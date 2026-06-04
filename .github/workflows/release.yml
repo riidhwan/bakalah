@@ -14,21 +14,53 @@ permissions:
 jobs:
   get_tag:
     if: github.repository == 'riidhwan/bakalah'
-    name: Extract tag name
+    name: Validate release version
     runs-on: 'ubuntu-24.04'
     outputs:
       tag: ${{ steps.extract.outputs.tag }}
+      version: ${{ steps.extract.outputs.version }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
       - name: Get tag name
         id: extract
-        run: echo "tag=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+        run: .github/scripts/validate-release-inputs.sh
+
+  gate:
+    if: github.repository == 'riidhwan/bakalah'
+    name: Release gate
+    runs-on: 'ubuntu-24.04'
+    needs: get_tag
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up JDK
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          java-version-file: .github/.java-version
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      - name: Check code format
+        run: ./gradlew spotlessCheck
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: Verify SQLDelight migrations
+        run: ./gradlew verifySqlDelightMigration
 
   build:
     if: github.repository == 'riidhwan/bakalah'
     name: Build
     runs-on: 'ubuntu-24.04'
-    needs: get_tag
+    needs: [get_tag, gate]
 
     steps:
       - name: Checkout
@@ -58,14 +90,10 @@ jobs:
           BUILD_TOOLS_VERSION: '35.0.1'
 
       - name: Rename APK
-        run: |
-          set -e
+        run: .github/scripts/rename-release-apks.sh release ${{ needs.get_tag.outputs.tag }}
 
-          mv app/build/outputs/apk/release/app-universal-release-unsigned-signed.apk bakalah-${{ needs.get_tag.outputs.tag }}.apk
-          mv app/build/outputs/apk/release/app-arm64-v8a-release-unsigned-signed.apk bakalah-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk
-          mv app/build/outputs/apk/release/app-armeabi-v7a-release-unsigned-signed.apk bakalah-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
-          mv app/build/outputs/apk/release/app-x86-release-unsigned-signed.apk bakalah-x86-${{ needs.get_tag.outputs.tag }}.apk
-          mv app/build/outputs/apk/release/app-x86_64-release-unsigned-signed.apk bakalah-x86_64-${{ needs.get_tag.outputs.tag }}.apk
+      - name: Verify APKs
+        run: .github/scripts/verify-release-artifacts.sh release ${{ needs.get_tag.outputs.tag }}
 
       - name: Upload APK
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -82,7 +110,7 @@ jobs:
     if: github.repository == 'riidhwan/bakalah'
     name: Build (FOSS)
     runs-on: ubuntu-24.04
-    needs: get_tag
+    needs: [get_tag, gate]
 
     steps:
       - name: Checkout
@@ -114,10 +142,10 @@ jobs:
           BUILD_TOOLS_VERSION: '35.0.1'
 
       - name: Rename APK
-        run: |
-          set -e
+        run: .github/scripts/rename-release-apks.sh foss ${{ needs.get_tag.outputs.tag }}
 
-          mv app/build/outputs/apk/foss/app-universal-foss-unsigned-signed.apk bakalah-${{ needs.get_tag.outputs.tag }}-foss.apk
+      - name: Verify APK
+        run: .github/scripts/verify-release-artifacts.sh foss ${{ needs.get_tag.outputs.tag }}
 
       - name: Upload APK
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -132,10 +160,20 @@ jobs:
     needs: [get_tag, build, build_foss]
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Prepare release notes
+        id: changelog
+        run: .github/scripts/prepare-release-notes.sh ${{ needs.get_tag.outputs.tag }}
+
       - name: Download all artifacts
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           merge-multiple: true
+
+      - name: Verify release artifact set
+        run: .github/scripts/verify-release-artifacts.sh all ${{ needs.get_tag.outputs.tag }}
 
       - name: Delete all artifacts
         uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b # v5.1.0
@@ -150,18 +188,7 @@ jobs:
         with:
           tag_name: ${{ needs.get_tag.outputs.tag }}
           name: Bakalah ${{ needs.get_tag.outputs.tag }}
-          body: |
-            Bakalah personal release.
-
-            <!-->
-
-
-
-            <!-->
-
-            > [!TIP]
-            >
-            > ### If you are unsure which version to download then go with `bakalah-${{ needs.get_tag.outputs.tag }}.apk`
+          body_path: release_body.md
           files: |
             bakalah-${{ needs.get_tag.outputs.tag }}.apk
             bakalah-${{ needs.get_tag.outputs.tag }}-foss.apk
