@@ -20,6 +20,22 @@ _Avoid_: Legacy link, old link
 Names, text, icons, and release artifacts that identify the installed app to a person using or installing Bakalah.
 _Avoid_: Internal package name, namespace
 
+**Release Process**:
+The end-to-end practice for shipping a Bakalah version to users, from deciding the version through making release artifacts available.
+_Avoid_: Release workflow, build workflow, CI workflow
+
+**Release Intent**:
+The explicit project decision that a specific Bakalah revision should become a user-available version.
+_Avoid_: Build trigger, publish action
+
+**Release Version**:
+The public version name assigned to one Bakalah release and used consistently for the release tag and user-facing artifacts.
+_Avoid_: Build number, version code, tag name
+
+**Release Artifact Set**:
+The complete group of installable Bakalah files that together represent one shipped version.
+_Avoid_: APKs, build outputs, assets
+
 **Internal Namespace**:
 Source code package names and module identifiers inherited from Mihon or Tachiyomi that do not by themselves determine Android install identity.
 _Avoid_: App identity, launcher name

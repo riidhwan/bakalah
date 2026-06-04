@@ -14,6 +14,7 @@ This is a multi-module Kotlin/Android Gradle project. Key modules are `app/` for
 - `./gradlew clean` removes Gradle build outputs.
 
 Use Android Studio with the project Gradle wrapper for day-to-day development and device/emulator testing.
+For release preparation, follow `docs/release-process.md`.
 
 ## Coding Style & Naming Conventions
 
@@ -28,6 +29,8 @@ Tests use JUnit Jupiter, Kotest assertions, MockK, and coroutine test utilities.
 Recent commits use short, imperative subjects such as `Add vertical chapter navigator` or `Drop kotlinx-collections-immutable usage`. Keep commits focused.
 
 Pull requests should include a summary, linked issue when applicable, testing performed, and a brief self-review. For UI changes, include screenshots and verify relevant themes and tablet mode. CI expects formatting, unit tests, SQLDelight migration checks, and release assembly to pass.
+
+Release versions use signed annotated `vMAJOR.MINOR.PATCH` tags. The tag version must match the Android `versionName`, `versionCode` must increase for public releases, and GitHub Releases are created as drafts for manual verification before publishing.
 
 ## Security & Configuration Tips
 
