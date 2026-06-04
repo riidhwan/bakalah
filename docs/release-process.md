@@ -5,6 +5,7 @@ Bakalah releases are started by a maintainer pushing a version tag. Release auto
 ## Version Rules
 
 - Use a `vMAJOR.MINOR.PATCH` tag, such as `v0.19.9`.
+- Maintainers must choose and confirm the next release version before any release metadata is changed. Do not infer whether the next version is a major, minor, or patch release from the previous tag alone.
 - The tag without its leading `v` must match `versionName` in `app/build.gradle.kts`.
 - Increase `versionCode` for every public release version.
 

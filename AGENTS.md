@@ -31,6 +31,7 @@ Recent commits use short, imperative subjects such as `Add vertical chapter navi
 Pull requests should include a summary, linked issue when applicable, testing performed, and a brief self-review. For UI changes, include screenshots and verify relevant themes and tablet mode. CI expects formatting, unit tests, SQLDelight migration checks, and release assembly to pass.
 
 Release versions use signed annotated `vMAJOR.MINOR.PATCH` tags. The tag version must match the Android `versionName`, `versionCode` must increase for public releases, and GitHub Releases are created as drafts for manual verification before publishing.
+Confirm the intended next release version with the maintainer before changing release metadata, creating a changelog release section, tagging, or publishing; do not infer the next version by incrementing the previous tag.
 
 ## Security & Configuration Tips
 
