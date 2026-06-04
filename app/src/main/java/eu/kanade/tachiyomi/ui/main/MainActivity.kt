@@ -258,7 +258,6 @@ class MainActivity : BaseActivity() {
 
                 CheckForUpdates()
                 ShowOnboarding()
-                ShowDonationCampaign()
             }
         }
 
@@ -584,7 +583,8 @@ class MainActivity : BaseActivity() {
 
     private fun Intent.isAddExtensionStoreIntent(): Boolean {
         return (scheme == "tachiyomi" && data?.host == "add-repo") ||
-            (scheme == "mihon" && data?.host == "extension-store")
+            (scheme == "mihon" && data?.host == "extension-store") ||
+            (scheme == "bakalah" && data?.host == "extension-store")
     }
 
     companion object {
