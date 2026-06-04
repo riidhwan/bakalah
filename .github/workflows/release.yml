@@ -8,9 +8,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   get_tag:
-    if: github.repository == 'mihonapp/mihon'
+    if: github.repository == 'riidhwan/bakalah'
     name: Extract tag name
     runs-on: 'ubuntu-24.04'
     outputs:
@@ -22,7 +25,7 @@ jobs:
         run: echo "tag=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
 
   build:
-    if: github.repository == 'mihonapp/mihon'
+    if: github.repository == 'riidhwan/bakalah'
     name: Build
     runs-on: 'ubuntu-24.04'
     needs: get_tag
@@ -41,7 +44,7 @@ jobs:
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Build
-        run: ./gradlew assembleRelease -Pinclude-telemetry -Penable-updater
+        run: ./gradlew assembleRelease -Penable-updater
 
       - name: Sign APK
         uses: r0adkll/sign-android-release@a391126403df92c6a0a3988a829dd47f79b89ed7
@@ -58,25 +61,25 @@ jobs:
         run: |
           set -e
 
-          mv app/build/outputs/apk/release/app-universal-release-unsigned-signed.apk mihon-${{ needs.get_tag.outputs.tag }}.apk
-          mv app/build/outputs/apk/release/app-arm64-v8a-release-unsigned-signed.apk mihon-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk
-          mv app/build/outputs/apk/release/app-armeabi-v7a-release-unsigned-signed.apk mihon-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
-          mv app/build/outputs/apk/release/app-x86-release-unsigned-signed.apk mihon-x86-${{ needs.get_tag.outputs.tag }}.apk
-          mv app/build/outputs/apk/release/app-x86_64-release-unsigned-signed.apk mihon-x86_64-${{ needs.get_tag.outputs.tag }}.apk
+          mv app/build/outputs/apk/release/app-universal-release-unsigned-signed.apk bakalah-${{ needs.get_tag.outputs.tag }}.apk
+          mv app/build/outputs/apk/release/app-arm64-v8a-release-unsigned-signed.apk bakalah-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk
+          mv app/build/outputs/apk/release/app-armeabi-v7a-release-unsigned-signed.apk bakalah-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
+          mv app/build/outputs/apk/release/app-x86-release-unsigned-signed.apk bakalah-x86-${{ needs.get_tag.outputs.tag }}.apk
+          mv app/build/outputs/apk/release/app-x86_64-release-unsigned-signed.apk bakalah-x86_64-${{ needs.get_tag.outputs.tag }}.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: mihon
+          name: bakalah
           path: |
-            mihon-${{ needs.get_tag.outputs.tag }}.apk
-            mihon-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk
-            mihon-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
-            mihon-x86-${{ needs.get_tag.outputs.tag }}.apk
-            mihon-x86_64-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-x86-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-x86_64-${{ needs.get_tag.outputs.tag }}.apk
 
   build_foss:
-    if: github.repository == 'mihonapp/mihon'
+    if: github.repository == 'riidhwan/bakalah'
     name: Build (FOSS)
     runs-on: ubuntu-24.04
     needs: get_tag
@@ -114,16 +117,16 @@ jobs:
         run: |
           set -e
 
-          mv app/build/outputs/apk/foss/app-universal-foss-unsigned-signed.apk mihon-${{ needs.get_tag.outputs.tag }}-foss.apk
+          mv app/build/outputs/apk/foss/app-universal-foss-unsigned-signed.apk bakalah-${{ needs.get_tag.outputs.tag }}-foss.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: mihon-foss
-          path: mihon-${{ needs.get_tag.outputs.tag }}-foss.apk
+          name: bakalah-foss
+          path: bakalah-${{ needs.get_tag.outputs.tag }}-foss.apk
 
   release:
-    if: github.repository == 'mihonapp/mihon'
+    if: github.repository == 'riidhwan/bakalah'
     name: Create GitHub Release
     runs-on: ubuntu-24.04
     needs: [get_tag, build, build_foss]
@@ -139,16 +142,16 @@ jobs:
         with:
           failOnError: false
           name: |
-            mihon
-            mihon-foss
+            bakalah
+            bakalah-foss
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: ${{ needs.get_tag.outputs.tag }}
-          name: Mihon ${{ needs.get_tag.outputs.tag }}
+          name: Bakalah ${{ needs.get_tag.outputs.tag }}
           body: |
-            Check out the [past release notes](https://github.com/mihonapp/mihon/releases) if you're upgrading from an earlier version. Consider [becoming a patron](https://www.patreon.com/mihon/membership) to help keep Mihon improving!
+            Bakalah personal release.
 
             <!-->
 
@@ -158,14 +161,14 @@ jobs:
 
             > [!TIP]
             >
-            > ### If you are unsure which version to download then go with `mihon-${{ needs.get_tag.outputs.tag }}.apk`
+            > ### If you are unsure which version to download then go with `bakalah-${{ needs.get_tag.outputs.tag }}.apk`
           files: |
-            mihon-${{ needs.get_tag.outputs.tag }}.apk
-            mihon-${{ needs.get_tag.outputs.tag }}-foss.apk
-            mihon-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk
-            mihon-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
-            mihon-x86-${{ needs.get_tag.outputs.tag }}.apk
-            mihon-x86_64-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-${{ needs.get_tag.outputs.tag }}-foss.apk
+            bakalah-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-x86-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-x86_64-${{ needs.get_tag.outputs.tag }}.apk
           draft: true
           prerelease: false
-          token: ${{ secrets.MIHON_BOT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
