@@ -20,7 +20,7 @@ Use this checklist for every public release:
 - Create a release branch named `release/MAJOR.MINOR.PATCH`; do not push release preparation commits directly to `main`.
 - Update `app/build.gradle.kts` so `versionName` matches the tag without `v` and `versionCode` is higher than the previous public release.
 - Move the relevant `Unreleased` entries in `CHANGELOG.md` into a non-empty release section for the confirmed version.
-- For local agent release preparation, run only metadata checks that do not require GitHub CI context or remote GitHub API access. Do not run the release metadata workflow's remote duplicate-release check locally; CI verifies existing tags and GitHub Releases after the pull request is opened.
+- For local agent release preparation, do not run GitHub workflow or release validation scripts such as `.github/scripts/validate-release-branch.sh` or `.github/scripts/validate-release-inputs.sh`, even without remote-check flags. Instead, inspect the edited files directly, confirm the branch name, `versionName`, `versionCode`, and changelog section are consistent, and let pull request CI run the release metadata validation, including duplicate tag and GitHub Release checks.
 - Open a pull request from the release branch to `main`.
 - Wait for the release metadata check to verify the branch name, `versionName`, changelog section, and absence of an existing tag or GitHub Release for the version.
 - Run and record any additional pre-release verification commands in the pull request.
