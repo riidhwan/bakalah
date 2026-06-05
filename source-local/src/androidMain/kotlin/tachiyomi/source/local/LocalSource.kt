@@ -61,6 +61,8 @@ actual class LocalSource(
     @Suppress("PrivatePropertyName")
     private val LatestFilters = FilterList(OrderBy.Latest(context))
 
+    private var searchCache: SearchCache? = null
+
     override val name: String = context.stringResource(MR.strings.local_source)
 
     override val id: Long = ID
@@ -83,59 +85,77 @@ actual class LocalSource(
             0L
         }
 
-        var mangaDirs = fileSystem.getFilesInBaseDirectory()
-            // Filter out files that are hidden and is not a folder
-            .filter { it.isDirectory && !it.name.orEmpty().startsWith('.') }
-            .distinctBy { it.name }
-            .filter {
-                if (lastModifiedLimit == 0L && query.isBlank()) {
-                    true
-                } else if (lastModifiedLimit == 0L) {
-                    it.name.orEmpty().contains(query, ignoreCase = true)
-                } else {
-                    it.lastModified() >= lastModifiedLimit
+        val cacheKey = SearchCacheKey(
+            query = query,
+            latestOnly = lastModifiedLimit != 0L,
+            orderBy = filters.orderByKey(),
+        )
+        val cachedMangaDirs = searchCache
+            ?.takeIf { it.key == cacheKey && System.currentTimeMillis() - it.createdAt < SEARCH_CACHE_TTL }
+            ?.mangaDirs
+
+        val mangaDirs = if (cachedMangaDirs != null) {
+            cachedMangaDirs
+        } else {
+            val baseFiles = fileSystem.getFilesInBaseDirectory()
+
+            var mangaDirs = baseFiles
+                .filter { it.name.orEmpty().startsWith('.').not() }
+                .distinctBy { it.name }
+                .filter {
+                    if (lastModifiedLimit == 0L && query.isBlank()) {
+                        true
+                    } else if (lastModifiedLimit == 0L) {
+                        it.name.orEmpty().contains(query, ignoreCase = true)
+                    } else {
+                        it.isDirectory && it.lastModified() >= lastModifiedLimit
+                    }
+                }
+
+            filters.forEach { filter ->
+                when (filter) {
+                    is OrderBy.Popular -> {
+                        mangaDirs = if (filter.state!!.ascending) {
+                            mangaDirs.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name.orEmpty() })
+                        } else {
+                            mangaDirs.sortedWith(
+                                compareByDescending(String.CASE_INSENSITIVE_ORDER) {
+                                    it.name.orEmpty()
+                                },
+                            )
+                        }
+                    }
+                    is OrderBy.Latest -> {
+                        mangaDirs = if (filter.state!!.ascending) {
+                            mangaDirs.sortedBy(UniFile::lastModified)
+                        } else {
+                            mangaDirs.sortedByDescending(UniFile::lastModified)
+                        }
+                    }
+                    else -> {
+                        /* Do nothing */
+                    }
                 }
             }
 
-        filters.forEach { filter ->
-            when (filter) {
-                is OrderBy.Popular -> {
-                    mangaDirs = if (filter.state!!.ascending) {
-                        mangaDirs.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name.orEmpty() })
-                    } else {
-                        mangaDirs.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name.orEmpty() })
-                    }
-                }
-                is OrderBy.Latest -> {
-                    mangaDirs = if (filter.state!!.ascending) {
-                        mangaDirs.sortedBy(UniFile::lastModified)
-                    } else {
-                        mangaDirs.sortedByDescending(UniFile::lastModified)
-                    }
-                }
-                else -> {
-                    /* Do nothing */
-                }
-            }
+            searchCache = SearchCache(cacheKey, mangaDirs)
+            mangaDirs
         }
 
-        val mangas = mangaDirs
+        val mangaPage = mangaDirs.toLocalMangaPage(page)
+
+        val mangas = mangaPage.items
             .map { mangaDir ->
                 async {
                     SManga.create().apply {
                         title = mangaDir.name.orEmpty()
                         url = mangaDir.name.orEmpty()
-
-                        // Try to find the cover
-                        coverManager.find(mangaDir.name.orEmpty())?.let {
-                            thumbnail_url = it.uri.toString()
-                        }
                     }
                 }
             }
             .awaitAll()
 
-        MangasPage(mangas, false)
+        MangasPage(mangas, mangaPage.hasNextPage)
     }
 
     // Manga details related
@@ -366,6 +386,29 @@ actual class LocalSource(
         const val HELP_URL = "https://mihon.app/docs/guides/local-source/"
 
         private val LATEST_THRESHOLD = 7.days.inWholeMilliseconds
+        private const val SEARCH_CACHE_TTL = 5 * 60 * 1000L
+    }
+}
+
+private data class SearchCacheKey(
+    val query: String,
+    val latestOnly: Boolean,
+    val orderBy: String,
+)
+
+private data class SearchCache(
+    val key: SearchCacheKey,
+    val mangaDirs: List<UniFile>,
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
+private fun FilterList.orderByKey(): String {
+    return joinToString(separator = "|") { filter ->
+        when (filter) {
+            is OrderBy.Popular -> "popular:${filter.state?.ascending}"
+            is OrderBy.Latest -> "latest:${filter.state?.ascending}"
+            else -> filter::class.simpleName.orEmpty()
+        }
     }
 }
 

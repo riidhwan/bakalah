@@ -12,6 +12,13 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.21.1] - 2026-06-05
+### Improved
+- Improve Local source browse performance by paging results, caching directory listings, and avoiding expensive per-entry file checks during browsing.
+
+### Fixed
+- Fix Local source reloading when returning from manga details.
+
 ## [v0.21.0] - 2026-06-05
 ### Added
 - Add a top-level Local tab for browsing local source entries, replacing Updates in the main navigation.

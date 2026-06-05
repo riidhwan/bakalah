@@ -78,12 +78,17 @@ data class BrowseSourceScreen(
 
     @Composable
     override fun Content() {
+        val screenModel = rememberScreenModel { BrowseSourceScreenModel(sourceId, listingQuery) }
+        Content(screenModel)
+    }
+
+    @Composable
+    fun Content(screenModel: BrowseSourceScreenModel) {
         if (!ifSourcesLoaded()) {
             LoadingScreen()
             return
         }
 
-        val screenModel = rememberScreenModel { BrowseSourceScreenModel(sourceId, listingQuery) }
         val state by screenModel.state.collectAsState()
 
         val navigator = LocalNavigator.currentOrThrow

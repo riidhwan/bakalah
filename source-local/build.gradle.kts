@@ -22,6 +22,12 @@ kotlin {
     }
 
     sourceSets {
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
         androidMain {
             dependencies {
                 implementation(projects.core.archive)
