@@ -35,7 +35,11 @@ class SourceRepositoryImpl(
         return sourceManager.catalogueSources.map { sources ->
             sources
                 .filterIsInstance<HttpSource>()
-                .map(::mapSourceToDomainSource)
+                .map {
+                    mapSourceToDomainSource(it).copy(
+                        supportsLatest = it.supportsLatest,
+                    )
+                }
         }
     }
 
