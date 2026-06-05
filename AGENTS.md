@@ -48,3 +48,5 @@ Keep edits aligned with those documents. If implementation needs to diverge, exp
 When making code or configuration changes, also review `AGENTS.md` and the relevant files under `docs/`. Update them in the same change whenever commands, architecture, module ownership, workflow expectations, branding, release behavior, or coding guidance would otherwise become stale.
 
 Do not create commits, push branches, or open pull requests unless the user explicitly asks for that Git/GitHub operation. It is fine to stage files only when preparing a user-requested commit.
+
+When the user asks to split work into GitHub issues, draft the proposed issue decomposition first and get explicit user approval before creating or syncing issues on GitHub. The draft should include parent/sub-issue boundaries, scope, out-of-scope notes, and any native dependency relationships that will be created. Each issue body must be self-contained enough for a separate agent with no conversation context to pick it up: include the outcome, parent context, relevant decisions/docs, concrete files or areas likely involved, explicit exclusions, dependencies, and verification commands.

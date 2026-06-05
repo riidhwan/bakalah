@@ -43,3 +43,35 @@ _Avoid_: APKs, build outputs, assets
 **Internal Namespace**:
 Source code package names and module identifiers inherited from Mihon or Tachiyomi that do not by themselves determine Android install identity.
 _Avoid_: App identity, launcher name
+
+**Library Chapter Update System**:
+The feature area that discovers, records, presents, and notifies about new or changed chapters for manga already in the user's library.
+_Avoid_: App updates, extension updates, generic update operations
+
+**Legacy Library Update Work**:
+Previously scheduled background or manual work that bulk-refreshes library manga for chapter changes.
+_Avoid_: Per-manga refresh, metadata update
+
+**Per-Manga Chapter Refresh**:
+Refreshing the chapter list for one manga while the user is interacting with that manga or a workflow that needs its chapters.
+_Avoid_: Library update, background update
+
+**Recent Updates Surface**:
+A user-facing view or widget that lists recently fetched chapters across the library.
+_Avoid_: Chapter list, history
+
+**Local Tab**:
+The top-level navigation destination for browsing manga stored in the user's local source directory.
+_Avoid_: Local source tab, downloads
+
+**Browse Area**:
+The feature area for remote sources, extension management, global search, and migration.
+_Avoid_: Local tab
+
+**Catalogue Latest Browsing**:
+Browsing a source-provided list of recently added or modified catalogue entries.
+_Avoid_: Library update, recent updates
+
+**Legacy Updates Shortcut**:
+An Android launcher or intent entry point that previously opened the Updates tab.
+_Avoid_: Local tab shortcut
