@@ -80,7 +80,6 @@
     <string name="action_settings">Pengaturan</string>
     <string name="history">Sejarah</string>
     <string name="categories">Kategori</string>
-    <string name="information_no_recent">Ora ono updetan anyar</string>
     <string name="information_no_downloads">Ora ono donlotan</string>
     <string name="label_help">Nulungi</string>
     <string name="label_extension_info">Info Ekstensi</string>
@@ -305,7 +304,6 @@
     <string name="not_selected">Mboten dipunpilih</string>
     <string name="action_menu_overflow_description">Pilihan liane</string>
     <string name="label_data_storage">Data lan penyimpanan</string>
-    <string name="label_upcoming">Bakal muncul</string>
     <string name="action_bar_up_description">navigasi mendhuwur</string>
     <string name="scanlator">Diluru</string>
     <string name="label_auto">Otomatis</string>

@@ -141,7 +141,6 @@
     <string name="information_empty_category">ምንም ምድቦች የሉዎትም። ቤተ-መጽሐፍትዎን ለማደራጀት አንድ ለመፍጠር የመደመር አዝራሩን መታ ያድርጉ።</string>
     <string name="information_empty_library">ቤተ-መጽሐፍትዎ ባዶ ነው ተከታታዮችን ከአሰሳ ወደ ቤተ-መጽሐፍትዎ ያክሉ።</string>
     <string name="information_no_recent_manga">በቅርቡ የተነበበ ነገር የለም</string>
-    <string name="information_no_recent">የቅርብ ጊዜ ዝመናዎች የሉም</string>
     <string name="information_no_downloads">ምንም የሚወርድ የለም</string>
     <string name="label_help">እገዛ</string>
     <string name="label_extension_info">የኤክስቴንሽን መረጃ</string>

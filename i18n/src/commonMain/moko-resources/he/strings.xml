@@ -307,7 +307,6 @@
     <string name="categories">קטגוריות</string>
     <string name="name">שם</string>
     <string name="information_no_recent_manga">שום דבר לא נקרא לאחרונה</string>
-    <string name="information_no_recent">אין עידכונים אחרונים</string>
     <string name="action_filter_bookmarked">סומן</string>
     <string name="label_default">ברירת המחדל</string>
     <string name="pref_app_theme">ערכת נושא של האפליקציה</string>
@@ -593,7 +592,6 @@
     <string name="theme_lavender">לבנדר</string>
     <string name="information_cloudflare_help">לחץ כאן לעזרה עם Cloudflare</string>
     <string name="download_notifier_split_page_not_found">עמוד %d לא נמצא בעת פיצול</string>
-    <string name="appwidget_updates_description">צפה בפריטי הספריה העדכניים ביותר</string>
     <string name="download_notifier_split_page_path_not_found">נכשל במציאת כתובת עמוד %d</string>
     <string name="pref_downloads_summary">הורדה אוטומטית, הורד את הבאים</string>
     <string name="pref_appearance_summary">ערכת נושא, תצורת תאריך ושעה</string>
@@ -620,7 +618,6 @@
     <string name="pref_invalidate_download_cache">בטל תוקף של אינדקס ההורדות</string>
     <string name="enhanced_services_not_installed">זמין אבל המקור לא מותקן: %s</string>
     <string name="tracking_info">סנכרון חד צדדי לעדכון ההתקדמות בפרקים בשיקות המעקב. קבע מעקב עבור פריטים ספציפיים מכפתור המעקב שלהם.</string>
-    <string name="pref_library_update_show_tab_badge">הצג כמות פרקים שלא נקראו בסמל העדכונים</string>
     <string name="split_tall_images">פצל תמונה מוארכת</string>
     <string name="pref_dump_crash_logs_summary">שומר דוח שגיאות לקובץ עבור שיתוף עם המפתחים</string>
     <string name="custom_cover">כריכה מותאמת אישית</string>

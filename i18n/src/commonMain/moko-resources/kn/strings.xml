@@ -96,7 +96,6 @@
     <string name="information_empty_category">ನೀವು ವರ್ಗಗಳನ್ನು ಹೊಂದಿಲ್ಲ. ನಿಮ್ಮ ಗ್ರಂಥಾಲಯದಲ್ಲಿ ವರ್ಗ ಒಂದನ್ನು ರಚಿಸಲು ಪ್ಲಸ್ ಬಟನ್ ಒತ್ತಿರಿ.</string>
     <string name="information_empty_library">ನಿಮ್ಮ ಲೈಬ್ರರಿ ಖಾಲಿಯಾಗಿದೆ, ಯಾವುದೇ ಮೂಲದಿಂದ ನಿಮ್ಮ ಲೈಬ್ರರಿಗೆ ಸರಣಿಯನ್ನು ಸೇರಿಸಿ.</string>
     <string name="information_no_recent_manga">ಇತ್ತೀಚೆಗೆ ಏನೂ ಓದಿಲ್ಲ</string>
-    <string name="information_no_recent">ಹೊಸ ನವೀಕರಣಗಳಿಲ್ಲ</string>
     <string name="information_no_downloads">ಡೌನ್‌ಲೋಡ್‌ಗಳಿಲ್ಲ</string>
     <string name="label_help">ಸಹಾಯ</string>
     <string name="label_extension_info">ವಿಸ್ತರಣೆ ಮಾಹಿತಿ</string>

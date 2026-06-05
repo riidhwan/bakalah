@@ -247,7 +247,6 @@
     <string name="transition_no_next">以下空白</string>
     <string name="transition_no_previous">已達盡頭</string>
     <string name="transition_pages_error">頁面載入失敗：%1$s</string>
-    <string name="information_no_recent">最近無更新</string>
     <string name="name">名稱</string>
     <string name="track">歷程</string>
     <string name="action_open_log">檢視記錄檔</string>
@@ -604,7 +603,6 @@
     <string name="pref_user_agent_string">預設使用者代理字串</string>
     <string name="action_remove_everything">全部清除</string>
     <string name="appwidget_unavailable_locked">當需要解鎖才能存取應用程式時，無法使用小工具</string>
-    <string name="appwidget_updates_description">查看書櫃中近期更新的作品</string>
     <string name="update_already_running">已在進行更新</string>
     <string name="error_user_agent_string_blank">使用者代理字串不得為空</string>
     <string name="theme_tidalwave">潮浪</string>
@@ -667,7 +665,6 @@
     <string name="seconds_short">%d 秒鐘</string>
     <string name="action_not_now">暫時不要</string>
     <string name="information_no_manga_category">類別尚無作品</string>
-    <string name="pref_library_update_show_tab_badge">在「更新」導覽圖示上標記未讀章數</string>
     <string name="copied_to_clipboard_plain">已複製到剪貼簿</string>
     <string name="pref_skip_dupe_chapters">略過重複的章節</string>
     <string name="enhanced_services_not_installed">可供使用但來源尚未安裝：%s</string>
@@ -781,11 +778,6 @@
     <string name="action_replace_repo">取代</string>
     <string name="action_replace_repo_title">已有相同的簽署金鑰指紋</string>
     <string name="action_replace_repo_message">「%1$s」儲存庫的簽署金鑰指紋與「%2$s」相同\n若此為預期現象，則「%2$s」將被取代，否則請聯絡該儲存庫的維護者</string>
-    <string name="upcoming_guide">即將推出的指南</string>
-    <string name="upcoming_calendar_next">下個月</string>
-    <string name="upcoming_calendar_prev">上個月</string>
-    <string name="label_upcoming">即將推出</string>
-    <string name="action_view_upcoming">檢視即將推出的更新</string>
     <string name="file_picker_uri_permission_unsupported">無法取得永久性資料夾存取權，應用程式可能會表現異常</string>
     <string name="pref_flash_style_white">白</string>
     <string name="pref_flash_style_white_black">黑白</string>

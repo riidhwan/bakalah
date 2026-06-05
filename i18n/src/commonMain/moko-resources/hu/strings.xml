@@ -148,7 +148,6 @@
     <string name="action_select_inverse">Kiválasztás megfordítása</string>
     <string name="action_menu">Menü</string>
     <string name="information_empty_library">A könyvtárad üres</string>
-    <string name="information_no_recent">Nincs új frissítés</string>
     <string name="information_no_downloads">Nincs letöltés folyamatban</string>
     <string name="channel_ext_updates">Bővítményfrissítések</string>
     <string name="channel_new_chapters">Fejezetfrissítések</string>
@@ -606,7 +605,6 @@
     <string name="pref_user_agent_string">Alap hálózati kliens szöveg</string>
     <string name="pref_reset_user_agent_string">Alap hálózati kliens szöveg visszaállítása</string>
     <string name="action_remove_everything">Minden Eltávolitása</string>
-    <string name="appwidget_updates_description">Lásd nemrég frissített mangádat</string>
     <string name="appwidget_unavailable_locked">Widget nem elérhető amikor az alkalmazás zárolva van</string>
     <string name="pref_appearance_summary">Téma, dátum és idő formátuma</string>
     <string name="action_search_hint">Keresés…</string>
@@ -624,7 +622,6 @@
     <string name="action_open_random_manga">Véletlenszerű elem megnyitása</string>
     <string name="updates_last_update_info">Könyvtár utoljára frissítve: %s</string>
     <string name="label_tracker_section">Nyilvántartók</string>
-    <string name="pref_library_update_show_tab_badge">Az olvasatlanok számának megjelenítése a Frissítések ikonon</string>
     <string name="action_display_show_continue_reading_button">Olvasás folytatása gomb</string>
     <string name="pref_library_summary">Kategóriák, globális frissítés, fejezet csúsztatás</string>
     <string name="pref_security_summary">Alkalmazás zárolás, képernyő zár</string>
@@ -790,11 +787,6 @@
     <string name="action_replace_repo_title">Aláíró kulcs ujjlenyomat már létezik</string>
     <string name="action_replace_repo_message">A(z) %1$s tárolónak ugyanaz az aláíró kulcs ujjlenyomat, mint a(z) %2$s tárolónak.
 \nHa ez várható volt, akkor a(z) %2$s lecserélődik, ellenkező esetben lépjen kapcsolatba a tároló karbantartójával.</string>
-    <string name="label_upcoming">Közelgő</string>
-    <string name="upcoming_calendar_next">Következő hónap</string>
-    <string name="action_view_upcoming">Közelgő frissítések megtekintése</string>
-    <string name="upcoming_guide">Közelgő útmutató</string>
-    <string name="upcoming_calendar_prev">Előző hónap</string>
     <string name="action_copy_link">Hivatkozás másolása</string>
     <string name="onboarding_permission_crashlytics">Összeomlási jelentés küldése</string>
     <string name="onboarding_permission_analytics">Analitika engedélyezése</string>

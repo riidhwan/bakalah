@@ -258,7 +258,6 @@
     <string name="update_check_notification_download_error">下载失败</string>
     <string name="update_check_notification_update_available">有新版本！</string>
     <string name="information_no_downloads">无下载任务</string>
-    <string name="information_no_recent">最近没有更新</string>
     <string name="information_no_recent_manga">最近没有阅读</string>
     <string name="information_empty_library">书架为空</string>
     <string name="information_empty_category">尚无分类，点击加号按钮创建分类用来管理书架。</string>
@@ -607,7 +606,6 @@
     <string name="pref_reset_user_agent_string">恢复默认 User Agent 字符串</string>
     <string name="action_remove_everything">全部删除</string>
     <string name="appwidget_unavailable_locked">应用锁开启时，小部件不能使用</string>
-    <string name="appwidget_updates_description">查看最近更新的作品</string>
     <string name="update_already_running">有其他更新尚未完成</string>
     <string name="error_user_agent_string_blank">User Agent 字符串不能为空</string>
     <string name="theme_tidalwave">浪潮</string>
@@ -670,7 +668,6 @@
     <string name="seconds_short">%d 秒</string>
     <string name="day_short">%d 天</string>
     <string name="hour_short">%d 时</string>
-    <string name="pref_library_update_show_tab_badge">在“更新”图标上显示未读章数</string>
     <string name="information_no_manga_category">分类为空</string>
     <string name="copied_to_clipboard_plain">已复制到剪贴板</string>
     <string name="enhanced_services_not_installed">支持以下平台但图源尚未安装：%s</string>
@@ -790,11 +787,6 @@
     <string name="action_replace_repo_message">%1$s 仓库已经存在和 %2$s 仓库相同的签名密钥指纹。
 \n若继续，%2$s 将被替换，否则请联系你的仓库维护员。</string>
     <string name="action_replace_repo_title">签名密钥指纹已存在</string>
-    <string name="action_view_upcoming">显示即将推出的更新</string>
-    <string name="upcoming_guide">即将推出的指南</string>
-    <string name="label_upcoming">即将推出</string>
-    <string name="upcoming_calendar_next">下个月</string>
-    <string name="upcoming_calendar_prev">上个月</string>
     <string name="manga_interval_expected_update_null">此漫画或已完结，或无发行日期。</string>
     <string name="pref_flash_duration_summary">%1$s 毫秒</string>
     <string name="pref_flash_duration">闪烁时间</string>

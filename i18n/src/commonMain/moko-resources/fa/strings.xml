@@ -89,7 +89,6 @@
     <string name="information_empty_category">هیچ دسته بندی وجود ندارد. با زدن دکمه به علاوه دسته بندی جدیدی بسازید.</string>
     <string name="information_empty_library">کتابخانه شما خالی است</string>
     <string name="information_no_recent_manga">هیچ چیز مانگاای به تازگی خوانده شده</string>
-    <string name="information_no_recent">هیچ قسمت جدیدی یافت نشد</string>
     <string name="information_no_downloads">لیست دانلود خالی است</string>
     <string name="label_help">راهنما</string>
     <string name="label_extension_info">اطلاعات افزونه</string>
@@ -560,7 +559,6 @@
     <string name="pref_downloads_summary">دانلود خودکار، دانلود از قبل</string>
     <string name="pref_browse_summary">منابع، برنامه های افزودنی، جستجوی سراسری</string>
     <string name="pref_backup_summary">پشتیبان گیری دستی و خودکار</string>
-    <string name="pref_library_update_show_tab_badge">نمایش تعداد خوانده نشده در نماد به‌روزرسانی‌ها</string>
     <string name="label_stats">آمار</string>
     <string name="label_started">من شروع کردم</string>
     <string name="label_local">شیرین شده</string>

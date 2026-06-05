@@ -31,7 +31,6 @@
     <string name="delete_downloaded">ဒေါင်းလုဒ်များ ဖျက်မည်။</string>
     <string name="history">မှတ်တမ်း</string>
     <string name="label_settings">ဆက်တင်များ</string>
-    <string name="label_upcoming">နောက်ဆက်တွဲ</string>
     <string name="label_extensions">ချိတ်ဆက်မှုများ</string>
     <string name="label_backup">အရံသိမ်းဆည်းခြင်းနှင့် ပြန်လည်ရယူခြင်း</string>
     <string name="unlock_app_title">%s ကို လော့ခ်ဖွင့်ပါ။</string>
@@ -232,7 +231,6 @@
     <string name="pref_update_only_non_completed">ဖတ်ပြီးသား အခန်းများကို ကျော်သွားပါ</string>
     <string name="pref_update_only_started">မစရသေးသော အခန်းများကို ကျော်သွားပါ</string>
     <string name="connected_to_wifi">Wi-Fi ဖြင့်သာ</string>
-    <string name="pref_library_update_show_tab_badge">အိုင်ကွန်ပေါ်တွင် မဖတ်ရသေးတဲ့ အရေအတွက်ကို ပြသပါ</string>
     <string name="default_category_summary">အချိန်တိုင်း မေးပါ။</string>
     <string name="pref_library_update_categories_details">ဝင်ရောက်ခွင့် ပိတ်ထားသော ကဏ္ဍများရှိ အခန်းများကို ပါဝင်ခွင့်ပြုထားသော ကဏ္ဍများတွင် ပါဝင်နေသည့်တိုင် အပ်ဒိတ်မပြုလုပ်ပါ</string>
     <string name="all">အားလုံး</string>

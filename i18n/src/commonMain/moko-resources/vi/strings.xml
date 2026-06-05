@@ -187,7 +187,6 @@
     <string name="update_check_notification_download_error">Lỗi khi tải xuống</string>
     <string name="update_check_notification_update_available">Có cập nhật mới!</string>
     <string name="information_no_downloads">Không có</string>
-    <string name="information_no_recent">Không có cập nhật mới</string>
     <string name="information_no_recent_manga">Không có truyện đã đọc gần đây</string>
     <string name="information_empty_library">Thư viện trống</string>
     <string name="download_notifier_downloader_title">Trình tải xuống</string>
@@ -606,7 +605,6 @@
     <string name="delete_category_confirmation">Bạn có muốn xóa thể loại \"%s\"?</string>
     <string name="custom_cover">Tùy chỉnh ảnh bìa</string>
     <string name="appwidget_unavailable_locked">Tiện ích không còn khả dụng khi khóa ứng dụng đang bật</string>
-    <string name="appwidget_updates_description">Xem các bộ truyện được cập nhật gần đây</string>
     <string name="action_remove_everything">Loại bỏ tất cả mọi thứ</string>
     <string name="update_already_running">Có một cập nhật đang chạy sẵn</string>
     <string name="theme_tidalwave">Sóng Thủy Triều</string>
@@ -653,7 +651,6 @@
     <string name="label_tracker_section">Theo dõi</string>
     <string name="label_tracked_titles">Tổng theo dõi</string>
     <string name="crash_screen_restart_application">Khởi động lại ứng dụng</string>
-    <string name="pref_library_update_show_tab_badge">Hiển thị số chương chưa đọc</string>
     <string name="error_user_agent_string_invalid">Chuỗi tác nhân người dùng không hợp lệ</string>
     <string name="unknown_title">Tiêu đề không xác định</string>
     <string name="track_remove_start_date_conf_text">Thao tác này sẽ xóa ngày bắt đầu đã chọn trước đó của bạn khỏi %s</string>
@@ -769,7 +766,6 @@
     <string name="action_add_anyway">Luôn luôn thêm</string>
     <string name="theme_nord">Phương bắc</string>
     <string name="pref_library_update_smart_update">Tùy chọn bỏ qua cập nhật</string>
-    <string name="label_upcoming">Sắp tới</string>
     <string name="onboarding_storage_help_info">Cập nhật từ phiên bản cũ hơn và không biết nên chọn gì? Tham khảo hướng dẫn để biết thêm thông tin.</string>
     <string name="action_add_repo_message">Thêm nguồn bổ sung vào %s. Địa chỉ URL này cần phải kết thúc với \"index.min.json\".</string>
     <string name="action_replace_repo_message">Kho lưu trữ %1$s có Dấu vân tay Khóa ký giống hệt như %2$s.
@@ -789,10 +785,6 @@
     <string name="manga_interval_custom_amount">Tần suất cập nhật tùy chỉnh:</string>
     <string name="pref_display_profile">Tùy chỉnh hồ sơ màn hình</string>
     <string name="pref_webtoon_disable_zoom_out">Tắt thu nhỏ</string>
-    <string name="action_view_upcoming">Xem các cập nhật sắp tới</string>
-    <string name="upcoming_guide">Hướng dẫn sắp tới</string>
-    <string name="upcoming_calendar_next">Tháng tiếp theo</string>
-    <string name="upcoming_calendar_prev">Tháng trước</string>
     <string name="action_replace_repo">Thay thế</string>
     <string name="action_replace_repo_title">Dấu vân tay cho khóa ký đã được tạo trước đó</string>
     <string name="action_copy_link">Sao chép liên kết</string>

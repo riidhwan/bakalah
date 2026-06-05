@@ -178,7 +178,6 @@
     <string name="update_check_notification_download_error">Errore di scaricamento</string>
     <string name="update_check_notification_update_available">Nuova versione disponibile!</string>
     <string name="information_no_downloads">Nessun download</string>
-    <string name="information_no_recent">Nessuna novità recente</string>
     <string name="information_no_recent_manga">Nessuna lettura recente</string>
     <string name="information_empty_library">La tua libreria è vuota</string>
     <string name="download_notifier_downloader_title">Gestione Download</string>
@@ -607,7 +606,6 @@
     <string name="pref_user_agent_string">Stringa «user agent» del browser</string>
     <string name="action_remove_everything">Rimuovi tutto</string>
     <string name="appwidget_unavailable_locked">Widget non disponibile quando il blocco app è attivo</string>
-    <string name="appwidget_updates_description">Vedi le voci aggiornate di recente</string>
     <string name="update_already_running">È già in corso un aggiornamento</string>
     <string name="error_user_agent_string_blank">La sringa «user agent» non può essere vuota</string>
     <string name="theme_tidalwave">Maremoto</string>
@@ -671,7 +669,6 @@
     <string name="day_short">%d g</string>
     <string name="action_not_now">Non ora</string>
     <string name="information_no_manga_category">La categoria è vuota</string>
-    <string name="pref_library_update_show_tab_badge">Mostra il numero dei capitoli non letti nell\'icona Novità</string>
     <string name="copied_to_clipboard_plain">Copiato negli appunti</string>
     <string name="enhanced_services_not_installed">Disponibile ma la fonte non è installata: %s</string>
     <string name="pref_skip_dupe_chapters">Salta i capitoli duplicati</string>
@@ -790,11 +787,6 @@
 \nSe è quello che si desidera, %2$s verrà sostituita, altrimenti contatta il manutentore della repository.</string>
     <string name="action_replace_repo">Sostituisci</string>
     <string name="pref_webtoon_disable_zoom_out">Disattiva zoom indietro</string>
-    <string name="label_upcoming">Prossimamente</string>
-    <string name="action_view_upcoming">Controlla i Prossimi Aggiornamenti</string>
-    <string name="upcoming_guide">Guida in arrivo</string>
-    <string name="upcoming_calendar_next">Mese prossimo</string>
-    <string name="upcoming_calendar_prev">Mese scorso</string>
     <string name="pref_flash_duration">Durata del flash</string>
     <string name="pref_flash_duration_summary">%1$s ms</string>
     <string name="pref_flash_with">Flash con</string>

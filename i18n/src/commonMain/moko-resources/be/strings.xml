@@ -172,7 +172,6 @@
     <string name="action_share">Падзяліцца</string>
     <string name="action_install">Усталяваць</string>
     <string name="action_move_to_bottom">У канец</string>
-    <string name="information_no_recent">Няма нядаўніх абнаўленняў</string>
     <string name="information_no_downloads">Няма спамповак</string>
     <string name="pref_page_transitions">Аніміраваць пераходы старонак</string>
     <string name="pref_cutout_short">Паказваць змесціва ў вобласці выраза</string>
@@ -345,7 +344,6 @@
     <string name="label_local">Лакальна</string>
     <string name="action_set_interval">Задаць інтэрвал</string>
     <string name="action_filter_interval_custom">Наладжваемая частата абнаўлення</string>
-    <string name="label_upcoming">Наступнае</string>
     <string name="scanlator">Сканлейтар</string>
     <string name="label_downloaded">Спампована</string>
     <string name="label_auto">Аўта</string>
@@ -413,7 +411,6 @@
     <string name="firebase_summary">Адпраўка журналаў збояў і аналітыкі дазволіць нам выяўляць і выпраўляць памылкі, паляпшаць прадукцыйнасць і развіваць праграму з улікам вашых патрэб</string>
     <string name="pref_library_update_smart_update">Разумнае абнаўленне</string>
     <string name="pref_update_only_in_release_period">Прадказваць выхад новых раздзелаў</string>
-    <string name="pref_library_update_show_tab_badge">Паказваць колькасць непрачытаных на значку «Абнаўленні»</string>
     <string name="pref_behavior">Паводзіны</string>
     <string name="pref_chapter_swipe_end">Раздзел пры змахванні ўправа</string>
     <string name="pref_chapter_swipe_start">Раздзел пры змахванні ўлева</string>
@@ -758,11 +755,7 @@
     <string name="updates_last_update_info">Апошняе абноўленне: %s</string>
     <string name="updates_last_update_info_just_now">Толькі што</string>
     <string name="relative_time_span_never">Ніколі</string>
-    <string name="action_view_upcoming">Прагляд будучых абнаўленняў</string>
     <string name="action_filter_excluded_scanlators">Фільтраваць выключаных сканлэйтараў</string>
-    <string name="upcoming_guide">Будучы дапаможнік</string>
-    <string name="upcoming_calendar_next">Наступны месяц</string>
-    <string name="upcoming_calendar_prev">Папярэдні месяц</string>
     <string name="recent_manga_time">Раздз. %1$s ‐ %2$s</string>
     <string name="pref_clear_history">Ачысціць гісторыю</string>
     <string name="clear_history_completed">Гісторыя выдалена</string>
@@ -857,7 +850,6 @@
     <string name="channel_ext_updates">Абнаўленні пашырэнняў</string>
     <string name="spen_previous_page">Папярэдняя старонка</string>
     <string name="spen_next_page">Наступная старонка</string>
-    <string name="appwidget_updates_description">Праглядзець нядаўна абноўленыя ў бібліятэцы</string>
     <string name="appwidget_unavailable_locked">Віджэт недаступны, калі ўключана блакіроўка праграмы</string>
     <string name="remove_manga">Вы збіраецеся прыбраць «%s» са сваёй бібліятэкі</string>
     <string name="exception_http">HTTP %d: праверце сайт у WebView</string>

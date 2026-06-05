@@ -210,7 +210,6 @@
     <string name="update_check_notification_download_error">Fehler beim Herunterladen</string>
     <string name="update_check_notification_update_available">Neue Version verfügbar!</string>
     <string name="information_no_downloads">Keine Downloads</string>
-    <string name="information_no_recent">Keine neuen Kapitel</string>
     <string name="information_no_recent_manga">Nichts kürzlich gelesen</string>
     <string name="information_empty_library">Deine Bibliothek ist leer</string>
     <string name="download_notifier_downloader_title">Downloader</string>
@@ -606,7 +605,6 @@
     <string name="pref_user_agent_string">Standard-User-Agent-Text</string>
     <string name="pref_reset_user_agent_string">Standard-User-Agent-Text zurücksetzen</string>
     <string name="action_remove_everything">Alles entfernen</string>
-    <string name="appwidget_updates_description">Deine kürzlich aktualisierten Bibliothekseinträge ansehen</string>
     <string name="appwidget_unavailable_locked">Widget ist nicht verfügbar, wenn die App-Sperre aktiviert ist</string>
     <string name="update_already_running">Ein Update ist bereits im Gange</string>
     <string name="error_user_agent_string_blank">User-Agent-Text darf nicht leer sein</string>
@@ -671,7 +669,6 @@
     <string name="seconds_short">%d s</string>
     <string name="action_not_now">Nicht jetzt</string>
     <string name="information_no_manga_category">Kategorie ist leer</string>
-    <string name="pref_library_update_show_tab_badge">Anzahl an Ungelesenem auf dem „Neues“-Symbol anzeigen</string>
     <string name="copied_to_clipboard_plain">In die Zwischenablage kopiert</string>
     <string name="enhanced_services_not_installed">Verfügbar, aber Quelle ist nicht installiert: %s</string>
     <string name="pref_skip_dupe_chapters">Doppelte Kapitel überspringen</string>
@@ -790,11 +787,6 @@
     <string name="action_replace_repo_title">Signaturschlüssel-Fingerprint existiert bereits</string>
     <string name="action_replace_repo_message">Repository %1$s hat den gleichen Signaturschlüssel-Fingerprint wie %2$s.
 \nFalls das erwünscht ist, wird %2$s nun ersetzt. Falls nicht, kontaktiere den Repository-Maintainer.</string>
-    <string name="upcoming_calendar_next">Nächster Monat</string>
-    <string name="upcoming_calendar_prev">Vorheriger Monat</string>
-    <string name="label_upcoming">Bevorstehend</string>
-    <string name="action_view_upcoming">Bevorstehende Aktualisierungen ansehen</string>
-    <string name="upcoming_guide">Leitfaden für Bevorstehendes</string>
     <string name="file_picker_uri_permission_unsupported">Dauerhafter Ordnerzugriff konnte nicht erlangt werden. Die App kann sich unerwartet verhalten.</string>
     <string name="manga_interval_expected_update_null">Dieser Manga ist entweder abgeschlossen, oder es existiert kein geschätztes Veröffentlichungsdatum.</string>
     <string name="pref_flash_page_interval">Leuchte jede</string>

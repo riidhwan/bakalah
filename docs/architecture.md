@@ -13,7 +13,6 @@ The root `settings.gradle.kts` includes these main modules:
 - `core/archive`: archive and EPUB/ZIP reading primitives.
 - `core-metadata`: metadata models for formats such as Tachiyomi metadata and ComicInfo.
 - `presentation-core`: reusable Compose UI components, theme primitives, icons, and presentation utilities.
-- `presentation-widget`: Glance app widget components and receivers.
 - `source-api`: multiplatform source contracts used by remote/local content providers.
 - `source-local`: local content source implementation, file-system access, archive detection, and local cover handling.
 - `i18n`: shared localized resources generated through Moko resources.
@@ -26,7 +25,7 @@ The intended dependency direction is mostly top-down:
 
 ```text
 app
-  -> presentation-core / presentation-widget
+  -> presentation-core
   -> data
   -> domain
   -> source-api / source-local
@@ -104,7 +103,7 @@ UI is primarily Jetpack Compose, with some Android views and activities where ne
 
 Feature-specific UI belongs in `app/src/main/java/eu/kanade/presentation/*` or the relevant `mihon/feature/*` package. Keep composables mostly stateless: pass state in, emit events out, and let screen models own loading, mutation, and navigation decisions.
 
-Widgets are isolated in `presentation-widget`, using Glance receivers and widget components. This keeps home-screen widget dependencies separate from normal app UI.
+Bakalah currently has no app widget module; recent-updates widgets were removed with the Recent Updates Surface.
 
 ## Networking and Serialization
 

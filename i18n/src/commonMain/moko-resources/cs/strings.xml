@@ -137,7 +137,6 @@
     <string name="update_check_notification_download_complete">Klepnutím nainstalujte aktualizaci</string>
     <string name="update_check_notification_download_error">Chyba při stahování</string>
     <string name="update_check_notification_update_available">Dostupná aktualizace!</string>
-    <string name="information_no_recent">Žádné nedávné aktualizace</string>
     <string name="information_no_recent_manga">Nic nedávno čtené</string>
     <string name="download_notifier_title_error">Chyba</string>
     <string name="download_notifier_unknown_error">Při stahování kapitoly došlo k neznámé chybě</string>
@@ -607,7 +606,6 @@
     <string name="pref_user_agent_string">Výchozí řetězec pro user agent</string>
     <string name="action_remove_everything">Odstranit vše</string>
     <string name="appwidget_unavailable_locked">Widget není k dispozici, když je povolen zámek aplikace</string>
-    <string name="appwidget_updates_description">Podívejte se na své nedávno aktualizované záznamy v knihovně</string>
     <string name="update_already_running">Aktualizace již probíhá</string>
     <string name="error_user_agent_string_blank">Řetězec uživatelského agenta nemůže být prázdný</string>
     <string name="theme_tidalwave">Přílivová Vlna</string>
@@ -671,7 +669,6 @@
     <string name="seconds_short">%ds</string>
     <string name="action_not_now">Teď ne</string>
     <string name="information_no_manga_category">Kategorie je prázdná</string>
-    <string name="pref_library_update_show_tab_badge">Zobrazit počet nepřečtených kapitol na ikoně Aktualizace</string>
     <string name="copied_to_clipboard_plain">Zkopírováno do schránky</string>
     <string name="enhanced_services_not_installed">K dispozici, ale zdroj není nainstalován: %s</string>
     <string name="pref_skip_dupe_chapters">Přeskakovat duplicitní kapitoly</string>
@@ -792,14 +789,12 @@
     <string name="pref_flash_duration_summary">%1$s ms</string>
     <string name="pref_flash_style_white">Bílou</string>
     <string name="manga_interval_expected_update_null">Tato manga je buďto dokončená, nebo nemá přibližné datum vydání.</string>
-    <string name="label_upcoming">Nadcházející</string>
     <string name="pref_flash_duration">Délka bliknutí</string>
     <string name="pref_flash_page_interval">Bliknout každých</string>
     <string name="pref_flash_with">Bliknout</string>
     <string name="pref_flash_style_black">Černou</string>
     <string name="pref_flash_style_white_black">Bílou a Černou</string>
     <string name="pref_display_profile">Vlastní profil zobrazení</string>
-    <string name="action_view_upcoming">Zobrazit nadcházející aktualizace</string>
     <string name="file_picker_uri_permission_unsupported">Nepodařilo se získat trvalý přístup ke složce. Aplikace se může chovat zvláštně.</string>
     <string name="pref_auto_update_manga_on_mark_read">Aktualizovat postup po přečtení</string>
     <string name="action_copy_link">Zkopírovat odkaz</string>
@@ -827,9 +822,6 @@
     <string name="trackers_updated_summary">Sledovače aktualizovány do kapitoly %d</string>
     <string name="non_library_settings">Všechny přečtené záznamy</string>
     <string name="confirm_tracker_update">Aktualizovat sledovače do kapitoly %d?</string>
-    <string name="upcoming_calendar_prev">Předchozí měsíc</string>
-    <string name="upcoming_calendar_next">Následující měsíc</string>
-    <string name="upcoming_guide">Návod k nadcházejícím kapitolám</string>
     <string name="label_auto">Automaticky</string>
     <string name="pref_mark_duplicate_read_chapter_read">Označit duplicitní přečtenou kapitolu jako přečtenou</string>
     <string name="theme_monochrome">Černobílý</string>

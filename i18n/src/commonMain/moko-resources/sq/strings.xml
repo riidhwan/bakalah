@@ -14,7 +14,6 @@
     <string name="label_extensions">Shtesa</string>
     <string name="label_extension_info">Informacione shtesë</string>
     <string name="label_help">Ndihmë</string>
-    <string name="information_no_recent">S\'ka përditësime të reja</string>
     <string name="action_disable">Çaktivizo</string>
     <string name="action_cancel">Anulo</string>
     <string name="action_cancel_all">Anulo të gjitha</string>
@@ -234,7 +233,6 @@
     <string name="action_display">Ekrani</string>
     <string name="action_display_mode">Modaliteti i ekranit</string>
     <string name="action_display_grid">Rrjetë kompakte</string>
-    <string name="appwidget_updates_description">Shiko përditësimin e fundit të elementeve të bibliotekes tuaj</string>
     <string name="remove_manga">Ju jeni gati të hiqni \"%s\" nga biblioteka juaj</string>
     <string name="appwidget_unavailable_locked">Miniaplikacioni nuk ofrohet kur kyçja e aplikacionit është aktivizuar</string>
     <string name="ext_pending">Në pritje</string>
@@ -652,7 +650,6 @@
     <string name="pref_tablet_ui_mode">Ndërfaqja e përdoruesve të tabletit</string>
     <string name="pref_verbose_logging_summary">Printoni regjistrat me fjalë në regjistrin e sistemit (ul performancën e aplikacionit)</string>
     <string name="file_picker_error">Nuk u gjet asnjë aplikacion për përzgjedhjen e skedarëve</string>
-    <string name="pref_library_update_show_tab_badge">Trego numrin e të pa lezuarave ne ikonën e Përditësimeve</string>
     <string name="label_overview_section">Pasqyrë e Përgjithshme</string>
     <string name="seconds_short">%ds</string>
     <string name="label_stats">Statistikë</string>

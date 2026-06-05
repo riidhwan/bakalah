@@ -26,7 +26,6 @@
     <string name="scale_type_fit_screen">Экранға сыйғыздыру</string>
     <string name="scale_type_stretch">Тарту</string>
     <string name="information_no_downloads">Жүктеулер жоқ</string>
-    <string name="information_no_recent">Жаңа жаңартулар жоқ</string>
     <string name="information_no_recent_manga">Жақында ештеңе оқылмады</string>
     <string name="information_empty_library">Кітапханаңыз бос</string>
     <string name="name">Атауы</string>
@@ -583,7 +582,6 @@
     <string name="channel_ext_updates">Кеңейту жаңартулары</string>
     <string name="spen_previous_page">Алдыңғы бет</string>
     <string name="spen_next_page">Келесі бет</string>
-    <string name="appwidget_updates_description">Жақында кітапханада жаңартылған жазбаларды қарау</string>
     <string name="remove_manga">\"%s\"ті кітапханадан жойғай тұрсыз</string>
     <string name="skipped_reason_not_always_update">Туындыға жаңарту керек жоқ болғандықтан өткізіп жіберіледі</string>
     <string name="update_check_notification_download_in_progress">Жүктелуде…</string>
@@ -674,7 +672,6 @@
     <string name="label_titles_in_global_update">Ауқымды жаңартуда</string>
     <string name="label_tracked_titles">Бақыланудағы жазбалар</string>
     <string name="label_tracker_section">Бақылау қызметтері</string>
-    <string name="pref_library_update_show_tab_badge">Жаңартулар белгішесінде оқылмаған тараулар санын көрсету</string>
     <string name="information_no_manga_category">Бұл санат бос</string>
     <string name="enhanced_services_not_installed">Қолжетімді, бірақ дереккөзі орнатылған жоқ: %s</string>
     <string name="copied_to_clipboard_plain">Аралық сақтағышқа көшірілді</string>
@@ -699,5 +696,4 @@
     <string name="action_set_interval">Аралығын қою</string>
     <string name="unlock_app_title">%s шешу</string>
     <string name="action_filter_interval_custom">Өзгермелі жаңарту жиілігі</string>
-    <string name="label_upcoming">Келешек</string>
 </resources>

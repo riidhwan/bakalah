@@ -53,7 +53,6 @@
     <string name="information_empty_category">మీ దగ్గర ఏ విభాగములు లేవు। మీ గ్రంథాలయాన్ని సరికూర్చుకోడానికి ప్లస్ చిహ్నాన్ని నొక్కి కొత్త దాన్ని సృష్టించుకోండి॥</string>
     <string name="information_empty_library">మీ గ్రంథాలయము ఖాళీగా ఉన్నది</string>
     <string name="information_no_recent_manga">ఈ మధ్య మీరు ఏమి చదవలేదు</string>
-    <string name="information_no_recent">కొత్త నవీకరణలు లేవు</string>
     <string name="action_remove">తొలగించుము</string>
     <string name="action_retry">మళ్ళీ ప్రయత్నించుము</string>
     <string name="action_next_chapter">తదుపరి అధ్యాయము</string>

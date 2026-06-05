@@ -218,7 +218,6 @@
     <string name="update_check_notification_download_error">ডাউনলোড ত্রুটি দেখা গিয়েছে</string>
     <string name="update_check_notification_update_available">নতুন সংস্করণ উপলভ্য!</string>
     <string name="information_no_downloads">ডাউনলোড নেই</string>
-    <string name="information_no_recent">কোন নতুন হালনাগাদ নেই</string>
     <string name="information_no_recent_manga">সম্প্রতি কিছু পড়া হয়নি</string>
     <string name="information_empty_library">আপনার সংগ্রহশালা খালি</string>
     <string name="information_empty_category">আপনার কোন বিভাগ নেই। আপনার সংগ্রহশালা সাজাতে যোগ চিহ্ন বাটনে চেপে একটি বিভাগ তৈরী করুন।</string>
@@ -553,7 +552,6 @@
     <string name="publishing_finished">সম্পূর্ণ প্রকাশিত</string>
     <string name="action_sort_last_manga_update">সর্বশেষ হালনাগাদ চেক</string>
     <string name="delete_category_confirmation">আপনি কি “%s” ক্যাটাগরিটি মুছে ফেলতে চান?</string>
-    <string name="appwidget_updates_description">সম্প্রতি আপনার হালনাগাদকৃত মাঙ্গা দেখুন</string>
     <string name="are_you_sure">আপনি কি নিশ্চিত?</string>
     <string name="action_sort_unread_count">অপঠিত সংখ্যা</string>
     <string name="action_remove_everything">সবকিছু মুছে ফেলুন</string>
@@ -634,7 +632,6 @@
     <string name="action_add_anyway">যাই হোক যোগ করুন</string>
     <string name="onboarding_storage_help_action">স্টোরেজ গাইড</string>
     <string name="onboarding_storage_help_info">পুরোনো ভার্সন থেকে আপডেট করছেন এবং কী নির্বাচন করবেন তা নিশ্চিত নন? আরও তথ্যের জন্য স্টোরেজ গাইডটি দেখুন।</string>
-    <string name="label_upcoming">আসন্ন</string>
     <string name="action_display_unread_badge">অপঠিত অধ্যায়</string>
     <string name="action_notes">নোটস</string>
     <string name="action_edit_notes">নোট পরিবর্তন</string>
@@ -658,7 +655,6 @@
     <string name="network_not_metered">শুধু আনলিমিটেড নেটওয়ার্কে</string>
     <string name="pref_library_update_smart_update">স্মার্ট আপডেট</string>
     <string name="pref_update_only_in_release_period">পরবর্তী রিলিজের সময় অনুমান করুন</string>
-    <string name="pref_library_update_show_tab_badge">আপডেট আইকনে অপঠিত সংখ্যা দেখান</string>
     <string name="pref_behavior">ব্যবহার</string>
     <string name="pref_chapter_swipe_end">অধ্যায় ডানে সোয়াইপ করলে</string>
     <string name="pref_chapter_swipe_start">অধ্যায় বামে সোয়াইপ করলে</string>
@@ -824,10 +820,6 @@
     <string name="track_remove_finish_date_conf_text">এটি %s থেকে পূর্বে নির্বাচিত শেষ তারিখ মুছে ফেলবে</string>
     <string name="track_delete_title">%s ট্র্যাকিং মুছে ফেলা হবে?</string>
     <string name="updates_last_update_info">লাইব্রেরি সর্বশেষ আপডেট: %s</string>
-    <string name="action_view_upcoming">আসন্ন আপডেটগুলো দেখুন</string>
-    <string name="upcoming_guide">আসন্ন গাইড</string>
-    <string name="upcoming_calendar_next">আগামী মাস</string>
-    <string name="upcoming_calendar_prev">গত মাস</string>
     <string name="track_delete_text">এটি লোকাল ট্র্যাকিং থেকে মুছে যাবে।</string>
     <string name="migrationListScreen.latestChapterLabel">সর্বশেষ: %1$s</string>
     <string name="migrationListScreen.unknownLatestChapter">অজানা</string>

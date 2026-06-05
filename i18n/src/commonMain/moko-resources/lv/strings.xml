@@ -113,7 +113,6 @@
     <string name="information_empty_category">Jums nav nevienas kategorijas. Pieskarieties plus pogai, lai izveidotu kategoriju savas bibliotēkas organizēšanai.</string>
     <string name="information_empty_library">Jūsu bibliotēka ir tukša</string>
     <string name="information_no_recent_manga">Nekas nesen lasīts</string>
-    <string name="information_no_recent">Nekas nesen lasīts</string>
     <string name="action_newest">Jaunākais</string>
     <string name="action_cancel_all">Atcelt visu</string>
     <string name="action_unpin">Atspraust</string>
@@ -654,7 +653,6 @@
     <string name="pref_browse_summary">Avoti, paplašinājumi, globālā meklēšana</string>
     <string name="pref_appearance_summary">Tēma, datuma un laika formāti</string>
     <string name="pref_library_summary">Kategorijas, globāli atjauninājumi, nodaļu vilkšana</string>
-    <string name="pref_library_update_show_tab_badge">Rādīt nelasīto skaitu uz atjauninājumu ikonas</string>
     <string name="appwidget_unavailable_locked">Logrīks nav pieejams, ja ir iespējota lietotņu bloķēšana</string>
     <string name="hour_short">%dh</string>
     <string name="internal_error">InternalError: Par plašāku informāciju skatiet avārijas žurnālu</string>
@@ -668,7 +666,6 @@
     <string name="pref_hide_in_library_items">Slēpt ierakstus, kas jau ir bibliotēkā</string>
     <string name="track_remove_date_conf_title">Vai noņemt datumu?</string>
     <string name="information_no_manga_category">Kategorija ir tukša</string>
-    <string name="appwidget_updates_description">Skatiet savus nesen atjauninātos bibliotēkas ierakstus</string>
     <string name="remove_manga">Jūs gatavojaties noņemt \"%s\" no savas bibliotēkas</string>
     <string name="action_not_now">Ne tagad</string>
     <string name="action_search_hint">Meklē…</string>

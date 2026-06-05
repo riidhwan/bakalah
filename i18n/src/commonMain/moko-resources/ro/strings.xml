@@ -258,7 +258,6 @@
     <string name="update_check_notification_download_error">Eroare la descărcare</string>
     <string name="update_check_notification_update_available">Versiune nouă disponibilă!</string>
     <string name="information_no_downloads">Fără descărcări</string>
-    <string name="information_no_recent">Nu există actualizări recente</string>
     <string name="information_no_recent_manga">Nimic citit recent</string>
     <string name="information_empty_library">Biblioteca este goală</string>
     <string name="information_empty_category">Nu aveți categorii. Apăsați butonul plus pentru a crea una pentru a vă organiza biblioteca.</string>
@@ -608,7 +607,6 @@
     <string name="error_no_match">Nimic asemănător nu a fost găsit</string>
     <string name="remove_manga">Sunteți pe cale să eliminați \"%s\" din biblioteca dvs</string>
     <string name="source_filter_empty_screen">Nici o sursă instalată nu a fost găsită</string>
-    <string name="appwidget_updates_description">Vizualizați intrările recent actualizate din bibliotecă</string>
     <string name="pref_reset_viewer_flags_error">Nu am putut reseta setările de citire</string>
     <string name="source_empty_screen">Nici o sursă găsită</string>
     <string name="skipped_reason_not_always_update">Ignorat deoarece seria nu necesită actualizări</string>
@@ -649,7 +647,6 @@
 \nApăsați pentru a afla mai multe.</string>
     <string name="action_open_random_manga">Deschideți aleatoriu</string>
     <string name="pref_invalidate_download_cache_summary">Obligați aplicația să refacă verificarea capitolelor descărcate</string>
-    <string name="pref_library_update_show_tab_badge">Afiseaza numarul de notificari necitite pe pictorgrama Actualizari</string>
     <string name="label_stats">Statistici</string>
     <string name="label_local">Local</string>
     <string name="label_started">Început</string>
@@ -780,7 +777,6 @@
     <string name="error_repo_exists">Acest repozitoriu există deja!</string>
     <string name="action_delete_repo">Șterge repozitoriu</string>
     <string name="invalid_repo_name">URL repozitoriu invalid</string>
-    <string name="label_upcoming">Viitoare</string>
     <string name="theme_nord">Nord</string>
     <string name="action_replace_repo_message">Repozitoriul %1$s are acceeași amprenta digitală a cheii de semnare ca și %2$s
 \nÎn cazul în care asta este la ce vă așteptați, %2$s va fi înlocuit, altfel contatati întreținătorul repozitoriului.</string>
@@ -789,10 +785,6 @@
     <string name="action_replace_repo">Înlocuiți</string>
     <string name="action_replace_repo_title">Amprenta digitală a cheii de semnare există deja</string>
     <string name="pref_webtoon_disable_zoom_out">Dezactivați funcția de zoom-out</string>
-    <string name="action_view_upcoming">Vizualizați actualizările viitoare</string>
-    <string name="upcoming_guide">Ghidul viitor</string>
-    <string name="upcoming_calendar_next">Luna următoare</string>
-    <string name="upcoming_calendar_prev">Luna anterioară</string>
     <string name="extensionRepo_settings">Repo-uri extensii</string>
     <string name="manga_interval_expected_update_null">Această manga este fie finalizată, fie nu există preconizare pentru data lansării.</string>
     <string name="pref_flash_style_black">Negru</string>

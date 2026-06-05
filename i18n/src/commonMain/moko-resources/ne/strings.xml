@@ -91,7 +91,6 @@
     <string name="information_empty_category">तपाईंसँग कुनै वर्गहरू छैन। वर्ग बनाएर पुस्तकालय व्यवस्थित गर्न प्लस बटन थिच्नुहोस्।</string>
     <string name="information_empty_library">तपाईंको पुस्तकालय खाली छ</string>
     <string name="information_no_recent_manga">हालै केहि पढेको छैन</string>
-    <string name="information_no_recent">हालैका कुनै अपडेट छैन</string>
     <string name="label_download_queue">डाउनलोड सूची</string>
     <string name="information_no_downloads">कुनै डाउनलोड्स छैन</string>
     <string name="label_help">मद्दत</string>
@@ -582,7 +581,6 @@
     <string name="pref_backup_summary">म्यानुअल र स्वचालित ब्याकअप, भण्डारण स्पेस</string>
     <string name="pref_security_summary">एप लक, सुरक्षित स्क्रिन</string>
     <string name="multi_lang">थुप्रै</string>
-    <string name="pref_library_update_show_tab_badge">अपडेट्स आइकनमा नपढिएको गणना देखाउनुहोस्</string>
     <string name="pref_skip_dupe_chapters">डुप्लिकेट अध्यायहरू छोड्नुहोस्</string>
     <string name="action_display_show_continue_reading_button">जारी राख्ने बटन</string>
     <string name="label_stats">तथ्याङ्क</string>
@@ -616,7 +614,6 @@
     <string name="crash_screen_restart_application">एप पुन: सुरु गर्नुहोस्</string>
     <string name="label_tracked_titles">ट्र्याक गरिएका इन्ट्रीहरू</string>
     <string name="label_mean_score">औसत स्कोर</string>
-    <string name="appwidget_updates_description">तपाईंको भर्खरै अपडेट गरिएको पुस्तकालय इन्ट्रीहरू हेर्नुहोस्</string>
     <string name="enhanced_services_not_installed">उपलब्ध छ तर स्रोत स्थापना गरिएको छैन: %s</string>
     <string name="copied_to_clipboard_plain">क्लिपबोर्डमा प्रतिलिपि गरियो</string>
     <string name="information_no_entries_found">यस वर्गमा कुनै इन्ट्रीहरू फेला परेनन्</string>
@@ -788,11 +785,6 @@
     <string name="action_replace_repo_title">साइन गर्ने की फिंगरप्रिन्ट पहिले नै अवस्थित छ</string>
     <string name="action_replace_repo_message">रिपो %1$s सँग %2$s जस्तै साइन गर्ने की फिंगरप्रिन्ट छ।
 \nयदि यो अपेक्षित छ भने, %2$s प्रतिस्थापन गरिनेछ, अन्यथा आफ्नो रिपो प्रबन्धकलाई सम्पर्क गर्नुहोस्।</string>
-    <string name="label_upcoming">आगामी</string>
-    <string name="action_view_upcoming">आगामी अपडेट्स हेर्नुहोस्</string>
-    <string name="upcoming_guide">आगामी गाइड</string>
-    <string name="upcoming_calendar_next">अर्को महिना</string>
-    <string name="upcoming_calendar_prev">अघिल्लो महिना</string>
     <string name="file_picker_uri_permission_unsupported">लगातार फोल्डर पहुँच प्राप्त गर्न असफल। एपले अप्रत्याशित रूपमा व्यवहार गर्न सक्छ।</string>
     <string name="pref_flash_duration">फ्ल्यास अवधि</string>
     <string name="pref_flash_style_white">सेतो</string>

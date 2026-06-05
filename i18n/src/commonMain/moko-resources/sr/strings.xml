@@ -250,7 +250,6 @@
     <string name="email">Имејл адреса</string>
     <string name="information_empty_library">Ваша колекција је празна</string>
     <string name="information_no_recent_manga">Ништа није недавно читано</string>
-    <string name="information_no_recent">Нема недавних ажурирања</string>
     <string name="information_no_downloads">Нема преузимања</string>
     <string name="label_sources">Извори</string>
     <string name="ext_obsolete">Застарело</string>
@@ -591,7 +590,6 @@
     <string name="not_installed">Није инсталирано</string>
     <string name="crash_screen_description">%s је наишао на неочекивану грешку. Предлажемо да поделите запис о прекиду програма на нашем каналу за подршку на Discord-у.</string>
     <string name="appwidget_unavailable_locked">Виџет није доступан када је омогућено закључавање апликације</string>
-    <string name="pref_library_update_show_tab_badge">Прокажи број непрочитаних на икони ажурирања</string>
     <string name="wish_list">Листа жеља</string>
     <string name="enhanced_services_not_installed">Доступно, али извор није преузет: %s</string>
     <string name="fdroid_warning">F-Droid верзије нису званично подржане.
@@ -644,7 +642,6 @@
     <string name="error_user_agent_string_invalid">Неважећи низ корисничког агента</string>
     <string name="pref_reset_viewer_flags_error">Није могуће ресетовати подешавања читача</string>
     <string name="remove_manga">Управо ћете уклонити \"%s\" из своје колекције</string>
-    <string name="appwidget_updates_description">Погледај твоје недавно ажуриране наслове у колекцији</string>
     <string name="pref_invalidate_download_cache">Поништи индекс преузимања</string>
     <string name="action_sort_unread_count">Број непрочитаних</string>
     <string name="action_sort_last_manga_update">Последња провера ажурирања</string>
@@ -789,7 +786,6 @@
     <string name="action_apply">Примени</string>
     <string name="action_revert_to_default">Врати на подразумевано</string>
     <string name="action_add_anyway">Dodati svejedno</string>
-    <string name="label_upcoming">Predstojeći</string>
     <string name="action_replace_repo">Zameniti</string>
     <string name="action_replace_repo_title">Otisak prsta za otključavanje već postoji</string>
 </resources>

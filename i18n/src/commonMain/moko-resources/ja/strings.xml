@@ -247,7 +247,6 @@
     <string name="update_check_notification_download_error">ダウンロード中にエラー発生</string>
     <string name="update_check_notification_update_available">アップデート利用可能！</string>
     <string name="information_no_downloads">ダウンロードがありません</string>
-    <string name="information_no_recent">最近の更新はありません</string>
     <string name="information_no_recent_manga">最近は何も読んでいません</string>
     <string name="information_empty_library">ライブラリは空です</string>
     <string name="information_empty_category">カテゴリーがありません。「+」をタップしてカテゴリーを追加し、ライブラリを整理できます。</string>
@@ -606,7 +605,6 @@
     <string name="pref_user_agent_string">デフォルトのユーザーエージェント文字列</string>
     <string name="pref_reset_user_agent_string">デフォルトのユーザーエージェント文字列をリセットする</string>
     <string name="action_remove_everything">全て削除</string>
-    <string name="appwidget_updates_description">最近更新されたライブラリの項目を見る</string>
     <string name="appwidget_unavailable_locked">アプリロックがONの時、ウィジェットは利用できません</string>
     <string name="update_already_running">アップデートはすでに進行中です</string>
     <string name="error_user_agent_string_blank">ユーザーエージェント文字列を入力してください</string>
@@ -671,7 +669,6 @@
     <string name="day_short">%d日</string>
     <string name="action_not_now">後で</string>
     <string name="information_no_manga_category">カテゴリが空です</string>
-    <string name="pref_library_update_show_tab_badge">アップデートアイコンに未読メッセージの件数を表示</string>
     <string name="copied_to_clipboard_plain">クリップボードにコピーしました</string>
     <string name="enhanced_services_not_installed">利用可能ですが未インストールのソース: %s</string>
     <string name="pref_skip_dupe_chapters">重複の章をスキップ</string>
@@ -787,12 +784,7 @@
     <string name="action_add_anyway">追加</string>
     <string name="action_replace_repo">交換</string>
     <string name="pref_display_profile">カスタムディスプレイプロファイル</string>
-    <string name="upcoming_calendar_prev">前月</string>
-    <string name="upcoming_calendar_next">翌月</string>
-    <string name="label_upcoming">近々公開</string>
-    <string name="action_view_upcoming">今後のアップデート</string>
     <string name="action_replace_repo_title">署名キーのフィンガープリントはすでに存在します</string>
-    <string name="upcoming_guide">今後のご案内</string>
     <string name="action_replace_repo_message">リポジトリ %1$s は %2$s と同じ署名キー指紋を持っています。
 \nこれが予想される場合は %2$s が置換されますが、そうでない場合はリポジトリのメンテナーに連絡してください。</string>
     <string name="pref_flash_duration">閃光時間</string>

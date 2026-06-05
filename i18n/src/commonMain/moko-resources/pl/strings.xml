@@ -216,7 +216,6 @@
     <string name="notification_first_add_to_library">Zanim to zrobisz, dodaj ten wpis do biblioteki</string>
     <string name="file_select_backup">Wybierz plik kopii zapasowej</string>
     <string name="information_no_downloads">Brak pobieranych rozdziałów</string>
-    <string name="information_no_recent">Brak ostatnio zaktualizowanych</string>
     <string name="information_no_recent_manga">Nic ostatnio nie czytano</string>
     <string name="download_notifier_downloader_title">Pobieranie</string>
     <string name="download_notifier_text_only_wifi">Brak połączenia Wi-Fi</string>
@@ -615,7 +614,6 @@
     <string name="theme_tidalwave">Tsunami</string>
     <string name="download_ahead">Pobierz z wyprzedzeniem</string>
     <string name="auto_download_while_reading">Pobieraj podczas czytania</string>
-    <string name="appwidget_updates_description">Zobacz ostatnio zaktualizowane wpisy</string>
     <string name="appwidget_unavailable_locked">Widżet nie jest dostępny kiedy blokada aplikacji jest włączona</string>
     <string name="are_you_sure">Jesteś pewien?</string>
     <string name="download_ahead_info">Działa tylko, jeśli aktualny i następny rozdział są już pobrane.</string>
@@ -663,7 +661,6 @@
     <string name="label_read_chapters">Przeczytane</string>
     <string name="pref_downloads_summary">Automatyczne pobieranie, pobierz wstępnie</string>
     <string name="track_remove_start_date_conf_text">To spowoduje usunięcie wcześniej wybranej daty rozpoczęcia z %s</string>
-    <string name="pref_library_update_show_tab_badge">Pokaż liczbę nieprzeczytanych na ikonie Aktualizacji</string>
     <string name="not_applicable">N/A</string>
     <string name="day_short">%dd</string>
     <string name="hour_short">%d godz.</string>
@@ -790,10 +787,6 @@
     <string name="pref_webtoon_disable_zoom_out">Wyłącz oddalenie</string>
     <string name="action_add_anyway">Dodaj mimo to</string>
     <string name="action_replace_repo">Zamień</string>
-    <string name="action_view_upcoming">Pokaż nadchodzące aktualizacje</string>
-    <string name="upcoming_calendar_next">Następny miesiąc</string>
-    <string name="upcoming_calendar_prev">Poprzedni miesiąc</string>
-    <string name="label_upcoming">Nadchodzący</string>
     <string name="file_picker_uri_permission_unsupported">Nie udało się uzyskać dostępu do folderu. Aplikacja może się zachowywać nieprzewidywalnie.</string>
     <string name="pref_flash_duration_summary">%1$s ms</string>
     <string name="pref_flash_duration">Długość migania</string>
@@ -826,7 +819,6 @@
     <string name="pref_hardware_bitmap_threshold_summary">Jeżeli czytnik załaduje pusty obraz, stopniowo zmniejszaj zakres graniczny.\nWybrany: %s</string>
     <string name="confirm_tracker_update">Zaktualizować śledzenie do rozdziału %d?</string>
     <string name="action_replace_repo_title">Identyfikator Klucza Certyfikatu już istnieje</string>
-    <string name="upcoming_guide">Przewodnik nadchodzących aktualizacji</string>
     <string name="action_replace_repo_message">Repozytorium %1$s posiada taki sam identyfikator certyfikatu jak %2$s.\nJeżeli było to przewidziane, %2$s zostanie zastąpione, w przeciwnym wypadku skontaktuj się z z osobą utrzymującą repozytorium.</string>
     <string name="pref_download_new_unread_chapters_only">Pomiń pobieranie duplikatów przeczytanych już rozdziałów</string>
     <string name="invalid_backup_file_json">Kopia zapasowa JSON nie jest wspierana</string>

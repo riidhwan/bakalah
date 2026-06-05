@@ -218,7 +218,6 @@
     <string name="update_check_notification_download_error">Ralat muat turun</string>
     <string name="update_check_notification_update_available">Versi baharu boleh didapati!</string>
     <string name="information_no_downloads">Tiada muat turun</string>
-    <string name="information_no_recent">Tiada kemas kini terkini</string>
     <string name="information_no_recent_manga">Tiada bacaan setakat ini</string>
     <string name="information_empty_library">Pustaka kosong</string>
     <string name="download_notifier_downloader_title">Pemuat turun</string>
@@ -607,7 +606,6 @@
     <string name="pref_reset_user_agent_string">Set semula untaian ejen pengguna lalai</string>
     <string name="action_remove_everything">Buang semuanya</string>
     <string name="appwidget_unavailable_locked">Widget tidak tersedia apabila kekunci aplikasi digunakan</string>
-    <string name="appwidget_updates_description">Lihat kemas kini entri pustaka terkini anda</string>
     <string name="update_already_running">Kemas kini sedang berjalan</string>
     <string name="error_user_agent_string_blank">Untaian ejen pengguna tidak boleh kosong</string>
     <string name="auto_download_while_reading">Muat turun automatik semasa membaca</string>
@@ -671,7 +669,6 @@
     <string name="seconds_short">%ds</string>
     <string name="action_not_now">Bukan sekarang</string>
     <string name="information_no_manga_category">Kategori kosong</string>
-    <string name="pref_library_update_show_tab_badge">Tunjuk bilangan belum dibaca pada ikon Kemas kini</string>
     <string name="pref_skip_dupe_chapters">Langkau bab pendua</string>
     <string name="enhanced_services_not_installed">Tersedia tetapi sumber tidak dipasang: %s</string>
     <string name="copied_to_clipboard_plain">Disalin ke papan keratan</string>
@@ -784,12 +781,7 @@
     <string name="last_auto_backup_info">Sandaran automatik terakhir:%s</string>
     <string name="notification_updating_progress">Mengemaskini pustaka… (%s)</string>
     <string name="action_replace_repo">Ganti</string>
-    <string name="label_upcoming">Akan datang</string>
     <string name="pref_webtoon_disable_zoom_out">Lumpuhkan zum keluar</string>
-    <string name="action_view_upcoming">Lihat kemas kini yang akan datang</string>
-    <string name="upcoming_guide">Panduan yang akan datang</string>
-    <string name="upcoming_calendar_next">Bulan depan</string>
-    <string name="upcoming_calendar_prev">Bulan sebelumnya</string>
     <string name="label_auto">Otomatis</string>
     <string name="action_sort_random">Rawak</string>
     <string name="action_copy_link">Pautan salin</string>

@@ -276,7 +276,6 @@
     <string name="update_check_notification_download_error">Chyba sťahovania</string>
     <string name="update_check_notification_update_available">Dostupná nová aktualizácia!</string>
     <string name="information_no_downloads">Žiadne sťahovanie</string>
-    <string name="information_no_recent">Žiadne nedávne aktualizácie</string>
     <string name="information_no_recent_manga">Nič nedávno čítané</string>
     <string name="information_empty_library">Vaša knižnica je prázdna</string>
     <string name="information_empty_category">Nemáte žiadne kategórie. Ťuknutím na tlačidlo plus si ju vytvorte a usporiadajte knižnicu.</string>
@@ -419,7 +418,6 @@
     <string name="reading_list">Zoznam čítania</string>
     <string name="track_finished_reading_date">Dátum ukončenia</string>
     <string name="updates_last_update_info">Posledná aktualizácia knižnice: %s</string>
-    <string name="appwidget_updates_description">Pozrite si svoju nedávno aktualizovanú mangu</string>
     <string name="pref_hide_threshold">Citlivosť pre skrytie ponuky pri posúvaní</string>
     <string name="page_list_empty_error">Nenašli sa žiadne stránky</string>
     <string name="pref_always_show_chapter_transition">Vždy zobraziť prechod medzi kapitolami</string>
@@ -658,7 +656,6 @@
     <string name="action_set_interval">Nastaviť interval</string>
     <string name="action_sort_next_updated">Ďalšia očakávaná aktualizácia</string>
     <string name="onboarding_heading">Vitajte!</string>
-    <string name="label_upcoming">Nadchádzajúce</string>
     <string name="action_replace_repo">Nahradiť</string>
     <string name="action_bar_up_description">Navigovať hore</string>
     <string name="label_auto">Auto</string>
@@ -690,7 +687,6 @@
     <string name="onboarding_guides_new_user">Prvý krát používate %s? Odporúčame prečítať si príručku pre začiatočníkov.</string>
     <string name="onboarding_guides_returning_user">Inštalujete %s znovu?</string>
     <string name="pref_appearance_summary">Téma, dátum a formát času</string>
-    <string name="upcoming_guide">Príručka pre nadchádzajúce</string>
     <string name="track_activity_name">Prihlásenie do sledovača</string>
     <string name="private_settings">Zahrnúť citlivé nastavenia (napr. prihlasovacie údaje do sledovačov)</string>
     <string name="confirm_tracker_update">Aktualizovať postup na sledovačoch po kapitolu %d?</string>
@@ -711,7 +707,6 @@
     <string name="pref_firebase">Analytické dáta a záznamy v prípade zlyhania</string>
     <string name="firebase_summary">Posielaním záznamov v prípade zlyhania aplikácie a analytických údajov nám umožníte identifikovať a opraviť chyby, zlepšiť rýchlost aplikácie a urobiť aplikáciu viac relevantnejšiu pre vaše potreby</string>
     <string name="pref_library_update_smart_update">Inteligentné aktualizácie</string>
-    <string name="pref_library_update_show_tab_badge">Zobraziť počet neprečítaných na ikone Aktualizácii</string>
     <string name="pref_behavior">Správanie</string>
     <string name="pref_chapter_swipe_end">Kapitola po potiahnutí prstom doprava</string>
     <string name="pref_chapter_swipe_start">Kapitola po potiahnutí prstom doľava</string>

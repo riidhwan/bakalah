@@ -258,7 +258,6 @@
     <string name="update_check_notification_download_error">Помилка завантаження</string>
     <string name="update_check_notification_update_available">Доступна нова версія!</string>
     <string name="information_no_downloads">Завантажень немає</string>
-    <string name="information_no_recent">Без оновлень</string>
     <string name="information_no_recent_manga">Останнім часом нічого не прочитано</string>
     <string name="information_empty_library">Ваша бібліотека порожня</string>
     <string name="information_empty_category">У вас немає категорій. Тицьніть кнопку плюс, для початку облаштування вашої бібліотеки.</string>
@@ -603,7 +602,6 @@
     <string name="internal_error">InternalError: Перевірте журнал халеп задля додаткової інформації</string>
     <string name="delete_category_confirmation">Чи бажаєте ви видалити категорію \"%s\"?</string>
     <string name="delete_category">Видалити категорію</string>
-    <string name="appwidget_updates_description">Переглянути нещодавно оновлені записи бібліотеки</string>
     <string name="appwidget_unavailable_locked">Віджет не доступний при ввімкненому блокуванні застосунку</string>
     <string name="pref_user_agent_string">Типовий user agent</string>
     <string name="action_remove_everything">Видалити все</string>
@@ -670,7 +668,6 @@
     <string name="hour_short">%dh</string>
     <string name="seconds_short">%ds</string>
     <string name="action_not_now">Не зараз</string>
-    <string name="pref_library_update_show_tab_badge">Відображення кількості непрочитаних на значку \"Нове\"</string>
     <string name="information_no_manga_category">Категорія порожня</string>
     <string name="copied_to_clipboard_plain">Скопійовано в буфер обміну</string>
     <string name="enhanced_services_not_installed">Доступно, але джерело не встановлене: %s</string>
@@ -783,13 +780,9 @@
     <string name="action_replace_repo_title">Відбиток пальця для підпису ключа вже існує</string>
     <string name="action_replace_repo_message">Репозиторій %1$s має такий самий відбиток ключа підпису, як і %2$s.
 \nЯкщо це очікувано, %2$s буде замінено, в іншому випадку зверніться до вашого обслуговуючого репозиторію.</string>
-    <string name="action_view_upcoming">Переглянути майбутні оновлення</string>
-    <string name="upcoming_calendar_prev">Попередній місяць</string>
     <string name="action_replace_repo">Замінити</string>
     <string name="pref_display_profile">Власний профіль відображення</string>
     <string name="pref_webtoon_disable_zoom_out">Вимкнути зменшення масштабу</string>
-    <string name="label_upcoming">Незабаром</string>
-    <string name="upcoming_calendar_next">Наступний місяць</string>
     <string name="pref_auto_update_manga_on_mark_read">Оновити прогрес коли главу помічено прочитаною</string>
     <string name="manga_interval_expected_update_null">Ця манґа завершена, або не має приблизної дати релізу.</string>
     <string name="action_sort_random">Випадково</string>
@@ -838,7 +831,6 @@
     <string name="file_picker_uri_permission_unsupported">Не вдалося отримати постійний доступ до теки. Програма може поводитися непередбачувано.</string>
     <string name="notes_placeholder">Сподобалась частина, де…</string>
     <string name="extensionRepo_settings">Репозиторії розширень</string>
-    <string name="upcoming_guide">Інструкції до наступних розділів</string>
     <string name="non_library_settings">Всі прочитані записи</string>
     <string name="tracked_privately">Відстежується приватно</string>
     <string name="action_toggle_private_off">Відстежувати публічно</string>
