@@ -1,11 +1,13 @@
 # Release Process
 
-Bakalah releases are started by a maintainer pushing a version tag. Release automation builds and signs the release artifacts, creates a draft GitHub Release, and leaves final publication to a manual verification step.
+Bakalah releases are started by merging a reviewed release branch into `main`. Release automation validates the release metadata, creates a version tag, builds and signs the release artifacts, creates a draft GitHub Release, and leaves final publication to a manual verification step.
 
 ## Version Rules
 
 - Use a `vMAJOR.MINOR.PATCH` tag, such as `v0.19.9`.
 - Confirm the intended next release version with the maintainer before changing release metadata. Do not infer whether the next release is major, minor, or patch from the previous tag alone.
+- Name the release branch `release/MAJOR.MINOR.PATCH`, such as `release/0.19.9`.
+- The release branch version must match `versionName` in `app/build.gradle.kts`.
 - The tag without its leading `v` must match `versionName` in `app/build.gradle.kts`.
 - Increase `versionCode` for every public release version.
 
@@ -15,45 +17,46 @@ Use this checklist for every public release:
 
 - Confirm the intended release version with the maintainer.
 - Confirm that no tag or GitHub Release already exists for that version.
-- Create a release-prep branch; do not push release-prep commits directly to `main`.
+- Create a release branch named `release/MAJOR.MINOR.PATCH`; do not push release preparation commits directly to `main`.
 - Update `app/build.gradle.kts` so `versionName` matches the tag without `v` and `versionCode` is higher than the previous public release.
 - Move the relevant `Unreleased` entries in `CHANGELOG.md` into a non-empty release section for the confirmed version.
-- Open a pull request for the release-prep branch.
-- Run and record the pre-tag verification commands in the pull request.
-- Merge the release-prep pull request only after review and required checks pass.
-- Update local `main` to the merged release-prep commit.
-- Create a signed annotated tag on the merged release-prep commit.
-- Push only the release tag after confirming it points at the intended commit.
+- Open a pull request from the release branch to `main`.
+- Wait for the release metadata check to verify the branch name, `versionName`, changelog section, and absence of an existing tag or GitHub Release for the version.
+- Run and record any additional pre-release verification commands in the pull request.
+- Merge the release pull request only after review and required checks pass.
+- Wait for release automation to create the annotated release tag on the merged revision.
 - Wait for release automation to create the draft GitHub Release.
 - Verify all expected artifacts, artifact names, release notes, and install or upgrade behavior before publishing the draft.
 - Publish the GitHub Release only after the draft passes verification.
 - Run the post-publish smoke test.
 
-## Pre-Tag Verification
+## Release Metadata Verification
 
-Before creating the release tag, update `CHANGELOG.md`:
+Before merging the release branch, update `CHANGELOG.md`:
 
 - Move relevant `Unreleased` entries into a new section for the release version.
 - Use a heading in the form `## [vMAJOR.MINOR.PATCH] - YYYY-MM-DD`.
 - Keep the existing changelog categories when they apply.
-- Keep the release section non-empty; the workflow uses it to generate the draft GitHub Release notes.
+- Keep the release section non-empty; release automation uses it to generate the draft GitHub Release notes.
+
+For a release branch named `release/0.19.9`, release metadata must resolve to:
+
+- branch version `0.19.9`
+- release tag `v0.19.9`
+- Android `versionName = "0.19.9"`
+- a non-empty `CHANGELOG.md` section for `v0.19.9`
 
 ## Repository Settings
 
-Protect release tags so only maintainers can create or update `v*` tags. This keeps a pushed release tag aligned with Release Intent.
+Protect release tags so only maintainers and the release GitHub App can create `v*` tags. This keeps generated release tags aligned with Release Intent.
 
-Maintainers who create release tags must follow `playbooks/release-tag-signing.md`.
+Configure release automation with a GitHub App installed only on this repository. The app must have `Contents: Read and write` permission, and the repository must provide `RELEASE_APP_ID` as an Actions variable and `RELEASE_APP_PRIVATE_KEY` as an Actions secret. Automated release tags are annotated but not GPG-signed.
 
 Maintainers who manage APK signing secrets must follow `playbooks/apk-signing.md`.
 
 ## Release Trigger
 
-Create and push a signed annotated tag for the release version:
-
-```shell
-git tag -s v0.19.9 -m "Bakalah v0.19.9"
-git push origin v0.19.9
-```
+Merge the reviewed release pull request into `main`. If the pull request source branch is named `release/0.19.9`, release automation creates the annotated tag `v0.19.9` on the merged revision.
 
 The release workflow accepts only `vMAJOR.MINOR.PATCH` tags, verifies that the tag matches the Android `versionName`, and fails before release builds if `CHANGELOG.md` does not have a non-empty section for the tag.
 
@@ -92,6 +95,6 @@ After publishing the GitHub Release, verify that:
 
 ## Bad Release Handling
 
-If a draft release fails verification, delete the draft, fix the issue, and rerun the release workflow or create a corrected tag as appropriate.
+If a draft release fails verification because of transient infrastructure or signing issues, keep the tag and rerun the release workflow for that tag after fixing the issue. If the failure is due to bad release metadata that somehow passed checks and no draft or published release exists, delete the tag, fix the issue through a new release pull request, and let automation recreate the tag.
 
 If a published release is bad, prefer publishing a new patch release that supersedes it. Delete or hide published assets only when the artifact is actively harmful, such as a signing, security, or install-breaking issue.

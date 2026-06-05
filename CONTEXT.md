@@ -25,8 +25,12 @@ The end-to-end practice for shipping a Bakalah version to users, from deciding t
 _Avoid_: Release workflow, build workflow, CI workflow
 
 **Release Intent**:
-The explicit project decision that a specific Bakalah revision should become a user-available version.
+The explicit project decision that a reviewed Bakalah revision should become a user-available version.
 _Avoid_: Build trigger, publish action
+
+**Release Branch**:
+A short-lived preparation branch named for the Release Version it intends to ship, using `release/MAJOR.MINOR.PATCH`.
+_Avoid_: Release prep branch, version branch
 
 **Release Version**:
 The public version name assigned to one Bakalah release and used consistently for the release tag and user-facing artifacts.
