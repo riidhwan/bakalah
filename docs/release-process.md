@@ -5,8 +5,29 @@ Bakalah releases are started by a maintainer pushing a version tag. Release auto
 ## Version Rules
 
 - Use a `vMAJOR.MINOR.PATCH` tag, such as `v0.19.9`.
+- Confirm the intended next release version with the maintainer before changing release metadata. Do not infer whether the next release is major, minor, or patch from the previous tag alone.
 - The tag without its leading `v` must match `versionName` in `app/build.gradle.kts`.
 - Increase `versionCode` for every public release version.
+
+## Release Checklist
+
+Use this checklist for every public release:
+
+- Confirm the intended release version with the maintainer.
+- Confirm that no tag or GitHub Release already exists for that version.
+- Create a release-prep branch; do not push release-prep commits directly to `main`.
+- Update `app/build.gradle.kts` so `versionName` matches the tag without `v` and `versionCode` is higher than the previous public release.
+- Move the relevant `Unreleased` entries in `CHANGELOG.md` into a non-empty release section for the confirmed version.
+- Open a pull request for the release-prep branch.
+- Run and record the pre-tag verification commands in the pull request.
+- Merge the release-prep pull request only after review and required checks pass.
+- Update local `main` to the merged release-prep commit.
+- Create a signed annotated tag on the merged release-prep commit.
+- Push only the release tag after confirming it points at the intended commit.
+- Wait for release automation to create the draft GitHub Release.
+- Verify all expected artifacts, artifact names, release notes, and install or upgrade behavior before publishing the draft.
+- Publish the GitHub Release only after the draft passes verification.
+- Run the post-publish smoke test.
 
 ## Pre-Tag Verification
 
@@ -17,19 +38,13 @@ Before creating the release tag, update `CHANGELOG.md`:
 - Keep the existing changelog categories when they apply.
 - Keep the release section non-empty; the workflow uses it to generate the draft GitHub Release notes.
 
-Before creating the release tag, run:
-
-```shell
-./gradlew spotlessCheck
-./gradlew testDebugUnitTest
-./gradlew verifySqlDelightMigration
-./gradlew assembleRelease -Penable-updater
-./gradlew assembleFoss -Penable-updater
-```
-
 ## Repository Settings
 
 Protect release tags so only maintainers can create or update `v*` tags. This keeps a pushed release tag aligned with Release Intent.
+
+Maintainers who create release tags must follow `playbooks/release-tag-signing.md`.
+
+Maintainers who manage APK signing secrets must follow `playbooks/apk-signing.md`.
 
 ## Release Trigger
 
