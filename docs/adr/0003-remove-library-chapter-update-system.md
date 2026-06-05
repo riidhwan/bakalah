@@ -1,0 +1,3 @@
+# Remove Library Chapter Update System
+
+Bakalah removes the Library Chapter Update System: bulk/background chapter refresh for library entries, recent-updates screens and widgets, update badges, update notifications, and related scheduling/settings. Per-Manga Chapter Refresh remains because manga detail, migration, deep-link, and reading workflows still need explicit chapter synchronization for a single manga. Catalogue Latest Browsing also remains because it is source discovery, not library update tracking; old Updates launcher shortcuts should route to the Local Tab so legacy entry points do not break.
