@@ -26,8 +26,8 @@ android {
     defaultConfig {
         applicationId = "me.ramdhani.bakalah"
 
-        versionCode = 23
-        versionName = "0.20.0"
+        versionCode = 24
+        versionName = "0.20.1"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getLatestCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getLatestCommitSha()}\"")
