@@ -122,7 +122,7 @@ Prefer adding typed preference accessors over reading raw keys throughout featur
 
 ## Background Work and Long-Running Flows
 
-The app contains long-running workflows for library updates, downloads, backups, restore, notifications, extension installation, tracking sync, and reader page loading. These are mostly in `app/src/main/java/eu/kanade/tachiyomi/data` and related UI packages.
+The app contains long-running workflows for metadata refreshes, downloads, backups, restore, notifications, extension installation, tracking sync, and reader page loading. These are mostly in `app/src/main/java/eu/kanade/tachiyomi/data` and related UI packages.
 
 Keep these flows explicit about ownership:
 

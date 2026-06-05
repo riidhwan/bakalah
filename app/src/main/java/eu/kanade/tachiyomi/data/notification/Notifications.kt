@@ -22,14 +22,12 @@ object Notifications {
     const val ID_DOWNLOAD_IMAGE = 2
 
     /**
-     * Notification channel and ids used by the library updater.
+     * Notification channel and ids used by metadata refresh.
      */
     private const val GROUP_LIBRARY = "group_library"
     const val CHANNEL_LIBRARY_PROGRESS = "library_progress_channel"
     const val ID_LIBRARY_PROGRESS = -101
     const val ID_LIBRARY_SIZE_WARNING = -103
-    const val CHANNEL_LIBRARY_ERROR = "library_errors_channel"
-    const val ID_LIBRARY_ERROR = -102
 
     /**
      * Notification channel and ids used by the downloader.
@@ -39,13 +37,6 @@ object Notifications {
     const val ID_DOWNLOAD_CHAPTER_PROGRESS = -201
     const val CHANNEL_DOWNLOADER_ERROR = "downloader_error_channel"
     const val ID_DOWNLOAD_CHAPTER_ERROR = -202
-
-    /**
-     * Notification channel and ids used by the library updater.
-     */
-    const val CHANNEL_NEW_CHAPTERS = "new_chapters_channel"
-    const val ID_NEW_CHAPTERS = -301
-    const val GROUP_NEW_CHAPTERS = "eu.kanade.tachiyomi.NEW_CHAPTERS"
 
     /**
      * Notification channel and ids used by the backup/restore system.
@@ -126,14 +117,6 @@ object Notifications {
                     setName(context.stringResource(MR.strings.channel_progress))
                     setGroup(GROUP_LIBRARY)
                     setShowBadge(false)
-                },
-                buildNotificationChannel(CHANNEL_LIBRARY_ERROR, IMPORTANCE_LOW) {
-                    setName(context.stringResource(MR.strings.channel_errors))
-                    setGroup(GROUP_LIBRARY)
-                    setShowBadge(false)
-                },
-                buildNotificationChannel(CHANNEL_NEW_CHAPTERS, IMPORTANCE_DEFAULT) {
-                    setName(context.stringResource(MR.strings.channel_new_chapters))
                 },
                 buildNotificationChannel(CHANNEL_DOWNLOADER_PROGRESS, IMPORTANCE_LOW) {
                     setName(context.stringResource(MR.strings.channel_progress))
