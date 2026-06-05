@@ -14,6 +14,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ### Added
 - Add a top-level Local tab for browsing local source entries, replacing Updates in the main navigation.
 
+### Removed
+- Remove the Updates screen, Upcoming entry point, recent-updates widgets, and Updates tab badge setting.
+
 ## [v0.20.3] - 2026-06-05
 ### Other
 - Verify automated release tag creation uses the GitHub App token.

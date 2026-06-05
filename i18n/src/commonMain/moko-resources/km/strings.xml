@@ -68,7 +68,6 @@
     <string name="action_asc">ឡើង</string>
     <string name="action_desc">ចុះ</string>
     <string name="information_no_downloads">មិនមានការទាញយក</string>
-    <string name="information_no_recent">មិនមានបច្ចុប្បន្នភាពថ្មីៗ</string>
     <string name="information_no_recent_manga">អ្នកពុំបានអានអ្វីថ្មីឡើយ</string>
     <string name="label_extension_info">អំពីប្រភពម៊េងហ្គា</string>
     <string name="information_empty_library">បណ្ណាល័យរបស់អ្នកទទេស្អាត</string>

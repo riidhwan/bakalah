@@ -214,7 +214,6 @@
     <string name="update_check_notification_download_error">다운로드 오류</string>
     <string name="update_check_notification_update_available">업데이트 이용 가능!</string>
     <string name="information_no_downloads">다운로드 없음</string>
-    <string name="information_no_recent">최근 업데이트 없음</string>
     <string name="information_no_recent_manga">최근 읽은 기록 없음</string>
     <string name="download_notifier_downloader_title">다운로더</string>
     <string name="download_notifier_title_error">오류</string>
@@ -604,7 +603,6 @@
     <string name="pref_reset_viewer_flags_error">뷰어 설정을 초기화 할 수 없습니다</string>
     <string name="pref_reset_viewer_flags">시리즈마다 뷰어 설정 초기화</string>
     <string name="cant_open_last_read_chapter">마지막 회차를 열 수 없습니다</string>
-    <string name="appwidget_updates_description">최근에 업데이트된 항목 보기</string>
     <string name="on_hold_list">보류 목록</string>
     <string name="download_notifier_split_page_not_found">분리 중 페이지 %d을 찾을 수 없습니다</string>
     <string name="appwidget_unavailable_locked">앱 잠금 사용 중에는 위젯을 이용할 수 없습니다</string>
@@ -670,7 +668,6 @@
     <string name="day_short">%d일</string>
     <string name="hour_short">%d시간</string>
     <string name="action_not_now">나중에</string>
-    <string name="pref_library_update_show_tab_badge">업데이트 아이콘에 읽지 않은 수 표시</string>
     <string name="information_no_manga_category">카테고리가 비어 있습니다</string>
     <string name="copied_to_clipboard_plain">클립보드에 복사됨</string>
     <string name="enhanced_services_not_installed">사용 가능하지만 소스가 설치되지 않음: %s</string>
@@ -783,7 +780,6 @@
     <string name="relative_time_span_never">없음</string>
     <string name="available_disk_space_info">사용가능: %1$s / 전체: %2$s</string>
     <string name="theme_nord">Nord</string>
-    <string name="label_upcoming">곧 공개</string>
     <string name="label_auto">자동</string>
     <string name="action_sort_random">무작위</string>
     <string name="action_copy_link">링크 복사</string>
@@ -848,10 +844,6 @@
     <string name="manga_interval_expected_update_null">이 만화는 완결되었거나 예상 출시일이 없습니다.</string>
     <string name="confirm_tracker_update">트래커를 %d 챕터에 업데이트하시겠습니까?</string>
     <string name="trackers_updated_summary">트래커가 %d 챕터에 업데이트</string>
-    <string name="action_view_upcoming">업데이트 예정 표시</string>
-    <string name="upcoming_guide">예정일 안내</string>
-    <string name="upcoming_calendar_next">다음 달</string>
-    <string name="upcoming_calendar_prev">이전 달</string>
     <string name="file_picker_uri_permission_unsupported">지속적인 폴더 액세스에 실패했습니다. 앱이 예상치 못하게 동작할 수 있습니다.</string>
     <string name="pref_flash_with">플래시 대상</string>
     <string name="pref_flash_style_black">흑색</string>

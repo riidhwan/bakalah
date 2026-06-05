@@ -82,7 +82,6 @@
     <string name="theme_dark">På</string>
     <string name="theme_monet">Dynamisk</string>
     <string name="information_no_downloads">Ingen nedlastingar</string>
-    <string name="information_no_recent">Ingen nylege oppdateringar</string>
     <string name="label_library">Bibliotek</string>
     <string name="label_sources">Kjelder</string>
     <string name="action_settings">Innstillingar</string>

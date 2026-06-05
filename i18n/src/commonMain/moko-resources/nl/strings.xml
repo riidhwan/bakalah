@@ -166,7 +166,6 @@
     <string name="update_check_notification_download_complete">Tik om update te installeren</string>
     <string name="update_check_notification_update_available">Nieuwe versie beschikbaar!</string>
     <string name="information_no_downloads">Geen downloads</string>
-    <string name="information_no_recent">Geen recente updates</string>
     <string name="information_empty_library">Je bibliotheek is leeg</string>
     <string name="information_empty_category">Er zijn nog geen categorieën. Druk op de plus-knop om er een aan te maken.</string>
     <string name="download_notifier_downloader_title">Downloader</string>
@@ -626,7 +625,6 @@
     <string name="pref_reset_viewer_flags">Leesinstellingen voor alle series terugzetten naar standaardwaarde</string>
     <string name="pref_invalidate_download_cache_summary">Hercontrole van gedownloade hoofdstukken forceren</string>
     <string name="copied_to_clipboard_plain">Naar klembord gekopieerd</string>
-    <string name="appwidget_updates_description">Recentelijk bijgewerkte items in de bibliotheek bekijken</string>
     <string name="track_error">%1$s-fout: %2$s</string>
     <string name="pref_reset_user_agent_string">User agent terugzetten naar standaardwaarde</string>
     <string name="track_remove_date_conf_title">Datum verwijderen?</string>
@@ -636,7 +634,6 @@
     <string name="pref_advanced_summary">Crashlogboeken opslaan, batterijoptimalisaties</string>
     <string name="action_update_category">Categorie bijwerken</string>
     <string name="updates_last_update_info">Laatste update bibliotheek: %s</string>
-    <string name="pref_library_update_show_tab_badge">Toon aantal ongelezen op updates icon</string>
     <string name="source_filter_empty_screen">Geen geïnstalleerde bron gevonden</string>
     <string name="not_installed">Niet geïnstalleerd</string>
     <string name="pref_hide_in_library_items">Verberg manga die al in de bibliotheek staat</string>
@@ -789,9 +786,7 @@
     <string name="manga_interval_expected_update_null">Deze manga is voltooid of er is geen voorspelde uitkomstdatum.</string>
     <string name="pref_auto_update_manga_on_mark_read">Voortgang bijwerken wanneer gemarkeerd als gelezen</string>
     <string name="trackers_updated_summary">Trackers bijgewerkt naar hoofdstuk %d</string>
-    <string name="upcoming_calendar_next">Volgende Maand</string>
     <string name="action_create">Aanmaken</string>
-    <string name="label_upcoming">Toekomstige Updates</string>
     <string name="available_disk_space_info">Beschikbaar: %1$s / Totaal: %2$s</string>
     <string name="pref_storage_location_info">Gebruikt voor automatische back-ups, hoofdstukdownloads en als lokale bron.</string>
     <string name="pref_storage_location">Opslaglocatie</string>
@@ -801,8 +796,6 @@
     <string name="exclude_scanlators">Scanlators uitsluiten</string>
     <string name="no_scanlators_found">Geen scanlators gevonden</string>
     <string name="confirm_tracker_update">Trackers bijwerken naar hoofdstuk %d?</string>
-    <string name="action_view_upcoming">Toekomstige Updates Bekijken</string>
-    <string name="upcoming_calendar_prev">Vorige Maand</string>
     <string name="invalid_backup_file_json">JSON back-up niet ondersteund</string>
     <string name="invalid_backup_file_unknown">Back-up bestand is corrupt</string>
     <string name="manga_interval_expected_update">Nieuwe hoofdstukken zijn geschat om uit te komen in ongeveer %1$s. Word ongeveer elke %2$s gecontroleerd.</string>
@@ -897,7 +890,6 @@
     <string name="firebase_summary">Het verzenden van crashlogs en analytics zal ons toestaan om problemen te identificeren en op te lossen, performance te verbeteren en om toekomstige updates relevanter te maken voor jouw noden</string>
     <string name="action_replace_repo_title">Ondertekeningssleutelvingerafdruk bestaat al</string>
     <string name="action_replace_repo_message">Repo %1$s heeft dezelfde ondertekeningssleutelvingerafdruk als %2$s.\nAls dit verwacht is zal %2$s vervangen worden. Zo niet, neem dan contact op met de beheerder van uw repo.</string>
-    <string name="upcoming_guide">Toekomstige Updatesgids</string>
     <string name="file_picker_uri_permission_unsupported">Kon geen permanente toegang tot map vergijken. De app kan zich onverwacht gedragen.</string>
     <string name="onboarding_action_finish">Beginnen</string>
 </resources>

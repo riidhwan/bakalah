@@ -221,7 +221,6 @@
     <string name="information_empty_library">A túa biblioteca está vacía</string>
     <string name="browse">Explorar</string>
     <string name="information_no_recent_manga">Non se leu nada recentemente</string>
-    <string name="information_no_recent">Sen actualizacións recentes</string>
     <string name="information_no_downloads">Sen descargas</string>
     <string name="label_help">Axuda</string>
     <string name="label_extension_info">Información da extensión</string>
@@ -280,7 +279,6 @@
     <string name="delete_category">Eliminar categoría</string>
     <string name="enhanced_services_not_installed">Dispoñible, mais a fonte non se instalou: %s</string>
     <string name="pinned_sources">Fixados</string>
-    <string name="pref_library_update_show_tab_badge">Amosar o número de capítulos por ler na icona de actualizacións</string>
     <string name="exclude">Excluír: %s</string>
     <string name="pref_skip_dupe_chapters">Saltar os capítulos duplicados</string>
     <string name="auto_download_while_reading">Descargar automaticamente durante a lectura</string>
@@ -598,7 +596,6 @@
     <string name="download_notifier_no_network">Non hai ningunha conexión de rede dispoñible</string>
     <string name="remove_from_library">Eliminar da biblioteca</string>
     <string name="chapter_settings_updated">Actualizáronse os axustes por defecto dos capítulos</string>
-    <string name="appwidget_updates_description">Ver os elementos da biblioteca actualizados recentemente</string>
     <string name="remove_manga">Vas eliminar \"%s\" da túa biblioteca</string>
     <string name="no_next_chapter">Non se atopou a o capítulo seguinte</string>
     <string name="transition_pages_loading">Cargando páxinas…</string>
@@ -767,7 +764,6 @@
     <string name="available_disk_space_info">Dispoñible: %1$s / Total: %2$s</string>
     <string name="syncing_library">Sincronizando a biblioteca</string>
     <string name="relative_time_span_never">Nunca</string>
-    <string name="label_upcoming">Proximamente</string>
     <string name="action_replace_repo">Substituír</string>
     <string name="action_replace_repo_title">A impresión dixital da chave da firma xa existe</string>
     <string name="action_replace_repo_message">O repositorio %1$s ten a misma impresión dixital da chave da firma que %2$s.
@@ -790,10 +786,6 @@
     <string name="exclude_scanlators">Excluír equipos de tradución</string>
     <string name="no_scanlators_found">Non se atopou ningún equipo de tradución</string>
     <string name="track_delete_text">Esto eliminará o seguimento local.</string>
-    <string name="action_view_upcoming">Ver as próximas actualizacións</string>
-    <string name="upcoming_guide">Guía dos próximos lanzamenos</string>
-    <string name="upcoming_calendar_next">Mes seguinte</string>
-    <string name="upcoming_calendar_prev">Mes anterior</string>
     <string name="information_cloudflare_help">Preme aquí para obter axuda con Cloudflare</string>
     <string name="pref_auto_update_manga_on_mark_read">Actualizar o progreso ao marcalo como lido</string>
     <string name="action_copy_link">Copiar ligazón</string>

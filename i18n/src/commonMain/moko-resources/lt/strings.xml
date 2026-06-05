@@ -11,7 +11,6 @@
     <string name="information_empty_category">Neturite jokių kategorijų. Paspauskite pliuso simbolį, kad sukurtumėte kategoriją jūsų bibliotekos organizavimui.</string>
     <string name="information_empty_library">Jūsų biblioteka tuščia</string>
     <string name="information_no_recent_manga">Nėra neseniai skaitytų</string>
-    <string name="information_no_recent">Naujinių nėra</string>
     <string name="information_no_downloads">Atsiuntimų nėra</string>
     <string name="label_help">Pagalba</string>
     <string name="label_extension_info">Papildinių info</string>
@@ -436,7 +435,6 @@
     <string name="download_notifier_no_network">Tinklo ryšis nepasiekiamas</string>
     <string name="download_notifier_unknown_error">Nepavyko atsisiųsti skyriaus dėl netikėtos klaidos</string>
     <string name="appwidget_unavailable_locked">Valdiklis nepasiekiamas, kai įjungtas programėlės užraktas</string>
-    <string name="appwidget_updates_description">Peržiūrėkite neseniai atnaujintus bibliotekos įrašus</string>
     <string name="cache_deleted">Talpykla išvalyta. %1$d failai buvo ištrinti</string>
     <string name="pref_clear_database">Išvalyti duomenų bazę</string>
     <string name="file_picker_error">Nerandama failų rinkiklio programos</string>
@@ -677,6 +675,5 @@
     <string name="information_no_manga_category">Kategorija yra tuščia</string>
     <string name="copied_to_clipboard_plain">Nukopijuota į iškarpinę</string>
     <string name="enhanced_services_not_installed">Turima, bet šaltinis nėra įdiegtas: %s</string>
-    <string name="pref_library_update_show_tab_badge">Rodyti neperskaitytų skaičių ant Naujienų piktogramos</string>
     <string name="pref_skip_dupe_chapters">Praleisti pasikartojančius skyrius</string>
 </resources>

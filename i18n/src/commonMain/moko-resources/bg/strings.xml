@@ -186,7 +186,6 @@
     <string name="update_check_notification_download_error">Грешка при изтегляне</string>
     <string name="update_check_notification_update_available">Има нова версия!</string>
     <string name="information_no_downloads">Нямате изтегляния</string>
-    <string name="information_no_recent">Нямате нови глави</string>
     <string name="information_no_recent_manga">Не сте чели нищо наскоро</string>
     <string name="information_empty_library">Библиотеката Ви е празна</string>
     <string name="download_notifier_downloader_title">Изтегли</string>
@@ -593,7 +592,6 @@
     <string name="on_hold_list">Списък със спрени</string>
     <string name="download_ahead">Предстоящо изтегляне</string>
     <string name="download_ahead_info">Работи само със заглавия в библиотеката и ако текущата и следващата глава са вече изтеглени</string>
-    <string name="appwidget_updates_description">Виж наскоро обновената манга</string>
     <string name="download_notifier_split_page_path_not_found">Не можа да бъде намерен файловият път на страница %d</string>
     <string name="action_sort_last_manga_update">Последно обновяване</string>
     <string name="pref_clear_webview_data">Изчисти данните на WebView</string>
@@ -699,7 +697,6 @@
     <string name="pref_hide_in_library_items">Скрий манги, които са вече в библиотеката</string>
     <string name="source_settings">Настройки на източници</string>
     <string name="manga_interval_expected_update">Нови глави предвидени да бъдат качени след около %1$s, проверяване около всеки %2$s.</string>
-    <string name="upcoming_calendar_prev">Предишен месец</string>
     <string name="ext_remove">Премахни</string>
     <string name="ext_confirm_remove">Премахни разширение?</string>
     <string name="action_menu_overflow_description">Още настройки</string>
@@ -709,12 +706,10 @@
     <string name="label_downloaded">Изтеглени</string>
     <string name="unlock_app_title">Отключи %s</string>
     <string name="action_delete_repo">Изтрий хранилище</string>
-    <string name="label_upcoming">Предстоящи</string>
     <string name="track_remove_date_conf_title">Премахни дата?</string>
     <string name="syncing_library">Синхронизиране на библиотеката</string>
     <string name="action_ok">ОК</string>
     <string name="action_add_repo">Добави хрнилише</string>
-    <string name="upcoming_calendar_next">Следващ месец</string>
     <string name="label_completed_titles">Завършени манги</string>
     <string name="seconds_short">%dсек</string>
     <string name="exception_offline">Няма връзка с интернет</string>
@@ -722,7 +717,6 @@
     <string name="pref_skip_dupe_chapters">Пропусни дублиращи се глави</string>
     <string name="invalid_backup_file_unknown">Резервното копие е повредено</string>
     <string name="label_total_chapters">Общо</string>
-    <string name="action_view_upcoming">Преглед на предстоящите обновления</string>
     <string name="label_titles_section">Манги</string>
     <string name="action_move_to_bottom_all_for_series">Премести най-долу</string>
     <string name="label_started">Започнати</string>

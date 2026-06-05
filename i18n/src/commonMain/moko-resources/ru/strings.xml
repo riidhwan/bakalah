@@ -81,7 +81,6 @@
     <string name="fourth_to_last">Четвёртая от прочитанной главы</string>
     <string name="information_empty_library">Ваша библиотека пуста</string>
     <string name="information_no_downloads">Нет загрузок</string>
-    <string name="information_no_recent">Нет новых обновлений</string>
     <string name="information_no_recent_manga">Ничего не прочитано в последнее время</string>
     <string name="label_backup">Резервная копия</string>
     <string name="label_download_queue">Очередь загрузки</string>
@@ -607,7 +606,6 @@
     <string name="pref_reset_user_agent_string">Сбросить user agent по умолчанию</string>
     <string name="action_remove_everything">Удалить всё</string>
     <string name="appwidget_unavailable_locked">Виджет недоступен при включённой блокировке биометрией</string>
-    <string name="appwidget_updates_description">Посмотреть недавно обновлённые серии в библиотеке</string>
     <string name="update_already_running">Обновление уже запущено</string>
     <string name="error_user_agent_string_blank">User agent не может быть пустым</string>
     <string name="theme_tidalwave">Приливная Волна</string>
@@ -671,7 +669,6 @@
     <string name="label_local">На устройстве</string>
     <string name="action_not_now">Не сейчас</string>
     <string name="information_no_manga_category">Категория пуста</string>
-    <string name="pref_library_update_show_tab_badge">Количество непрочитанных глав на иконке «Обновления»</string>
     <string name="copied_to_clipboard_plain">Скопировано в буфер обмена</string>
     <string name="enhanced_services_not_installed">Доступно, но источник не установлен: %s</string>
     <string name="pref_skip_dupe_chapters">Пропускать повторяющиеся главы</string>
@@ -790,11 +787,6 @@
     <string name="action_replace_repo_message">Репозиторий %1$s имеет тот же подписанный ключ отпечатка, что и %2$s.
 \nЕсли это так и задумано, %2$s будет заменён, в противном случае, свяжитесь с сопровождающим вашего репозитория.</string>
     <string name="action_replace_repo_title">Подписанный ключ отпечатка уже существует</string>
-    <string name="upcoming_calendar_prev">Предыдущий месяц</string>
-    <string name="action_view_upcoming">Просмотр предстоящих обновлений</string>
-    <string name="label_upcoming">Предстоящее</string>
-    <string name="upcoming_guide">Предстоящее руководство</string>
-    <string name="upcoming_calendar_next">Следующий месяц</string>
     <string name="file_picker_uri_permission_unsupported">Не удалось получить постоянный доступ к папке. Приложение может работать некорректно.</string>
     <string name="pref_flash_duration">Продолжительность вспышки</string>
     <string name="pref_flash_duration_summary">%1$s мс</string>

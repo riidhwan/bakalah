@@ -155,7 +155,6 @@
     <string name="update_check_notification_download_error">Erro na transferência</string>
     <string name="update_check_notification_update_available">Nova versão disponível!</string>
     <string name="information_no_downloads">Sem transferências</string>
-    <string name="information_no_recent">Sem atualizações recentes</string>
     <string name="information_no_recent_manga">Nada lido recentemente</string>
     <string name="information_empty_library">A sua biblioteca está vazia</string>
     <string name="download_notifier_title_error">Erro</string>
@@ -591,7 +590,6 @@
     <string name="error_user_agent_string_blank">Cadeia de agente de utilizador não pode estar em branco</string>
     <string name="are_you_sure">Tem a certeza?</string>
     <string name="updates_last_update_info">Última atualização da biblioteca: %s</string>
-    <string name="appwidget_updates_description">Veja os seus itens da biblioteca atualizados recentemente</string>
     <string name="remove_manga">Está prestes a remover \"%s\" da sua biblioteca</string>
     <string name="download_ahead_info">Funciona apenas se o capítulo atual, mais o próximo, já estiverem transferidos.</string>
     <string name="theme_tidalwave">Maremoto</string>
@@ -643,7 +641,6 @@
     <string name="information_no_manga_category">A categoria está vazia</string>
     <string name="track_remove_start_date_conf_text">Isto irá remover a sua data de início selecionada anteriormente no %s</string>
     <string name="hour_short">%dh</string>
-    <string name="pref_library_update_show_tab_badge">Mostrar a contagem no ícone de Atualizações</string>
     <string name="pref_skip_dupe_chapters">Pular capítulos duplicados</string>
     <string name="error_user_agent_string_invalid">Valor de user agent inválido</string>
     <string name="not_applicable">N/A</string>
@@ -762,9 +759,6 @@
     <string name="has_results">Há resultados</string>
     <string name="manga_interval_expected_update_soon">Em breve</string>
     <string name="relative_time_span_never">Nunca</string>
-    <string name="upcoming_guide">Guia de próximos lançamentos</string>
-    <string name="upcoming_calendar_next">Próximo mês</string>
-    <string name="upcoming_calendar_prev">Mês anterior</string>
     <string name="track_delete_remote_text">Também remover do %s</string>
     <string name="onboarding_description">Vamos definir algumas coisas primeiro. Sempre pode fazer alterações nas configurações depois também.</string>
     <string name="onboarding_action_next">Próximo</string>
@@ -790,8 +784,6 @@
     <string name="manga_interval_expected_update">Novos capítulos com previsão de serem lançados em torno de %1$s, verificando em torno de cada %2$s.</string>
     <string name="track_delete_text">Isto irá remover o monitoramento localmente.</string>
     <string name="pref_webtoon_disable_zoom_out">Desativar redução de zoom</string>
-    <string name="action_view_upcoming">Exibir as próximas atualizações</string>
-    <string name="label_upcoming">A seguir</string>
     <string name="non_library_settings">Todas as entradas lidas</string>
     <string name="action_copy_link">Copiar hiperligação</string>
     <string name="pref_flash_style_black">Preto</string>

@@ -257,7 +257,6 @@
     <string name="update_check_notification_download_error">Errore de iscarrigamentu</string>
     <string name="update_check_notification_update_available">Versione noa a disponimentu!</string>
     <string name="information_no_downloads">Perunu iscarrigamentu</string>
-    <string name="information_no_recent">Perunu agiornamentu reghente</string>
     <string name="information_no_recent_manga">Nudda de lèghidu dae pagu</string>
     <string name="information_empty_library">Sa biblioteca tua est bòida</string>
     <string name="information_empty_category">Non tenes categorias. Incarca su butone de su \"prus\" pro nde creare una pro organizare sa biblioteca tua.</string>
@@ -605,7 +604,6 @@
     <string name="pref_reset_user_agent_string">Reseta s\'istringa de agente de utente predefinida</string>
     <string name="action_remove_everything">Boga totu</string>
     <string name="appwidget_unavailable_locked">Su widget no est a disponimentu cando su blocu de s\'aplicatzione est abilitadu</string>
-    <string name="appwidget_updates_description">Pòmpia sos elementos de biblioteca tuos agiornados dae pagu</string>
     <string name="update_already_running">B\'est giai un\'agiornamentu in cursu</string>
     <string name="theme_tidalwave">Maremotu</string>
     <string name="error_user_agent_string_blank">S\'istringa de s\'agente de s\'utente non podet èssere bòida</string>
@@ -669,7 +667,6 @@
     <string name="day_short">%dd</string>
     <string name="action_not_now">Como nono</string>
     <string name="information_no_manga_category">Sa categoria est bòida</string>
-    <string name="pref_library_update_show_tab_badge">Ammustra su nùmeru de non lèghidos in s\'icona de agiornamentu</string>
     <string name="copied_to_clipboard_plain">Copiadu in punta de billete</string>
     <string name="pref_skip_dupe_chapters">Brinca sos capìtulos duplicados</string>
     <string name="enhanced_services_not_installed">A disponimentu ma sa fonte no est installada: %s</string>
@@ -753,7 +750,6 @@
     <string name="pref_flash_style_white">Biancu</string>
     <string name="pref_flash_style_white_black">Biancu e nieddu</string>
     <string name="invalid_backup_file_error">Errore intreu:</string>
-    <string name="upcoming_guide">Ghia a sas atualizatziones imbenientes</string>
     <string name="pref_onboarding_guide">Ghia de introdutzione</string>
     <string name="onboarding_heading">Bene bènnidu!</string>
     <string name="onboarding_action_next">Imbeniente</string>
@@ -789,8 +785,6 @@
     <string name="invalid_repo_name">URL de su depòsitu non vàlidu</string>
     <string name="manga_interval_expected_update">Si pensat chi sos capìtulos los pùblichent pagu prus o mancu cada%1$s, cun verìficas cada %2$s.</string>
     <string name="manga_interval_custom_amount">Frecuèntzia de agiornamentu personalizada:</string>
-    <string name="upcoming_calendar_next">Su mese chi intrat</string>
-    <string name="upcoming_calendar_prev">Su mese coladu</string>
     <string name="onboarding_guides_returning_user">Ses torrende a installare %s?</string>
     <string name="ext_revoke_trust">Rèvoca sas estensiones disconnotas afidàbiles</string>
     <string name="label_extension_repos">Depòsitos de estensiones</string>
@@ -800,8 +794,6 @@
     <string name="action_replace_repo_message">Su depòsitu %1$s tenet sa matessi imprenta digitale de sa crae de firma de %2$s.
 \nSi custu est su chi t\'isetas, %2$s s\'at a sostituire, si nono cuntata su mantenidore de su depòsitu tuo.</string>
     <string name="pref_display_profile">Profilu de visualizatzione predefinidu</string>
-    <string name="action_view_upcoming">Abbista·ti sos agiornamentos imbenientes</string>
-    <string name="label_upcoming">Imbeniente</string>
     <string name="non_library_settings">Totu sos elementos lèghidos</string>
     <string name="action_copy_link">Còpia su ligàmene</string>
     <string name="action_sort_random">A casu</string>

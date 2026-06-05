@@ -150,7 +150,6 @@
     <string name="update_check_notification_download_error">Error de descarga</string>
     <string name="update_check_notification_update_available">¡Hay una nueva versión!</string>
     <string name="information_no_downloads">No hay descargas</string>
-    <string name="information_no_recent">No hay actualizaciones recientes</string>
     <string name="information_no_recent_manga">No has leído nada últimamente</string>
     <string name="information_empty_library">Tu biblioteca está vacía</string>
     <string name="download_notifier_title_error">Error</string>
@@ -604,7 +603,6 @@
     <string name="pref_user_agent_string">Identificarse como otro navegador web («user agent»)</string>
     <string name="pref_reset_user_agent_string">Volver a la identificación de navegador («user agent») original</string>
     <string name="action_remove_everything">Quitar todo</string>
-    <string name="appwidget_updates_description">Aquí aparecerá el contenido más reciente de tu biblioteca</string>
     <string name="appwidget_unavailable_locked">El widget no está disponible cuando el bloqueo de aplicación está activo</string>
     <string name="update_already_running">Ya se está actualizando</string>
     <string name="theme_tidalwave">Marea</string>
@@ -669,7 +667,6 @@
     <string name="seconds_short">%ds</string>
     <string name="action_not_now">Ahora no</string>
     <string name="information_no_manga_category">La categoría está vacía</string>
-    <string name="pref_library_update_show_tab_badge">Ver número de capítulos por leer en el icono de actualizaciones</string>
     <string name="copied_to_clipboard_plain">Se ha copiado al portapapeles</string>
     <string name="pref_skip_dupe_chapters">Saltarse los capítulos repetidos</string>
     <string name="enhanced_services_not_installed">Están disponibles, pero las fuentes todavía no se han instalado: %s</string>
@@ -783,11 +780,6 @@
     <string name="action_replace_repo">Reemplazar</string>
     <string name="action_replace_repo_title">Ya hay una huella digital de la clave de firma</string>
     <string name="action_replace_repo_message">El repositorio %1$s tiene la misma huella digital de la clave de firma que %2$s.\nSi ya contabas con ello y te parece bien se reemplazará %2$s. De lo contrario habla con la persona a cargo de este repositorio.</string>
-    <string name="label_upcoming">Próximamente</string>
-    <string name="action_view_upcoming">Ver las próximas actualizaciones</string>
-    <string name="upcoming_guide">Próxima guía</string>
-    <string name="upcoming_calendar_next">Próximo mes</string>
-    <string name="upcoming_calendar_prev">Mes anterior</string>
     <string name="file_picker_uri_permission_unsupported">No se ha podido obtener un acceso continuo a la carpeta, por lo que la aplicación puede fallar de vez en cuando.</string>
     <string name="pref_flash_page_interval">Parpadear cada</string>
     <string name="pref_flash_with">Parpadear a</string>

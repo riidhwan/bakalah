@@ -65,7 +65,6 @@
     <string name="information_empty_category">Nemaš kategorija. Za stvaranje kategorije i organiziranje biblioteke dodirni gumb plus.</string>
     <string name="information_empty_library">Tvoja je biblioteka prazna</string>
     <string name="information_no_recent_manga">Ništa nije nedavno čitano</string>
-    <string name="information_no_recent">Nema nedavnih aktualiziranja</string>
     <string name="information_no_downloads">Nema preuzimanja</string>
     <string name="label_help">Pomoć</string>
     <string name="label_extension_info">Podaci proširenja</string>
@@ -664,13 +663,11 @@
     <string name="download_notifier_cache_renewal">Provjeravanje preuzimanja</string>
     <string name="update_check_open">Otvori na GitHubu</string>
     <string name="skipped_reason_not_always_update">Preskočeno jer serija ne zahtijeva aktualiziranja</string>
-    <string name="appwidget_updates_description">Pogledaj nedavno aktualizirane unose u biblioteci</string>
     <string name="remove_manga">Uklonit ćeš „%s” iz svoje biblioteke</string>
     <string name="appwidget_unavailable_locked">Widget nije dostupan kada je zaključavanje aplikacije aktivirano</string>
     <string name="information_no_entries_found">Nije pronađen nijedan unos u ovoj kategoriji</string>
     <string name="download_notifier_split_page_path_not_found">Nije moguće pronaći putanju datoteke stranice %d</string>
     <string name="action_not_now">Ne sada</string>
-    <string name="pref_library_update_show_tab_badge">Prikaži broj nepročitanih na ikoni aktualiziranja</string>
     <string name="information_no_manga_category">Kategorija je prazna</string>
     <string name="copied_to_clipboard_plain">Kopirano u međuspremnik</string>
     <string name="enhanced_services_not_installed">Dostupne, ali izvor nije instaliran: %s</string>
@@ -785,13 +782,8 @@
     <string name="available_disk_space_info">Dostupno: %1$s / Ukupno: %2$s</string>
     <string name="pref_webtoon_disable_zoom_out">Deaktiviraj smanjivanje zumiranja</string>
     <string name="pref_display_profile">Prilagođeni profil prikaza</string>
-    <string name="label_upcoming">Predstojeći</string>
     <string name="action_add_anyway">Svejedno dodaj</string>
-    <string name="upcoming_calendar_prev">Prethodni mjesec</string>
     <string name="action_replace_repo">Zamijeni</string>
-    <string name="upcoming_calendar_next">Sljedeći mjesec</string>
-    <string name="action_view_upcoming">Pogledaj nadolazeća aktualizirane verzije</string>
-    <string name="upcoming_guide">Vodič za nadolazeće verzije</string>
     <string name="action_replace_repo_title">Digitalni otisak prsta za potpisivanje već postoji</string>
     <string name="action_replace_repo_message">Repozitorij %1$s ima isti digitalni otisak ključa za potpisivanje kao %2$s.
 \nAko se to očekuje, %2$s će se zamijeniti, u suprotnom se obrati svom održavatelju repozitorija.</string>

@@ -422,7 +422,6 @@
     <string name="notification_new_chapters">Kapitulu berriak aurkituak</string>
     <string name="information_no_recent_manga">Ez da ezer irakurri azkenaldian</string>
     <string name="information_no_downloads">Deskargarik ez</string>
-    <string name="information_no_recent">Ez dago azkenaldiko eguneraketarik</string>
     <string name="information_empty_library">Zure liburutegia hutsik dago</string>
     <string name="information_empty_category">Ez daukazu kategoriarik. Sakatu gehiketa botoia zure liburutegia antolatzeko bat sortzeko.</string>
     <string name="spen_previous_page">Aurreko orrialdea</string>
@@ -612,7 +611,6 @@
     <string name="supportUsScreen.contactForDetailsMessage">Aukera alternatiboak edo lotutako edozein zalantza argitzeko, gure Discord zerbitzarian sartu.</string>
     <string name="supportUsScreen.contactPlatform">Discord</string>
     <string name="label_support_us">Lagun iezaguzu</string>
-    <string name="label_upcoming">Etorkizunean</string>
     <string name="unlock_app_title">%s desblokeatu</string>
     <string name="action_copy_link">Esteka kopiatu</string>
 </resources>

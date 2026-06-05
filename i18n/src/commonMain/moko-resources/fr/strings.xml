@@ -176,7 +176,6 @@
     <string name="update_check_notification_download_error">Erreur lors du téléchargement</string>
     <string name="update_check_notification_update_available">Mise à jour disponible !</string>
     <string name="information_no_downloads">Aucun téléchargement en cours</string>
-    <string name="information_no_recent">Pas de mises à jour récentes</string>
     <string name="information_no_recent_manga">Rien de lu récemment</string>
     <string name="information_empty_library">Votre bibliothèque est vide</string>
     <string name="download_notifier_downloader_title">Téléchargement</string>
@@ -606,7 +605,6 @@
     <string name="pref_reset_user_agent_string">Réinitialiser la liste d\'agents utilisateurs</string>
     <string name="pref_user_agent_string">Liste d\'agents utilisateurs par défaut</string>
     <string name="action_remove_everything">Tout retirer</string>
-    <string name="appwidget_updates_description">Voir les séries de votre bibliothèque récemment mises à jour</string>
     <string name="appwidget_unavailable_locked">Le Widget n\'est pas disponible lorsque l\'application est verrouillée</string>
     <string name="error_user_agent_string_blank">La liste d\'agents utilisateurs ne peut être vide</string>
     <string name="update_already_running">Une mise à jour est déjà en cours</string>
@@ -671,7 +669,6 @@
     <string name="label_read_duration">Durée de lecture</string>
     <string name="label_tracked_titles">Séries suivies</string>
     <string name="label_mean_score">Note moyenne</string>
-    <string name="pref_library_update_show_tab_badge">Afficher le nombre de chapitres non lus sur l\'icône des mises à jour</string>
     <string name="copied_to_clipboard_plain">Copié dans le presse-papier</string>
     <string name="pref_skip_dupe_chapters">Ignorer les chapitres en double</string>
     <string name="track_error">%1$s erreur : %2$s</string>
@@ -784,14 +781,9 @@
     <string name="last_auto_backup_info">Dernière sauvegarde automatique : %s</string>
     <string name="source_settings">Paramètres sources</string>
     <string name="action_add_anyway">Ajouter tout de même</string>
-    <string name="label_upcoming">À venir</string>
     <string name="action_replace_repo">Remplacer</string>
     <string name="pref_display_profile">Profil d\'affichage personnalisé</string>
     <string name="pref_webtoon_disable_zoom_out">Désactiver le zoom arrière</string>
-    <string name="action_view_upcoming">Afficher les mises à jour à venir</string>
-    <string name="upcoming_guide">Guide à venir</string>
-    <string name="upcoming_calendar_next">Le mois prochain</string>
-    <string name="upcoming_calendar_prev">Le mois précédent</string>
     <string name="action_copy_link">Copier le lien</string>
     <string name="action_replace_repo_title">L\'empreinte digitale de la clé de signature existe déjà</string>
     <string name="add_repo_confirmation">Souhaitez-vous ajouter le répertoire \"%s\" ?</string>

@@ -42,7 +42,6 @@
     <string name="categories">Toifalar</string>
     <string name="information_empty_library">Sizning kutubxonangiz bo\'sh</string>
     <string name="information_no_recent_manga">Yaqin vaqtda hech narsa o\'qilmagan</string>
-    <string name="information_no_recent">Yangilanishlar yo\'q</string>
     <string name="information_no_downloads">Yuklamalar yo\'q</string>
     <string name="label_help">Yordam</string>
     <string name="label_extension_info">Qo\'shimchalar haqida ma\'lumot</string>
@@ -201,7 +200,6 @@
     <string name="pref_crop_borders">Chetlarini kesish</string>
     <string name="pref_color_filter_mode">Rang filtri rejimi</string>
     <string name="all">Barchasi</string>
-    <string name="pref_library_update_show_tab_badge">O\'qilmagan boblar soni «Yangilanishlar» ikonida</string>
     <string name="ext_pending">Kutilmoqda</string>
     <string name="ext_downloading">Yuklanmoqda</string>
     <string name="ext_installing">O\'rnatilmoqda</string>

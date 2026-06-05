@@ -4,7 +4,6 @@
     <string name="off">বন্ধ</string>
     <string name="label_library">পুথিভঁৰাল</string>
     <string name="label_recent_updates">আপডেটসমূহ</string>
-    <string name="label_upcoming">আসন্ন</string>
     <string name="label_started">আৰম্ভ হৈছে</string>
     <string name="label_local">স্থানীয়</string>
     <string name="label_downloaded">ডাউনলোড কৰা</string>
@@ -285,7 +284,6 @@
     <string name="restrictions">সীমাবদ্ধতা: %s</string>
     <string name="pref_update_only_started">অ আৰম্ভিত প্ৰৱিষ্টিসমূহ আঁতৰাওক</string>
     <string name="pref_update_only_in_release_period">পৰৱৰ্তী মুক্তিৰ সময় অনুমান কৰক</string>
-    <string name="pref_library_update_show_tab_badge">আপডেট আইকনৰ ওপৰত অপঠিত গণনা দেখুৱাওক</string>
     <string name="pref_library_update_refresh_metadata">স্বয়ংক্ৰিয়ভাৱে মেটাডাটা ৰিফ্ৰেশ কৰক</string>
     <string name="pref_library_update_refresh_metadata_summary">লাইব্ৰেৰী আপডেট কৰাৰ সময়ত নতুন কাভাৰ আৰু বিৱৰণৰ সন্ধান কৰক</string>
     <string name="default_category_summary">সদায় সোধা হব</string>
@@ -709,10 +707,6 @@
     <string name="updates_last_update_info">লাইব্রেৰী শেষ আপডেট: %s</string>
     <string name="updates_last_update_info_just_now">এতিয়া</string>
     <string name="relative_time_span_never">কদাচিৎ</string>
-    <string name="action_view_upcoming">পৰৱৰ্তী আপডেট চাওক</string>
-    <string name="upcoming_guide">পৰৱৰ্তী গাইড</string>
-    <string name="upcoming_calendar_next">পৰৱৰ্তী মাহ</string>
-    <string name="upcoming_calendar_prev">পূৰ্বৰ মাহ</string>
     <string name="recent_manga_time">চ. %1$s - %2$s</string>
     <string name="pref_clear_history">ইতিহাস সাফ কৰক</string>
     <string name="clear_history_completed">ইতিহাস মচি পেলোৱা হৈছে</string>
@@ -775,7 +769,6 @@
     <string name="update_check_no_new_updates">নতুন আপডেট উপলব্ধ নাই</string>
     <string name="update_check_notification_download_in_progress">ডাউনলোড হৈছে…</string>
     <string name="update_check_notification_update_available">নতুন সংস্কৰণ উপলব্ধ!</string>
-    <string name="information_no_recent">কোনো নতুন আপডেট নাই</string>
     <string name="information_no_recent_manga">সম্প্ৰতি কিবা পঢ়া হোৱা নাই</string>
     <string name="information_empty_library">আপোনাৰ লাইব্ৰেৰী খালী</string>
     <string name="information_no_manga_category">বিভাগ খালী</string>
@@ -804,7 +797,6 @@
     <string name="channel_app_updates">এপ আপডেট</string>
     <string name="channel_ext_updates">এক্সটেনচন আপডেট</string>
     <string name="spen_previous_page">পূৰ্বৰ পৃষ্ঠা</string>
-    <string name="appwidget_updates_description">আপোনাৰ সাম্প্ৰতিক আপডেট কৰা লাইব্ৰেৰী প্ৰৱেশসমূহ চাওক</string>
     <string name="appwidget_unavailable_locked">এপ লক সক্ৰিয় থাকোতে উইজেট উপলব্ধ নহয়</string>
     <string name="remove_manga">আপুনি আপোনাৰ লাইব্ৰেৰীৰ পৰা \"%s\" মচাৰ বাবে সাজু হৈছে</string>
     <string name="spen_next_page">পৰৱৰ্তী পৃষ্ঠা</string>

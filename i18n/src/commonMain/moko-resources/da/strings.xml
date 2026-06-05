@@ -33,7 +33,6 @@
     <string name="label_sources">Kilder</string>
     <string name="label_settings">Indstillinger</string>
     <string name="name">Navn</string>
-    <string name="information_no_recent">Ingen nylige opdateringer</string>
     <string name="action_sort_last_read">Sidst læst</string>
     <string name="action_filter">Filter</string>
     <string name="action_sort_alpha">Alfabetisk</string>

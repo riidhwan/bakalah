@@ -218,7 +218,6 @@
     <string name="update_check_notification_download_error">डाउनलोड त्रुटि</string>
     <string name="update_check_notification_update_available">नया संस्करण उपलब्ध है!</string>
     <string name="information_no_downloads">कोई डाउनलोड नहीं है</string>
-    <string name="information_no_recent">कोई हालिया अपडेट नहीं</string>
     <string name="information_no_recent_manga">हाल ही में कुछ भी नहीं पढ़ा</string>
     <string name="information_empty_library">आपका पुस्तकालय खाली है़ें। स्रोतों से अपने पुस्तकालय में श्रृंखला जोड़ें</string>
     <string name="information_empty_category">आपके पास कोई श्रेणियां नहीं हैं। अपने पुस्तकालय के आयोजन के लिए एक बनाने के लिए प्लस बटन को दबाएं।</string>
@@ -603,7 +602,6 @@
     <string name="internal_error">आंतरिक त्रुटि : अधिक जानकारी के लिए क्रैश लॉग की जाँच करें</string>
     <string name="network_not_metered">केवल अनमीटर्ड कनेक्शन पर</string>
     <string name="updates_last_update_info">पुस्तकालय पिछली बार अपडेट किया गया: %s</string>
-    <string name="appwidget_updates_description">अपनी हाल ही में अपडेट की गई पुस्तकालय एन्ट्री देखें</string>
     <string name="download_ahead_info">केवल तभी काम करता है जब वर्तमान अध्याय + अगला पहले से ही डाउनलोड किया गया हो।</string>
     <string name="custom_cover">कस्टम कवर</string>
     <string name="pref_user_agent_string">चूक यूजर एजेंट स्ट्रिंग (User agent string)</string>
@@ -636,7 +634,6 @@
     <string name="action_update_category">श्रेणी अपडेट करें</string>
     <string name="pref_appearance_summary">थीम, दिनांक और समय प्रारूप</string>
     <string name="pref_downloads_summary">स्वचालित डाउनलोड, आगे डाउनलोड करें</string>
-    <string name="pref_library_update_show_tab_badge">नए अपडेट आइकन पर अपठित संख्या दिखाएं</string>
     <string name="enhanced_services_not_installed">उपलब्ध है लेकिन स्रोत स्थापित नहीं है: %s</string>
     <string name="pref_hide_in_library_items">पुस्तकालय में पहले से ही रही आइटम को छिपाएँ</string>
     <string name="pref_library_summary">श्रेणियाँ, वैश्विक अपडेट, अध्याय स्वाइप</string>
@@ -675,7 +672,6 @@
     <string name="action_move_to_bottom_all_for_series">सीरीज को नीचे ले जाएं</string>
     <string name="pref_onboarding_guide">ऑनबोर्डिंग मार्गदर्शक</string>
     <string name="onboarding_heading">नमस्ते!आपका स्वागत है!</string>
-    <string name="label_upcoming">आगामी</string>
     <string name="action_revert_to_default">डिफ़ॉल्ट पर वापस लौटें</string>
     <string name="onboarding_description">पहले कुछ चीजें सेट करते हैं। आप इन्हें बाद में सेटिंग्स में बदल भी सकते हैं।</string>
     <string name="onboarding_storage_selection_required">एक फ़ोल्डर चुनना अनिवार्य है</string>
@@ -821,10 +817,6 @@
     <string name="track_delete_text">यह ट्रैकिंग को स्थानीय रूप से हटा देगा।</string>
     <string name="updates_last_update_info_just_now">अभी अभी</string>
     <string name="relative_time_span_never">कभी नहीं</string>
-    <string name="action_view_upcoming">आगामी अपडेट देखें</string>
-    <string name="upcoming_guide">आगामी मार्गदर्शिका</string>
-    <string name="upcoming_calendar_next">अगला महीना</string>
-    <string name="upcoming_calendar_prev">पिछला महीना</string>
     <string name="crash_screen_title">अरे!</string>
     <string name="crash_screen_description">%s को एक अप्रत्याशित त्रुटि का सामना करना पड़ा। हम सुझाव देते हैं कि आप क्रैश लॉग्स हमारे Discord सपोर्ट चैनल में साझा करें।</string>
     <string name="crash_screen_restart_application">एप्लिकेशन पुनः प्रारंभ करें</string>

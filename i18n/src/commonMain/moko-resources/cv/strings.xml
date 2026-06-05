@@ -130,7 +130,6 @@
     <string name="notification_chapters_single">%1$s-мӗш сыпӑк</string>
     <string name="notification_new_chapters">Ҫӗнӗ сыпӑксем тупӑнман</string>
     <string name="information_no_recent_manga">Йулашки вӑхӑтра нимӗн те вуламан</string>
-    <string name="information_no_recent">Пӗр ҫӗнетӳ те ҫук</string>
     <string name="information_no_downloads">Пӗр тийев те ҫук</string>
     <string name="label_help">Пулӑшу</string>
     <string name="label_extension_info">Хушма ҫинчен</string>
@@ -527,7 +526,6 @@
     <string name="pref_backup_summary">Хӑй тӗллӗн тата хӑй халлӗн йантӑлав</string>
     <string name="action_update_category">Пухмӑша ҫӗнет</string>
     <string name="pref_advanced_summary">Йӑнӑш кӗнекине тийесе йани, паттарейе лайӑхлатни</string>
-    <string name="pref_library_update_show_tab_badge">Вуламан сыпӑксен шутне «Ҫӗнӗлӗх» ыккун ҫинче кӑтартни</string>
     <string name="pref_landscape_zoom">Сӑна тӑрӑх пысӑклатни</string>
     <string name="multi_lang">Нумай чӗлхеллӗ</string>
     <string name="automatic_background">Хӑй халлӗн</string>
@@ -589,7 +587,6 @@
     <string name="onboarding_storage_help_info">Кивӗ верҫҫирен ҫӗнӗлетӗн те мӗн суламаллине пӗлместӗн? Нумайрах пӗлме усрав пӗлкӗчне кӗрсе пӑх.</string>
     <string name="onboarding_guides_returning_user">%s ҫӗнӗрен лартатӑн?</string>
     <string name="pref_relative_format_summary">«%2$s» вырӑнне «%1$s»</string>
-    <string name="label_upcoming">Пулас</string>
     <string name="action_menu_overflow_description">Ытти ӗнерӳсем</string>
     <string name="action_copy_link">Каҫҫа ӑт</string>
     <string name="action_sort_random">Ӑнсӑрт</string>

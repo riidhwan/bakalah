@@ -212,7 +212,6 @@
     <string name="update_check_notification_download_error">Erro ao fazer download</string>
     <string name="update_check_notification_update_available">Nova versão disponível!</string>
     <string name="information_no_downloads">Nenhum download</string>
-    <string name="information_no_recent">Sem atualizações recentes</string>
     <string name="information_no_recent_manga">Nada lido recentemente</string>
     <string name="information_empty_library">A sua biblioteca está vazia</string>
     <string name="download_notifier_downloader_title">Gerenciador de downloads</string>
@@ -606,7 +605,6 @@
     <string name="pref_user_agent_string">User Agent padrão</string>
     <string name="pref_reset_user_agent_string">Redefinir o User Agent padrão</string>
     <string name="action_remove_everything">Remover tudo</string>
-    <string name="appwidget_updates_description">Veja seus itens da biblioteca atualizados recentemente</string>
     <string name="appwidget_unavailable_locked">Widget não disponível quando o bloqueio do aplicativo está habilitado</string>
     <string name="update_already_running">Uma atualização já está em andamento</string>
     <string name="error_user_agent_string_blank">O valor do User-Agent não pode ficar em branco</string>
@@ -671,7 +669,6 @@
     <string name="seconds_short">%ds</string>
     <string name="action_not_now">Agora não</string>
     <string name="information_no_manga_category">A categoria está vazia</string>
-    <string name="pref_library_update_show_tab_badge">Mostrar a contagem no ícone de Atualizações</string>
     <string name="copied_to_clipboard_plain">Copiado para a área de transferência</string>
     <string name="enhanced_services_not_installed">Disponíveis, mas a fonte não está instalada: %s</string>
     <string name="pref_skip_dupe_chapters">Pular capítulos duplicados</string>
@@ -786,15 +783,10 @@
     <string name="pref_webtoon_disable_zoom_out">Desativar redução de zoom</string>
     <string name="action_add_anyway">Adicionar de qualquer maneira</string>
     <string name="action_replace_repo">Substituir</string>
-    <string name="label_upcoming">Próximo</string>
     <string name="action_replace_repo_title">A impressão digital da chave de assinatura já existe</string>
     <string name="action_replace_repo_message">O repositório %1$s tem a mesma impressão digital da chave de assinatura que %2$s.
 \nSe isso for esperado, %2$s será substituído, caso contrário, entre em contato com o mantenedor do repositório.</string>
     <string name="pref_display_profile">Perfil de exibição personalizado</string>
-    <string name="action_view_upcoming">Exibir as próximas atualizações</string>
-    <string name="upcoming_guide">Guia de próximos lançamentos</string>
-    <string name="upcoming_calendar_next">Próximo mês</string>
-    <string name="upcoming_calendar_prev">Mês anterior</string>
     <string name="pref_flash_style_black">Preto</string>
     <string name="pref_flash_style_white">Branco</string>
     <string name="pref_flash_style_white_black">Branco e Preto</string>
