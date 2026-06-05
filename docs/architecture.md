@@ -59,9 +59,9 @@ Feature code generally follows a pattern where screen models coordinate domain i
 The `domain` module is the boundary for business operations. It contains:
 
 - Repository interfaces such as `MangaRepository`, `ChapterRepository`, `HistoryRepository`, `SourceRepository`, and `TrackRepository`.
-- Interactors such as `GetManga`, `GetChaptersByMangaId`, `FetchInterval`, `GetUpdates`, and `SetMangaCategories`.
+- Interactors such as `GetManga`, `GetChaptersByMangaId`, `FetchInterval`, and `SetMangaCategories`.
 - Domain models for manga, chapters, categories, history, downloads, sources, tracking, releases, storage, and backup behavior.
-- Preference service classes such as `LibraryPreferences`, `UpdatesPreferences`, `DownloadPreferences`, and `StoragePreferences`.
+- Preference service classes such as `LibraryPreferences`, `DownloadPreferences`, and `StoragePreferences`.
 
 Interactors should stay small and focused. They are the preferred place for reusable business workflows because they keep UI code from reaching directly into persistence details.
 
@@ -73,7 +73,7 @@ Key areas:
 
 - `data/src/main/java/tachiyomi/data/*`: repository implementations and mappers.
 - `data/src/main/sqldelight/tachiyomi/data`: table definitions such as `mangas.sq`, `chapters.sq`, `categories.sq`, `history.sq`, and `sources.sq`.
-- `data/src/main/sqldelight/tachiyomi/view`: query views used for library, history, and update screens.
+- `data/src/main/sqldelight/tachiyomi/view`: query views used for library and history screens.
 - `data/src/main/sqldelight/tachiyomi/migrations`: numbered schema migrations.
 
 SQLDelight generates the `tachiyomi.data.Database` API. `AppModule` creates the Android SQL driver and registers `Database` with adapters for custom column types such as date values, genre lists, and update strategies.
