@@ -1,6 +1,6 @@
-# Release Tag Signing Playbook
+# Manual Release Tag Signing Playbook
 
-Use this playbook when setting up or using the maintainer GPG key that signs Bakalah release tags.
+Use this playbook when setting up or using the maintainer GPG key that signs Bakalah release tags for a manual fallback. The normal release process creates annotated release tags through automation after a reviewed `release/MAJOR.MINOR.PATCH` pull request is merged.
 
 This key only signs Git tags. It does not sign APKs, and adding its public key to GitHub does not give GitHub Actions access to sign artifacts.
 
@@ -83,9 +83,9 @@ Expected result:
 
 Do not push test tags.
 
-## Sign A Release Tag
+## Manually Sign A Release Tag
 
-Use this only after the release-prep pull request is merged.
+Use this only when release automation cannot create the tag and the maintainer has confirmed that manual tag creation is the right recovery path.
 
 1. Update local `main`:
 
@@ -95,7 +95,7 @@ Use this only after the release-prep pull request is merged.
    git pull --ff-only origin main
    ```
 
-2. Confirm the release-prep commit is at `HEAD`:
+2. Confirm the merged release pull request commit is at `HEAD`:
 
    ```shell
    git log --oneline -n 3

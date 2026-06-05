@@ -1,0 +1,5 @@
+# Auto-Tag Merged Release Branches
+
+Bakalah release intent is a reviewed pull request from a `release/MAJOR.MINOR.PATCH` branch merged into `main`, not a maintainer pushing a release tag by hand. Automation should validate release metadata on release pull requests, then create an annotated `vMAJOR.MINOR.PATCH` tag on the merged revision after the pull request closes as merged. The downstream release workflow still builds from the tag and creates a draft GitHub Release, preserving the manual artifact verification checkpoint while removing the local maintainer tagging step.
+
+The release branch name is the only release intent signal. Release metadata checks guard that intent by requiring the branch version, Android `versionName`, changelog section, and absence of an existing tag or GitHub Release to agree before merge, with the post-merge tagger repeating duplicate checks for race conditions. Automated tags do not need to be GPG-signed; protected `v*` tags and a tightly scoped GitHub App provide the control boundary for tag creation.
