@@ -36,8 +36,6 @@ class DeleteCategory(
         }
 
         val categoryPreferences = listOf(
-            libraryPreferences.updateCategories,
-            libraryPreferences.updateCategoriesExclude,
             downloadPreferences.removeExcludeCategories,
             downloadPreferences.downloadNewChapterCategories,
             downloadPreferences.downloadNewChapterCategoriesExclude,

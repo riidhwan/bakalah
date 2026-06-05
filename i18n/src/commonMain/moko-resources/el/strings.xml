@@ -10,7 +10,6 @@
     <string name="label_download_queue">Ουρά λήψεων</string>
     <string name="label_library">Βιβλιοθήκη</string>
     <string name="label_recent_manga">Ιστορικό</string>
-    <string name="label_recent_updates">Ενημερώσεις</string>
     <string name="label_backup">Αντίγραφο ασφαλείας και επαναφορά</string>
     <string name="label_migration">Μεταφορά</string>
     <string name="label_extensions">Επεκτάσεις</string>
@@ -33,7 +32,6 @@
     <string name="action_bookmark">Προσθήκη σελιδοδείκτη κεφαλαίου</string>
     <string name="action_remove_bookmark">Κατάργηση σελιδοδείκτη κεφαλαίου</string>
     <string name="action_delete">Διαγραφή</string>
-    <string name="action_update_library">Ενημέρωση βιβλιοθήκης</string>
     <string name="action_edit">Επεξεργασία</string>
     <string name="action_add">Προσθήκη</string>
     <string name="action_add_category">Προσθήκη κατηγορίας</string>
@@ -73,7 +71,6 @@
     <string name="pref_library_columns">Στοιχεία ανά σειρά</string>
     <string name="portrait">Κατακόρυφα</string>
     <string name="landscape">Οριζόντια</string>
-    <string name="pref_library_update_interval">Αυτόματες ενημερώσεις</string>
     <string name="update_never">Απενεργοποιημένο</string>
     <string name="update_6hour">Κάθε 6 ώρες</string>
     <string name="update_12hour">Κάθε 12 ώρες</string>
@@ -81,9 +78,7 @@
     <string name="update_48hour">Κάθε 2 ημέρες</string>
     <string name="update_weekly">Εβδομαδιαία</string>
     <string name="all">Όλα</string>
-    <string name="pref_library_update_restriction">Περιορισμοί αυτόματων ενημερώσεων συσκευής</string>
     <string name="charging">Κατά τη φόρτιση</string>
-    <string name="pref_update_only_non_completed">Παράλειψη καταχωρήσεων με κατάσταση \"Ολοκληρώθηκε\"</string>
     <string name="pref_auto_update_manga_sync">Ενημέρωση προόδου μετά την ανάγνωση</string>
     <string name="default_category">Προεπιλεγμένη κατηγορία</string>
     <string name="default_category_summary">Ερώτηση πάντα</string>
@@ -293,7 +288,6 @@
     <string name="restore_duration">%1$02d λεπτά, %2$02d δευτερόλεπτα</string>
     <string name="action_select_inverse">Επιλογή αντίστροφου</string>
     <string name="channel_ext_updates">Ενημερώσεις επεκτάσεων</string>
-    <string name="channel_new_chapters">Ενημερώσεις κεφαλαίων</string>
     <string name="information_webview_outdated">Παρακαλώ ενημερώστε την εφαρμογή WebView για καλύτερη συμβατότητα</string>
     <string name="information_webview_required">Το WebView απαιτείται για τη λειτουργία της εφαρμογής</string>
     <string name="notification_chapters_single_and_more">Κεφάλαιο %1$s και %2$d ακόμη</string>
@@ -330,7 +324,6 @@
     <string name="pref_skip_filtered_chapters">Παράλειψη φιλτραρισμένων κεφαλαίων</string>
     <string name="pref_cutout_short">Εμφάνιση περιεχομένου στην περιοχή αποκοπής</string>
     <string name="ext_updates_pending">Εκκρεμούν ενημερώσεις</string>
-    <string name="pref_category_library_update">Καθολική ενημέρωση</string>
     <string name="pref_category_display">Προβολή</string>
     <string name="hide_notification_content">Απόκρυψη περιεχομένου ειδοποιήσεων</string>
     <string name="secure_screen_summary">Η ασφαλής οθόνη αποκρύπτει τα περιεχόμενα εφαρμογών κατά την εναλλαγή εφαρμογών και εμποδίζει τα στιγμιότυπα οθόνης</string>
@@ -369,8 +362,6 @@
     <string name="backup_restore_missing_sources">Πηγές που λείπουν:</string>
     <string name="invalid_backup_file_missing_manga">Το αντίγραφο ασφαλείας δεν περιέχει καταχωρήσεις βιβλιοθήκης.</string>
     <string name="invalid_backup_file">Μη έγκυρο αρχείο αντιγράφου ασφαλείας:</string>
-    <string name="pref_library_update_refresh_metadata_summary">Έλεγχος για νέο εξώφυλλο και λεπτομέρειες κατά την ενημέρωση της βιβλιοθήκης</string>
-    <string name="pref_library_update_refresh_metadata">Αυτόματη ανανέωση μεταδεδομένων</string>
     <string name="action_migrate">Μεταφορά</string>
     <string name="action_display_comfortable_grid">Άνετο πλέγμα</string>
     <string name="tabs_header">Καρτέλες</string>
@@ -462,7 +453,6 @@
     <string name="action_sort_chapter_fetch_date">Ημερομηνία ανάκτησης κεφαλαίου</string>
     <string name="pref_download_new_categories_details">Οι καταχωρήσεις σε εξαιρούμενες κατηγορίες δε θα ληφθούν ακόμη και αν βρίσκονται επίσης σε κατηγορίες που περιλαμβάνονται.</string>
     <string name="pref_category_auto_download">Αυτόματη λήψη</string>
-    <string name="pref_library_update_categories_details">Οι καταχωρίσεις σε εξαιρούμενες κατηγορίες δε θα ενημερώνονται ακόμη και αν περιλαμβάνονται επίσης σε κατηγορίες που περιλαμβάνονται.</string>
     <string name="action_show_errors">Πατήστε για να δείτε λεπτομέρειες</string>
     <string name="update_check_eol">Αυτή η έκδοση Android δεν υποστηρίζεται πλέον</string>
     <string name="clipboard_copy_error">Απέτυχε η αντιγραφή στο πρόχειρο</string>
@@ -548,7 +538,6 @@
     <string name="database_clean">Τίποτα προς εκκαθάριση</string>
     <string name="extension_api_error">Αποτυχία ανάκτησης διαθέσιμων επεκτάσεων</string>
     <string name="privacy_policy">Πολιτική απορρήτου</string>
-    <string name="pref_update_only_completely_read">Παράλειψη καταχωρήσεων με αδιάβαστο(α) κεφάλαιο(α)</string>
     <string name="library_errors_help">Για βοήθεια σχετικά με τον τρόπο διόρθωσης σφαλμάτων ενημέρωσης βιβλιοθήκης, ανατρέξτε στο %1$s</string>
     <string name="save_chapter_as_cbz">Αποθήκευση ως αρχείο CBZ</string>
     <string name="cancelled">Ακυρώθηκε</string>
@@ -557,7 +546,6 @@
     <string name="action_show_manga">Εμφάνιση καταχώρισης</string>
     <string name="pref_landscape_zoom">Αυτόματο ζουμ σε ευρείες εικόνες</string>
     <string name="action_display_cover_only_grid">Πλέγμα μόνο με εξώφυλλα</string>
-    <string name="pref_update_only_started">Παράλειψη καταχωρήσεων που δεν έχουν αρχίσει</string>
     <string name="pref_navigate_pan">Μετατόπιση πλατιών εικόνων</string>
     <string name="skipped_reason_completed">Παραλείφθηκε επειδή η σειρά ολοκληρώθηκε</string>
     <string name="skipped_reason_not_caught_up">Παραβλέφθηκε επειδή υπάρχουν μη αναγνωσμένα κεφάλαια</string>
@@ -605,7 +593,6 @@
     <string name="pref_user_agent_string">Προεπιλεγμένη συμβολοσειρά πράκτορα χρήστη</string>
     <string name="pref_reset_user_agent_string">Επαναφορά προεπιλεγμένης συμβολοσειράς πράκτορα χρήστη</string>
     <string name="action_remove_everything">Καταργήστε τα πάντα</string>
-    <string name="appwidget_unavailable_locked">Το widget δεν είναι διαθέσιμο όταν είναι ενεργοποιημένο το κλείδωμα εφαρμογών</string>
     <string name="update_already_running">Εκτελείται ήδη μια ενημέρωση</string>
     <string name="error_user_agent_string_blank">Η συμβολοσειρά πράκτορα χρήστη δεν μπορεί να είναι κενή</string>
     <string name="theme_tidalwave">Παλιρροϊκό κύμα</string>
@@ -666,7 +653,6 @@
     <string name="label_tracked_titles">Παρακολουθούμενες καταχωρήσεις</string>
     <string name="label_mean_score">Μέση βαθμολογία</string>
     <string name="label_downloaded">Κατεβασμένο</string>
-    <string name="label_titles_in_global_update">Σε καθολική ενημέρωση</string>
     <string name="action_not_now">Όχι τώρα</string>
     <string name="information_no_manga_category">Η κατηγορία είναι άδεια</string>
     <string name="copied_to_clipboard_plain">Αντιγράφηκε στο πρόχειρο</string>
@@ -687,7 +673,6 @@
     <string name="pref_chapter_swipe_end">Κεφάλαιο με σύρσιμο προς τα δεξιά</string>
     <string name="action_set_interval">Ορισμός χρονικού διαστήματος</string>
     <string name="action_filter_interval_custom">Προσαρμοσμένη συχνότητα ενημέρωσης</string>
-    <string name="pref_update_only_in_release_period">Πρόβλεψη χρόνου επόμενης απελευθέρωσης</string>
     <string name="intervals_header">Διαστήματα</string>
     <string name="manga_display_interval_title">Εκτίμηση κάθε</string>
     <string name="manga_display_modified_interval_title">Ρύθμιση για ενημέρωση κάθε</string>

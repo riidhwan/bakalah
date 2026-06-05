@@ -10,7 +10,6 @@
     <string name="label_download_queue">Fila de sos iscarrigamentos</string>
     <string name="label_library">Biblioteca</string>
     <string name="label_recent_manga">Cronologia</string>
-    <string name="label_recent_updates">Agiornamentos</string>
     <string name="label_backup">Còpia de seguresa e riprìstinu</string>
     <string name="label_migration">Tràmuda</string>
     <string name="label_extensions">Estensiones</string>
@@ -33,7 +32,6 @@
     <string name="action_bookmark">Annanghe su capìtulu a sos sinnalibros</string>
     <string name="action_remove_bookmark">Boga su capìtulu dae sos sinnalibros</string>
     <string name="action_delete">Iscantzella</string>
-    <string name="action_update_library">Agiorna sa biblioteca</string>
     <string name="action_edit">Modìfica</string>
     <string name="action_add">Annanghe</string>
     <string name="action_add_category">Annanghe una categoria</string>
@@ -73,7 +71,6 @@
     <string name="pref_library_columns">Elementos pro riga</string>
     <string name="portrait">Verticale</string>
     <string name="landscape">Orizontale</string>
-    <string name="pref_library_update_interval">Agiornamentos automàticos</string>
     <string name="update_never">Istudadu</string>
     <string name="update_6hour">Cada 6 oras</string>
     <string name="update_12hour">Cada 12 oras</string>
@@ -81,9 +78,7 @@
     <string name="update_48hour">Cada 2 dies</string>
     <string name="update_weekly">Cada chida</string>
     <string name="all">Totus</string>
-    <string name="pref_library_update_restriction">Restritziones de su dispositivu a s\'agiornamentu automàticu</string>
     <string name="charging">Durante sa càrriga</string>
-    <string name="pref_update_only_non_completed">Cun s\'istadu \"acabbada\"</string>
     <string name="pref_auto_update_manga_sync">Agiorna su progressu a pustis de sa leghidura</string>
     <string name="default_category">Categoria predefinida</string>
     <string name="default_category_summary">Pedi semper</string>
@@ -285,7 +280,6 @@
     <string name="ext_obsolete">Obsoleta</string>
     <string name="obsolete_extension_message">Custa estensione no est prus a disponimentu. Diat pòdere non funtzionare prus comente si tocat e causare problemas cun s\'aplicatzione. Ti cussigiamus de la disinstallare.</string>
     <string name="pref_date_format">Formadu de sa data</string>
-    <string name="pref_category_library_update">Agiornamentu globale</string>
     <string name="logout_title">Essire dae %1$s?</string>
     <string name="logout">Essi</string>
     <string name="logout_success">Ses essidu</string>
@@ -308,7 +302,6 @@
     <string name="pref_cutout_short">Ammustra sos cuntenutos in s\'àrea de retàlliu</string>
     <string name="information_cloudflare_bypass_failure">Isfrancamentu de Cloudflare fallidu</string>
     <string name="information_webview_outdated">Agiorna s\'aplicatzione de WebView pro otènnere una cumpatibilidade prus manna</string>
-    <string name="channel_new_chapters">Agiornamentos de sos capìtulos</string>
     <string name="secure_screen_summary">S\'ischermu seguru cuat sos cuntenutos de s\'aplicatzione cando mudas de aplicatzione e blocat sas ischermadas</string>
     <string name="pref_category_display">Visualizatzione</string>
     <string name="notification_chapters_single">Capìtulu %1$s</string>
@@ -367,8 +360,6 @@
     <string name="backup_restore_missing_sources">Fontes chi mancant:</string>
     <string name="invalid_backup_file_missing_manga">Sa còpia de seguresa non tenet perunu elementu.</string>
     <string name="invalid_backup_file">Documentu de sa còpia de seguresa non vàlidu:</string>
-    <string name="pref_library_update_refresh_metadata_summary">Verìfica si b\'est una cobertedda noa o bi sunt detàllios noos cando agiornas sa biblioteca</string>
-    <string name="pref_library_update_refresh_metadata">Annoa automaticamente sos metadatos</string>
     <string name="action_migrate">Tràmuda</string>
     <string name="action_display_comfortable_grid">Grìllia discansosa</string>
     <string name="page_list_empty_error">Peruna pàgina agatada</string>
@@ -460,7 +451,6 @@
     <string name="action_sort_chapter_fetch_date">Data de recùperu de su capìtulu</string>
     <string name="pref_download_new_categories_details">Sos elementos in sas categorias esclùdidas non s\'ant a iscarrigare nemmancu si sunt fintzas in categorias inclùdidas.</string>
     <string name="pref_category_auto_download">Iscarrigamentu automàticu</string>
-    <string name="pref_library_update_categories_details">Sos elementos in sas categorias esclùdidas non s\'ant a agiornare nemmancu si sunt fintzas in categorias inclùdidas.</string>
     <string name="action_show_errors">Toca pro bìdere sos detàllios</string>
     <string name="clipboard_copy_error">Còpia in punta de billete fallida</string>
     <string name="update_check_eol">Custa versione de Android no est prus suportada</string>
@@ -548,14 +538,12 @@
     <string name="privacy_policy">Polìtica de riservadesa</string>
     <string name="save_chapter_as_cbz">Sarva comente archìviu CBZ</string>
     <string name="library_errors_help">Pro tènnere un\'agiudu pro acontzare sos errores de agiornamentu de sa biblioteca pòmpia·ti %1$s</string>
-    <string name="pref_update_only_completely_read">Cun capìtulos non lèghidos</string>
     <string name="publishing_finished">Publicatzione acabada</string>
     <string name="on_hiatus">In pàusa</string>
     <string name="cancelled">Annullada</string>
     <string name="action_show_manga">Ammustra s\'elementu</string>
     <string name="pref_landscape_zoom">Ismànnia in automàticu sas immàgines largas</string>
     <string name="action_display_cover_only_grid">Grìllia cun coberteddas ebbia</string>
-    <string name="pref_update_only_started">No incumintzadas</string>
     <string name="pref_navigate_pan">Iscurre sas pàginas largas</string>
     <string name="skipped_reason_completed">Brincadu ca sa sèrie est acabada</string>
     <string name="skipped_reason_not_caught_up">Brincadu ca bi sunt capìtulos non lèghidos</string>
@@ -603,7 +591,6 @@
     <string name="pref_user_agent_string">Istringa de agente de utente predefinida</string>
     <string name="pref_reset_user_agent_string">Reseta s\'istringa de agente de utente predefinida</string>
     <string name="action_remove_everything">Boga totu</string>
-    <string name="appwidget_unavailable_locked">Su widget no est a disponimentu cando su blocu de s\'aplicatzione est abilitadu</string>
     <string name="update_already_running">B\'est giai un\'agiornamentu in cursu</string>
     <string name="theme_tidalwave">Maremotu</string>
     <string name="error_user_agent_string_blank">S\'istringa de s\'agente de s\'utente non podet èssere bòida</string>
@@ -647,7 +634,6 @@
     <string name="label_downloaded">Iscarrigados</string>
     <string name="label_local">In locale</string>
     <string name="pref_invalidate_download_cache_summary">Fortzat s\'aplicatzione a torrare a verificare sos capìtulos iscarrigados</string>
-    <string name="label_titles_in_global_update">In s\'agiornamentu globale</string>
     <string name="label_total_chapters">Totale</string>
     <string name="label_read_chapters">Lèghidos</string>
     <string name="label_tracked_titles">Elementos arrastados</string>
@@ -686,7 +672,6 @@
     <string name="manga_display_interval_title">Càrcula cada</string>
     <string name="action_filter_interval_custom">Intervallu de recùperu personalizadu</string>
     <string name="action_sort_next_updated">Agiornamentu imbente prevìdidu</string>
-    <string name="pref_update_only_in_release_period">Foras de su perìodu de publicatzione prevìdidu</string>
     <string name="intervals_header">Intervallos</string>
     <string name="manga_display_modified_interval_title">Imposta s\'agiornamentu pro cada</string>
     <string name="skipped_reason_not_in_release_period">Brincadu ca non bi fiat peruna publicatzione prevìdida oe</string>

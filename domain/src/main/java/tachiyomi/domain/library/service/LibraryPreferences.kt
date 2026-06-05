@@ -32,29 +32,12 @@ class LibraryPreferences(
 
     val landscapeColumns: Preference<Int> = preferenceStore.getInt("pref_library_columns_landscape_key", 0)
 
-    val lastUpdatedTimestamp: Preference<Long> = preferenceStore.getLong(
-        Preference.appStateKey("library_update_last_timestamp"),
-        0L,
-    )
-    val autoUpdateInterval: Preference<Int> = preferenceStore.getInt("pref_library_update_interval_key", 0)
-
-    val autoUpdateDeviceRestrictions: Preference<Set<String>> = preferenceStore.getStringSet(
-        "library_update_restriction",
-        setOf(
-            DEVICE_ONLY_ON_WIFI,
-        ),
-    )
     val autoUpdateMangaRestrictions: Preference<Set<String>> = preferenceStore.getStringSet(
         "library_update_manga_restriction",
         setOf(
-            MANGA_HAS_UNREAD,
-            MANGA_NON_COMPLETED,
-            MANGA_NON_READ,
             MANGA_OUTSIDE_RELEASE_PERIOD,
         ),
     )
-
-    val autoUpdateMetadata: Preference<Boolean> = preferenceStore.getBoolean("auto_update_metadata", false)
 
     val showContinueReadingButton: Preference<Boolean> = preferenceStore.getBoolean(
         "display_continue_reading_button",
@@ -112,11 +95,6 @@ class LibraryPreferences(
 
     val languageBadge: Preference<Boolean> = preferenceStore.getBoolean("display_language_badge", false)
 
-    val newUpdatesCount: Preference<Int> = preferenceStore.getInt(
-        Preference.appStateKey("library_unseen_updates_count"),
-        0,
-    )
-
     // endregion
 
     // region Category
@@ -130,16 +108,6 @@ class LibraryPreferences(
     val categoryNumberOfItems: Preference<Boolean> = preferenceStore.getBoolean("display_number_of_items", false)
 
     val categorizedDisplaySettings: Preference<Boolean> = preferenceStore.getBoolean("categorized_display", false)
-
-    val updateCategories: Preference<Set<String>> = preferenceStore.getStringSet(
-        LIBRARY_UPDATE_CATEGORIES_PREF_KEY,
-        emptySet(),
-    )
-
-    val updateCategoriesExclude: Preference<Set<String>> = preferenceStore.getStringSet(
-        LIBRARY_UPDATE_CATEGORIES_EXCLUDE_PREF_KEY,
-        emptySet(),
-    )
 
     // endregion
 
@@ -224,25 +192,14 @@ class LibraryPreferences(
     }
 
     companion object {
-        const val DEVICE_ONLY_ON_WIFI = "wifi"
-        const val DEVICE_NETWORK_NOT_METERED = "network_not_metered"
-        const val DEVICE_CHARGING = "ac"
-
-        const val MANGA_NON_COMPLETED = "manga_ongoing"
-        const val MANGA_HAS_UNREAD = "manga_fully_read"
-        const val MANGA_NON_READ = "manga_started"
         const val MANGA_OUTSIDE_RELEASE_PERIOD = "manga_outside_release_period"
 
         const val MARK_DUPLICATE_CHAPTER_READ_NEW = "new"
         const val MARK_DUPLICATE_CHAPTER_READ_EXISTING = "existing"
 
         const val DEFAULT_CATEGORY_PREF_KEY = "default_category"
-        private const val LIBRARY_UPDATE_CATEGORIES_PREF_KEY = "library_update_categories"
-        private const val LIBRARY_UPDATE_CATEGORIES_EXCLUDE_PREF_KEY = "library_update_categories_exclude"
         val categoryPreferenceKeys = setOf(
             DEFAULT_CATEGORY_PREF_KEY,
-            LIBRARY_UPDATE_CATEGORIES_PREF_KEY,
-            LIBRARY_UPDATE_CATEGORIES_EXCLUDE_PREF_KEY,
         )
     }
 }

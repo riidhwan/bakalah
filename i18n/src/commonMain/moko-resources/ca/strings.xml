@@ -10,7 +10,6 @@
     <string name="label_download_queue">Cua de baixades</string>
     <string name="label_library">Biblioteca</string>
     <string name="label_recent_manga">Historial</string>
-    <string name="label_recent_updates">Novetats</string>
     <string name="label_backup">Còpia de seguretat i restauració</string>
     <string name="label_migration">Migració</string>
     <string name="label_extensions">Extensions</string>
@@ -33,7 +32,6 @@
     <string name="action_bookmark">Marca el capítol</string>
     <string name="action_remove_bookmark">Desmarca el capítol</string>
     <string name="action_delete">Suprimeix</string>
-    <string name="action_update_library">Actualitza la biblioteca</string>
     <string name="action_edit">Edita</string>
     <string name="action_add">Afegeix</string>
     <string name="action_add_category">Afegeix una categoria</string>
@@ -73,7 +71,6 @@
     <string name="pref_library_columns">Elements per fila</string>
     <string name="portrait">Vertical</string>
     <string name="landscape">Horitzontal</string>
-    <string name="pref_library_update_interval">Actualitzacions automàtiques</string>
     <string name="update_never">Desactivades</string>
     <string name="update_6hour">Cada 6 hores</string>
     <string name="update_12hour">Cada 12 hores</string>
@@ -81,9 +78,7 @@
     <string name="update_48hour">Cada 2 dies</string>
     <string name="update_weekly">Cada setmana</string>
     <string name="all">Tot</string>
-    <string name="pref_library_update_restriction">Restriccions del dispositiu per a les actualitzacions automàtiques</string>
     <string name="charging">Quan s’estigui carregant</string>
-    <string name="pref_update_only_non_completed">Omet els elements amb l’estat «Completat»</string>
     <string name="pref_auto_update_manga_sync">Actualitza el progrés després de llegir</string>
     <string name="default_category">Categoria per defecte</string>
     <string name="default_category_summary">Demana-ho sempre</string>
@@ -284,7 +279,6 @@
     <string name="ext_obsolete">Obsoleta</string>
     <string name="obsolete_extension_message">Aquesta extensió ja no està disponible. És possible que no funcioni correctament i pot causar problemes a l’aplicació. És recomanable que la desinstal·leu.</string>
     <string name="pref_date_format">Format de data</string>
-    <string name="pref_category_library_update">Actualització global</string>
     <string name="logout_title">Voleu tancar la sessió a %1$s?</string>
     <string name="logout">Tanca la sessió</string>
     <string name="logout_success">S’ha tancat la sessió</string>
@@ -307,7 +301,6 @@
     <string name="pref_cutout_short">Mostra el contingut a l’àrea de retall</string>
     <string name="information_cloudflare_bypass_failure">No s’ha pogut evitar el Cloudflare</string>
     <string name="information_webview_outdated">Actualitzeu l’aplicació WebView per a tenir més bona compatibilitat</string>
-    <string name="channel_new_chapters">Novetats de capítols</string>
     <string name="secure_screen_summary">El mode discret amaga el contingut de l’aplicació en canviar entre aplicacions i bloca les captures de pantalla</string>
     <string name="pref_category_display">Visualització</string>
     <string name="notification_chapters_single">Capítol %1$s</string>
@@ -366,8 +359,6 @@
     <string name="backup_restore_missing_sources">Manquen fonts:</string>
     <string name="invalid_backup_file_missing_manga">La còpia de seguretat no conté cap element de la biblioteca.</string>
     <string name="invalid_backup_file">Fitxer de còpia de seguretat invàlid:</string>
-    <string name="pref_library_update_refresh_metadata_summary">Comprova si hi ha noves portades o detalls en actualitzar la biblioteca</string>
-    <string name="pref_library_update_refresh_metadata">Refresca les metadades automàticament</string>
     <string name="action_display_comfortable_grid">Graella confortable</string>
     <string name="action_migrate">Migra</string>
     <string name="tabs_header">Pestanyes</string>
@@ -454,7 +445,6 @@
     <string name="notification_incognito_text">Desactiva el mode d’incògnit</string>
     <string name="pref_dns_over_https">DNS sobre HTTPS (DoH)</string>
     <string name="pref_download_new_categories_details">Els elements de les categories excloses no es baixaran encara que també siguin a les categories incloses.</string>
-    <string name="pref_library_update_categories_details">Els elements de les categories excloses no s’actualitzaran encara que també siguin a les categories incloses.</string>
     <string name="pref_category_auto_download">Baixada automàtica</string>
     <string name="rotation_landscape">Horitzontal</string>
     <string name="rotation_portrait">Vertical</string>
@@ -539,7 +529,6 @@
     <string name="cancelled">Cancel·lada</string>
     <string name="library_errors_help">Per a obtenir ajuda per a resoldre errors d’actualització de la biblioteca, vegeu %1$s</string>
     <string name="extension_api_error">No s’han pogut obtenir les extensions disponibles</string>
-    <string name="pref_update_only_completely_read">Omet els elements amb capítols no llegits</string>
     <string name="save_chapter_as_cbz">Desa com a arxiu CBZ</string>
     <string name="backup_info">També hauríeu de desar còpies de les còpies de seguretat en altres llocs. Les còpies de seguretat poden contenir dades sensibles, incloent-hi les contrasenyes desades; aneu amb compte si les compartiu.</string>
     <string name="database_clean">No hi ha res que calgui buidar</string>
@@ -555,7 +544,6 @@
     <string name="action_show_manga">Mostra l’element</string>
     <string name="pref_navigate_pan">Fes panoràmiques les imatges amples</string>
     <string name="action_display_cover_only_grid">Graella només a la portada</string>
-    <string name="pref_update_only_started">Omet els elements no començats</string>
     <string name="skipped_reason_completed">S’ha omès perquè la sèrie està completada</string>
     <string name="skipped_reason_not_started">S’ha omès perquè no hi ha cap capítol llegit</string>
     <string name="skipped_reason_not_caught_up">S’ha omès perquè hi ha capítols no llegits</string>
@@ -601,7 +589,6 @@
     <string name="internal_error">Error intern: Reviseu els registres de fallades per a més informació</string>
     <string name="pref_user_agent_string">Cadena d’agent d’usuari per defecte</string>
     <string name="pref_reset_user_agent_string">Restableix la cadena d’agent d’usuari per defecte</string>
-    <string name="appwidget_unavailable_locked">El widget no està disponible quan hi ha activat el blocatge de l’aplicació</string>
     <string name="action_remove_everything">Elimina-ho tot</string>
     <string name="update_already_running">Ja s’està executant una actualització</string>
     <string name="theme_tidalwave">Tsunami</string>
@@ -657,7 +644,6 @@
     <string name="label_completed_titles">Elements completats</string>
     <string name="track_error">Error %1$s: %2$s</string>
     <string name="action_not_now">Ara no</string>
-    <string name="label_titles_in_global_update">A l’actualització global</string>
     <string name="label_overview_section">Resum</string>
     <string name="label_tracker_section">Serveis de seguiment</string>
     <string name="label_tracked_titles">Elements seguits</string>
@@ -685,7 +671,6 @@
     <string name="action_filter_interval_custom">Freqüència d’actualització personalitzat</string>
     <string name="action_sort_next_updated">Pròxima actualització prevista</string>
     <string name="action_ok">D’acord</string>
-    <string name="pref_update_only_in_release_period">Preveu el moment de la pròxima publicació</string>
     <string name="intervals_header">Intervals</string>
     <string name="manga_display_interval_title">Estima cada</string>
     <string name="manga_display_modified_interval_title">S’actualitzarà cada</string>

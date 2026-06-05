@@ -10,7 +10,6 @@
     <string name="label_download_queue">Nedladdningskö</string>
     <string name="label_library">Bibliotek</string>
     <string name="label_recent_manga">Historik</string>
-    <string name="label_recent_updates">Uppdateringar</string>
     <string name="label_backup">Säkerhetskopiera och återställ</string>
     <string name="label_migration">Migrera</string>
     <string name="label_extensions">Tillägg</string>
@@ -33,7 +32,6 @@
     <string name="action_bookmark">Kapitel bokmärke</string>
     <string name="action_remove_bookmark">Radera kapitel bokmärke</string>
     <string name="action_delete">Radera</string>
-    <string name="action_update_library">Uppdatera biblioteket</string>
     <string name="action_edit">Redigera</string>
     <string name="action_add">Lägg till</string>
     <string name="action_add_category">Lägg till kategori</string>
@@ -73,7 +71,6 @@
     <string name="pref_library_columns">Objekt per rad</string>
     <string name="portrait">Porträtt</string>
     <string name="landscape">Landskap</string>
-    <string name="pref_library_update_interval">Automatiska uppdateringar</string>
     <string name="update_never">Av</string>
     <string name="update_6hour">Var 6:e timme</string>
     <string name="update_12hour">Var 12:e timme</string>
@@ -81,9 +78,7 @@
     <string name="update_48hour">Varannan dag</string>
     <string name="update_weekly">Varje vecka</string>
     <string name="all">Alla</string>
-    <string name="pref_library_update_restriction">Automatiska uppdateringar av enhetsbegränsningar</string>
     <string name="charging">Vid laddning</string>
-    <string name="pref_update_only_non_completed">Hoppa över artiklar med status \"Avslutat\"</string>
     <string name="pref_auto_update_manga_sync">Uppdatera förlopp efter läsning</string>
     <string name="default_category">Standardkategori</string>
     <string name="default_category_summary">Fråga alltid</string>
@@ -287,7 +282,6 @@
     <string name="ext_obsolete">Obsolet</string>
     <string name="obsolete_extension_message">Detta tillägg är inte längre tillgängligt. Det kanske inte fungerar korrekt och kan orsaka problem med appen. Vi rekommenderar att du avinstallerar det.</string>
     <string name="pref_date_format">Datumformat</string>
-    <string name="pref_category_library_update">Global uppdatering</string>
     <string name="logout_title">Logga ut från %1$s?</string>
     <string name="logout">Logga ut</string>
     <string name="logout_success">Du är nu utloggad</string>
@@ -310,7 +304,6 @@
     <string name="pref_cutout_short">Visa innehåll i utskärningsområdet</string>
     <string name="information_cloudflare_bypass_failure">Det gick inte att kringgå Cloudflare</string>
     <string name="information_webview_outdated">Uppdatera WebView-appen för bättre kompatibilitet</string>
-    <string name="channel_new_chapters">Kapiteluppdateringar</string>
     <string name="secure_screen_summary">Säker skärm döljer appinnehållet när du byter app och blockerar skärmdumpar</string>
     <string name="pref_category_display">Skärmvisning</string>
     <string name="notification_chapters_single">Kapitel %1$s</string>
@@ -369,8 +362,6 @@
     <string name="backup_restore_missing_sources">Saknade källor:</string>
     <string name="invalid_backup_file_missing_manga">Säkerhetskopian innehåller inga biblioteksposter.</string>
     <string name="invalid_backup_file">Ogiltig säkerhetskopiafil:</string>
-    <string name="pref_library_update_refresh_metadata_summary">Sök efter nytt omslag och detaljer när du uppdaterar biblioteket</string>
-    <string name="pref_library_update_refresh_metadata">Uppdatera metadata automatiskt</string>
     <string name="action_migrate">Migrera</string>
     <string name="action_disable_all">Inaktivera alla</string>
     <string name="page_list_empty_error">Hittade inga sidor</string>
@@ -462,7 +453,6 @@
     <string name="action_sort_chapter_fetch_date">Datum för hämtning av kapitel</string>
     <string name="pref_download_new_categories_details">Inlägg i uteslutna kategorier laddas inte ner även om de också ingår i inkluderade kategorier.</string>
     <string name="pref_category_auto_download">Ladda ned automatiskt</string>
-    <string name="pref_library_update_categories_details">Inlägg i uteslutna kategorier uppdateras inte även om de också ingår i inkluderade kategorier.</string>
     <string name="action_show_errors">Tryck för att se detaljer</string>
     <string name="update_check_eol">Denna Android-version stöds inte längre</string>
     <string name="clipboard_copy_error">Kunde inte kopiera till urklipp</string>
@@ -552,11 +542,9 @@
     <string name="publishing_finished">Publiceringen avslutad</string>
     <string name="save_chapter_as_cbz">Spara som CBZ-arkiv</string>
     <string name="privacy_policy">Integritetspolicy</string>
-    <string name="pref_update_only_completely_read">Hoppa över artiklar med olästa kapitel</string>
     <string name="extension_api_error">Kunde inte hämta tillgängliga tillägg</string>
     <string name="action_show_manga">Visa inlägg</string>
     <string name="action_display_cover_only_grid">Endast omslags-rutnät</string>
-    <string name="pref_update_only_started">Hoppa över artiklar som ej är påbörjade</string>
     <string name="pref_navigate_pan">Panorera breda sidor</string>
     <string name="pref_landscape_zoom">Automatiskt zoomning i stora bilder</string>
     <string name="skipped_reason_completed">Hoppade över eftersom serien är klar</string>
@@ -605,7 +593,6 @@
     <string name="pref_user_agent_string">Standardsträng för användaragent</string>
     <string name="pref_reset_user_agent_string">Återställ standardsträngen för användaragent</string>
     <string name="action_remove_everything">Ta bort allt</string>
-    <string name="appwidget_unavailable_locked">Widget är inte tillgänglig när applåset är aktiverat</string>
     <string name="update_already_running">En uppdatering pågår redan</string>
     <string name="multi_lang">Flerspråkig</string>
     <string name="error_user_agent_string_blank">Strängen för användaragent kan inte vara tom</string>
@@ -666,7 +653,6 @@
     <string name="not_applicable">N/A</string>
     <string name="track_remove_date_conf_title">Ta bort datum?</string>
     <string name="label_titles_section">Inlägg</string>
-    <string name="label_titles_in_global_update">I global uppdatering</string>
     <string name="label_total_chapters">Totalt</string>
     <string name="label_read_chapters">Läst</string>
     <string name="manga_display_interval_title">Uppskatta varje</string>
@@ -701,7 +687,6 @@
     <string name="label_tracker_section">Spårare</string>
     <string name="information_cloudflare_help">Klicka här för hjälp med Cloudflare</string>
     <string name="action_ok">OK</string>
-    <string name="pref_update_only_in_release_period">Förutspå nästa releaseperiod</string>
     <string name="intervals_header">Intervaller</string>
     <string name="create_backup_file_error">Kunde inte skapa en backup-fil</string>
     <string name="track_activity_name">Spårar-inloggning</string>

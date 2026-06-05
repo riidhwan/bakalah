@@ -10,7 +10,6 @@
     <string name="label_download_queue">Редослед преузимања</string>
     <string name="label_library">Колекција</string>
     <string name="label_recent_manga">Историја</string>
-    <string name="label_recent_updates">Ново</string>
     <string name="label_backup">Резервна копија и враћање</string>
     <string name="label_migration">Миграција</string>
     <string name="label_extensions">Додаци</string>
@@ -34,7 +33,6 @@
     <string name="action_bookmark">Забележи поглавље</string>
     <string name="action_remove_bookmark">Уклони белешку поглавља</string>
     <string name="action_delete">Обриши</string>
-    <string name="action_update_library">Ажурирај колекцију</string>
     <string name="action_edit">Уреди</string>
     <string name="action_add">Додај</string>
     <string name="action_add_category">Додај категорију</string>
@@ -74,7 +72,6 @@
     <string name="pref_library_columns">Величина мреже</string>
     <string name="portrait">Усправно</string>
     <string name="landscape">Хоризонтално</string>
-    <string name="pref_library_update_interval">Аутоматска ажурирања</string>
     <string name="update_never">Искључено</string>
     <string name="update_6hour">Шесточасовно</string>
     <string name="update_12hour">Дванаесточасовно</string>
@@ -82,9 +79,7 @@
     <string name="update_48hour">Свака 2 дана</string>
     <string name="update_weekly">Недељно</string>
     <string name="all">Све</string>
-    <string name="pref_library_update_restriction">Ограничења уређаја за аутоматска ажурирања</string>
     <string name="charging">Пуњење</string>
-    <string name="pref_update_only_non_completed">Прескочи уносе са статусом \"Завршено\"</string>
     <string name="pref_auto_update_manga_sync">Ажурирај пратиоца након читања</string>
     <string name="default_category">Подразумевана категорија</string>
     <string name="default_category_summary">Увек питај</string>
@@ -225,7 +220,6 @@
     <string name="pref_category_library">Колекција</string>
     <string name="obsolete_extension_message">Овај додатак није више доступан. Можда неће исправно функционисати и може изазвати проблеме са апликацијом. Препоручује се деинсталирање.</string>
     <string name="pref_date_format">Формат датума</string>
-    <string name="pref_category_library_update">Глобално ажурирање</string>
     <string name="logout_title">Излогуј се из %1$s?</string>
     <string name="logout">Излогуј се</string>
     <string name="logout_success">Сада сте излоговани</string>
@@ -361,8 +355,6 @@
     <string name="pref_show_reading_mode">Прикажи начин читања</string>
     <string name="ext_nsfw_warning">Може садржати садржај за одрасле (18+)</string>
     <string name="ext_nsfw_short">18+</string>
-    <string name="pref_library_update_refresh_metadata_summary">Провери да ли постоје нови омоти при ажурирању колекције</string>
-    <string name="pref_library_update_refresh_metadata">Аутоматски освежи метаподатке</string>
     <string name="parental_controls_info">Ово не спречава незваничне или потенцијално погрешно означене додатке да прикажу садржај за одрасле (18+) унутар апликације.</string>
     <string name="action_filter_tracked">Запраћено</string>
     <string name="label_warning">Упозорење</string>
@@ -457,7 +449,6 @@
     <string name="unread">Непрочитано</string>
     <string name="channel_progress">Напредак</string>
     <string name="channel_complete">Завршено</string>
-    <string name="channel_new_chapters">Ажурирања поглавља</string>
     <string name="download_insufficient_space">Неуспешно преузимање поглавља због недовољне меморије</string>
     <string name="getting_started_guide">Почетни водич</string>
     <string name="update_check_eol">Ова Android верзија више није подржана</string>
@@ -497,7 +488,6 @@
     <string name="connected_to_wifi">Само преко Wi-Fi-а</string>
     <string name="restrictions">Ограничења: %s</string>
     <string name="categorized_display_settings">Поставке за сортирање одвојено за сваку категорију</string>
-    <string name="pref_library_update_categories_details">Наслови у искљученим категоријама се неће ажурирати иако су такође у укљученим категоријама.</string>
     <string name="include">Укључи: %s</string>
     <string name="exclude">Искључи: %s</string>
     <string name="ext_install_service_notif">Инсталирање додатка…</string>
@@ -552,11 +542,9 @@
     <string name="extension_api_error">Преузимање листе додатака није успело</string>
     <string name="pref_auto_clear_chapter_cache">Испразни кеш меморију поглавља током покретања апликације</string>
     <string name="database_clean">Нема ништа за чишћење</string>
-    <string name="pref_update_only_completely_read">Прескочи уносе са непрочитаним поглављима</string>
     <string name="privacy_policy">Политика приватности</string>
     <string name="cancelled">Отказано</string>
     <string name="on_hiatus">На паузи</string>
-    <string name="pref_update_only_started">Прескочи уносе који нису започети</string>
     <string name="action_show_manga">Прикажи наслов</string>
     <string name="action_move_to_top_all_for_series">Помакни наслов на врх</string>
     <string name="learn_more">Додирните да сазнате више</string>
@@ -589,7 +577,6 @@
     <string name="pref_invalidate_download_cache_summary">Присили апликацију да поново провери преузета поглавља</string>
     <string name="not_installed">Није инсталирано</string>
     <string name="crash_screen_description">%s је наишао на неочекивану грешку. Предлажемо да поделите запис о прекиду програма на нашем каналу за подршку на Discord-у.</string>
-    <string name="appwidget_unavailable_locked">Виџет није доступан када је омогућено закључавање апликације</string>
     <string name="wish_list">Листа жеља</string>
     <string name="enhanced_services_not_installed">Доступно, али извор није преузет: %s</string>
     <string name="fdroid_warning">F-Droid верзије нису званично подржане.
@@ -616,7 +603,6 @@
     <string name="reading_list">Листа за читање</string>
     <string name="are_you_sure">Да ли сте сигурни?</string>
     <string name="label_read_duration">Трајање читања</string>
-    <string name="label_titles_in_global_update">У глобалним ажурирањима</string>
     <string name="label_titles_section">Наслови</string>
     <string name="label_total_chapters">Укупно</string>
     <string name="label_mean_score">Просечна оцена</string>
@@ -693,7 +679,6 @@
     <string name="create_backup_file_error">Није могуће створити датотеку резервне копије</string>
     <string name="has_results">Има резултата</string>
     <string name="skipped_reason_not_in_release_period">Прескочено јер данас није очекивано издање</string>
-    <string name="pref_update_only_in_release_period">Предвиди очекивано време изласка</string>
     <string name="action_set_interval">Постави интервал</string>
     <string name="intervals_header">Интервали</string>
     <string name="track_delete_remote_text">Такође уклони из %s</string>

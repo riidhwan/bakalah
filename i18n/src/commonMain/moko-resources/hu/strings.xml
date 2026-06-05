@@ -30,7 +30,6 @@
     <string name="pref_library_columns">Elemek soronként</string>
     <string name="portrait">Álló</string>
     <string name="landscape">Fekvő</string>
-    <string name="pref_library_update_interval">Frissítések gyakorisága</string>
     <string name="update_never">Ki</string>
     <string name="update_6hour">6 óránként</string>
     <string name="update_12hour">12 óránként</string>
@@ -38,9 +37,7 @@
     <string name="update_48hour">2 naponta</string>
     <string name="update_weekly">Hetente</string>
     <string name="all">Összes</string>
-    <string name="pref_library_update_restriction">Frissítések korlátozása</string>
     <string name="charging">Töltés közben</string>
-    <string name="pref_update_only_non_completed">\"Befejezett\" állapotú elemek kihagyása</string>
     <string name="default_category">Alapértelmezett kategória</string>
     <string name="default_category_summary">Mindig kérdezzen rá</string>
     <string name="pref_fullscreen">Teljes képernyő</string>
@@ -63,7 +60,6 @@
     <string name="download_notifier_no_network">A hálózat nem érhető el</string>
     <string name="label_download_queue">Letöltési sor</string>
     <string name="label_library">Könyvtár</string>
-    <string name="label_recent_updates">Frissítések</string>
     <string name="action_filter">Szűrők</string>
     <string name="action_filter_bookmarked">Könyvjelzőzve</string>
     <string name="action_filter_unread">Olvasatlan</string>
@@ -79,7 +75,6 @@
     <string name="action_bookmark">Fejezet könyvjelzőzése</string>
     <string name="action_remove_bookmark">Fejezet eltávolítása a könyvjelzők közül</string>
     <string name="action_delete">Törlés</string>
-    <string name="action_update_library">Könyvtár frissítése</string>
     <string name="action_edit">Szerkesztés</string>
     <string name="action_add">Hozzáadás</string>
     <string name="action_add_category">Kategória hozzáadása</string>
@@ -150,7 +145,6 @@
     <string name="information_empty_library">A könyvtárad üres</string>
     <string name="information_no_downloads">Nincs letöltés folyamatban</string>
     <string name="channel_ext_updates">Bővítményfrissítések</string>
-    <string name="channel_new_chapters">Fejezetfrissítések</string>
     <string name="channel_common">Gyakori</string>
     <string name="download_notifier_download_paused">Letöltés szüneteltetve</string>
     <string name="download_notifier_text_only_wifi">Nincs Wi-Fi kapcsolat</string>
@@ -183,9 +177,6 @@
     <string name="untrusted_extension">Nem megbízható bővítmény</string>
     <string name="ext_obsolete">Elavult</string>
     <string name="ext_updates_pending">Függőben lévő frissítések</string>
-    <string name="pref_library_update_refresh_metadata_summary">Új borító és részletek keresése a könyvtár frissítésekor</string>
-    <string name="pref_library_update_refresh_metadata">Metaadatokat frissítse automatikusan</string>
-    <string name="pref_category_library_update">Minden frissítése</string>
     <string name="pref_category_display">Megjelenés</string>
     <string name="parental_controls_info">Ez nem akadályozza meg a nem hivatalos vagy az esetlegesen helytelenül megjelölt bővítményeket a 18+-os tartalmak megjelenítésétől az alkalmazáson belül.</string>
     <string name="pref_show_nsfw_source">Megjelenítés a forrás- és kiterjesztéseklistában</string>
@@ -277,7 +268,6 @@
     <string name="include">Kedvelt: %s</string>
     <string name="none">Semmi</string>
     <string name="pref_download_new_categories_details">Elemek a tiltott kategóriákban nem lesznek letöltve, még akkor se, ha a kedvelt kategóriában is vannak.</string>
-    <string name="pref_library_update_categories_details">Elemek a tiltott kategóriákban nem lesznek frissítve, még akkor se, ha a kedvelt kategóriákban is vannak.</string>
     <string name="secure_screen">Biztonságos képernyő</string>
     <string name="lock_when_idle">Zárás tétlen állapotban</string>
     <string name="lock_with_biometrics">Biometrikus zár</string>
@@ -423,7 +413,6 @@
     <string name="action_global_search_hint">Globális keresés…</string>
     <string name="sort_by_upload_date">Feltöltési dátum szerint</string>
     <string name="dialog_with_checkbox_remove_description">Ez eltávolítja a fejezet olvasási dátumát. Biztos benne?</string>
-    <string name="pref_update_only_completely_read">Olvasatlan fejezet(ek)et tartalmazó elemek kihagyása</string>
     <string name="delete_category_confirmation">Törölni akarja a %s kategóriát ?</string>
     <string name="internal_error">InternalError: Nézze meg a hibaüzenetet további információért</string>
     <string name="network_not_metered">Csak korlátlan hálózatokon</string>
@@ -494,7 +483,6 @@
     <string name="recent_manga_time">Fej. %1$s - %2$s</string>
     <string name="getting_started_guide">Kezdési útmutató</string>
     <string name="database_clean">Adatbázis törlése</string>
-    <string name="pref_update_only_started">El nem kezdett elemek kihagyása</string>
     <string name="notification_new_chapters">Új fejezet</string>
     <string name="backup_in_progress">Biztonsági mentés már folyamatban van</string>
     <string name="not_installed">Nincs telepítve</string>
@@ -605,7 +593,6 @@
     <string name="pref_user_agent_string">Alap hálózati kliens szöveg</string>
     <string name="pref_reset_user_agent_string">Alap hálózati kliens szöveg visszaállítása</string>
     <string name="action_remove_everything">Minden Eltávolitása</string>
-    <string name="appwidget_unavailable_locked">Widget nem elérhető amikor az alkalmazás zárolva van</string>
     <string name="pref_appearance_summary">Téma, dátum és idő formátuma</string>
     <string name="action_search_hint">Keresés…</string>
     <string name="pref_invalidate_download_cache_summary">Kényszerítse az alkalmazást a letöltött fejezetek újbóli ellenőrzésére</string>
@@ -663,7 +650,6 @@
     <string name="crash_screen_description">%s hibába ütközött. A hiba üzenetet kérünk oszd meg velünk a Discord szerverünkön.</string>
     <string name="track_remove_date_conf_title">Dátum eltávolítása?</string>
     <string name="crash_screen_restart_application">Applikáció újrainditása</string>
-    <string name="label_titles_in_global_update">Globális frissítésben</string>
     <string name="information_required_plain">*kötelező</string>
     <string name="pref_chapter_swipe_start">Fejezet balra húzásakor</string>
     <string name="pref_skip_dupe_chapters">Duplikált fejezetek átugrása</string>
@@ -675,7 +661,6 @@
     <string name="track_activity_name">Bejelentkezés nyilvántartóhoz</string>
     <string name="delete_downloaded">Letöltött törlése</string>
     <string name="split_tall_images">Magas képek szétvágása</string>
-    <string name="pref_update_only_in_release_period">Következő kiadás idejének megjóslása</string>
     <string name="pref_page_rotate">Széles oldalak forgatása az illeszkedéshez</string>
     <string name="pref_chapter_swipe_end">Fejezet jobbra húzásakor</string>
     <string name="pref_page_rotate_invert">Forgatott széles oldalak megfordítása</string>

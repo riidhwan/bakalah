@@ -103,7 +103,7 @@ object Notifications {
                     setName(context.stringResource(MR.strings.label_library))
                 },
                 buildNotificationChannelGroup(GROUP_APK_UPDATES) {
-                    setName(context.stringResource(MR.strings.label_recent_updates))
+                    setName(context.stringResource(MR.strings.channel_app_and_ext_updates))
                 },
             ),
         )

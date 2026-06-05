@@ -7,7 +7,6 @@
     <string name="label_settings">அமைப்புகள்</string>
     <string name="label_download_queue">வரிசையைப் பதிவிறக்கவும்</string>
     <string name="label_library">நூலகம்</string>
-    <string name="label_recent_updates">புதுப்பிப்புகள்</string>
     <string name="label_default">இயல்புநிலை</string>
     <string name="label_warning">எச்சரிக்கை</string>
     <string name="label_started">தொடங்கியது</string>
@@ -104,7 +103,6 @@
     <string name="relative_time_span_never">ஒருபோதும்</string>
     <string name="recent_manga_time">Ch. %1$s - %2$s</string>
     <string name="pref_clear_history">வரலாற்றை அழிக்கவும்</string>
-    <string name="appwidget_unavailable_locked">பயன்பாட்டு பூட்டு இயக்கப்பட்டால் விட்செட் கிடைக்கவில்லை</string>
     <string name="remove_manga">உங்கள் நூலகத்திலிருந்து \"%s\" ஐ அகற்ற உள்ளீர்கள்</string>
     <string name="exception_http">Http %d, வெப்வியூவில் வலைத்தளத்தைப் பாருங்கள்</string>
     <string name="exception_offline">இணைய இணைப்பு இல்லை</string>
@@ -127,7 +125,6 @@
     <string name="delete_category_confirmation">\"%s\" என்ற வகையை நீக்க விரும்புகிறீர்களா?</string>
     <string name="delete_category">வகையை நீக்கு</string>
     <string name="action_delete">நீக்கு</string>
-    <string name="action_update_library">நூலகத்தைப் புதுப்பிக்கவும்</string>
     <string name="action_enable_all">அனைத்தையும் இயக்கு</string>
     <string name="action_disable_all">அனைத்தையும் முடக்கு</string>
     <string name="action_edit">தொகு</string>
@@ -267,8 +264,6 @@
     <string name="pref_library_columns">ஒரு வரிசையில் உருப்படிகள்</string>
     <string name="portrait">உருவப்படம்</string>
     <string name="landscape">நிலப்பரப்பு</string>
-    <string name="pref_category_library_update">உலகளாவிய புதுப்பிப்பு</string>
-    <string name="pref_library_update_interval">தானியங்கி புதுப்பிப்புகள்</string>
     <string name="update_never">அணை</string>
     <string name="update_6hour">ஒவ்வொரு 6 மணி நேரமும்</string>
     <string name="update_12hour">ஒவ்வொரு 12 மணி நேரமும்</string>
@@ -283,22 +278,14 @@
     <string name="lock_always">எப்போதும்</string>
     <string name="lock_never">ஒருபோதும்</string>
     <string name="hide_notification_content">அறிவிப்பு உள்ளடக்கத்தை மறைக்கவும்</string>
-    <string name="pref_library_update_restriction">தானியங்கி புதுப்பிப்புகள் சாதன கட்டுப்பாடுகள்</string>
     <string name="connected_to_wifi">வைஃபை மட்டுமே</string>
     <string name="network_not_metered">அளவிடப்படாத நெட்வொர்க்கில் மட்டுமே</string>
     <string name="charging">கட்டணம் வசூலிக்கும்போது</string>
     <string name="restrictions">கட்டுப்பாடுகள்: %s</string>
     <string name="pref_library_update_smart_update">அறிவுள்ள புதுப்பிப்பு</string>
-    <string name="pref_update_only_completely_read">படிக்காத அத்தியாயம் (கள்) உடன் உள்ளீடுகளைத் தவிர்க்கவும்</string>
-    <string name="pref_update_only_non_completed">\"நிறைவு செய்யப்பட்ட\" நிலையுடன் உள்ளீடுகளைத் தவிர்க்கவும்</string>
-    <string name="pref_update_only_started">சிக்கலற்ற உள்ளீடுகளைத் தவிர்க்கவும்</string>
-    <string name="pref_update_only_in_release_period">அடுத்த வெளியீட்டு நேரத்தை கணிக்கவும்</string>
-    <string name="pref_library_update_refresh_metadata">மெட்டாடேட்டாவை தானாக புதுப்பிக்கவும்</string>
-    <string name="pref_library_update_refresh_metadata_summary">நூலகத்தைப் புதுப்பிக்கும்போது புதிய கவர் மற்றும் விவரங்களைச் சரிபார்க்கவும்</string>
     <string name="default_category">இயல்புநிலை வகை</string>
     <string name="default_category_summary">எப்போதும் கேளுங்கள்</string>
     <string name="categorized_display_settings">வரிசைக்கான ஒரு வகை அமைப்புகள்</string>
-    <string name="pref_library_update_categories_details">விலக்கப்பட்ட வகைகளில் உள்ளீடுகள் சேர்க்கப்பட்ட வகைகளில் இருந்தாலும் அவை புதுப்பிக்கப்படாது.</string>
     <string name="all">அனைத்தும்</string>
     <string name="none">எதுவுமில்லை</string>
     <string name="include">அடங்கும்: %s</string>
@@ -734,7 +721,6 @@
     <string name="label_completed_titles">நிறைவு செய்யப்பட்ட உள்ளீடுகள்</string>
     <string name="label_read_duration">காலத்தைப் படியுங்கள்</string>
     <string name="label_titles_section">உள்ளீடுகள்</string>
-    <string name="label_titles_in_global_update">உலகளாவிய புதுப்பிப்பில்</string>
     <string name="migrate">குடியேறவும்</string>
     <string name="copy">நகலெடு</string>
     <string name="empty_screen">சரி, இது மோசமானது</string>
@@ -808,7 +794,6 @@
     <string name="channel_progress">முன்னேற்றம்</string>
     <string name="channel_complete">முழுமையானது</string>
     <string name="channel_errors">பிழைகள்</string>
-    <string name="channel_new_chapters">அத்தியாயம் புதுப்பிப்புகள்</string>
     <string name="channel_app_updates">பயன்பாட்டு புதுப்பிப்புகள்</string>
     <string name="channel_ext_updates">நீட்டிப்பு புதுப்பிப்புகள்</string>
     <string name="spen_previous_page">முந்தைய பக்கம்</string>

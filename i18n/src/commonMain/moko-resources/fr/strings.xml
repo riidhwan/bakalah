@@ -5,7 +5,6 @@
     <string name="label_download_queue">File de téléchargement</string>
     <string name="label_library">Bibliothèque</string>
     <string name="label_recent_manga">Historique</string>
-    <string name="label_recent_updates">Mises à jour</string>
     <string name="label_backup">Sauvegarder et restaurer</string>
     <string name="action_settings">Paramètres</string>
     <string name="action_filter">Filtre</string>
@@ -23,7 +22,6 @@
     <string name="action_bookmark">Marquer le chapitre</string>
     <string name="action_remove_bookmark">Retirer des favoris</string>
     <string name="action_delete">Supprimer</string>
-    <string name="action_update_library">Mettre à jour la bibliothèque</string>
     <string name="action_edit">Modifier</string>
     <string name="action_add">Ajouter</string>
     <string name="action_add_category">Ajouter une catégorie</string>
@@ -58,16 +56,13 @@
     <string name="pref_library_columns">Éléments par ligne</string>
     <string name="portrait">Portrait</string>
     <string name="landscape">Paysage</string>
-    <string name="pref_library_update_interval">Mises à jour automatiques</string>
     <string name="update_never">Désactivé</string>
     <string name="update_6hour">Toutes les 6 heures</string>
     <string name="update_12hour">Toutes les 12 heures</string>
     <string name="update_24hour">Tous les jours</string>
     <string name="update_48hour">Tous les 2 jours</string>
     <string name="all">Tout</string>
-    <string name="pref_library_update_restriction">Restrictions matérielles pour les mises à jour automatiques</string>
     <string name="charging">Lors de la charge</string>
-    <string name="pref_update_only_non_completed">Exclure si le statut est « Terminé »</string>
     <string name="pref_auto_update_manga_sync">Synchroniser la progression après lecture</string>
     <string name="pref_fullscreen">Plein écran</string>
     <string name="pref_page_transitions">Activer les transitions</string>
@@ -283,7 +278,6 @@
     <string name="pref_category_library">Bibliothèque</string>
     <string name="obsolete_extension_message">Cette extension n\'est plus disponible. Elle peut ne pas fonctionner correctement et causer des problèmes avec l\'application. Il est recommandé de la désinstaller.</string>
     <string name="pref_date_format">Format de date</string>
-    <string name="pref_category_library_update">Mises à jour</string>
     <string name="action_webview_back">Précédent</string>
     <string name="action_webview_forward">Suivant</string>
     <string name="action_webview_refresh">Actualiser</string>
@@ -310,7 +304,6 @@
     <string name="pref_cutout_short">Utiliser la zone de l\'encoche</string>
     <string name="information_cloudflare_bypass_failure">Impossible de contourner Cloudflare</string>
     <string name="information_webview_outdated">Veuillez mettre à jour l\'application WebView pour une meilleure compatibilité</string>
-    <string name="channel_new_chapters">Mises à jour des chapitres</string>
     <string name="secure_screen_summary">L\'écran sécurisé cache le contenu lors du changement d\'application et bloque les captures d\'écran</string>
     <string name="pref_category_display">Affichage</string>
     <string name="notification_chapters_single">Chapitre %1$s</string>
@@ -364,13 +357,11 @@
     <string name="battery_optimization_setting_activity_not_found">Impossible d\'ouvrir les paramètres de l\'appareil</string>
     <string name="pref_refresh_library_covers">Actualiser les couvertures de la bibliothèque</string>
     <string name="tracking_info">Synchronisation à sens unique pour mettre à jour la progression du chapitre dans les services de suivi. Configurez le suivi des séries à partir de leur bouton de suivi.</string>
-    <string name="pref_library_update_refresh_metadata_summary">Vérifier s\'il y a une nouvelle couverture ou synopsis lors des mises à jour de la bibliothèque</string>
     <string name="sort_by_upload_date">Par date de téléversement</string>
     <string name="label_data">Donnée</string>
     <string name="backup_restore_missing_sources">Sources manquantes :</string>
     <string name="invalid_backup_file_missing_manga">Cette sauvegarde ne contient aucune série dans sa bibliothèque.</string>
     <string name="invalid_backup_file">Fichier de sauvegarde invalide :</string>
-    <string name="pref_library_update_refresh_metadata">Actualiser automatiquement les métadonnées</string>
     <string name="action_migrate">Migrer</string>
     <string name="action_display_comfortable_grid">Grille espacée</string>
     <string name="tabs_header">Onglets</string>
@@ -460,7 +451,6 @@
     <string name="include">Inclure : %s</string>
     <string name="none">Aucun(e)</string>
     <string name="action_sort_chapter_fetch_date">Date de récupération du chapitre</string>
-    <string name="pref_library_update_categories_details">Les séries dans les catégories exclues ne seront pas mises à jour même si elles sont aussi dans les catégories inclues.</string>
     <string name="pref_download_new_categories_details">Les séries des catégories exclues ne seront pas mis à jour même si elles appartiennent également à des catégories incluses.</string>
     <string name="pref_category_auto_download">Téléchargement automatique</string>
     <string name="action_show_errors">Appuyez pour voir les détails</string>
@@ -548,7 +538,6 @@
     <string name="database_clean">Rien à effacer</string>
     <string name="extension_api_error">Aucune extension trouvée</string>
     <string name="privacy_policy">Politique de confidentialité</string>
-    <string name="pref_update_only_completely_read">Exclure s\'il reste un/des chapitre(s) à lire</string>
     <string name="save_chapter_as_cbz">Enregistrer comme archive CBZ</string>
     <string name="library_errors_help">Pour savoir comment corriger les erreurs de mise à jour de la bibliothèque, voir %1$s</string>
     <string name="on_hiatus">En pause</string>
@@ -558,7 +547,6 @@
     <string name="action_display_cover_only_grid">Grille avec seulement la couverture</string>
     <string name="pref_navigate_pan">Panoramique des images larges</string>
     <string name="pref_landscape_zoom">Zoom automatique dans les images larges</string>
-    <string name="pref_update_only_started">Exclure si lecture pas encore débutée</string>
     <string name="skipped_reason_completed">Sauté car la série est terminée</string>
     <string name="skipped_reason_not_started">Sauté car aucun chapitre n\'est lu</string>
     <string name="skipped_reason_not_caught_up">Sauté car il y a des chapitres non lus</string>
@@ -605,7 +593,6 @@
     <string name="pref_reset_user_agent_string">Réinitialiser la liste d\'agents utilisateurs</string>
     <string name="pref_user_agent_string">Liste d\'agents utilisateurs par défaut</string>
     <string name="action_remove_everything">Tout retirer</string>
-    <string name="appwidget_unavailable_locked">Le Widget n\'est pas disponible lorsque l\'application est verrouillée</string>
     <string name="error_user_agent_string_blank">La liste d\'agents utilisateurs ne peut être vide</string>
     <string name="update_already_running">Une mise à jour est déjà en cours</string>
     <string name="theme_tidalwave">Raz-de-marée</string>
@@ -655,7 +642,6 @@
     <string name="label_downloaded">Téléchargé</string>
     <string name="information_no_manga_category">La catégorie est vide</string>
     <string name="label_titles_section">Séries</string>
-    <string name="label_titles_in_global_update">Dans la mise à jour globale</string>
     <string name="label_read_chapters">Lus</string>
     <string name="label_tracker_section">Traqueurs</string>
     <string name="label_used">Utilisé</string>
@@ -686,7 +672,6 @@
     <string name="pref_chapter_swipe_end">Action de glisser à droite</string>
     <string name="pref_double_tap_zoom">Appuyez deux fois pour zoomer</string>
     <string name="action_sort_next_updated">Prochaine mise à jour prévue</string>
-    <string name="pref_update_only_in_release_period">Prédiction de la prochaine date sortie</string>
     <string name="action_set_interval">Définir l\'intervalle</string>
     <string name="action_ok">Valider</string>
     <string name="action_filter_interval_custom">Fréquence de mise à jour personnalisée</string>
