@@ -6,6 +6,7 @@ import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import eu.kanade.presentation.util.Tab
@@ -18,6 +19,14 @@ import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.source.local.LocalSource
 
 data object LocalTab : Tab {
+
+    private val localSourceScreen = BrowseSourceScreen(
+        sourceId = LocalSource.ID,
+        listingQuery = BrowseSourceScreenModel.Listing.Popular.query,
+        showNavigateUp = false,
+    )
+
+    internal fun localSourceScreenForTesting(): BrowseSourceScreen = localSourceScreen
 
     override val options: TabOptions
         @Composable
@@ -34,12 +43,14 @@ data object LocalTab : Tab {
     @Composable
     override fun Content() {
         val context = LocalContext.current
+        val screenModel = localSourceScreen.rememberScreenModel(tag = "local_source_browse") {
+            BrowseSourceScreenModel(
+                sourceId = LocalSource.ID,
+                listingQuery = BrowseSourceScreenModel.Listing.Popular.query,
+            )
+        }
 
-        BrowseSourceScreen(
-            sourceId = LocalSource.ID,
-            listingQuery = BrowseSourceScreenModel.Listing.Popular.query,
-            showNavigateUp = false,
-        ).Content()
+        localSourceScreen.Content(screenModel)
 
         LaunchedEffect(Unit) {
             (context as? MainActivity)?.ready = true
