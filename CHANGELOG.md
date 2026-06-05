@@ -12,6 +12,10 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.20.2] - 2026-06-05
+### Other
+- Verify automated release tagging with the GitHub App token.
+
 ## [v0.20.1] - 2026-06-05
 ### Other
 - Test the automated release tagging process.
