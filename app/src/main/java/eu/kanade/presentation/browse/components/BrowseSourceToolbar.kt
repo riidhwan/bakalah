@@ -30,7 +30,8 @@ fun BrowseSourceToolbar(
     source: Source?,
     displayMode: LibraryDisplayMode,
     onDisplayModeChange: (LibraryDisplayMode) -> Unit,
-    navigateUp: () -> Unit,
+    navigateUp: (() -> Unit)?,
+    onClickCloseSearch: () -> Unit = { onSearchQueryChange(null) },
     onWebViewClick: () -> Unit,
     onHelpClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -50,7 +51,7 @@ fun BrowseSourceToolbar(
         searchQuery = searchQuery,
         onChangeSearchQuery = onSearchQueryChange,
         onSearch = onSearch,
-        onClickCloseSearch = navigateUp,
+        onClickCloseSearch = onClickCloseSearch,
         actions = {
             AppBarActions(
                 actions = buildList {

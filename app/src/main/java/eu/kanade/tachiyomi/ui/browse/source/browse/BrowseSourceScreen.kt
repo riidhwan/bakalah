@@ -69,6 +69,7 @@ import tachiyomi.source.local.LocalSource
 data class BrowseSourceScreen(
     val sourceId: Long,
     private val listingQuery: String?,
+    private val showNavigateUp: Boolean = true,
 ) : Screen(), AssistContentScreen {
 
     private var assistUrl: String? = null
@@ -135,7 +136,8 @@ data class BrowseSourceScreen(
                         source = screenModel.source,
                         displayMode = screenModel.displayMode,
                         onDisplayModeChange = { screenModel.displayMode = it },
-                        navigateUp = navigateUp,
+                        navigateUp = navigateUp.takeIf { showNavigateUp },
+                        onClickCloseSearch = navigateUp,
                         onWebViewClick = onWebViewClick,
                         onHelpClick = onHelpClick,
                         onSettingsClick = { navigator.push(SourcePreferencesScreen(sourceId)) },
