@@ -2,6 +2,7 @@
 .gradle
 .kotlin
 build
+gradle/build-logic
 
 # IDE files
 *.iml
