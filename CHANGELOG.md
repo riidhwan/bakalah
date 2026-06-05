@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Added
+- Add a top-level Local tab for browsing local source entries, replacing Updates in the main navigation.
 
 ## [v0.20.3] - 2026-06-05
 ### Other
