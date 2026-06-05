@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="channel_ext_updates">עדכונים לתוסף</string>
-    <string name="channel_new_chapters">עדכונים לפרק</string>
     <string name="channel_common">נפוץ</string>
     <string name="download_notifier_download_paused">ההורדות מושהות</string>
     <string name="download_notifier_no_network">אין חיבור רשת זמין</string>
@@ -117,17 +116,13 @@
     <string name="all">הכל</string>
     <string name="default_category_summary">שאל תמיד</string>
     <string name="default_category">קטגוריית ברירת המחדל</string>
-    <string name="pref_update_only_non_completed">במצב \"נגמרה\"</string>
     <string name="charging">טוען</string>
-    <string name="pref_library_update_restriction">הגבלות עדכונים אוטומטיים</string>
     <string name="update_weekly">פעם בשבוע</string>
     <string name="update_48hour">פעם ביומיים</string>
     <string name="update_24hour">פעם ביום</string>
     <string name="update_12hour">כל 12 שעות</string>
     <string name="update_6hour">כל 6 שעות</string>
     <string name="update_never">כבוי</string>
-    <string name="pref_library_update_interval">עדכונים אוטומטיים</string>
-    <string name="pref_category_library_update">עדכון גלובלי</string>
     <string name="landscape">מאוזן</string>
     <string name="portrait">מאונך</string>
     <string name="hide_notification_content">הסתר תוכן התראות</string>
@@ -270,7 +265,6 @@
     <string name="pref_fullscreen">מסך מלא</string>
     <string name="action_add">הוסף</string>
     <string name="action_edit">ערוך</string>
-    <string name="action_update_library">עדכן ספרייה</string>
     <string name="action_delete">מחק</string>
     <string name="action_remove_bookmark">בטל סימון פרק</string>
     <string name="action_bookmark">סמן פרק</string>
@@ -297,7 +291,6 @@
     <string name="label_backup">גיבוי ושחזור</string>
     <string name="label_sources">מקורות</string>
     <string name="label_recent_manga">היסטוריה</string>
-    <string name="label_recent_updates">עדכונים</string>
     <string name="label_library">ספרייה</string>
     <string name="label_download_queue">תור ההורדות</string>
     <string name="label_settings">הגדרות</string>
@@ -315,7 +308,6 @@
     <string name="secure_screen">מסך מאובטח</string>
     <string name="pref_library_columns">פריטים בכל שורה</string>
     <string name="theme_system">עקוב אחר המערכת</string>
-    <string name="pref_library_update_refresh_metadata_summary">בדוק אם יש כריכה ופרטים חדשים בעת עדכון הספרייה</string>
     <string name="action_sort_count">סה\"כ פריטים</string>
     <string name="action_search_settings">הגדרות חיפוש</string>
     <string name="action_select_inverse">בחר את ההפך</string>
@@ -355,17 +347,13 @@
     <string name="pref_category_appearance">מראה</string>
     <string name="theme_midnightdusk">דמדומי חצות</string>
     <string name="theme_tako">טאקו</string>
-    <string name="pref_library_update_refresh_metadata">רענן נתונים באופן אוטומטי</string>
     <string name="action_filter_tracked">במעקב</string>
     <string name="action_sort_date_added">תאריך הוספה</string>
     <string name="action_sort_chapter_fetch_date">תאריך האחזור של הפרקים</string>
     <string name="theme_monet">דינמי</string>
-    <string name="pref_library_update_categories_details">פריט הנמצא בקטגוריית מנועי העדכונים לא יעודכן גם אם הוא נכלל בקטגורייה אחרת שכן מתעדכנת.</string>
     <string name="action_show_manga">הראה פריט</string>
-    <string name="pref_update_only_completely_read">עם פרק(ים) שלא נקרא(ו)</string>
     <string name="action_move_to_top_all_for_series">העבר סדרה לראש</string>
     <string name="ext_obsolete">מיושן</string>
-    <string name="pref_update_only_started">זה עוד לא התחיל</string>
     <string name="ext_update_all">עדכן הכל</string>
     <string name="ext_trust">האמן</string>
     <string name="ext_nsfw_warning">עלול להכיל תוכן שלא מתאים למקום העבודה (18+)</string>
@@ -632,11 +620,9 @@
     <string name="error_no_match">לא נמצאה התאמה</string>
     <string name="not_installed">לא מותקן</string>
     <string name="label_read_duration">משך קריאה</string>
-    <string name="label_titles_in_global_update">בעדכון כללי</string>
     <string name="not_applicable">N/A</string>
     <string name="library_errors_help">לזערה לגבי איך לתקן בעיות בעדכוני ספריה, ראה %1$s</string>
     <string name="exception_unknown_host">לא יכל להשיג את %s</string>
-    <string name="pref_update_only_in_release_period">מחוץ לתקופת הפרסום הצפויה</string>
     <string name="pref_page_rotate">סובב עמודים רחבים להתאמה</string>
     <string name="updates_last_update_info_just_now">ממש עכשיו</string>
     <string name="auto_download_while_reading">הורד אוטומטית בזמן קריאה</string>
@@ -704,7 +690,6 @@
     <string name="manga_display_modified_interval_title">קבע לעדכון בכל</string>
     <string name="recent_manga_time">פרקים %1$s-%2$s</string>
     <string name="label_overview_section">סקירה</string>
-    <string name="appwidget_unavailable_locked">יישומון לא זמין כשנעילת האפליקציה מופעלת</string>
     <string name="pref_invalidate_download_cache_summary">הכרח את האפליקציה לבדוק מחדש פרקים שהורדו</string>
     <string name="pref_clear_webview_data">נקה מידע של WebView</string>
     <string name="pref_refresh_library_covers">רענן כריכות ספרייה</string>

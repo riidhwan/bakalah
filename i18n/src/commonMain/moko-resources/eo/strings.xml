@@ -2,7 +2,6 @@
 <resources>
     <string name="label_sources">Fontoj</string>
     <string name="label_recent_manga">Historio</string>
-    <string name="label_recent_updates">Ĝisdatigoj</string>
     <string name="label_library">Biblioteko</string>
     <string name="label_download_queue">Elŝutvico</string>
     <string name="label_settings">Agordoj</string>
@@ -26,7 +25,6 @@
     <string name="action_edit">Redakti</string>
     <string name="action_disable_all">Malŝalti ĉiujn</string>
     <string name="action_enable_all">Ŝalti ĉiujn</string>
-    <string name="action_update_library">Ĝisdatigi bibliotekon</string>
     <string name="action_delete">Forigi</string>
     <string name="action_remove_bookmark">Mallegosigni ĉapitron</string>
     <string name="action_bookmark">Legosigni ĉapitron</string>
@@ -169,8 +167,6 @@
     <string name="update_12hour">Ĉiun 12-an horon</string>
     <string name="update_6hour">Ĉiun 6-an horon</string>
     <string name="update_never">Malŝaltitaj</string>
-    <string name="pref_library_update_interval">Aŭtomataj ĝisdatigoj</string>
-    <string name="pref_category_library_update">Tuta ĝisdatigo</string>
     <string name="landscape">Horizontale</string>
     <string name="portrait">Vertikale</string>
     <string name="pref_category_display">Montrado</string>
@@ -200,7 +196,6 @@
     <string name="action_sort_latest_chapter">Lasta ĉapitro</string>
     <string name="spen_next_page">Sekva paĝo</string>
     <string name="spen_previous_page">Antaŭa paĝo</string>
-    <string name="channel_new_chapters">Ĉapitraj ĝisdatigoj</string>
     <string name="channel_errors">Eraroj</string>
     <string name="channel_complete">Finitaj</string>
     <string name="channel_progress">Progreso</string>
@@ -405,7 +400,6 @@
     <string name="pref_inverted_colors">Inversigita</string>
     <string name="pref_dual_page_split">Dividi larĝajn paĝojn</string>
     <string name="ext_pending">Atendanta</string>
-    <string name="pref_update_only_non_completed">Preterpasi elementojn kun \"Finita\" statuso</string>
     <string name="restrictions">Limigoj: %s</string>
     <string name="theme_yotsuba">Jocuba</string>
     <string name="theme_tealturquoise">Bluverda k verdblua</string>
@@ -416,7 +410,6 @@
     <string name="action_sort_chapter_fetch_date">Ĉapitra elŝuta dato</string>
     <string name="track">Sekvado</string>
     <string name="pref_cutout_short">Montri enhavon en fortondareo</string>
-    <string name="pref_library_update_restriction">Aparataj limigoj por aŭtomataj ĝisdatigoj</string>
     <string name="track_finished_reading_date">Findato</string>
     <string name="track_started_reading_date">Komencdato</string>
     <string name="backup_restore_missing_trackers">Sekviloj ne ensalutintaj en:</string>
@@ -442,12 +435,10 @@
     <string name="pref_disable_battery_optimization">Malŝalti baterian optimumigon</string>
     <string name="channel_common">Ofta</string>
     <string name="cover_updated">Kovrilo aktualigita</string>
-    <string name="pref_library_update_refresh_metadata_summary">Kontroli ĉu estas nova kovrilo kaj detaloj dum biblioteka ĝisdatigo</string>
     <string name="cover_saved">Kovrilo konservita</string>
     <string name="manga_cover">Kovrilo</string>
     <string name="pref_skip_filtered_chapters">Preterpasi filtritajn ĉapitroj</string>
     <string name="pref_show_navigation_mode_summary">Koncize montri kiam legilo estas malfermita</string>
-    <string name="pref_library_update_refresh_metadata">Aŭtomate aktualigi metadatumojn</string>
     <string name="secure_screen_summary">Sekura ekrano kaŝas apan enhavon dum ŝanĝado de apo kaj malpermesas ekrankopiojn</string>
     <string name="label_stats">Statistikoj</string>
     <string name="label_warning">Averto</string>
@@ -556,21 +547,17 @@
     <string name="firebase_summary">Sendado de prikolapsaj protokoloj kaj analitikoj eblos al ni identigi kaj ripari problemojn, plibonigi rendimenton kaj igi estontajn ĝisdatigojn pli rilataj al viaj bezonoj</string>
     <string name="parental_controls_info">Tio ne preventas neoficialajn aŭ eventuale malĝuste markitajn etendaĵojn montri NSFW-enhavon (18+) ene de la apo.</string>
     <string name="update_72hour">Ĉiun 3-an tagon</string>
-    <string name="pref_update_only_started">Preterpasi nekomencitajn elementojn</string>
     <string name="pref_chapter_swipe_end">Ĉapitro je ŝovumo dekstren</string>
     <string name="ext_remove">Forigi</string>
     <string name="ext_confirm_remove">Ĉu forigi etendaĵon?</string>
     <string name="remove_private_extension_message">Ĉu vi vere volas forigi etendaĵon \"%s\"?</string>
     <string name="label_completed_titles">Finitaj elementoj</string>
-    <string name="pref_update_only_in_release_period">Prognozi daton de sekva eldono</string>
     <string name="connected_to_wifi">Nur per vifio</string>
     <string name="ext_installer_shizuku_stopped">Shizuku ne ruliĝas</string>
     <string name="categorized_display_settings">Agordoj de ordigo laŭ kategorio</string>
     <string name="pref_chapter_swipe_start">Ĉapitro je ŝovumo maldekstren</string>
     <string name="untrusted_extension_message">Malicaj etendaĵoj povas legi ĉiujn el konservitaj ensalutiloj aŭ plenumi arbitran kodon.\n\nFidante ĉi tiun etendaĵon, vi akceptas tiujn riskojn.</string>
     <string name="pref_library_update_smart_update">Saĝa ĝisdatigo</string>
-    <string name="pref_update_only_completely_read">Preterpasi elementojn kun nelegita(j)n ĉapitro(j)n</string>
-    <string name="pref_library_update_categories_details">Elementoj en ekskluzivitaj kategorioj ne estos ĝisdatigotaj, eĉ se ili estas ankaŭ en inkluzivitaj kategorioj.</string>
     <string name="multi_lang">Plur</string>
     <string name="ext_app_info">Pri apo</string>
     <string name="extension_api_error">Malsukcesis akiri etendaĵan liston</string>
@@ -792,7 +779,6 @@
     <string name="label_overview_section">Superrigardo</string>
     <string name="label_read_duration">Legada daŭro</string>
     <string name="label_titles_section">Elementoj</string>
-    <string name="label_titles_in_global_update">En ĉiea ĝisdatigo</string>
     <string name="label_total_chapters">Entute</string>
     <string name="label_read_chapters">Legitaj</string>
     <string name="label_tracker_section">Sekviloj</string>
@@ -836,7 +822,6 @@
     <string name="download_notifier_split_page_not_found">Paĝo %d netrovita dum dividado</string>
     <string name="download_notifier_cache_renewal">Kontrolado de elŝutoj</string>
     <string name="channel_app_updates">Apaj ĝisdatigoj</string>
-    <string name="appwidget_unavailable_locked">Fenestraĵo nedisponebla kiam apa ŝloso estas ŝaltita</string>
     <string name="remove_manga">Vi forigos \"%s\" el via biblioteko</string>
     <string name="exception_http">HTTP %d, kontrolu retejon per WebView</string>
     <string name="exception_offline">Sen interreta konekto</string>

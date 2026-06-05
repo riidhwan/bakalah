@@ -47,7 +47,6 @@
     <string name="action_edit">Isaayos</string>
     <string name="action_disable_all">Di-paganahin lahat</string>
     <string name="action_enable_all">Paganahin lahat</string>
-    <string name="action_update_library">I-update ang Aklatan</string>
     <string name="action_delete">Burahin</string>
     <string name="action_remove_bookmark">I-unbookmark ang kabanata</string>
     <string name="action_bookmark">I-bookmark ang kabanata</string>
@@ -85,7 +84,6 @@
     <string name="label_backup">Pag-backup at Pag-restore</string>
     <string name="label_sources">Mga Source</string>
     <string name="label_recent_manga">Kasaysayan</string>
-    <string name="label_recent_updates">Bago</string>
     <string name="label_library">Aklatan</string>
     <string name="label_download_queue">Pila ng mga download</string>
     <string name="label_settings">Mga Setting</string>
@@ -194,19 +192,13 @@
     <string name="all">Lahat</string>
     <string name="default_category_summary">Palaging tanungin</string>
     <string name="default_category">Default na kategorya</string>
-    <string name="pref_library_update_refresh_metadata_summary">Maghanap ng mga bagong pabalat at detalye kapag nag-a-update ng aklatan</string>
-    <string name="pref_library_update_refresh_metadata">Awtomatikong i-refresh ang metadata</string>
-    <string name="pref_update_only_non_completed">Laktawan ang mga entry na may katayuang \"Nakumpleto\"</string>
     <string name="charging">Kapag naka-charge</string>
-    <string name="pref_library_update_restriction">Awtomatikong ina-update ang mga paghihigpit sa device</string>
     <string name="update_weekly">Linggo-linggo</string>
     <string name="update_48hour">Kada 2 araw</string>
     <string name="update_24hour">Araw-araw</string>
     <string name="update_12hour">Kada 12 oras</string>
     <string name="update_6hour">Kada 6 na oras</string>
     <string name="update_never">Nakapatay</string>
-    <string name="pref_library_update_interval">Awtomatikong pag-update</string>
-    <string name="pref_category_library_update">Panlahatang update</string>
     <string name="landscape">Pahiga</string>
     <string name="portrait">Patayo</string>
     <string name="pref_library_columns">Mga item kada row</string>
@@ -239,7 +231,6 @@
     <string name="tapping_inverted_horizontal">Pahiga</string>
     <string name="channel_ext_updates">Mga update sa extension</string>
     <string name="tapping_inverted_none">Wala</string>
-    <string name="channel_new_chapters">Mga update sa kabanata</string>
     <string name="channel_common">Pangkaraniwan</string>
     <string name="download_notifier_download_paused">Naka-pause ang mga download</string>
     <string name="download_notifier_no_network">Walang koneksyon sa Internet</string>
@@ -461,7 +452,6 @@
     <string name="exclude">Na-ibukod: %s</string>
     <string name="include">Kasali ang: %s</string>
     <string name="none">Wala</string>
-    <string name="pref_library_update_categories_details">Hindi ia-update ang mga entry na nasa na-ibukod na mga kategorya kahit na nasa mga kasamang kategorya rin sila.</string>
     <string name="action_sort_chapter_fetch_date">Petsa ng pagkuha ng kabanata</string>
     <string name="action_show_errors">I-tap para makita ang detalye</string>
     <string name="update_check_eol">Di na suportado ang bersyong ito ng Android</string>
@@ -549,7 +539,6 @@
     <string name="extension_api_error">Bigong makuha ng mga available na extension</string>
     <string name="privacy_policy">Patakaran sa Pagkapribado</string>
     <string name="library_errors_help">Para sa tulong sa pag-aayos ng mga error sa pag-update ng aklatan, tingnan ang %1$s</string>
-    <string name="pref_update_only_completely_read">Laktawan ang mga entry na hindi pa nababasang kabanata</string>
     <string name="save_chapter_as_cbz">I-save bilang CBZ archive</string>
     <string name="publishing_finished">Tapos na ang paglalathala</string>
     <string name="on_hiatus">Naka-hiatus</string>
@@ -557,7 +546,6 @@
     <string name="action_show_manga">Ipakita ang entry</string>
     <string name="action_display_cover_only_grid">Pabalat lamang na grid</string>
     <string name="skipped_reason_completed">Nilaktawan dahil kumpleto na ang serye</string>
-    <string name="pref_update_only_started">Laktawan ang hindi nasimulang mga entry</string>
     <string name="skipped_reason_not_caught_up">Nilaktawan dahil may di pa nabasang mga kabanata</string>
     <string name="skipped_reason_not_started">Nilaktawan dahil wala pang nabasang mga kabanata</string>
     <string name="pref_landscape_zoom">Awtomatikong mag-zoom sa mga malalawak na larawan</string>
@@ -605,7 +593,6 @@
     <string name="pref_reset_user_agent_string">I-reset ang default na string ng user agent</string>
     <string name="pref_user_agent_string">Default na string ng user agent</string>
     <string name="action_remove_everything">Burahin lahat</string>
-    <string name="appwidget_unavailable_locked">Di available ang widget kapag nakabukas ang lock</string>
     <string name="update_already_running">May ina-update sa ngayon</string>
     <string name="error_user_agent_string_blank">Hindi dapat blangko ang user agent string</string>
     <string name="theme_tidalwave">Daluyong</string>
@@ -651,7 +638,6 @@
     <string name="label_started">Nasimulan</string>
     <string name="label_local">Lokal</string>
     <string name="label_downloaded">Na-download</string>
-    <string name="label_titles_in_global_update">Sa panlahatang update</string>
     <string name="label_titles_section">Mga Entry</string>
     <string name="label_total_chapters">Kabuuang dami</string>
     <string name="label_tracker_section">Mga Tracker</string>
@@ -690,7 +676,6 @@
     <string name="action_sort_next_updated">Susunod na inaasahang update</string>
     <string name="manga_display_interval_title">Tantyahin bawat</string>
     <string name="manga_display_modified_interval_title">Itakdang i-update bawat</string>
-    <string name="pref_update_only_in_release_period">Hulaan ang susunod na oras ng release</string>
     <string name="intervals_header">Mga pagitan</string>
     <string name="skipped_reason_not_in_release_period">Nilaktawan dahil walang inaasahang release ngayong araw</string>
     <string name="has_results">May mga resulta</string>

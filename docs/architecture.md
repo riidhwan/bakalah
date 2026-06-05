@@ -45,7 +45,7 @@ When adding new behavior, prefer this order:
 
 The `app` module contains the Android application shell and most feature-level UI. Important package areas include:
 
-- `eu.kanade.tachiyomi.ui`: screen models, tabs, activities, reader, library, browse, updates, history, settings, and manga detail flows.
+- `eu.kanade.tachiyomi.ui`: screen models, tabs, activities, reader, library, local, browse, history, settings, and manga detail flows.
 - `eu.kanade.presentation`: Compose screen content and UI components that are feature-specific.
 - `eu.kanade.tachiyomi.data`: app-owned data services such as downloads, backups, cache, notifications, and trackers.
 - `eu.kanade.tachiyomi.source`: Android source manager integration.
@@ -115,7 +115,7 @@ When adding new remote models, keep DTOs close to their integration area and map
 
 Preferences use `PreferenceStore` from `core/common`, backed by `AndroidPreferenceStore` in the app. Typed preference wrappers live across domain and app-specific packages:
 
-- Domain-level examples: library, updates, downloads, backup, source, track, storage, UI, and base preferences.
+- Domain-level examples: library, downloads, backup, source, track, storage, UI, and base preferences.
 - App-level examples: network, security, privacy, and reader preferences.
 
 Prefer adding typed preference accessors over reading raw keys throughout feature code.

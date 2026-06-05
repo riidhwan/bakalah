@@ -5,7 +5,6 @@
     <string name="name">Nome</string>
     <string name="label_sources">Fontes</string>
     <string name="label_recent_manga">Historial</string>
-    <string name="label_recent_updates">Actualizacións</string>
     <string name="label_library">Biblioteca</string>
     <string name="label_download_queue">Cola de descargas</string>
     <string name="last_read_chapter">Último capítulo lido</string>
@@ -96,19 +95,13 @@
     <string name="all">Todas</string>
     <string name="default_category_summary">Preguntar sempre</string>
     <string name="default_category">Categoría por defecto</string>
-    <string name="pref_library_update_refresh_metadata_summary">Procurar novas portadas e detalles cando se actualice a biblioteca</string>
-    <string name="pref_library_update_refresh_metadata">Refrescar os metadatos automaticamente</string>
-    <string name="pref_update_only_non_completed">Co estado de \"Rematados\"</string>
     <string name="charging">Durante a carga</string>
-    <string name="pref_library_update_restriction">Restricións do dispositivo para as actualizacións automáticas</string>
     <string name="update_weekly">Semanalmente</string>
     <string name="update_48hour">Cada 2 días</string>
     <string name="update_24hour">Diariamente</string>
     <string name="update_12hour">Cada 12 horas</string>
     <string name="update_6hour">Cada 6 horas</string>
     <string name="update_never">Desactivadas</string>
-    <string name="pref_library_update_interval">Actualizacións automáticas</string>
-    <string name="pref_category_library_update">Actualización global</string>
     <string name="landscape">Horizontal</string>
     <string name="portrait">Vertical</string>
     <string name="pref_library_columns">Tamaño da reixa</string>
@@ -189,7 +182,6 @@
     <string name="action_edit">Editar</string>
     <string name="action_disable_all">Deshabilitar todos</string>
     <string name="action_enable_all">Habilitar todos</string>
-    <string name="action_update_library">Actualizar biblioteca</string>
     <string name="action_delete">Eliminar</string>
     <string name="action_remove_bookmark">Quitar favorito</string>
     <string name="action_bookmark">Engadir favorito</string>
@@ -244,8 +236,6 @@
     <string name="pref_advanced_summary">Envorcar os rexistros de erros, optimizacións de batería</string>
     <string name="theme_tidalwave">Maremoto</string>
     <string name="relative_time_today">Hoxe</string>
-    <string name="pref_update_only_completely_read">Con capítulos sin ler</string>
-    <string name="pref_library_update_categories_details">Os elementos das categorías excluídas non se actualizarán aínda se están tamén nas categorías incluídas.</string>
     <string name="ext_info_version">Versión</string>
     <string name="ext_install_service_notif">Instalando a extensión…</string>
     <string name="ext_installer_legacy">Clásico</string>
@@ -326,7 +316,6 @@
     <string name="pref_downloads_summary">Baixadas automáticas e por adiantado</string>
     <string name="pref_backup_summary">Copias de seguridade manuais e automáticas</string>
     <string name="pref_security_summary">Bloqueo da aplicación e modo discreto</string>
-    <string name="pref_update_only_started">Que non foran comezadas</string>
     <string name="ext_update_all">Actualizar todo</string>
     <string name="tracking_info">Sincronización unidireccional para actualizar o progreso dos capítulos en servizos de seguimento externos. Configúraa na biblioteca, dende o botón de seguimento de cada elemento.</string>
     <string name="action_track">Seguir</string>
@@ -523,7 +512,6 @@
     <string name="information_no_manga_category">A categoría está baleira</string>
     <string name="getting_started_guide">Guía de introdución</string>
     <string name="information_cloudflare_bypass_failure">Non se puido evitar Cloudflare</string>
-    <string name="appwidget_unavailable_locked">O widget non está dispoñible cando está activo o bloqueo da aplicación</string>
     <string name="update_already_running">Xa se está a actualizar</string>
     <string name="chapter_downloading_progress">Descargando (%1$d/%2$d)</string>
     <string name="download_unread">Non lidos</string>
@@ -609,7 +597,6 @@
     <string name="show_chapter_number">Número do capítulo</string>
     <string name="download_notifier_split_page_path_not_found">Non se atopou a ruta do ficheiro da páxina %d</string>
     <string name="channel_complete">Rematada</string>
-    <string name="channel_new_chapters">Actualizacións de capítulos</string>
     <string name="information_webview_required">Mihon necesita WebView</string>
     <string name="download_notifier_split_page_not_found">Non se atopou a páxina %d ao separar</string>
     <string name="channel_common">Xeral</string>
@@ -635,7 +622,6 @@
     <string name="empty_screen">Houston, temos un problema</string>
     <string name="not_installed">Non instalado</string>
     <string name="label_read_duration">Tempo de lectura</string>
-    <string name="label_titles_in_global_update">Na actualización global</string>
     <string name="label_total_chapters">Totais</string>
     <string name="update_check_notification_download_in_progress">Descargando…</string>
     <string name="information_empty_category_dialog">Aínda non tes categorías.</string>
@@ -737,7 +723,6 @@
     <string name="onboarding_guides_new_user">Primeira vez usando %s? Recomendámosche ler a guía de introdución.</string>
     <string name="onboarding_guides_returning_user">Volvendo instalar %s?</string>
     <string name="pref_relative_format_summary">«%1$s» en lugar de «%2$s»</string>
-    <string name="pref_update_only_in_release_period">Predicir cando sae o seguinte capítulo</string>
     <string name="ext_permission_install_apps_warning">Preme aquí para conceder os permisos para instalar extensións.</string>
     <string name="ext_revoke_trust">Revogar as extensións de confianza de orixe descoñecida</string>
     <string name="label_extension_repos">Repositorios de extensións</string>

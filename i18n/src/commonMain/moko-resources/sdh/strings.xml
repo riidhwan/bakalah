@@ -10,7 +10,6 @@
     <string name="confirm_lock_change">دڵنیابوونەوە تا گۆڕانکاری بکرێت</string>
     <string name="action_mark_previous_as_read">ئاماژەکردنی پێشوو وەک خوێندراو</string>
     <string name="action_bookmark">نیشانکردنی چاپتەر</string>
-    <string name="action_update_library">نوێکردنەوەی کۆکراوەکان</string>
     <string name="action_enable_all">گشتی چالاک بکە</string>
     <string name="action_disable_all">گشتی ناچالاک بکە</string>
     <string name="action_add">زیادکردن</string>
@@ -18,7 +17,6 @@
     <string name="action_edit_categories">دەستکاریکردنی کاتیگۆری</string>
     <string name="action_rename_category">ناونانەوەی کاتیگۆری</string>
     <string name="label_library">کۆکراوەکان</string>
-    <string name="label_recent_updates">نوێکارییەکان</string>
     <string name="label_backup">یەدەگ کردن و گەڕانەوە بۆ باری سەرەکی</string>
     <string name="label_migration">گواستنەوە</string>
     <string name="label_extensions">زیادکراوەکان</string>

@@ -10,7 +10,6 @@
     <string name="label_download_queue">قائمة التنزيلات</string>
     <string name="label_library">المكتبة</string>
     <string name="label_recent_manga">السجل</string>
-    <string name="label_recent_updates">التحديثات</string>
     <string name="label_backup">النسخ الاحتياطي والاستعادة</string>
     <string name="action_settings">اﻹعدادات</string>
     <string name="action_filter">الترتيب حسب</string>
@@ -29,7 +28,6 @@
     <string name="action_bookmark">احفظ الفصل كإشارة مرجعية</string>
     <string name="action_remove_bookmark">إزالة الإشارة المرجعية</string>
     <string name="action_delete">حذف</string>
-    <string name="action_update_library">تحديث المكتبة</string>
     <string name="action_edit">تعديل</string>
     <string name="action_add">أضف</string>
     <string name="action_add_category">إضافة فئة</string>
@@ -68,7 +66,6 @@
     <string name="pref_library_columns">العناصر لكل صف</string>
     <string name="portrait">طوليٌّ</string>
     <string name="landscape">عرضيٌّ</string>
-    <string name="pref_library_update_interval">التحديثات التلقائية</string>
     <string name="update_never">إيقاف</string>
     <string name="update_6hour">كل ٦ ساعات</string>
     <string name="update_12hour">كل ١٢ ساعة</string>
@@ -76,9 +73,7 @@
     <string name="update_48hour">كل يومان</string>
     <string name="update_weekly">أسبوعياً</string>
     <string name="all">الكل</string>
-    <string name="pref_library_update_restriction">تقييد التحديث التلقائي للجهاز</string>
     <string name="charging">عند الشحن</string>
-    <string name="pref_update_only_non_completed">حالها «تمَّت»</string>
     <string name="pref_auto_update_manga_sync">تحديث تقدّم الفصول بعد القراءة</string>
     <string name="default_category">الفئة المبدئية</string>
     <string name="default_category_summary">السؤال دائماً</string>
@@ -314,7 +309,6 @@
     <string name="obsolete_extension_message">هذه الإضافة لم تعد متوفرة. قد لا تعمل بشكل صحيح ويمكن أن تسبب بمشاكل في التطبيق. يوصى بإلغائه.</string>
     <string name="ext_obsolete">قديم جدًا</string>
     <string name="ext_updates_pending">التحديثات معلقة</string>
-    <string name="pref_category_library_update">التحديث العام</string>
     <string name="pref_category_display">العرض</string>
     <string name="hide_notification_content">أخفِ محتوى الإشعارات</string>
     <string name="secure_screen_summary">تُخفي الشاشة الآمنة محتوى التطبيق عند التبديل بين التطبيقات، وتمنع التقاط الشاشة كذلك</string>
@@ -333,7 +327,6 @@
     <string name="action_pin">تثبيت</string>
     <string name="action_select_inverse">عكس التحديد</string>
     <string name="channel_ext_updates">تحديثات اﻹضافات</string>
-    <string name="channel_new_chapters">تحديثات الفصول</string>
     <string name="information_webview_outdated">يرجى تحديث تطبيق WebView لتوافق أفضل</string>
     <string name="information_webview_required">إن وجود WebView لازم ليعمل التطبيق</string>
     <string name="information_cloudflare_bypass_failure">فشل في تجاوز Cloudflare</string>
@@ -368,8 +361,6 @@
     <string name="invalid_backup_file_missing_manga">النسخة الإحتياطية لا تحتوي على أيّة إدخالات المكتبة.</string>
     <string name="invalid_backup_file">ملف النسخ الاحتياطي غير صالح:</string>
     <string name="tracking_info">مزامنة أحادية تُحدِّث قراءة الفصول في المتتبعات الخارجية، ولك تعيين التتبِّع لكلِّ مدخلة على حدى، وذلك من زرِّ التتبع فيهم.</string>
-    <string name="pref_library_update_refresh_metadata_summary">تحقق من وجود غلاف جديد وتفاصيل جديدة عند تحديث المكتبة</string>
-    <string name="pref_library_update_refresh_metadata">تحديث البيانات الوصفية تلقائياً</string>
     <string name="sort_by_upload_date">حسب تاريخ الرفع</string>
     <string name="pref_refresh_library_covers">حدّث صور اغلفة المكتبة</string>
     <string name="action_display_comfortable_grid">شبكة مريحة</string>
@@ -468,7 +459,6 @@
     <string name="exclude">إستثناء: %s</string>
     <string name="include">تضمين: %s</string>
     <string name="none">لا شيء</string>
-    <string name="pref_library_update_categories_details">الإدخالات في الفئات المستبعدة لن يتم تحديثها حتى و ان كانت أيضا في الفئات المضمنة.</string>
     <string name="action_show_errors">اضغط لإظهار التفاصيل</string>
     <string name="pref_category_auto_download">التنزيل التلقائي</string>
     <string name="pref_download_new_categories_details">لن يتم تنزيل الإدخالات في الفئات المستبعدة حتى إذا كانت موجودة أيضًا في الفئات المضمنة.</string>
@@ -546,7 +536,6 @@
     <string name="library_errors_help">للحصول على المساعده في إصلاح أخطاء تحديث المكتبة، أنظر هنا%1$s</string>
     <string name="save_chapter_as_cbz">احفظ كأرشيف CBZ</string>
     <string name="privacy_policy">سياسة الخصوصية</string>
-    <string name="pref_update_only_completely_read">فيها فصول لم تُقرأ</string>
     <string name="ext_installer_legacy">قياسي</string>
     <string name="pref_auto_clear_chapter_cache">امسح ملفات التخزين المؤقت عند فتح التطبيق</string>
     <string name="database_clean">لا شئ للتنظيف</string>
@@ -558,7 +547,6 @@
     <string name="action_display_cover_only_grid">شبكة بالاغلفة</string>
     <string name="skipped_reason_not_started">تُخُطِّيت بسبب عدم وجود فصول قُرئت</string>
     <string name="skipped_reason_not_caught_up">تُخُطِّيت لوجود فصول لم تُقرأ</string>
-    <string name="pref_update_only_started">لم يبدأ هذا بعد</string>
     <string name="skipped_reason_completed">تُخُطِّيت لأنها مكتملة</string>
     <string name="pref_navigate_pan">حرِّك الصور الواسعة</string>
     <string name="pref_landscape_zoom">كبِّر الصور العريضة تلقائيًّا</string>
@@ -604,7 +592,6 @@
     <string name="delete_category">مسح الفئة</string>
     <string name="description_placeholder">لا وصف</string>
     <string name="theme_lavender">أُرجواني</string>
-    <string name="appwidget_unavailable_locked">لا تتاح الأداة حال تمكين قفل التطبيق</string>
     <string name="action_remove_everything">حذف كل شيء</string>
     <string name="theme_tidalwave">موجة مد و جزر</string>
     <string name="multi_lang">متعدد</string>
@@ -655,7 +642,6 @@
     <string name="label_completed_titles">إدخالات مكتملة</string>
     <string name="label_read_duration">مدة القرائة</string>
     <string name="label_titles_section">إدخالات</string>
-    <string name="label_titles_in_global_update">في التحديث العام</string>
     <string name="label_total_chapters">الكل</string>
     <string name="label_read_chapters">إقرا</string>
     <string name="label_tracker_section">متتبعين</string>
@@ -688,7 +674,6 @@
     <string name="action_set_interval">عيِّد المدة</string>
     <string name="action_filter_interval_custom">مدة جلب مخصَّصة</string>
     <string name="manga_display_interval_title">قدِّر كلَّ</string>
-    <string name="pref_update_only_in_release_period">ليس ضمن مدة الإصدار المتوقعة</string>
     <string name="skipped_reason_not_in_release_period">تُخُطِّيت بسبب عدم توقع صدور اليوم</string>
     <string name="manga_display_modified_interval_title">عيِّن التحديث كلَّ</string>
     <string name="intervals_header">المدة</string>

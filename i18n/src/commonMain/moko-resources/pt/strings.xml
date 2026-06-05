@@ -5,7 +5,6 @@
     <string name="label_download_queue">Fila de Transferências</string>
     <string name="label_library">Biblioteca</string>
     <string name="label_recent_manga">Histórico</string>
-    <string name="label_recent_updates">Atualizações</string>
     <string name="label_backup">Cópia de segurança e restauro</string>
     <string name="action_settings">Definições</string>
     <string name="action_filter">Filtro</string>
@@ -18,7 +17,6 @@
     <string name="action_mark_previous_as_read">Marcar anteriores como lidos</string>
     <string name="action_download">Transferir</string>
     <string name="action_delete">Eliminar</string>
-    <string name="action_update_library">Atualizar biblioteca</string>
     <string name="action_edit">Editar</string>
     <string name="action_add_category">Adicionar categoria</string>
     <string name="action_edit_categories">Editar categorias</string>
@@ -45,16 +43,13 @@
     <string name="pref_library_columns">Itens por linha</string>
     <string name="portrait">Vertical</string>
     <string name="landscape">Horizontal</string>
-    <string name="pref_library_update_interval">Atualizações automáticas</string>
     <string name="update_never">Desligado</string>
     <string name="update_6hour">A cada 6 horas</string>
     <string name="update_12hour">A cada 12 horas</string>
     <string name="update_24hour">Diariamente</string>
     <string name="update_48hour">A cada 2 dias</string>
     <string name="all">Tudo</string>
-    <string name="pref_library_update_restriction">Restrições do aparelho para atualizações automáticas</string>
     <string name="charging">Ao carregar</string>
-    <string name="pref_update_only_non_completed">Com estado \'\'Terminado\'\'</string>
     <string name="pref_auto_update_manga_sync">Atualizar progresso após a leitura</string>
     <string name="pref_fullscreen">Ecrã inteiro</string>
     <string name="pref_page_transitions">Animar transições de página</string>
@@ -285,7 +280,6 @@
     <string name="ext_obsolete">Obsoleto</string>
     <string name="obsolete_extension_message">Esta extensão não está mais disponível. Ela pode não funcionar corretamente e pode causar problemas na app. É recomendado desinstalá-la.</string>
     <string name="pref_date_format">Formato da data</string>
-    <string name="pref_category_library_update">Atualização global</string>
     <string name="logout_title">Terminar sessão em %1$s?</string>
     <string name="logout">Terminar sessão</string>
     <string name="logout_success">Sua sessão está agora encerrada</string>
@@ -308,7 +302,6 @@
     <string name="pref_cutout_short">Mostrar conteúdo na área de corte</string>
     <string name="information_cloudflare_bypass_failure">Falha ao contornar o Cloudflare</string>
     <string name="information_webview_outdated">Por favor, atualize a app de WebView para melhor compatibilidade</string>
-    <string name="channel_new_chapters">Atualizações de capítulos</string>
     <string name="secure_screen_summary">Ecrã seguro esconde os conteúdos da app durante a troca de apps e impedir capturas de ecrã</string>
     <string name="pref_category_display">Visualização</string>
     <string name="notification_chapters_single_and_more">Capítulo %1$s e %2$d mais</string>
@@ -371,8 +364,6 @@
     <string name="invalid_backup_file_missing_manga">O backup não possui nenhum item da biblioteca.</string>
     <string name="invalid_backup_file">Ficheiro de cópia de segurança inválido:</string>
     <string name="pref_show_reading_mode">Mostrar modo de leitura</string>
-    <string name="pref_library_update_refresh_metadata_summary">Procurar nova capa e detalhes quando a biblioteca atualizar</string>
-    <string name="pref_library_update_refresh_metadata">Atualizar automaticamente os metadados</string>
     <string name="action_display_show_tabs">Mostrar separadores de categoria</string>
     <string name="action_display_comfortable_grid">Grelha confortável</string>
     <string name="action_migrate">Migrar</string>
@@ -461,7 +452,6 @@
     <string name="pref_download_new_categories_details">Os itens nas categorias excluídas não serão disponibilizados offline mesmo que eles também estejam nas categorias incluídas.</string>
     <string name="exclude">Excluir: %s</string>
     <string name="include">Incluir: %s</string>
-    <string name="pref_library_update_categories_details">Os itens nas categorias excluídas não serão atualizados mesmo que eles também estejam nas categorias incluídas.</string>
     <string name="action_show_errors">Toque para ver detalhes</string>
     <string name="action_sort_chapter_fetch_date">Data de procura do capítulo</string>
     <string name="rotation_landscape">Horizontal</string>
@@ -529,7 +519,6 @@
     <string name="notification_size_warning">Grandes atualizações prejudicam as fontes e podem levar a atualizações lentas e ainda ao aumento do uso da bateria. Toque para saber mais.</string>
     <string name="library_errors_help">Para obter ajuda sobre como corrigir erros de atualização da biblioteca, veja %1$s</string>
     <string name="pref_auto_clear_chapter_cache">Limpar a cache de capítulos ao fechar a app</string>
-    <string name="pref_update_only_completely_read">Com capítulo(s) não lidos</string>
     <string name="pref_hide_threshold">Sensibilidade para ocultar menu ao deslocar</string>
     <string name="pref_high">Alta</string>
     <string name="pref_low">Baixa</string>
@@ -561,7 +550,6 @@
     <string name="skipped_reason_not_started">Ignorado porque nenhum capítulo foi lido</string>
     <string name="skipped_reason_not_caught_up">Ignorado porque existem capítulos não lidos</string>
     <string name="empty_backup_error">Sem entradas na biblioteca para fazer cópia de segurança</string>
-    <string name="pref_update_only_started">Que não começaram a ser lidos</string>
     <string name="pref_clear_webview_data">Limpar dados do WebView</string>
     <string name="webview_data_deleted">Dados do WebView limpos</string>
     <string name="rotation_reverse_portrait">Vertical invertido</string>
@@ -601,7 +589,6 @@
     <string name="wish_list">Lista de Desejos</string>
     <string name="unfinished_list">Lista de Inacabados</string>
     <string name="update_already_running">Uma atualização já está a correr</string>
-    <string name="appwidget_unavailable_locked">Widget não disponível quando o bloqueio de aplicações está ativo</string>
     <string name="network_not_metered">Apenas em redes com tráfego ilimitado</string>
     <string name="download_ahead">Transferência em antecedência</string>
     <string name="on_hold_list">Lista dos Em Espera</string>
@@ -644,7 +631,6 @@
     <string name="pref_skip_dupe_chapters">Pular capítulos duplicados</string>
     <string name="error_user_agent_string_invalid">Valor de user agent inválido</string>
     <string name="not_applicable">N/A</string>
-    <string name="label_titles_in_global_update">Na atualização global</string>
     <string name="label_total_chapters">Total</string>
     <string name="label_read_chapters">Lidos</string>
     <string name="label_tracker_section">Monitoradores</string>
@@ -682,7 +668,6 @@
     <string name="pref_chapter_swipe_start">Capítulo ao deslizar para a esquerda</string>
     <string name="pref_double_tap_zoom">Toque duplo para aproximar</string>
     <string name="action_set_interval">Definir intervalo</string>
-    <string name="pref_update_only_in_release_period">Fora do período esperado de lançamento</string>
     <string name="pref_debug_info">Informações de depuração</string>
     <string name="pref_chapter_swipe_end">Capítulo ao deslizar para a direita</string>
     <string name="intervals_header">intervalos</string>

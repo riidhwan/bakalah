@@ -36867,14 +36867,8 @@ HSPLtachiyomi/domain/library/service/LibraryPreferences;->languageBadge()Ltachiy
 PLtachiyomi/domain/library/service/LibraryPreferences;->languageBadge()Ltachiyomi/core/preference/Preference;
 HSPLtachiyomi/domain/library/service/LibraryPreferences;->lastUsedCategory()Ltachiyomi/core/preference/Preference;
 PLtachiyomi/domain/library/service/LibraryPreferences;->lastUsedCategory()Ltachiyomi/core/preference/Preference;
-HSPLtachiyomi/domain/library/service/LibraryPreferences;->libraryUpdateInterval()Ltachiyomi/core/preference/Preference;
-PLtachiyomi/domain/library/service/LibraryPreferences;->libraryUpdateInterval()Ltachiyomi/core/preference/Preference;
-HSPLtachiyomi/domain/library/service/LibraryPreferences;->libraryUpdateLastTimestamp()Ltachiyomi/core/preference/Preference;
-PLtachiyomi/domain/library/service/LibraryPreferences;->libraryUpdateLastTimestamp()Ltachiyomi/core/preference/Preference;
 HSPLtachiyomi/domain/library/service/LibraryPreferences;->localBadge()Ltachiyomi/core/preference/Preference;
 PLtachiyomi/domain/library/service/LibraryPreferences;->localBadge()Ltachiyomi/core/preference/Preference;
-HSPLtachiyomi/domain/library/service/LibraryPreferences;->newUpdatesCount()Ltachiyomi/core/preference/Preference;
-PLtachiyomi/domain/library/service/LibraryPreferences;->newUpdatesCount()Ltachiyomi/core/preference/Preference;
 HSPLtachiyomi/domain/library/service/LibraryPreferences;->showContinueReadingButton()Ltachiyomi/core/preference/Preference;
 PLtachiyomi/domain/library/service/LibraryPreferences;->showContinueReadingButton()Ltachiyomi/core/preference/Preference;
 Ltachiyomi/domain/library/service/LibraryPreferences$Companion;

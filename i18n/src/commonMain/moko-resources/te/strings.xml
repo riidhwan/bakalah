@@ -8,7 +8,6 @@
     <string name="label_backup">భద్రపరచడము మరియు పునరుద్ధారణ</string>
     <string name="label_sources">మూలాలు</string>
     <string name="label_recent_manga">చరిత్ర</string>
-    <string name="label_recent_updates">నవీకరణలు</string>
     <string name="label_library">గ్రంథాలయము</string>
     <string name="label_download_queue">దిగుమతి వరుస</string>
     <string name="label_settings">అమరికలు</string>
@@ -21,7 +20,6 @@
     <string name="action_edit">సవరించుము</string>
     <string name="action_disable_all">అన్నిటిని అచైతన్న పరుచుము</string>
     <string name="action_enable_all">అన్నిటిని చైతన్న పరుచుము</string>
-    <string name="action_update_library">గ్రంథాలయాన్ని నవీకరించుము</string>
     <string name="action_delete">తొలగించుము</string>
     <string name="action_remove_bookmark">అధ్యాయ గుర్తు చిహ్నాన్ని తొలగించుము</string>
     <string name="action_bookmark">అధ్యాయమును గుర్తు పెట్టుకొనుము</string>

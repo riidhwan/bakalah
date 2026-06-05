@@ -37,7 +37,6 @@
     <string name="label_extensions">एक्स्टेन्शन</string>
     <string name="label_migration">स्त्रोत स्तालांतर</string>
     <string name="label_sources">स्त्रोत</string>
-    <string name="label_recent_updates">अपडेट्स</string>
     <string name="label_library">संग्रहालय</string>
     <string name="label_download_queue">डाऊनलोड रांग</string>
     <string name="action_restore">पुनर्संचयित करा</string>
@@ -77,7 +76,6 @@
     <string name="action_add_category">श्रेणी जोडा</string>
     <string name="action_add">जोडा</string>
     <string name="action_edit">सुधहरण</string>
-    <string name="action_update_library">संग्रहालय अध्यातानित करा</string>
     <string name="action_remove_bookmark">बुकमार्क काढा</string>
     <string name="action_bookmark">बुकमार्क</string>
     <string name="action_mark_previous_as_read">मागील वाचलेले म्हणून चिन्हांकित करा</string>
@@ -133,9 +131,7 @@
     <string name="all">सगडे</string>
     <string name="default_category_summary">नेहमी विचारायचे</string>
     <string name="default_category">मूलभूत श्रेणी</string>
-    <string name="pref_update_only_non_completed">फक्त चालू असलेल्याच मांगा आधीतणीत करायचे</string>
     <string name="charging">चार्ज होत आहे</string>
-    <string name="pref_library_update_restriction">लायब्ररी अद्ययावत प्रतिबंधी</string>
     <string name="double_tap_anim_speed_0">अनिमेशन नाही</string>
     <string name="zoom_start_center">सेंटर</string>
     <string name="zoom_start_right">उजवी बाजू</string>
@@ -181,8 +177,6 @@
     <string name="update_12hour">दर १२ तासाला</string>
     <string name="update_6hour">दर ६ तासाला</string>
     <string name="update_never">स्वतः करा</string>
-    <string name="pref_library_update_interval">लायब्ररी अद्यतन वारंवारता</string>
-    <string name="pref_category_library_update">अद्यतने</string>
     <string name="landscape">लँडस्केप</string>
     <string name="portrait">पोर्ट्रेट</string>
     <string name="pref_library_columns">आयटम प्रती पंक्ती</string>

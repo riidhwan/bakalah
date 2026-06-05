@@ -66,7 +66,6 @@
     <string name="action_add_category">ವರ್ಗವನ್ನು ಸೇರಿಸಿ</string>
     <string name="action_add">ಸೇರಿಸಿ</string>
     <string name="action_edit">ತಿದ್ದು</string>
-    <string name="action_update_library">ಗ್ರಂಥಾಲಯ ನವೀಕರಿಸಿ</string>
     <string name="action_delete">ತೆಗೆದು ಹಾಕು</string>
     <string name="action_remove_bookmark">ಅಧ್ಯಾಯದ ಬುಕ್‌ಮಾರ್ಕ್ ತೆಗೆದುಹಾಕಿ</string>
     <string name="action_bookmark">ಬುಕ್ ಮಾರ್ಕ್ ಅಧ್ಯಾಯ</string>
@@ -104,7 +103,6 @@
     <string name="label_backup">ಬ್ಯಾಕಪ್ ಮತ್ತು ಮರುಸ್ಥಾಪನೆ</string>
     <string name="label_sources">ಮೂಲಗಳು</string>
     <string name="label_recent_manga">ಇತಿಹಾಸ</string>
-    <string name="label_recent_updates">ನವೀಕರಣಗಳು</string>
     <string name="label_library">ಗ್ರಂಥಾಲಯ</string>
     <string name="label_download_queue">ಡೌನ್‌ಲೋಡ್ ಸಾಲು</string>
     <string name="label_settings">ಸಂಯೋಜನೆಗಳು</string>
@@ -209,19 +207,14 @@
     <string name="all">ಎಲ್ಲಾ</string>
     <string name="default_category_summary">ಯಾವಾಗಲೂ ಕೇಳಿ</string>
     <string name="default_category">ಡೀಫಾಲ್ಟ್ ವರ್ಗ</string>
-    <string name="pref_update_only_non_completed">ಚಾಲ್ತಿಯಿರುವ ಮಾಂಗಾವನ್ನು ಮಾತ್ರ ನವೀಕರಿಸಿ</string>
     <string name="charging">ಚಾರ್ಜಿಂಗ್</string>
-    <string name="pref_library_update_restriction">ನವೀಕರಣ ನಿರ್ಬಂಧಗಳು</string>
     <string name="update_weekly">ವಾರಕ್ಕೊಮ್ಮೆ</string>
     <string name="update_48hour">ಪ್ರತಿ 2 ದಿನಗಳಿಗೊಮ್ಮೆ</string>
     <string name="update_24hour">ಪ್ರತಿದಿನ</string>
     <string name="update_12hour">ಪ್ರತಿ 12 ಗಂಟೆಗಳಿಗೊಮ್ಮೆ</string>
     <string name="update_6hour">ಪ್ರತಿ 6 ಗಂಟೆಗಳಿಗೊಮ್ಮೆ</string>
     <string name="update_never">ಸ್ವಂತ ಮಾಡು</string>
-    <string name="pref_library_update_interval">ನವೀಕರಣ ಆವರ್ತನ</string>
-    <string name="pref_category_library_update">ನವೀಕರಣಗಳು</string>
     <string name="channel_ext_updates">ವಿಸ್ತರಣೆ ನವೀಕರಣಗಳು</string>
-    <string name="channel_new_chapters">ಅಧ್ಯಾಯ ನವೀಕರಣಗಳು</string>
     <string name="channel_common">ಸಾಮಾನ್ಯ</string>
     <string name="download_notifier_download_paused">ಡೌನ್‌ಲೋಡ್ ವಿರಾಮಗೊಳಿಸಲಾಗಿದೆ</string>
     <string name="download_notifier_no_network">ಯಾವುದೇ ನೆಟ್‌ವರ್ಕ್ ಸಂಪರ್ಕ ಲಭ್ಯವಿಲ್ಲ</string>
@@ -371,8 +364,6 @@
     <string name="backup_restore_missing_sources">ಕಾಣೆಯಾದ ಮೂಲಗಳು:</string>
     <string name="invalid_backup_file_missing_manga">ಬ್ಯಾಕಪ್ ಯಾವುದೇ ಮಾಂಗಾವನ್ನು ಹೊಂದಿಲ್ಲ.</string>
     <string name="invalid_backup_file">ಬ್ಯಾಕಪ್ ಫೈಲ್ ಅಮಾನ್ಯವಾಗಿದೆ</string>
-    <string name="pref_library_update_refresh_metadata_summary">ಗ್ರಂಥಾಲಯವನ್ನು ನವೀಕರಿಸುವಾಗ ಹೊಸ ಕವರ್ ಮತ್ತು ವಿವರಗಳಿಗಾಗಿ ಪರಿಶೀಲಿಸಿ</string>
-    <string name="pref_library_update_refresh_metadata">ಮೆಟಾಡೇಟಾವನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ರಿಫ್ರೆಶ್ ಮಾಡಿ</string>
     <string name="action_migrate">ಮೂಲ ಸ್ಥಳಾಂತರ</string>
     <string name="page_list_empty_error">ಯಾವುದೇ ಪುಟಗಳು ಸಿಕ್ಕಿಲ್ಲ</string>
     <string name="tabs_header">ಟ್ಯಾಬ್‌ಗಳು</string>
@@ -466,7 +457,6 @@
     <string name="exclude">ಹೊರಗಿಡಿ: %s</string>
     <string name="include">ಸೇರಿಸಿ: %s</string>
     <string name="none">ಯಾವುದು ಅಲ್ಲ</string>
-    <string name="pref_library_update_categories_details">ಹೊರಗಿಡಲಾದ ವರ್ಗಗಳಲ್ಲಿನ ಮಾಂಗಾ ಸೇರಿಸಿದ ವಿಭಾಗಗಳಲ್ಲಿದ್ದರೂ ನವೀಕರಿಸಲಾಗುವುದಿಲ್ಲ.</string>
     <string name="action_show_errors">ದೋಷಗಳನ್ನು ತೋರಿಸು</string>
     <string name="cancel_all_for_series">ಈ ಸರಣಿಯ ಎಲ್ಲವನ್ನೂ ರದ್ದುಮಾಡಿ</string>
     <string name="action_display_local_badge">ಸ್ಥಳೀಯ ಬ್ಯಾಡ್ಜ್ ಗಳು</string>

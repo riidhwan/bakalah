@@ -13,7 +13,6 @@
     <string name="action_search">Szukaj</string>
     <string name="action_select_all">Zaznacz wszystko</string>
     <string name="label_library">Biblioteka</string>
-    <string name="label_recent_updates">Aktualizacje</string>
     <string name="label_backup">Kopia zapasowa i przywracanie</string>
     <string name="action_filter_bookmarked">Zakładki</string>
     <string name="action_filter_empty">Usuń filtr</string>
@@ -25,7 +24,6 @@
     <string name="action_bookmark">Dodaj zakładkę</string>
     <string name="action_remove_bookmark">Usuń zakładkę</string>
     <string name="action_delete">Usuń</string>
-    <string name="action_update_library">Aktualizuj bibliotekę</string>
     <string name="action_edit">Edytuj</string>
     <string name="action_add">Dodaj</string>
     <string name="action_add_category">Dodaj kategorię</string>
@@ -109,7 +107,6 @@
     <string name="show_chapter_number">Numer rozdziału</string>
     <string name="portrait">Pionowo</string>
     <string name="landscape">Poziomo</string>
-    <string name="pref_library_update_interval">Automatyczne aktualizacje</string>
     <string name="update_never">Wyłączone</string>
     <string name="update_6hour">Co 6 godzin</string>
     <string name="update_12hour">Co 12 godzin</string>
@@ -117,9 +114,7 @@
     <string name="update_48hour">Co 2 dni</string>
     <string name="update_weekly">Co tydzień</string>
     <string name="all">Wszystko</string>
-    <string name="pref_library_update_restriction">Ograniczenia sprzętowe dla automatycznych aktualizacji</string>
     <string name="charging">Podczas ładowania</string>
-    <string name="pref_update_only_non_completed">Ukończone serie</string>
     <string name="pref_auto_update_manga_sync">Aktualizuj postęp po przeczytaniu rozdziału</string>
     <string name="default_category">Domyślna kategoria</string>
     <string name="default_category_summary">Zawsze pytaj</string>
@@ -289,7 +284,6 @@
     <string name="ext_obsolete">Przestarzałe</string>
     <string name="obsolete_extension_message">To rozszerzenie nie jest już dostępne i może nie funkcjonować prawidłowo, powodując problemy z aplikacją. Zalecamy odinstalowanie go.</string>
     <string name="pref_date_format">Format daty</string>
-    <string name="pref_category_library_update">Globalna aktualizacja</string>
     <string name="logout_title">Wylogować z %1$s?</string>
     <string name="logout">Wyloguj</string>
     <string name="logout_success">Wylogowano</string>
@@ -300,7 +294,6 @@
     <string name="pref_category_display">Wyświetlanie</string>
     <string name="hide_notification_content">Ukryj zawartość powiadomienia</string>
     <string name="lock_when_idle">Zablokuj podczas bezczynności</string>
-    <string name="channel_new_chapters">Aktualizacje rozdziałów</string>
     <string name="information_webview_outdated">Zaktualizuj aplikację WebView dla lepszej kompatybilności</string>
     <string name="information_cloudflare_bypass_failure">Nie udało się obejść Cloudflare</string>
     <string name="label_more">Więcej</string>
@@ -371,8 +364,6 @@
     <string name="backup_restore_missing_sources">Brakujące źródła:</string>
     <string name="invalid_backup_file_missing_manga">Kopia zapasowa nie zawiera żadnych wpisów.</string>
     <string name="invalid_backup_file">Nieprawidłowy plik kopii zapasowej:</string>
-    <string name="pref_library_update_refresh_metadata_summary">Sprawdź, czy są nowe okładki i opisy podczas aktualizowania biblioteki</string>
-    <string name="pref_library_update_refresh_metadata">Automatycznie odświeżaj metadane</string>
     <string name="action_display_comfortable_grid">Wygodna siatka</string>
     <string name="action_migrate">Migracja</string>
     <string name="page_list_empty_error">Nie znaleziono żadnych stron</string>
@@ -465,7 +456,6 @@
     <string name="none">Brak</string>
     <string name="update_check_eol">Ta wersja Androida nie jest już wspierana</string>
     <string name="clipboard_copy_error">Nie udało się skopiować do schowka</string>
-    <string name="pref_library_update_categories_details">Tytuły w wykluczonych kategoriach nie będą aktualizowane, nawet jeśli są również w uwzględnionych kategoriach.</string>
     <string name="pref_download_new_categories_details">Tytuły w wykluczonych kategoriach nie będą pobierane, nawet jeśli są również w uwzględnionych kategoriach.</string>
     <string name="pref_category_auto_download">Automatyczne pobieranie</string>
     <string name="rotation_landscape">Poziomo</string>
@@ -557,8 +547,6 @@
     <string name="save_chapter_as_cbz">Zapisz jako archiwum CBZ</string>
     <string name="privacy_policy">Polityka prywatności</string>
     <string name="clear_database_source_item_count">%1$d wpisów spoza biblioteki w bazie danych</string>
-    <string name="pref_update_only_completely_read">Posiada nieprzeczytane rozdziały</string>
-    <string name="pref_update_only_started">Brak przeczytanych rozdziałów</string>
     <string name="pref_landscape_zoom">Automatycznie przybliżaj poziome obrazy</string>
     <string name="action_show_manga">Pokaż</string>
     <string name="pref_navigate_pan">Przesuń szeroki obraz</string>
@@ -614,7 +602,6 @@
     <string name="theme_tidalwave">Tsunami</string>
     <string name="download_ahead">Pobierz z wyprzedzeniem</string>
     <string name="auto_download_while_reading">Pobieraj podczas czytania</string>
-    <string name="appwidget_unavailable_locked">Widżet nie jest dostępny kiedy blokada aplikacji jest włączona</string>
     <string name="are_you_sure">Jesteś pewien?</string>
     <string name="download_ahead_info">Działa tylko, jeśli aktualny i następny rozdział są już pobrane.</string>
     <string name="multi_lang">Wielojęzyczne</string>
@@ -639,7 +626,6 @@
     <string name="pref_backup_summary">Manualna &amp; automatyczna kopia</string>
     <string name="label_read_duration">Czas odczytu</string>
     <string name="label_titles_section">Wpisy</string>
-    <string name="label_titles_in_global_update">W globalnej aktualizacji</string>
     <string name="label_tracker_section">Śledzenie</string>
     <string name="unknown_title">Nieznany tytuł</string>
     <string name="updates_last_update_info_just_now">Przed chwilą</string>
@@ -755,7 +741,6 @@
     <string name="pref_library_update_smart_update">Inteligentna aktualizacja</string>
     <string name="onboarding_description">Na początek ustawmy kilka rzeczy. Zawsze możesz je później zmienić w ustawieniach.</string>
     <string name="onboarding_storage_help_info">Aktualizujesz ze starszej wersji i nie jesteś pewien co wybrać? Zobacz na przewodnik po pamięci.</string>
-    <string name="pref_update_only_in_release_period">Przewiduj następną aktualizację</string>
     <string name="ext_permission_install_apps_warning">Uprawnienia są wymagane aby zainstalować rozszerzenia. Kliknij tutaj aby je przyznać.</string>
     <string name="onboarding_storage_info">Wybierz folder gdzie %1$s będzie zapisywał pobrane rozdziały, kopie zapasowe i inne.
 \n

@@ -93,10 +93,6 @@ private fun LazyItemScope.TitlesStats(
     SectionCard(MR.strings.label_titles_section) {
         Row {
             StatsItem(
-                data.globalUpdateItemCount.toString(),
-                stringResource(MR.strings.label_titles_in_global_update),
-            )
-            StatsItem(
                 data.startedMangaCount.toString(),
                 stringResource(MR.strings.label_started),
             )

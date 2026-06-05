@@ -5,7 +5,6 @@
     <string name="label_download_queue">Coda download</string>
     <string name="label_library">Libreria</string>
     <string name="label_recent_manga">Cronologia</string>
-    <string name="label_recent_updates">Novità</string>
     <string name="label_backup">Backup e ripristino</string>
     <string name="action_settings">Impostazioni</string>
     <string name="action_filter">Filtro</string>
@@ -23,7 +22,6 @@
     <string name="action_bookmark">Aggiungi segnalibro</string>
     <string name="action_remove_bookmark">Rimuovi segnalibro</string>
     <string name="action_delete">Cancella</string>
-    <string name="action_update_library">Aggiorna libreria</string>
     <string name="action_edit">Modifica</string>
     <string name="action_add_category">Aggiungi categoria</string>
     <string name="action_edit_categories">Modifica categorie</string>
@@ -55,16 +53,13 @@
     <string name="pref_library_columns">Oggetti per riga</string>
     <string name="portrait">Verticale</string>
     <string name="landscape">Orizzontale</string>
-    <string name="pref_library_update_interval">Aggiornamenti automatici</string>
     <string name="update_never">Disabilitati</string>
     <string name="update_6hour">Ogni 6 ore</string>
     <string name="update_12hour">Ogni 12 ore</string>
     <string name="update_24hour">Ogni giorno</string>
     <string name="update_48hour">Ogni 2 giorni</string>
     <string name="all">Tutte</string>
-    <string name="pref_library_update_restriction">Restrizioni del dispositivo agli aggiornamenti automatici</string>
     <string name="charging">Quando si carica</string>
-    <string name="pref_update_only_non_completed">Con stato «Completata»</string>
     <string name="pref_auto_update_manga_sync">Aggiorna il tracking dopo la lettura</string>
     <string name="pref_fullscreen">Schermo Intero</string>
     <string name="pref_page_transitions">Animare le transizioni di pagina</string>
@@ -287,7 +282,6 @@
     <string name="ext_obsolete">Obsoleta</string>
     <string name="obsolete_extension_message">Questa estensione non è più disponibile. Potrebbe non funzionare correttamente e causare problemi con l\'app. Si consiglia di disinstallarla.</string>
     <string name="pref_date_format">Formato data</string>
-    <string name="pref_category_library_update">Aggiornamenti globali</string>
     <string name="logout_title">Disconnettersi da %1$s?</string>
     <string name="logout">Disconnetti</string>
     <string name="logout_success">Ora sei disconnesso</string>
@@ -310,7 +304,6 @@
     <string name="pref_cutout_short">Mostra il contenuto dell\'area ritagliata</string>
     <string name="information_cloudflare_bypass_failure">Impossibile bypassare Cloudflare</string>
     <string name="information_webview_outdated">Per favore aggiorna l\'app WebView per una migliore compatibilità</string>
-    <string name="channel_new_chapters">Aggiornamenti capitoli</string>
     <string name="secure_screen_summary">Schermo sicuro nasconde i contenuti dell\'app quando cambi applicazione e blocca gli screenshot</string>
     <string name="pref_category_display">Visualizzazione</string>
     <string name="channel_ext_updates">Aggiornamenti estensione</string>
@@ -371,8 +364,6 @@
     <string name="backup_restore_missing_sources">Fonti mancanti:</string>
     <string name="invalid_backup_file_missing_manga">Il backup non contiene alcuna voce di libreria.</string>
     <string name="invalid_backup_file">File di backup invalido:</string>
-    <string name="pref_library_update_refresh_metadata_summary">Controlla nuove copertine e descrizioni durante l\'aggiornamento della libreria</string>
-    <string name="pref_library_update_refresh_metadata">Ricarica metadati automaticamente</string>
     <string name="action_display_show_tabs">Mostra schede delle categorie</string>
     <string name="action_display_comfortable_grid">Griglia confortevole</string>
     <string name="action_migrate">Migra</string>
@@ -459,7 +450,6 @@
     <string name="pref_download_new_categories_details">Le voci che si trovano in categorie escluse non saranno scaricate nonostante si trovino anche in categorie incluse.</string>
     <string name="nav_zone_right">Destra</string>
     <string name="nav_zone_left">Sinistra</string>
-    <string name="pref_library_update_categories_details">Le voci in categorie escluse non saranno aggiornati nonostante si trovino anche in categorie incluse.</string>
     <string name="pref_dns_over_https">DNS su HTTPS (DoH)</string>
     <string name="pref_show_navigation_mode">Mostra sovrapposizione con zone di tocco</string>
     <string name="pref_show_navigation_mode_summary">Mostra brevemente quando il lettore viene aperto</string>
@@ -548,7 +538,6 @@
     <string name="database_clean">Niente da Pulire</string>
     <string name="extension_api_error">Impossibile ottenere l\'elenco estensioni</string>
     <string name="privacy_policy">Politica sulla privacy</string>
-    <string name="pref_update_only_completely_read">Con capitoli non letti</string>
     <string name="library_errors_help">Per un aiuto su come risolvere gli errori di aggiornamento della libreria vedi %1$s</string>
     <string name="save_chapter_as_cbz">Salva come archivio CBZ</string>
     <string name="cancelled">Cancellata</string>
@@ -558,7 +547,6 @@
     <string name="pref_navigate_pan">Scorri le immagini larghe</string>
     <string name="pref_landscape_zoom">Ingrandisci automaticamente le immagini larghe</string>
     <string name="action_display_cover_only_grid">Griglia con solo copertine</string>
-    <string name="pref_update_only_started">Che non sono state iniziate</string>
     <string name="skipped_reason_completed">Saltato perché la serie è completa</string>
     <string name="skipped_reason_not_caught_up">Saltato perché ci sono capitoli non letti</string>
     <string name="skipped_reason_not_started">Saltato perché non ci sono capitoli letti</string>
@@ -605,7 +593,6 @@
     <string name="pref_reset_user_agent_string">Ripristina la stringa «user agent» del browser</string>
     <string name="pref_user_agent_string">Stringa «user agent» del browser</string>
     <string name="action_remove_everything">Rimuovi tutto</string>
-    <string name="appwidget_unavailable_locked">Widget non disponibile quando il blocco app è attivo</string>
     <string name="update_already_running">È già in corso un aggiornamento</string>
     <string name="error_user_agent_string_blank">La sringa «user agent» non può essere vuota</string>
     <string name="theme_tidalwave">Maremoto</string>
@@ -659,7 +646,6 @@
     <string name="not_applicable">N/D</string>
     <string name="minute_short">%d min</string>
     <string name="label_downloaded">Scaricati</string>
-    <string name="label_titles_in_global_update">Nell\'aggiornamento globale</string>
     <string name="label_read_chapters">Letti</string>
     <string name="label_mean_score">Punteggio medio</string>
     <string name="hour_short">%d o</string>
@@ -686,7 +672,6 @@
     <string name="pref_chapter_swipe_end">Capitoli allo scorrimento a destra</string>
     <string name="pref_chapter_swipe_start">Capitoli allo scorrimento a sinistra</string>
     <string name="action_set_interval">Imposta intervallo</string>
-    <string name="pref_update_only_in_release_period">Fuori dal periodo di rilascio previsto</string>
     <string name="intervals_header">Intervalli</string>
     <string name="manga_display_interval_title">Stima ogni</string>
     <string name="action_filter_interval_custom">Intervallo di aggiornamento personalizzato</string>

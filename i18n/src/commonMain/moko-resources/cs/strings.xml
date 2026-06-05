@@ -49,7 +49,6 @@
     <string name="update_24hour">Denně</string>
     <string name="update_48hour">Každé 2 dny</string>
     <string name="update_weekly">Týdně</string>
-    <string name="pref_update_only_non_completed">Přeskočit položky ve stavu \"Dokončeno\"</string>
     <string name="pref_auto_update_manga_sync">Aktualizovat počet kapitol po přečtení</string>
     <string name="ext_update">Aktualizovat</string>
     <string name="ext_install">Instalovat</string>
@@ -146,12 +145,10 @@
     <string name="label_download_queue">Stahovací fronta</string>
     <string name="name">Název</string>
     <string name="track">Sledování</string>
-    <string name="label_recent_updates">Aktualizace</string>
     <string name="action_filter_bookmarked">Založeno</string>
     <string name="action_sort_total">Celkem kapitol</string>
     <string name="action_bookmark">Založit kapitolu</string>
     <string name="action_remove_bookmark">Odstranit záložku</string>
-    <string name="action_update_library">Aktualizovat knihovnu</string>
     <string name="action_rename_category">Přejmenovat kategorii</string>
     <string name="action_move_category">Vybrat kategorie</string>
     <string name="action_pause">Pauza</string>
@@ -171,7 +168,6 @@
     <string name="pref_library_columns">Položek na řádek</string>
     <string name="portrait">Na výšku</string>
     <string name="landscape">Na šířku</string>
-    <string name="pref_library_update_interval">Automatické aktualizace</string>
     <string name="update_never">Nikdy</string>
     <string name="all">Vše</string>
     <string name="charging">Při nabíjení</string>
@@ -239,7 +235,6 @@
     <string name="set_as_cover">Nastavit jako obal</string>
     <string name="cover_updated">Obal aktualizován</string>
     <string name="action_edit_cover">Upravit přebal</string>
-    <string name="pref_library_update_restriction">Omezení zařízení pro automatické aktualizace</string>
     <string name="pref_keep_screen_on">Udržovat obrazovku zapnutou</string>
     <string name="pref_reader_navigation">Navigování</string>
     <string name="pager_viewer">Stránkovač</string>
@@ -288,7 +283,6 @@
     <string name="obsolete_extension_message">Toto rozšíření již není k dispozici. Nemusí fungovat správně a může způsobit problémy s aplikací. Doporučujeme jej odinstalovat.</string>
     <string name="logout">Odhlásit se</string>
     <string name="pref_date_format">Formát data</string>
-    <string name="pref_category_library_update">Globální aktualizace</string>
     <string name="logout_title">Odhlásit z %1$s?</string>
     <string name="logout_success">Nyní jste odhlášený</string>
     <string name="paused">Pozastaveno</string>
@@ -372,8 +366,6 @@
     <string name="tapping_inverted_none">Žádné</string>
     <string name="ext_nsfw_warning">Zdroje z tohoto rozšíření mohou obsahovat NSFW (18+) obsah</string>
     <string name="ext_nsfw_short">18+</string>
-    <string name="pref_library_update_refresh_metadata_summary">Kontrolovat dostupnost nových přebalů a detailů při aktualizaci knihovny</string>
-    <string name="pref_library_update_refresh_metadata">Automaticky obnovovat metadata</string>
     <string name="parental_controls_info">Toto nastavení nemůže zamezit neoficiálním nebo špatně označeným rozšířením v zobrazování NSFW (18+) obsahu v aplikaci.</string>
     <string name="pref_show_nsfw_source">Zobrazovat v seznamu zdrojů a rozšíření</string>
     <string name="pref_category_nsfw_content">NSFW (18+) zdroje</string>
@@ -394,7 +386,6 @@
     <string name="action_display_show_number_of_items">Zobrazovat počet položek</string>
     <string name="action_start">Začít</string>
     <string name="channel_ext_updates">Aktualizace rozšíření</string>
-    <string name="channel_new_chapters">Aktualizace kapitol</string>
     <string name="channel_errors">Chyby</string>
     <string name="channel_complete">Dokončeno</string>
     <string name="channel_progress">Postup</string>
@@ -449,7 +440,6 @@
     <string name="exclude">Vynechat: %s</string>
     <string name="include">Zahrnout: %s</string>
     <string name="none">Žádné</string>
-    <string name="pref_library_update_categories_details">Položky ve vynechaných kategoriích nebudou aktualizovány, i kdyby byly také v zahrnutých kategoriích.</string>
     <string name="pref_category_display">Zobrazení</string>
     <string name="action_display_show_tabs">Zobrazovat karty kategorií</string>
     <string name="update_check_eol">Tato verze systému Android již není podporována</string>
@@ -547,7 +537,6 @@
     <string name="extension_api_error">Chyba v získání seznamu rozšíření</string>
     <string name="privacy_policy">Zásady ochrany osobních údajů</string>
     <string name="clear_database_source_item_count">%1$d položek v databázi co nejsou v knihovně</string>
-    <string name="pref_update_only_completely_read">Přeskočit položky s nepřečtenými kapitolami</string>
     <string name="database_clean">Nic k vyčištění</string>
     <string name="save_chapter_as_cbz">Uložit jako CBZ archiv</string>
     <string name="library_errors_help">Nápovědu k tomu, jak opravit chyby při aktualizaci knihovny, viz %1$s</string>
@@ -555,7 +544,6 @@
     <string name="cancelled">Zrušeno</string>
     <string name="action_show_manga">Zobrazit položku</string>
     <string name="action_display_cover_only_grid">Mřížka jen s přebaly</string>
-    <string name="pref_update_only_started">Přeskočit nerozečtené položky</string>
     <string name="on_hiatus">Má pauzu</string>
     <string name="skipped_reason_not_caught_up">Přeskočeno, protože obsahuje nepřečtené kapitoly</string>
     <string name="action_move_to_top_all_for_series">Přesunout sérii na začátek</string>
@@ -605,7 +593,6 @@
     <string name="pref_reset_user_agent_string">Obnovit výchozí řetězec pro user agent</string>
     <string name="pref_user_agent_string">Výchozí řetězec pro user agent</string>
     <string name="action_remove_everything">Odstranit vše</string>
-    <string name="appwidget_unavailable_locked">Widget není k dispozici, když je povolen zámek aplikace</string>
     <string name="update_already_running">Aktualizace již probíhá</string>
     <string name="error_user_agent_string_blank">Řetězec uživatelského agenta nemůže být prázdný</string>
     <string name="theme_tidalwave">Přílivová Vlna</string>
@@ -651,7 +638,6 @@
     <string name="label_local">Lokální</string>
     <string name="label_downloaded">Staženo</string>
     <string name="label_completed_titles">Dokončené položky</string>
-    <string name="label_titles_in_global_update">V globální aktualizaci</string>
     <string name="label_total_chapters">Celkem</string>
     <string name="label_read_chapters">Přečteno</string>
     <string name="label_tracker_section">Sledovače</string>
@@ -690,7 +676,6 @@
     <string name="manga_display_interval_title">Odhadovat každý</string>
     <string name="manga_display_modified_interval_title">Nastavit aktualizaci každých</string>
     <string name="action_set_interval">Nastavit interval</string>
-    <string name="pref_update_only_in_release_period">Předpovědět čas příštího vydání</string>
     <string name="intervals_header">Intervaly</string>
     <string name="skipped_reason_not_in_release_period">Přeskočeno, protože dnes nebylo očekáváno žádné vydání</string>
     <string name="track_delete_text">Tím se lokálně odstraní sledování.</string>

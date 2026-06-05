@@ -88,7 +88,6 @@
     <string name="label_backup">Serep lan mulihake</string>
     <string name="label_sources">Sumber</string>
     <string name="label_recent_manga">Sejarah</string>
-    <string name="label_recent_updates">Nganyari</string>
     <string name="label_library">Perpustakaan</string>
     <string name="label_download_queue">Antrian Donlot</string>
     <string name="label_settings">Setelan</string>
@@ -102,7 +101,6 @@
     <string name="action_pause">Jeda</string>
     <string name="action_edit_cover">Nyunting sampul</string>
     <string name="action_move_category">Ngatur kategori</string>
-    <string name="action_update_library">Nganyari perpustakaan</string>
     <string name="action_remove_bookmark">Ngilangi penunjuk bab</string>
     <string name="action_bookmark">Penujuk bab</string>
     <string name="action_mark_previous_as_read">Tandai sadurunge dadi diwaca</string>
@@ -167,7 +165,6 @@
     <string name="action_display_language_badge">basa</string>
     <string name="action_close">Tutup</string>
     <string name="restrictions">Batesan: %s</string>
-    <string name="pref_update_only_non_completed">Karo status \"Rampung\"</string>
     <string name="action_display_cover_only_grid">Kothak sampul</string>
     <string name="theme_system">Tumuti sistem</string>
     <string name="pref_app_theme">Tema aplikasi</string>
@@ -180,7 +177,6 @@
     <string name="lock_always">Tansah</string>
     <string name="pref_category_nsfw_content">Sumber NSFW (18+)</string>
     <string name="pref_show_nsfw_source">Tampilaken ing sumber lan dhaptar ekstensi</string>
-    <string name="pref_update_only_completely_read">Karo bab durung diwaca</string>
     <string name="pref_manage_notifications">Kelola notifikasi</string>
     <string name="secure_screen_summary">Amanaken layar sembunikan konten aplikasi wektu ngaleh aplikasi lan blokir tangkapan layar</string>
     <string name="theme_midnightdusk">Surup wengi</string>
@@ -196,8 +192,6 @@
     <string name="update_72hour">Saben 3 dinten</string>
     <string name="connected_to_wifi">Namung ing Wi-Fi</string>
     <string name="ext_untrusted">Ora kapracaya</string>
-    <string name="pref_update_only_started">Iku durung diwiwiti</string>
-    <string name="pref_library_update_refresh_metadata_summary">periksa sampul lan rinci anyar wektu memerbarui pustaka</string>
     <string name="default_category">kategori gawan</string>
     <string name="include">Kalebu: %s</string>
     <string name="exclude">Kajaba: %s</string>
@@ -237,16 +231,12 @@
     <string name="l_nav">Wangun L</string>
     <string name="action_sort_last_manga_update">Priksa nganyari pungkasan</string>
     <string name="action_sort_unread_count">Total gak diwoco</string>
-    <string name="pref_category_library_update">Updatean umum</string>
-    <string name="pref_library_update_interval">Updatean otomatis</string>
     <string name="lock_with_biometrics">Mbutuhake mbukak kunci</string>
-    <string name="pref_library_update_refresh_metadata">Nganyari metadata otomatis</string>
     <string name="network_not_metered">Jaringan gak kebates tok</string>
     <string name="pref_app_language">Bohoso aplikasi</string>
     <string name="untrusted_extension_message">Ekstensi iki ditandatangani nganggo sertifikat sing ora dipercaya lan ora diaktifake.\n\nEkstensi angkoro bisa maca kredensial login sing disimpen ing Mihon utawa nglakokake kode sewenang-wenang. Kanthi percaya karo sertifikat iki, sampeyan nampa risiko kasebut.</string>
     <string name="ext_downloading">Ndownload</string>
     <string name="pref_show_navigation_mode">Tampilake overlay zona tutul</string>
-    <string name="pref_library_update_categories_details">Manga ing kategori sing ora kalebu ora bakal dianyari sanajan uga ana ing kategori sing kalebu.</string>
     <string name="none">Ora ono</string>
     <string name="ext_pending">Ketunda</string>
     <string name="ext_info_version">Versine</string>
@@ -255,7 +245,6 @@
     <string name="ext_app_info">Infone aplikasi</string>
     <string name="pref_show_navigation_mode_summary">Tampilake kanthi ringkes nalika maca dibukak</string>
     <string name="pref_dual_page_split">Pamisahan kaca kaping pindho</string>
-    <string name="pref_library_update_restriction">Nganyari otomatis watesan piranti</string>
     <string name="categorized_display_settings">Setelan saben kategori kanggo ngurutake lan tampilan</string>
     <string name="delete_category_confirmation">Apa sampeyan pengin mbusak kategori \"%s\"?</string>
     <string name="delete_category">Busak kategori</string>

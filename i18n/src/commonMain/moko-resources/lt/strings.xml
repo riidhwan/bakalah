@@ -19,7 +19,6 @@
     <string name="label_backup">Atsarginė kopija ir atkūrimas</string>
     <string name="label_sources">Šaltiniai</string>
     <string name="label_recent_manga">Istorija</string>
-    <string name="label_recent_updates">Naujienos</string>
     <string name="label_library">Biblioteka</string>
     <string name="label_download_queue">Atsisiuntimų eilė</string>
     <string name="label_settings">Nustatymai</string>
@@ -27,20 +26,14 @@
     <string name="name">Vardas</string>
     <string name="default_category_summary">Visada klausti</string>
     <string name="default_category">Numatyta kategorija</string>
-    <string name="pref_library_update_refresh_metadata_summary">Tikrinti naujus viršelius ir informaciją kai biblioteka naujinama</string>
-    <string name="pref_library_update_refresh_metadata">Automatiškai naujinti metaduomenis</string>
-    <string name="pref_update_only_non_completed">Kai yra \"Perskaityta\" statusas</string>
     <string name="restrictions">Ribojimai: %s</string>
     <string name="charging">Kai krovimas pajungtas</string>
-    <string name="pref_library_update_restriction">Automatinio naujinimo ribojimai</string>
     <string name="update_weekly">Kas savaitę</string>
     <string name="update_48hour">Kas 2 dienas</string>
     <string name="update_24hour">Kasdien</string>
     <string name="update_12hour">Kas 12 valandų</string>
     <string name="update_6hour">Kas 6 valandas</string>
     <string name="update_never">Išjungti</string>
-    <string name="pref_library_update_interval">Automatiniai atnaujinimai</string>
-    <string name="pref_category_library_update">Globalus naujinimas</string>
     <string name="landscape">Kraštovaizdis</string>
     <string name="portrait">Portretas</string>
     <string name="pref_library_columns">Elementai eilutėje</string>
@@ -139,7 +132,6 @@
     <string name="action_edit">Redaguoti</string>
     <string name="action_disable_all">Išjungti visus</string>
     <string name="action_enable_all">Įjungti visus</string>
-    <string name="action_update_library">Naujinti biblioteką</string>
     <string name="action_delete">Ištrinti</string>
     <string name="action_remove_bookmark">Pašalinti skyrių iš žymių</string>
     <string name="action_bookmark">Išsaugoti skyrių į žymes</string>
@@ -204,7 +196,6 @@
     <string name="include">Įtraukti: %s</string>
     <string name="none">Nėra</string>
     <string name="all">Visi</string>
-    <string name="pref_library_update_categories_details">Įrašai, kurie yra įtraukti į neįtraukiamas kategorijas, nebus atnaujinami, net jei yra įtraukti į įtrauktąsias kategorijas.</string>
     <string name="update_check_notification_download_error">Atsiuntimo klaida</string>
     <string name="update_check_notification_update_available">Nauja versija pasiekiama!</string>
     <string name="scale_type_fit_height">Pagal aukštį talpinimas</string>
@@ -214,8 +205,6 @@
     <string name="vertical_viewer">Vertikalus</string>
     <string name="webtoon_viewer">Webtoon</string>
     <string name="ext_installer_pref">Diegimo programa</string>
-    <string name="pref_update_only_completely_read">Kai yra neskaitytų skyrių</string>
-    <string name="pref_update_only_started">Kai dar neprasidėjo</string>
     <string name="ext_install_service_notif">Instaliuojamas papildinys…</string>
     <string name="pref_keep_screen_on">Palikti ekraną įjungta</string>
     <string name="pref_skip_read_chapters">Praleisti perskaitytus skyrius</string>
@@ -434,7 +423,6 @@
     <string name="pref_dns_over_https">DNS per HTTPS (DoH)</string>
     <string name="download_notifier_no_network">Tinklo ryšis nepasiekiamas</string>
     <string name="download_notifier_unknown_error">Nepavyko atsisiųsti skyriaus dėl netikėtos klaidos</string>
-    <string name="appwidget_unavailable_locked">Valdiklis nepasiekiamas, kai įjungtas programėlės užraktas</string>
     <string name="cache_deleted">Talpykla išvalyta. %1$d failai buvo ištrinti</string>
     <string name="pref_clear_database">Išvalyti duomenų bazę</string>
     <string name="file_picker_error">Nerandama failų rinkiklio programos</string>
@@ -486,7 +474,6 @@
     <string name="channel_common">Bendras</string>
     <string name="channel_complete">Baigtas</string>
     <string name="download_notifier_download_paused">Atsisiuntimas pristabdytas</string>
-    <string name="channel_new_chapters">Skyriaus atnaujinimai</string>
     <string name="spen_next_page">Kitas puslapis</string>
     <string name="pref_clear_cookies">Išvalyti slapukus</string>
     <string name="pref_auto_clear_chapter_cache">Išvalyti skyriaus talpyklą uždarius programą</string>
@@ -656,7 +643,6 @@
     <string name="label_total_chapters">Iš viso</string>
     <string name="label_read_chapters">Perskaityta</string>
     <string name="label_tracker_section">Sekliai</string>
-    <string name="label_titles_in_global_update">Globaliame atnaujinime</string>
     <string name="label_mean_score">Vidutinis įvertinimas</string>
     <string name="day_short">%d d.</string>
     <string name="hour_short">%d val.</string>

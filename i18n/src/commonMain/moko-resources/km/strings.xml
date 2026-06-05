@@ -17,7 +17,6 @@
     <string name="label_more">ច្រើនទៀត</string>
     <string name="label_settings">ការកំណត់</string>
     <string name="label_library">បណ្ណាល័យ</string>
-    <string name="label_recent_updates">បច្ចុប្បន្នភាព</string>
     <string name="label_migration">ផ្លាស់ប្ដូរ</string>
     <string name="label_extensions">ប្រភពម៊េងហ្គា</string>
     <string name="label_help">ជំនួយ</string>
@@ -83,7 +82,6 @@
     <string name="action_select_all">ជ្រើសទាំងអស់</string>
     <string name="action_remove_bookmark">លែងចំណាំភាគនេះ</string>
     <string name="action_mark_as_unread">បញ្ជាក់ថាមិនទាន់បានអាន</string>
-    <string name="action_update_library">ធ្វើបច្ចុប្បន្នភាពបណ្ណាល័យ</string>
     <string name="action_enable_all">បើកទាំងអស់</string>
     <string name="action_add_category">បន្ថែមថ្នាក់ក្រម</string>
     <string name="action_disable_all">បិទទាំងអស់</string>
@@ -143,13 +141,11 @@
     <string name="pref_library_columns">ធាតុក្នុងមួយជួ</string>
     <string name="portrait">បញ្ឈរ</string>
     <string name="landscape">ផ្ដេក</string>
-    <string name="pref_library_update_interval">ការធ្វើប្ចុប្បន្នភាពដោយស្វ័យប្រវត្ត</string>
     <string name="update_never">បិទ</string>
     <string name="update_6hour">រាល់៦ម៉ោងម្ដង</string>
     <string name="update_48hour">រាល់២ថ្ងៃម្ដង</string>
     <string name="update_72hour">រាល់៣ថ្ងៃម្ដង</string>
     <string name="update_weekly">រាល់សប្ដាហ៍</string>
-    <string name="pref_library_update_restriction">ធ្វើប្ចុប្បន្នភាពdevice restrictionsដោយស្វ័យប្រវត្ត</string>
     <string name="connected_to_wifi">នៅពេលបើកWi-Fiប៉ុណ្ណោះ</string>
     <string name="action_webview_forward">ទៅមុខ</string>
     <string name="action_webview_refresh">រីហ្វ្រេស</string>
@@ -162,7 +158,6 @@
     <string name="lock_never">មិនដែល</string>
     <string name="parental_controls_info">ការសម្រេចចិត្តនេះមិនបិទការflagនៃប្រភពទៅលើរឿង(១៨+)នៅក្នុងកម្មវិធីឡើយ។</string>
     <string name="update_24hour">រាល់ថ្ងៃ</string>
-    <string name="pref_category_library_update">ការធ្វើបច្ចុប្បន្នភាពសកល</string>
     <string name="title">ចំណងជើង</string>
     <string name="completed">បានបញ្ចប់ការចេញផ្សាយ</string>
     <string name="ongoing">កំពុងតែចេញផ្សាយ</string>

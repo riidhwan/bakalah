@@ -15,7 +15,6 @@
     <string name="label_more">ပိုမို၍</string>
     <string name="label_download_queue">ဒေါင်းလုဒ် စာရင်း</string>
     <string name="label_library">စာအုပ်စင်</string>
-    <string name="label_recent_updates">အပ်ဒိတ်များ</string>
     <string name="label_recent_manga">မှတ်တမ်းများ</string>
     <string name="label_sources">ရင်းမြစ်များ</string>
     <string name="label_data_storage">ဒေတာနှင့် သိမ်းဆည်းမှု</string>
@@ -89,7 +88,6 @@
     <string name="action_mark_as_unread">မဖတ်ရသေးဘူး</string>
     <string name="action_mark_previous_as_read">ယခင် အပိုင်းများကို ဖတ်ပြီးပြီး</string>
     <string name="action_download">သိမ်းယူထားမယ်</string>
-    <string name="action_update_library">စာအုပ်စင် အပ်ဒိတ်လုပ်ပါ</string>
     <string name="action_enable_all">အားလုံးကို ဖွင့်ပါ</string>
     <string name="action_disable_all">အားလုံးကို ပိတ်ပါ</string>
     <string name="action_add">ထည့်ပါ</string>
@@ -210,7 +208,6 @@
     <string name="ext_pending">စောင့်ဆိုင်းဆဲ</string>
     <string name="ext_installed">ထည့်သွင်းပြီး</string>
     <string name="obsolete_extension_message">ယခုအခါ ရရှိနိုင်ပါတော့မည်မဟုတ်ပါ။ ၎င်းသည် စနစ်တကျ မလုပ်ဆောင်နိုင်တော့ဘဲ အက်ပ်လီကေးရှင်းတွင် ပြဿနာများ ဖြစ်ပေါ်စေနိုင်ပါသည်။ ဖယ်ရှားပစ်ရန် အကြံပြုအပ်ပါသည်။</string>
-    <string name="pref_update_only_in_release_period">နောက်မည့် အချိန်ကို ခန့်မှန်းခြင်း</string>
     <string name="lock_with_biometrics">လော့ခ်ဖြည်ရန် လိုအပ်သည်</string>
     <string name="lock_when_idle">အသုံးမပြုသည့်အခါ သော့ခတ်ရန်</string>
     <string name="lock_always">ဘာဖြစ်ဖြစ်</string>
@@ -227,12 +224,8 @@
     <string name="update_72hour">သုံးရက်ခြား</string>
     <string name="update_weekly">အပတ်စဥ်</string>
     <string name="charging">အားသွင်းနေစဥ်</string>
-    <string name="pref_update_only_completely_read">မဖတ်ရသေးသော အခန်းများကို ကျော်သွားပါ</string>
-    <string name="pref_update_only_non_completed">ဖတ်ပြီးသား အခန်းများကို ကျော်သွားပါ</string>
-    <string name="pref_update_only_started">မစရသေးသော အခန်းများကို ကျော်သွားပါ</string>
     <string name="connected_to_wifi">Wi-Fi ဖြင့်သာ</string>
     <string name="default_category_summary">အချိန်တိုင်း မေးပါ။</string>
-    <string name="pref_library_update_categories_details">ဝင်ရောက်ခွင့် ပိတ်ထားသော ကဏ္ဍများရှိ အခန်းများကို ပါဝင်ခွင့်ပြုထားသော ကဏ္ဍများတွင် ပါဝင်နေသည့်တိုင် အပ်ဒိတ်မပြုလုပ်ပါ</string>
     <string name="all">အားလုံး</string>
     <string name="none">တစ်ခုမဟုတ်</string>
     <string name="include">အပါအဝင်: %s</string>
@@ -266,18 +259,14 @@
     <string name="pref_show_page_number">စာမျက်နှာနံပါတ် ပြပါ။</string>
     <string name="delete_repo_confirmation">\"%s\"ကို ဖျက်လိုပါသလား?</string>
     <string name="add_repo_confirmation">\"%s\" ထည့်သွင်းလိုပါသလား?</string>
-    <string name="pref_library_update_interval">အလိုအလျောက် အပ်ဒိတ်များ</string>
     <string name="landscape">ရှုခင်း</string>
     <string name="portrait">ပုံတူ</string>
     <string name="pref_library_columns">အတန်းအလိုက် ပစ္စည်းများ</string>
     <string name="pref_category_display">ဖုန်းမျက်နှာပြင်</string>
-    <string name="pref_category_library_update">ကမ္ဘာလုံးဆိုင်ရာ အပ်ဒိတ်</string>
     <string name="theme_greenapple">နီစိမ်းရောင်</string>
     <string name="theme_lavender">ခရမ်းနုရောင်</string>
     <string name="pref_relative_format">အနီးစပ်ဆုံး အချိန်အမှတ်အသား</string>
     <string name="pref_relative_format_summary">\"%2$s\" မဟုတ်ဘဲ \"%1$s\" ဟုပြရန်</string>
-    <string name="pref_library_update_refresh_metadata">metadataကို အလိုလျောက် ပြန်လည်ဆန်းသစ်ပေးပါ။</string>
-    <string name="pref_library_update_refresh_metadata_summary">စာအုပ်စင်ကို အပ်ဒိတ်လုပ်လျှင် ကာဗာနှင့် အချက်အလက်သစ်များ ရယူရန်။</string>
     <string name="default_category">မူရင်းကဏ္ဍ</string>
     <string name="ext_obsolete">အသုံးပြု၍မရ</string>
     <string name="ext_trust">ယုံကြည်ရန်</string>

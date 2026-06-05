@@ -3,7 +3,6 @@
     <string name="label_settings">Баптау</string>
     <string name="label_download_queue">Жүктеу кезегі</string>
     <string name="label_library">Кітапхана</string>
-    <string name="label_recent_updates">Жаңартпа</string>
     <string name="label_sources">Дереккөз</string>
     <string name="label_backup">Сақтық көшірме</string>
     <string name="label_extensions">Кеңейтпе</string>
@@ -73,7 +72,6 @@
     <string name="update_48hour">Әр 2 күн сайын</string>
     <string name="update_72hour">Әр 3 күн сайын</string>
     <string name="update_weekly">Апта сайын</string>
-    <string name="pref_library_update_restriction">Автоматты жаңартуларға құрылғы шектеулері</string>
     <string name="connected_to_wifi">Тек Wi-Fi болғанда</string>
     <string name="charging">Қуаттандыру кездінде</string>
     <string name="restrictions">Шектеулер: %s</string>
@@ -102,7 +100,6 @@
     <string name="action_bookmark">Тарауды бетбелгілеу</string>
     <string name="action_remove_bookmark">Тарау бетбелгісін өшіру</string>
     <string name="action_delete">Жою</string>
-    <string name="action_update_library">Кітапхананы жаңарту</string>
     <string name="action_select_inverse">Керісінше таңдау</string>
     <string name="action_display">Бейнебет</string>
     <string name="action_enable_all">Түгелін қосу</string>
@@ -173,8 +170,6 @@
     <string name="pref_category_display">Көрсету</string>
     <string name="portrait">Портрет</string>
     <string name="landscape">Пейзаж</string>
-    <string name="pref_category_library_update">Ауқымды жаңарту</string>
-    <string name="pref_library_update_interval">Автоматты жаңартулар</string>
     <string name="action_resume">Жалғастыру</string>
     <string name="pref_app_language">Қолданба тілі</string>
     <string name="default_category_summary">Әрқашан сұраңыз</string>
@@ -202,8 +197,6 @@
     <string name="ext_info_age_rating">Жас рейтингі</string>
     <string name="action_display_comfortable_grid">Ыңғайлы кесте</string>
     <string name="action_display_cover_only_grid">Атаусыз кесте</string>
-    <string name="pref_library_update_refresh_metadata">Метадеректерді автоматты түрде жаңарту</string>
-    <string name="pref_library_update_categories_details">Шығарылған санаттардағы жазбалар енгізілген санаттарда болса да жаңартылмайды.</string>
     <string name="all">Барлығы</string>
     <string name="none">Ешқайсы</string>
     <string name="exclude">Шығару: %s</string>
@@ -218,16 +211,12 @@
     <string name="pref_dual_page_split">Қең беттерді бөлу</string>
     <string name="pref_show_page_number">Бет нөмірін көрсету</string>
     <string name="pref_color_filter_mode">Жарықты сүзу режимі</string>
-    <string name="pref_update_only_completely_read">Тарауы оқылмаған топтаманы өткізе беру</string>
-    <string name="pref_update_only_non_completed">«Аяқталған» күйімен</string>
     <string name="pref_dual_page_invert">Қос бетті бөлуді инверттеу</string>
     <string name="action_display_grid">Ықшам кесте</string>
     <string name="pref_show_reading_mode_summary">Оқыма ашылғаннан кейін оқу түрін қысқаша көрсету</string>
     <string name="pref_crop_borders">Кесу жиектері</string>
     <string name="extension_api_error">Кеңейтулер тізімін алу сәтсіз өтті</string>
     <string name="pref_cutout_short">Мазмұнды кесу аймағында көрсету</string>
-    <string name="pref_update_only_started">Бұл басталған жоқ</string>
-    <string name="pref_library_update_refresh_metadata_summary">Кітапхананы жаңарту кезінде жаңа мұқаба мен мәліметтерді тексеру</string>
     <string name="ext_updates_pending">Жаңартулар күтілуде</string>
     <string name="ext_update_all">Барлығын жаңарту</string>
     <string name="ext_obsolete">Ескірген</string>
@@ -577,7 +566,6 @@
     <string name="update_check_eol">Бұл Android нұсқасы қолжетімсіз</string>
     <string name="download_notifier_unknown_error">Белгісіз қателіктің кесірінен тарау жүктеп алынбады</string>
     <string name="download_notifier_split_page_path_not_found">Бет файлының жолы %d табылмады</string>
-    <string name="channel_new_chapters">Тарау жаңартулары</string>
     <string name="channel_app_updates">Қолданба жаңартулары</string>
     <string name="channel_ext_updates">Кеңейту жаңартулары</string>
     <string name="spen_previous_page">Алдыңғы бет</string>
@@ -617,7 +605,6 @@
     <string name="migration_help_guide">Дереккөздерді тасымалдау нұсқаулары</string>
     <string name="download_notifier_text_only_wifi">Wi-Fi байланысы жоқ</string>
     <string name="download_notifier_download_paused">Жүктеулер тоқтатылды</string>
-    <string name="appwidget_unavailable_locked">Биометриялық бұғаттау қосылып тұрғанда виджет қолжетімді емес</string>
     <string name="custom_filter">Жеке сүзгі</string>
     <string name="notification_size_warning">Көп жаңалтулар саны дереккөздер жұмысын баяулата және батарея жұмысын өтімін көбейте алады. Көбірек білу үшін басыңыз.</string>
     <string name="notification_chapters_single">%1$s-Тарау</string>
@@ -669,7 +656,6 @@
     <string name="label_read_chapters">Оқылған</string>
     <string name="hour_short">%dсағ</string>
     <string name="label_titles_section">Жазбалар</string>
-    <string name="label_titles_in_global_update">Ауқымды жаңартуда</string>
     <string name="label_tracked_titles">Бақыланудағы жазбалар</string>
     <string name="label_tracker_section">Бақылау қызметтері</string>
     <string name="information_no_manga_category">Бұл санат бос</string>

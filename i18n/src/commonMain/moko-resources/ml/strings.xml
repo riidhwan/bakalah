@@ -31,7 +31,6 @@
     <string name="label_more">ഇനിയും</string>
     <string name="label_download_queue">ഡൗൺലോഡ് ക്യൂ</string>
     <string name="label_library">ലൈബ്രറി</string>
-    <string name="label_recent_updates">അപ്ഡേറ്റുകൾ</string>
     <string name="label_recent_manga">ചരിത്രം</string>
     <string name="label_sources">ഉൽഭവം</string>
     <string name="label_backup">ബാക്കപ്പും റിസ്റ്റോറും</string>
@@ -76,7 +75,6 @@
     <string name="action_download">ഡൗൺലോഡ്</string>
     <string name="action_remove_bookmark">അൺബുക്ക്മാർക്ക് അധ്യായം</string>
     <string name="action_delete">ഇല്ലാതാക്കുക</string>
-    <string name="action_update_library">ലൈബ്രറി അപ്ഡേറ്റ് ചെയ്യുക</string>
     <string name="action_edit_categories">വിഭാഗങ്ങൾ എഡിറ്റ് ചെയ്യുക</string>
     <string name="action_rename_category">വിഭാഗത്തിൻ്റെ പേരുമാറ്റുക</string>
     <string name="action_move_category">വിഭാഗങ്ങൾ സജ്ജമാക്കുക</string>

@@ -43,7 +43,6 @@
     <string name="action_edit">Рэдагаваць</string>
     <string name="action_disable_all">Адключыць усе</string>
     <string name="action_enable_all">Уключыць усе</string>
-    <string name="action_update_library">Абнавіць бібліятэку</string>
     <string name="action_delete">Выдаліць</string>
     <string name="action_remove_bookmark">Зняць закладку</string>
     <string name="action_bookmark">Дадаць у закладкі</string>
@@ -77,7 +76,6 @@
     <string name="label_backup">Рэзерваванне і аднаўленне</string>
     <string name="label_sources">Крыніцы</string>
     <string name="label_recent_manga">Гісторыя</string>
-    <string name="label_recent_updates">Абнаўленні</string>
     <string name="label_library">Бібліятэка</string>
     <string name="label_download_queue">Чарга спамповак</string>
     <string name="label_settings">Налады</string>
@@ -102,24 +100,17 @@
     <string name="include">Уключаць: %s</string>
     <string name="none">Няма</string>
     <string name="all">Усе</string>
-    <string name="pref_library_update_categories_details">Творы ў выключаных катэгорыях не будуць абнаўляцца, нават калі яны таксама знаходзяцца ва ўключаных.</string>
     <string name="categorized_display_settings">Асобныя налады сартавання для кожнай катэгорыі</string>
     <string name="default_category_summary">Запытваць</string>
     <string name="default_category">Катэгорыя па змаўчанні</string>
-    <string name="pref_library_update_refresh_metadata_summary">Правераць наяўнасць новай вокладкі і дэталяў пры абнаўленні бібліятэкі</string>
-    <string name="pref_library_update_refresh_metadata">Аўтаабнаўленне метададзеных</string>
-    <string name="pref_update_only_non_completed">Прапускаць завершаныя творы</string>
     <string name="restrictions">Абмежаванні: %s</string>
     <string name="charging">Падчас зарадкі</string>
-    <string name="pref_library_update_restriction">Абмежаванні аўтаабнаўленняў</string>
     <string name="update_weekly">Штотыдзень</string>
     <string name="update_48hour">Кожныя 2 дні</string>
     <string name="update_24hour">Штодня</string>
     <string name="update_12hour">Кожныя 12 гадзін</string>
     <string name="update_6hour">Кожныя 6 гадзін</string>
     <string name="update_never">Выключаны</string>
-    <string name="pref_library_update_interval">Аўтаабнаўленні</string>
-    <string name="pref_category_library_update">Глабальнае абнаўленне</string>
     <string name="landscape">Альбомная</string>
     <string name="portrait">Кніжная</string>
     <string name="pref_library_columns">Элементаў у радку</string>
@@ -308,7 +299,6 @@
     <string name="internal_error">InternalError: Праверце журнал збояў для дадатковых зведак</string>
     <string name="ext_update_all">Абнавіць усё</string>
     <string name="ext_info_age_rating">Узроставы цэнз</string>
-    <string name="pref_update_only_started">Прапускаць непачатыя творы</string>
     <string name="action_show_manga">Паказаць твор</string>
     <string name="ext_info_version">Версія</string>
     <string name="action_sort_last_manga_update">Апошняя праверка абнаўлення</string>
@@ -322,7 +312,6 @@
     <string name="ext_info_language">Мова</string>
     <string name="theme_lavender">Лаванда</string>
     <string name="pref_app_language">Мова праграмы</string>
-    <string name="pref_update_only_completely_read">Прапускаць з непрачытаным(і) раздзелам(і)</string>
     <string name="ext_installer_shizuku_stopped">Shizuku не запушчаны</string>
     <string name="action_close">Закрыць</string>
     <string name="ext_install_service_notif">Усталёўка пашырэння…</string>
@@ -410,7 +399,6 @@
     <string name="pref_firebase">Аналітыка і журналы збояў</string>
     <string name="firebase_summary">Адпраўка журналаў збояў і аналітыкі дазволіць нам выяўляць і выпраўляць памылкі, паляпшаць прадукцыйнасць і развіваць праграму з улікам вашых патрэб</string>
     <string name="pref_library_update_smart_update">Разумнае абнаўленне</string>
-    <string name="pref_update_only_in_release_period">Прадказваць выхад новых раздзелаў</string>
     <string name="pref_behavior">Паводзіны</string>
     <string name="pref_chapter_swipe_end">Раздзел пры змахванні ўправа</string>
     <string name="pref_chapter_swipe_start">Раздзел пры змахванні ўлева</string>
@@ -780,7 +768,6 @@
     <string name="label_completed_titles">Завершаныя творы</string>
     <string name="label_read_duration">Працягласць чытання</string>
     <string name="label_titles_section">Творы</string>
-    <string name="label_titles_in_global_update">У глабальным абнаўленні</string>
     <string name="label_total_chapters">Усяго</string>
     <string name="label_read_chapters">Прачытана</string>
     <string name="label_tracker_section">Адсочванне</string>
@@ -845,12 +832,10 @@
     <string name="channel_progress">Прагрэс</string>
     <string name="channel_complete">Завершэнні</string>
     <string name="channel_errors">Памылкі</string>
-    <string name="channel_new_chapters">Абнаўленні раздзелаў</string>
     <string name="channel_app_updates">Абнаўленні праграмы</string>
     <string name="channel_ext_updates">Абнаўленні пашырэнняў</string>
     <string name="spen_previous_page">Папярэдняя старонка</string>
     <string name="spen_next_page">Наступная старонка</string>
-    <string name="appwidget_unavailable_locked">Віджэт недаступны, калі ўключана блакіроўка праграмы</string>
     <string name="remove_manga">Вы збіраецеся прыбраць «%s» са сваёй бібліятэкі</string>
     <string name="exception_http">HTTP %d: праверце сайт у WebView</string>
     <string name="exception_offline">Няма інтэрнэт-злучэння</string>

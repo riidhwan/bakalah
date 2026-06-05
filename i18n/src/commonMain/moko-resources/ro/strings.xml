@@ -10,7 +10,6 @@
     <string name="label_download_queue">Coadă de descărcări</string>
     <string name="label_library">Bibliotecă</string>
     <string name="label_recent_manga">Istoric</string>
-    <string name="label_recent_updates">Actualizări</string>
     <string name="label_backup">Backup și restaurare</string>
     <string name="label_migration">Migrează</string>
     <string name="label_extensions">Extensii</string>
@@ -33,7 +32,6 @@
     <string name="action_bookmark">Marchează Capitolul</string>
     <string name="action_remove_bookmark">Demarcați capitolul</string>
     <string name="action_delete">Șterge</string>
-    <string name="action_update_library">Actualizează biblioteca</string>
     <string name="action_edit">Modifică</string>
     <string name="action_add">Adaugă</string>
     <string name="action_add_category">Adaugă categorie</string>
@@ -71,7 +69,6 @@
     <string name="pref_category_about">Despre</string>
     <string name="pref_library_columns">Elemente pe rând</string>
     <string name="portrait">Portret</string>
-    <string name="pref_library_update_interval">Actualizări automate</string>
     <string name="update_never">Oprit</string>
     <string name="update_6hour">La fiecare 6 ore</string>
     <string name="update_12hour">La fiecare 12 ore</string>
@@ -79,9 +76,7 @@
     <string name="update_48hour">La fiecare 2 zile</string>
     <string name="update_weekly">Săptămânal</string>
     <string name="all">Toate</string>
-    <string name="pref_library_update_restriction">Actualizează automat restricțiile dispozitivului</string>
     <string name="charging">La încărcare</string>
-    <string name="pref_update_only_non_completed">Cu statutul \"Completată\"</string>
     <string name="pref_auto_update_manga_sync">Actualizarea progresului după citire</string>
     <string name="default_category">Categorie implicită</string>
     <string name="default_category_summary">Întreabă mereu</string>
@@ -287,7 +282,6 @@
     <string name="ext_obsolete">Învechit</string>
     <string name="obsolete_extension_message">Această extensie nu mai este disponibilă. Este posibil să nu funcționeze corect și poate cauza probleme cu aplicația. Se recomandă dezinstalarea acesteia.</string>
     <string name="pref_date_format">Formatul datei</string>
-    <string name="pref_category_library_update">Actualizare globală</string>
     <string name="logout_title">Deconectează-te de la %1$s?</string>
     <string name="logout">Deconectează-te</string>
     <string name="logout_success">Acum ești deconectat</string>
@@ -310,7 +304,6 @@
     <string name="pref_cutout_short">Afișare conținut în zona decupată</string>
     <string name="information_cloudflare_bypass_failure">A eșuat evitarea Cloudflare</string>
     <string name="information_webview_outdated">Actualizați aplicația WebView pentru o compatibilitate mai bună</string>
-    <string name="channel_new_chapters">Actualizări de capitole</string>
     <string name="secure_screen_summary">Ecranul securizat ascunde conținutul aplicațiilor la schimbarea aplicațiilor și blochează capturile de ecran</string>
     <string name="pref_category_display">Afișare</string>
     <string name="notification_chapters_single">Capitolul %1$s</string>
@@ -367,8 +360,6 @@
     <string name="sort_by_upload_date">După data încărcării</string>
     <string name="backup_restore_missing_sources">Surse lipsă:</string>
     <string name="invalid_backup_file_missing_manga">Copia de rezervă nu conține nicio intrare în bibliotecă.</string>
-    <string name="pref_library_update_refresh_metadata_summary">Verifica dacă exista copertă și detalii noi când biblioteca este actualizată</string>
-    <string name="pref_library_update_refresh_metadata">Actualizează metadata-ul automat</string>
     <string name="action_display_comfortable_grid">Grilă confortabilă</string>
     <string name="action_migrate">Migrează</string>
     <string name="label_data">Date</string>
@@ -440,7 +431,6 @@
     <string name="action_order_by_upload_date">După data postării</string>
     <string name="exclude">Excludeți: %s</string>
     <string name="include">Includeți: %s</string>
-    <string name="pref_library_update_categories_details">Înscrierile din categoriile excluse nu vor fi actualizate, chiar dacă acestea se află și în categoriile incluse.</string>
     <string name="action_show_errors">Atingeți pentru a vedea detaliile</string>
     <string name="action_display_show_number_of_items">Afișare număr de elemente</string>
     <string name="none">Nici unul</string>
@@ -529,7 +519,6 @@
     <string name="complete_list">Lista completă</string>
     <string name="action_display_cover_only_grid">Acoperire tip grilaj</string>
     <string name="action_move_to_top_all_for_series">Mutați seria pe prima poziție</string>
-    <string name="pref_update_only_started">Care nu au fost începute</string>
     <string name="ext_installer_shizuku_stopped">Shizuku nu rulează</string>
     <string name="pref_app_language">Limba aplicației</string>
     <string name="restrictions">Restricții: %s</string>
@@ -538,7 +527,6 @@
     <string name="pref_low">Scăzut</string>
     <string name="pref_clear_webview_data">Ștergeți datele WebView</string>
     <string name="on_hold_list">Lista în așteptare</string>
-    <string name="pref_update_only_completely_read">Cu capitol(e) necitit(e)</string>
     <string name="pref_lowest">Cel mai scăzut</string>
     <string name="unfinished_list">Lista neterminată</string>
     <string name="action_sort_unread_count">Număr de necitite</string>
@@ -621,7 +609,6 @@
     <string name="updates_last_update_info_just_now">Chiar acum</string>
     <string name="pref_verbose_logging">Consemnare verbală</string>
     <string name="crash_screen_description">%s a întâmpinat o eroare neașteptată. Vă sugerăm să faceți o captură de ecran a acestui mesaj, să descărcați registrele de erori și apoi să le partajați prin intermediul canalului nostru de asistență pe Discord.</string>
-    <string name="appwidget_unavailable_locked">Widgetul nu este disponibil atunci când este activată blocarea aplicației</string>
     <string name="pref_appearance_summary">Tema, formatul datei și al orei</string>
     <string name="pref_library_summary">Categorii, actualizări globale</string>
     <string name="pref_reader_summary">Modul de citire, afișare, navigare</string>
@@ -657,7 +644,6 @@
     <string name="label_completed_titles">Intrari complete</string>
     <string name="label_read_duration">Durata cutirii</string>
     <string name="label_titles_section">Intrari</string>
-    <string name="label_titles_in_global_update">In actualizare globala</string>
     <string name="label_total_chapters">Total</string>
     <string name="label_read_chapters">Citit</string>
     <string name="label_tracker_section">Servicii de urmărire</string>
@@ -720,7 +706,6 @@
     <string name="split_tall_images">Împărțiți imaginile înalte</string>
     <string name="has_results">Au fost găsite rezultate</string>
     <string name="track_delete_text">Această acțiune va elimina local monitorizarea.</string>
-    <string name="pref_update_only_in_release_period">În afara perioadei de lansare estimată</string>
     <string name="action_ok">Ok</string>
     <string name="pref_double_tap_zoom">Atingeți de două ori pentru a mări</string>
     <string name="track_activity_name">Autentificare serviciu de urmărire</string>
