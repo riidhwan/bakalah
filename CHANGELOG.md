@@ -16,6 +16,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ### Removed
 - Remove the Updates screen, Upcoming entry point, recent-updates widgets, and Updates tab badge setting.
+- Remove bulk/background library chapter update scheduling, actions, settings, and notifications.
 
 ## [v0.20.3] - 2026-06-05
 ### Other
