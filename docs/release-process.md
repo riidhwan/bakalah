@@ -50,7 +50,7 @@ For a release branch named `release/0.19.9`, release metadata must resolve to:
 
 Protect release tags so only maintainers and the release GitHub App can create `v*` tags. This keeps generated release tags aligned with Release Intent.
 
-Configure release automation with a GitHub App installed only on this repository. The app must have `Contents: Read and write` permission, and the repository must provide `RELEASE_APP_ID` as an Actions variable and `RELEASE_APP_PRIVATE_KEY` as an Actions secret. Automated release tags are annotated but not GPG-signed.
+Configure release automation with a GitHub App installed only on this repository. The app must have `Contents: Read and write` permission, and the repository must provide `RELEASE_APP_ID` and `RELEASE_APP_PRIVATE_KEY` as Actions secrets. Automated release tags are annotated but not GPG-signed.
 
 Maintainers who manage APK signing secrets must follow `playbooks/apk-signing.md`.
 
