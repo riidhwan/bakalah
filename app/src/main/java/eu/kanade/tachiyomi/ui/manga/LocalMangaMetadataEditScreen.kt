@@ -208,6 +208,7 @@ class LocalMangaMetadataEditScreenModel(
                 remoteManga = refreshedManga,
                 manualFetch = true,
                 forceTitleUpdate = true,
+                clearMissingMetadata = true,
             )
             mutableState.update {
                 it.copy(

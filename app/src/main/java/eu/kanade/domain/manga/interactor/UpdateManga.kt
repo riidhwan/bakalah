@@ -33,6 +33,7 @@ class UpdateManga(
         remoteManga: SManga,
         manualFetch: Boolean,
         forceTitleUpdate: Boolean = false,
+        clearMissingMetadata: Boolean = false,
         coverCache: CoverCache = Injekt.get(),
         libraryPreferences: LibraryPreferences = Injekt.get(),
         downloadManager: DownloadManager = Injekt.get(),
@@ -77,10 +78,10 @@ class UpdateManga(
                 id = localManga.id,
                 title = title,
                 coverLastModified = coverLastModified,
-                author = remoteManga.author,
-                artist = remoteManga.artist,
-                description = remoteManga.description,
-                genre = remoteManga.getGenres(),
+                author = remoteManga.author.orEmptyIf(clearMissingMetadata),
+                artist = remoteManga.artist.orEmptyIf(clearMissingMetadata),
+                description = remoteManga.description.orEmptyIf(clearMissingMetadata),
+                genre = remoteManga.getGenres() ?: emptyListIf(clearMissingMetadata),
                 thumbnailUrl = thumbnailUrl,
                 status = remoteManga.status.toLong(),
                 updateStrategy = remoteManga.update_strategy,
@@ -119,5 +120,13 @@ class UpdateManga(
         return mangaRepository.update(
             MangaUpdate(id = mangaId, favorite = favorite, dateAdded = dateAdded),
         )
+    }
+
+    private fun String?.orEmptyIf(condition: Boolean): String? {
+        return this ?: if (condition) "" else null
+    }
+
+    private fun emptyListIf(condition: Boolean): List<String>? {
+        return if (condition) emptyList() else null
     }
 }
