@@ -28,6 +28,12 @@ kotlin {
             }
         }
 
+        val androidHostTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
         androidMain {
             dependencies {
                 implementation(projects.core.archive)
