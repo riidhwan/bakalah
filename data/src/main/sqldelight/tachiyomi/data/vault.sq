@@ -1,0 +1,383 @@
+import kotlin.Boolean;
+import tachiyomi.domain.vault.model.VaultCacheState;
+import tachiyomi.domain.vault.model.VaultChapterContentFormat;
+import tachiyomi.domain.vault.model.VaultMangaStatus;
+
+CREATE TABLE content_vaults(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    identity TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL,
+    layout_version INTEGER NOT NULL,
+    root_revision_id TEXT NOT NULL,
+    root_revision_number INTEGER NOT NULL,
+    writer_id TEXT,
+    last_catalogue_refresh_at INTEGER,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE vault_mangas(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    title TEXT NOT NULL,
+    sort_key TEXT NOT NULL,
+    author TEXT,
+    artist TEXT,
+    description TEXT,
+    status INTEGER AS VaultMangaStatus NOT NULL,
+    cover_id INTEGER,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
+    UNIQUE(vault_id, identity)
+);
+
+CREATE INDEX vault_mangas_vault_id_index ON vault_mangas(vault_id);
+CREATE INDEX vault_mangas_sort_key_index ON vault_mangas(vault_id, sort_key);
+
+CREATE TABLE vault_chapters(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    manga_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    title TEXT NOT NULL,
+    chapter_number REAL NOT NULL,
+    volume_number REAL,
+    scanlator TEXT,
+    source_order INTEGER NOT NULL,
+    content_path TEXT NOT NULL,
+    content_format INTEGER AS VaultChapterContentFormat NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    checksum_sha256 TEXT NOT NULL,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    date_upload INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE,
+    UNIQUE(manga_id, identity)
+);
+
+CREATE INDEX vault_chapters_manga_id_index ON vault_chapters(manga_id);
+CREATE INDEX vault_chapters_source_order_index ON vault_chapters(manga_id, source_order);
+
+CREATE TABLE vault_labels(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    name TEXT NOT NULL,
+    sort_key TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
+    UNIQUE(vault_id, identity)
+);
+
+CREATE INDEX vault_labels_vault_id_index ON vault_labels(vault_id, sort_key);
+
+CREATE TABLE vault_manga_labels(
+    manga_id INTEGER NOT NULL,
+    label_id INTEGER NOT NULL,
+    PRIMARY KEY(manga_id, label_id),
+    FOREIGN KEY(manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE,
+    FOREIGN KEY(label_id) REFERENCES vault_labels(_id) ON DELETE CASCADE
+);
+
+CREATE TABLE vault_covers(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    manga_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    path TEXT NOT NULL,
+    media_type TEXT,
+    size_bytes INTEGER,
+    checksum_sha256 TEXT,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE,
+    UNIQUE(manga_id, identity)
+);
+
+CREATE INDEX vault_covers_manga_id_index ON vault_covers(manga_id);
+
+CREATE TABLE vault_reading_state(
+    chapter_id INTEGER NOT NULL PRIMARY KEY,
+    read INTEGER AS Boolean NOT NULL,
+    bookmark INTEGER AS Boolean NOT NULL,
+    last_page_read INTEGER NOT NULL,
+    last_read_at INTEGER,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE CASCADE
+);
+
+CREATE TABLE vault_chapter_cache_state(
+    chapter_id INTEGER NOT NULL PRIMARY KEY,
+    state INTEGER AS VaultCacheState NOT NULL,
+    local_path TEXT,
+    size_bytes INTEGER,
+    checksum_sha256 TEXT,
+    last_verified_at INTEGER,
+    last_opened_at INTEGER,
+    updated_at INTEGER NOT NULL,
+    failure_reason TEXT,
+    FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE CASCADE
+);
+
+CREATE INDEX vault_chapter_cache_state_state_index ON vault_chapter_cache_state(state);
+
+CREATE TABLE vault_import_target_hints(
+    local_manga_id INTEGER NOT NULL PRIMARY KEY,
+    local_manga_identity TEXT,
+    vault_manga_id INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(vault_manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE
+);
+
+CREATE TABLE vault_manifest_snapshots(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    manga_id INTEGER,
+    manifest_path TEXT NOT NULL,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    body TEXT NOT NULL,
+    fetched_at INTEGER NOT NULL,
+    FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
+    FOREIGN KEY(manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE,
+    UNIQUE(vault_id, manifest_path, revision_id)
+);
+
+getVaults:
+SELECT *
+FROM content_vaults
+ORDER BY display_name;
+
+getVaultByIdentity:
+SELECT *
+FROM content_vaults
+WHERE identity = :identity;
+
+upsertVault:
+INSERT INTO content_vaults(
+    _id, identity, display_name, layout_version, root_revision_id, root_revision_number, writer_id,
+    last_catalogue_refresh_at, created_at, updated_at
+)
+VALUES (
+    nullif(:id, -1), :identity, :displayName, :layoutVersion, :rootRevisionId, :rootRevisionNumber, :writerId,
+    :lastCatalogueRefreshAt, :createdAt, :updatedAt
+)
+ON CONFLICT(identity) DO UPDATE SET
+    display_name = excluded.display_name,
+    layout_version = excluded.layout_version,
+    root_revision_id = excluded.root_revision_id,
+    root_revision_number = excluded.root_revision_number,
+    writer_id = excluded.writer_id,
+    last_catalogue_refresh_at = excluded.last_catalogue_refresh_at,
+    updated_at = excluded.updated_at;
+
+getMangaForVault:
+SELECT *
+FROM vault_mangas
+WHERE vault_id = :vaultId
+ORDER BY sort_key;
+
+getMangaById:
+SELECT *
+FROM vault_mangas
+WHERE _id = :id;
+
+getMangaByIdentity:
+SELECT *
+FROM vault_mangas
+WHERE vault_id = :vaultId
+AND identity = :identity;
+
+upsertManga:
+INSERT INTO vault_mangas(
+    _id, vault_id, identity, title, sort_key, author, artist, description, status, cover_id,
+    revision_id, revision_number, created_at, updated_at
+)
+VALUES (
+    nullif(:id, -1), :vaultId, :identity, :title, :sortKey, :author, :artist, :description, :status, :coverId,
+    :revisionId, :revisionNumber, :createdAt, :updatedAt
+)
+ON CONFLICT(vault_id, identity) DO UPDATE SET
+    title = excluded.title,
+    sort_key = excluded.sort_key,
+    author = excluded.author,
+    artist = excluded.artist,
+    description = excluded.description,
+    status = excluded.status,
+    cover_id = excluded.cover_id,
+    revision_id = excluded.revision_id,
+    revision_number = excluded.revision_number,
+    updated_at = excluded.updated_at;
+
+getChaptersForManga:
+SELECT *
+FROM vault_chapters
+WHERE manga_id = :mangaId
+ORDER BY source_order;
+
+deleteChaptersNotInIdentities:
+DELETE FROM vault_chapters
+WHERE manga_id = :mangaId
+AND identity NOT IN :identities;
+
+deleteChaptersForManga:
+DELETE FROM vault_chapters
+WHERE manga_id = :mangaId;
+
+upsertChapter:
+INSERT INTO vault_chapters(
+    _id, manga_id, identity, title, chapter_number, volume_number, scanlator, source_order,
+    content_path, content_format, size_bytes, checksum_sha256, revision_id, revision_number,
+    date_upload, created_at, updated_at
+)
+VALUES (
+    nullif(:id, -1), :mangaId, :identity, :title, :chapterNumber, :volumeNumber, :scanlator, :sourceOrder,
+    :contentPath, :contentFormat, :sizeBytes, :checksumSha256, :revisionId, :revisionNumber,
+    :dateUpload, :createdAt, :updatedAt
+)
+ON CONFLICT(manga_id, identity) DO UPDATE SET
+    title = excluded.title,
+    chapter_number = excluded.chapter_number,
+    volume_number = excluded.volume_number,
+    scanlator = excluded.scanlator,
+    source_order = excluded.source_order,
+    content_path = excluded.content_path,
+    content_format = excluded.content_format,
+    size_bytes = excluded.size_bytes,
+    checksum_sha256 = excluded.checksum_sha256,
+    revision_id = excluded.revision_id,
+    revision_number = excluded.revision_number,
+    date_upload = excluded.date_upload,
+    updated_at = excluded.updated_at;
+
+getLabels:
+SELECT *
+FROM vault_labels
+WHERE vault_id = :vaultId
+ORDER BY sort_key;
+
+deleteLabelsNotInIdentities:
+DELETE FROM vault_labels
+WHERE vault_id = :vaultId
+AND identity NOT IN :identities;
+
+deleteLabelsForVault:
+DELETE FROM vault_labels
+WHERE vault_id = :vaultId;
+
+upsertLabel:
+INSERT INTO vault_labels(_id, vault_id, identity, name, sort_key, created_at, updated_at)
+VALUES (nullif(:id, -1), :vaultId, :identity, :name, :sortKey, :createdAt, :updatedAt)
+ON CONFLICT(vault_id, identity) DO UPDATE SET
+    name = excluded.name,
+    sort_key = excluded.sort_key,
+    updated_at = excluded.updated_at;
+
+deleteMangaLabels:
+DELETE FROM vault_manga_labels
+WHERE manga_id = :mangaId;
+
+insertMangaLabel:
+INSERT INTO vault_manga_labels(manga_id, label_id)
+VALUES (:mangaId, :labelId);
+
+upsertCover:
+INSERT INTO vault_covers(
+    _id, manga_id, identity, path, media_type, size_bytes, checksum_sha256, revision_id, revision_number, updated_at
+)
+VALUES (
+    nullif(:id, -1), :mangaId, :identity, :path, :mediaType, :sizeBytes, :checksumSha256, :revisionId,
+    :revisionNumber, :updatedAt
+)
+ON CONFLICT(manga_id, identity) DO UPDATE SET
+    path = excluded.path,
+    media_type = excluded.media_type,
+    size_bytes = excluded.size_bytes,
+    checksum_sha256 = excluded.checksum_sha256,
+    revision_id = excluded.revision_id,
+    revision_number = excluded.revision_number,
+    updated_at = excluded.updated_at;
+
+getCoverByIdentity:
+SELECT *
+FROM vault_covers
+WHERE manga_id = :mangaId
+AND identity = :identity;
+
+upsertReadingState:
+INSERT INTO vault_reading_state(chapter_id, read, bookmark, last_page_read, last_read_at, updated_at)
+VALUES (:chapterId, :read, :bookmark, :lastPageRead, :lastReadAt, :updatedAt)
+ON CONFLICT(chapter_id) DO UPDATE SET
+    read = excluded.read,
+    bookmark = excluded.bookmark,
+    last_page_read = excluded.last_page_read,
+    last_read_at = excluded.last_read_at,
+    updated_at = excluded.updated_at;
+
+getReadingState:
+SELECT *
+FROM vault_reading_state
+WHERE chapter_id = :chapterId;
+
+upsertCacheState:
+INSERT INTO vault_chapter_cache_state(
+    chapter_id, state, local_path, size_bytes, checksum_sha256, last_verified_at, last_opened_at, updated_at,
+    failure_reason
+)
+VALUES (
+    :chapterId, :state, :localPath, :sizeBytes, :checksumSha256, :lastVerifiedAt, :lastOpenedAt, :updatedAt,
+    :failureReason
+)
+ON CONFLICT(chapter_id) DO UPDATE SET
+    state = excluded.state,
+    local_path = excluded.local_path,
+    size_bytes = excluded.size_bytes,
+    checksum_sha256 = excluded.checksum_sha256,
+    last_verified_at = excluded.last_verified_at,
+    last_opened_at = excluded.last_opened_at,
+    updated_at = excluded.updated_at,
+    failure_reason = excluded.failure_reason;
+
+getCacheState:
+SELECT *
+FROM vault_chapter_cache_state
+WHERE chapter_id = :chapterId;
+
+upsertImportTargetHint:
+INSERT INTO vault_import_target_hints(local_manga_id, local_manga_identity, vault_manga_id, updated_at)
+VALUES (:localMangaId, :localMangaIdentity, :vaultMangaId, :updatedAt)
+ON CONFLICT(local_manga_id) DO UPDATE SET
+    local_manga_identity = excluded.local_manga_identity,
+    vault_manga_id = excluded.vault_manga_id,
+    updated_at = excluded.updated_at;
+
+getImportTargetHint:
+SELECT *
+FROM vault_import_target_hints
+WHERE local_manga_id = :localMangaId;
+
+upsertManifestSnapshot:
+INSERT INTO vault_manifest_snapshots(
+    _id, vault_id, manga_id, manifest_path, revision_id, revision_number, body, fetched_at
+)
+VALUES (
+    nullif(:id, -1), :vaultId, :mangaId, :manifestPath, :revisionId, :revisionNumber, :body, :fetchedAt
+)
+ON CONFLICT(vault_id, manifest_path, revision_id) DO UPDATE SET
+    manga_id = excluded.manga_id,
+    revision_number = excluded.revision_number,
+    body = excluded.body,
+    fetched_at = excluded.fetched_at;
+
+getManifestSnapshot:
+SELECT *
+FROM vault_manifest_snapshots
+WHERE vault_id = :vaultId
+AND manifest_path = :manifestPath
+AND revision_id = :revisionId;

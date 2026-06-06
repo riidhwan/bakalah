@@ -1,0 +1,57 @@
+package tachiyomi.domain.vault.repository
+
+import kotlinx.coroutines.flow.Flow
+import tachiyomi.domain.vault.model.ContentVault
+import tachiyomi.domain.vault.model.ContentVaultIdentity
+import tachiyomi.domain.vault.model.ImportTargetHint
+import tachiyomi.domain.vault.model.VaultChapter
+import tachiyomi.domain.vault.model.VaultChapterCacheState
+import tachiyomi.domain.vault.model.VaultCover
+import tachiyomi.domain.vault.model.VaultIdentity
+import tachiyomi.domain.vault.model.VaultLabel
+import tachiyomi.domain.vault.model.VaultManga
+import tachiyomi.domain.vault.model.VaultManifestSnapshot
+import tachiyomi.domain.vault.model.VaultReadingState
+
+interface VaultRepository {
+
+    fun getVaultsAsFlow(): Flow<List<ContentVault>>
+
+    suspend fun getVaultByIdentity(identity: ContentVaultIdentity): ContentVault?
+
+    suspend fun upsertVault(vault: ContentVault): Long
+
+    fun getMangaAsFlow(vaultId: Long): Flow<List<VaultManga>>
+
+    suspend fun getMangaById(id: Long): VaultManga?
+
+    suspend fun getMangaByIdentity(vaultId: Long, identity: VaultIdentity): VaultManga?
+
+    suspend fun upsertManga(manga: VaultManga): Long
+
+    fun getChaptersAsFlow(mangaId: Long): Flow<List<VaultChapter>>
+
+    suspend fun upsertChapters(mangaId: Long, chapters: List<VaultChapter>)
+
+    suspend fun getLabels(vaultId: Long): List<VaultLabel>
+
+    suspend fun upsertLabels(vaultId: Long, labels: List<VaultLabel>)
+
+    suspend fun setMangaLabels(mangaId: Long, labelIds: List<Long>)
+
+    suspend fun upsertCover(cover: VaultCover): Long
+
+    suspend fun upsertReadingState(state: VaultReadingState)
+
+    suspend fun getReadingState(chapterId: Long): VaultReadingState?
+
+    suspend fun upsertCacheState(state: VaultChapterCacheState)
+
+    suspend fun getCacheState(chapterId: Long): VaultChapterCacheState?
+
+    suspend fun upsertImportTargetHint(hint: ImportTargetHint)
+
+    suspend fun getImportTargetHint(localMangaId: Long): ImportTargetHint?
+
+    suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long
+}
