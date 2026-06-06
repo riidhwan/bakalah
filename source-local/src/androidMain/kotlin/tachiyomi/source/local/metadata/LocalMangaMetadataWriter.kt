@@ -6,6 +6,7 @@ import tachiyomi.core.metadata.comicinfo.COMIC_INFO_FILE
 import tachiyomi.core.metadata.comicinfo.ComicInfo
 import tachiyomi.core.metadata.comicinfo.ComicInfoPublishingStatus
 import tachiyomi.source.local.io.LocalSourceFileSystem
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
@@ -54,8 +55,7 @@ class LocalMangaMetadataWriter private constructor(
         }
 
         val comicInfo = existingComicInfo.withEdit(edit, title)
-        val targetFile = existingComicInfoFile
-            ?: mangaDir.createFile(COMIC_INFO_FILE)
+        val targetFile = existingComicInfoFile.prepareForWrite(mangaDir)
             ?: return LocalMangaMetadataWriteResult.WriteFailure()
 
         return try {
@@ -72,6 +72,22 @@ class LocalMangaMetadataWriter private constructor(
         }
     }
 
+    private fun LocalMangaMetadataFile?.prepareForWrite(
+        mangaDir: LocalMangaMetadataDirectory,
+    ): LocalMangaMetadataFile? {
+        if (this == null) {
+            return mangaDir.createFile(COMIC_INFO_FILE)
+        }
+
+        return try {
+            truncate()
+            this
+        } catch (_: Throwable) {
+            if (!delete()) return null
+            mangaDir.createFile(COMIC_INFO_FILE)
+        }
+    }
+
     private fun LocalMangaMetadataFile.readComicInfo(): ReadComicInfoResult {
         return try {
             val comicInfo = openInputStream().use { stream ->
@@ -84,10 +100,21 @@ class LocalMangaMetadataWriter private constructor(
     }
 
     private fun parseComicInfo(stream: InputStream): ComicInfo {
+        val bytes = stream.readBytes()
+        return try {
+            parseComicInfoBytes(bytes)
+        } catch (e: Throwable) {
+            val recoveredBytes = bytes.removeStaleTrailingComicInfoBytes()
+                ?: throw e
+            parseComicInfoBytes(recoveredBytes)
+        }
+    }
+
+    private fun parseComicInfoBytes(bytes: ByteArray): ComicInfo {
         val document = DocumentBuilderFactory.newInstance()
             .apply { isNamespaceAware = true }
             .newDocumentBuilder()
-            .parse(stream)
+            .parse(ByteArrayInputStream(bytes))
         val elementsByName = document
             .documentElement
             .childNodes
@@ -124,6 +151,22 @@ class LocalMangaMetadataWriter private constructor(
             categories = elementsByName["Categories"]?.let(ComicInfo::CategoriesTachiyomi),
             source = elementsByName["SourceMihon"]?.let(ComicInfo::SourceMihon),
         )
+    }
+
+    private fun ByteArray.removeStaleTrailingComicInfoBytes(): ByteArray? {
+        val content = toString(StandardCharsets.UTF_8)
+        val documentEnd = content.indexOf(COMIC_INFO_END_TAG)
+            .takeIf { it >= 0 }
+            ?.plus(COMIC_INFO_END_TAG.length)
+            ?: return null
+
+        if (content.substring(documentEnd).isBlank()) {
+            return null
+        }
+
+        return content
+            .substring(0, documentEnd)
+            .toByteArray(StandardCharsets.UTF_8)
     }
 
     private fun ComicInfo.withEdit(
@@ -186,6 +229,7 @@ class LocalMangaMetadataWriter private constructor(
 
     private companion object {
         const val NO_XML_FILE = ".noxml"
+        const val COMIC_INFO_END_TAG = "</ComicInfo>"
     }
 }
 
@@ -197,6 +241,8 @@ internal interface LocalMangaMetadataDirectory {
 
 internal interface LocalMangaMetadataFile {
     fun openInputStream(): InputStream
+
+    fun truncate()
 
     fun openOutputStream(): OutputStream
 
@@ -222,6 +268,15 @@ private class UniFileMangaMetadataFile(
 
     override fun openInputStream(): InputStream {
         return file.openInputStream()
+    }
+
+    override fun truncate() {
+        val randomAccessFile = file.createRandomAccessFile("rw")
+        try {
+            randomAccessFile.setLength(0)
+        } finally {
+            randomAccessFile.close()
+        }
     }
 
     override fun openOutputStream(): OutputStream {

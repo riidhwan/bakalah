@@ -145,6 +145,24 @@ class LocalMangaMetadataWriterTest {
     }
 
     @Test
+    fun `recovers existing ComicInfo with stale trailing bytes`() = withTempMangaDir { mangaDir ->
+        mangaDir.writeComicInfo(
+            """
+            <ComicInfo>
+                <Series>Original Title</Series>
+            </ComicInfo>le bytes from previous longer write</Summary>
+            """.trimIndent(),
+        )
+        val writer = writerFor(mangaDir)
+
+        val result = writer.write(defaultEdit(title = "Recovered Title"))
+
+        assertEquals(LocalMangaMetadataWriteResult.Success, result)
+        val comicInfo = mangaDir.comicInfoValues()
+        assertEquals("Recovered Title", comicInfo["Series"])
+    }
+
+    @Test
     fun `does not write details json`() = withTempMangaDir { mangaDir ->
         val writer = writerFor(mangaDir)
 
@@ -185,6 +203,80 @@ class LocalMangaMetadataWriterTest {
         assertNull(comicInfo["Penciller"])
         assertNull(comicInfo["Summary"])
         assertNull(comicInfo["Genre"])
+    }
+
+    @Test
+    fun `rewrites existing ComicInfo without leaving trailing bytes`() = withTempMangaDir { mangaDir ->
+        val writer = LocalMangaMetadataWriter(
+            mangaDirectoryProvider = { mangaUrl ->
+                if (mangaUrl == MANGA_URL) {
+                    NonTruncatingMangaMetadataDirectory(mangaDir)
+                } else {
+                    null
+                }
+            },
+            xml = xml,
+        )
+
+        assertEquals(
+            LocalMangaMetadataWriteResult.Success,
+            writer.write(
+                defaultEdit(
+                    title = "Very Long First Edited Title",
+                    author = "Very Long First Edited Author",
+                    artist = "Very Long First Edited Artist",
+                    description = "Very Long First Edited Description",
+                    genres = listOf("Very Long First Genre", "Very Long Second Genre"),
+                    status = SManga.ONGOING,
+                ),
+            ),
+        )
+
+        val result = writer.write(
+            defaultEdit(
+                title = "Short",
+                author = null,
+                artist = null,
+                description = null,
+                genres = emptyList(),
+                status = SManga.UNKNOWN,
+            ),
+        )
+
+        assertEquals(LocalMangaMetadataWriteResult.Success, result)
+        val comicInfo = mangaDir.comicInfoValues()
+        assertEquals("Short", comicInfo["Series"])
+        assertNull(comicInfo["Writer"])
+        assertNull(comicInfo["Penciller"])
+        assertNull(comicInfo["Summary"])
+        assertNull(comicInfo["Genre"])
+    }
+
+    @Test
+    fun `falls back to recreating ComicInfo when truncate is unsupported`() = withTempMangaDir { mangaDir ->
+        mangaDir.writeComicInfo(
+            """
+            <ComicInfo>
+                <Series>Original Title</Series>
+            </ComicInfo>
+            """.trimIndent(),
+        )
+        val writer = LocalMangaMetadataWriter(
+            mangaDirectoryProvider = { mangaUrl ->
+                if (mangaUrl == MANGA_URL) {
+                    UnsupportedTruncateMangaMetadataDirectory(mangaDir)
+                } else {
+                    null
+                }
+            },
+            xml = xml,
+        )
+
+        val result = writer.write(defaultEdit(title = "Fallback Title"))
+
+        assertEquals(LocalMangaMetadataWriteResult.Success, result)
+        val comicInfo = mangaDir.comicInfoValues()
+        assertEquals("Fallback Title", comicInfo["Series"])
     }
 
     private fun writerFor(mangaDir: File): LocalMangaMetadataWriter {
@@ -294,6 +386,114 @@ private class TestMangaMetadataFile(
 
     override fun openInputStream(): InputStream {
         return file.inputStream()
+    }
+
+    override fun truncate() {
+        file.writeBytes(ByteArray(0))
+    }
+
+    override fun openOutputStream(): OutputStream {
+        return file.outputStream()
+    }
+
+    override fun delete(): Boolean {
+        return file.delete()
+    }
+}
+
+private class NonTruncatingMangaMetadataDirectory(
+    private val directory: File,
+) : LocalMangaMetadataDirectory {
+
+    override fun findFile(name: String): LocalMangaMetadataFile? {
+        return directory
+            .resolve(name)
+            .takeIf(File::exists)
+            ?.let(::NonTruncatingMangaMetadataFile)
+    }
+
+    override fun createFile(name: String): LocalMangaMetadataFile? {
+        val file = directory.resolve(name)
+        return if (file.createNewFile() || file.exists()) {
+            NonTruncatingMangaMetadataFile(file)
+        } else {
+            null
+        }
+    }
+}
+
+private class NonTruncatingMangaMetadataFile(
+    private val file: File,
+) : LocalMangaMetadataFile {
+
+    override fun openInputStream(): InputStream {
+        return file.inputStream()
+    }
+
+    override fun truncate() {
+        java.io.RandomAccessFile(file, "rw").use { randomAccessFile ->
+            randomAccessFile.setLength(0)
+        }
+    }
+
+    override fun openOutputStream(): OutputStream {
+        return java.io.RandomAccessFile(file, "rw").let { randomAccessFile ->
+            object : OutputStream() {
+                override fun write(b: Int) {
+                    randomAccessFile.write(b)
+                }
+
+                override fun write(
+                    b: ByteArray,
+                    off: Int,
+                    len: Int,
+                ) {
+                    randomAccessFile.write(b, off, len)
+                }
+
+                override fun close() {
+                    randomAccessFile.close()
+                }
+            }
+        }
+    }
+
+    override fun delete(): Boolean {
+        return file.delete()
+    }
+}
+
+private class UnsupportedTruncateMangaMetadataDirectory(
+    private val directory: File,
+) : LocalMangaMetadataDirectory {
+
+    override fun findFile(name: String): LocalMangaMetadataFile? {
+        return directory
+            .resolve(name)
+            .takeIf(File::exists)
+            ?.let(::UnsupportedTruncateMangaMetadataFile)
+    }
+
+    override fun createFile(name: String): LocalMangaMetadataFile? {
+        val file = directory.resolve(name)
+        return if (file.createNewFile() || file.exists()) {
+            UnsupportedTruncateMangaMetadataFile(file)
+        } else {
+            null
+        }
+    }
+}
+
+private class UnsupportedTruncateMangaMetadataFile(
+    private val file: File,
+) : LocalMangaMetadataFile {
+
+    override fun openInputStream(): InputStream {
+        return file.inputStream()
+    }
+
+    override fun truncate() {
+        error("Truncate is not supported")
     }
 
     override fun openOutputStream(): OutputStream {

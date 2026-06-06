@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Added
+- Add local manga metadata editing for title, author, artist, description, genres, and status.
 
 ## [v0.21.1] - 2026-06-05
 ### Improved

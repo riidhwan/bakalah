@@ -32,6 +32,7 @@ class UpdateManga(
         localManga: Manga,
         remoteManga: SManga,
         manualFetch: Boolean,
+        forceTitleUpdate: Boolean = false,
         coverCache: CoverCache = Injekt.get(),
         libraryPreferences: LibraryPreferences = Injekt.get(),
         downloadManager: DownloadManager = Injekt.get(),
@@ -44,7 +45,10 @@ class UpdateManga(
 
         // if the manga isn't a favorite (or 'update titles' preference is enabled), set its title from source and update in db
         val title =
-            if (remoteTitle.isNotEmpty() && (!localManga.favorite || libraryPreferences.updateMangaTitles.get())) {
+            if (
+                remoteTitle.isNotEmpty() &&
+                (forceTitleUpdate || !localManga.favorite || libraryPreferences.updateMangaTitles.get())
+            ) {
                 remoteTitle
             } else {
                 null
