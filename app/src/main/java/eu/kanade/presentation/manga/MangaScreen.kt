@@ -390,22 +390,24 @@ private fun MangaScreenSmallImpl(
                         )
                     }
 
-                    item(
-                        key = MangaScreenItem.ACTION_ROW,
-                        contentType = MangaScreenItem.ACTION_ROW,
-                    ) {
-                        MangaActionRow(
-                            favorite = state.manga.favorite,
-                            trackingCount = state.trackingCount,
-                            nextUpdate = nextUpdate,
-                            isUserIntervalMode = state.manga.fetchInterval < 0,
-                            onAddToLibraryClicked = onAddToLibraryClicked,
-                            onWebViewClicked = onWebViewClicked,
-                            onWebViewLongClicked = onWebViewLongClicked,
-                            onTrackingClicked = onTrackingClicked,
-                            onEditIntervalClicked = onEditIntervalClicked,
-                            onEditCategory = onEditCategoryClicked,
-                        )
+                    if (!state.source.isLocal()) {
+                        item(
+                            key = MangaScreenItem.ACTION_ROW,
+                            contentType = MangaScreenItem.ACTION_ROW,
+                        ) {
+                            MangaActionRow(
+                                favorite = state.manga.favorite,
+                                trackingCount = state.trackingCount,
+                                nextUpdate = nextUpdate,
+                                isUserIntervalMode = state.manga.fetchInterval < 0,
+                                onAddToLibraryClicked = onAddToLibraryClicked,
+                                onWebViewClicked = onWebViewClicked,
+                                onWebViewLongClicked = onWebViewLongClicked,
+                                onTrackingClicked = onTrackingClicked,
+                                onEditIntervalClicked = onEditIntervalClicked,
+                                onEditCategory = onEditCategoryClicked,
+                            )
+                        }
                     }
 
                     item(
@@ -626,18 +628,20 @@ fun MangaScreenLargeImpl(
                             onCoverClick = onCoverClicked,
                             doSearch = onSearch,
                         )
-                        MangaActionRow(
-                            favorite = state.manga.favorite,
-                            trackingCount = state.trackingCount,
-                            nextUpdate = nextUpdate,
-                            isUserIntervalMode = state.manga.fetchInterval < 0,
-                            onAddToLibraryClicked = onAddToLibraryClicked,
-                            onWebViewClicked = onWebViewClicked,
-                            onWebViewLongClicked = onWebViewLongClicked,
-                            onTrackingClicked = onTrackingClicked,
-                            onEditIntervalClicked = onEditIntervalClicked,
-                            onEditCategory = onEditCategoryClicked,
-                        )
+                        if (!state.source.isLocal()) {
+                            MangaActionRow(
+                                favorite = state.manga.favorite,
+                                trackingCount = state.trackingCount,
+                                nextUpdate = nextUpdate,
+                                isUserIntervalMode = state.manga.fetchInterval < 0,
+                                onAddToLibraryClicked = onAddToLibraryClicked,
+                                onWebViewClicked = onWebViewClicked,
+                                onWebViewLongClicked = onWebViewLongClicked,
+                                onTrackingClicked = onTrackingClicked,
+                                onEditIntervalClicked = onEditIntervalClicked,
+                                onEditCategory = onEditCategoryClicked,
+                            )
+                        }
                         ExpandableMangaDescription(
                             defaultExpandState = true,
                             description = state.manga.description,
