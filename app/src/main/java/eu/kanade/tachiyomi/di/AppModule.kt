@@ -32,6 +32,12 @@ import tachiyomi.data.History
 import tachiyomi.data.Mangas
 import tachiyomi.data.StringListColumnAdapter
 import tachiyomi.data.UpdateStrategyColumnAdapter
+import tachiyomi.data.VaultCacheStateColumnAdapter
+import tachiyomi.data.VaultChapterContentFormatColumnAdapter
+import tachiyomi.data.VaultMangaStatusColumnAdapter
+import tachiyomi.data.Vault_chapter_cache_state
+import tachiyomi.data.Vault_chapters
+import tachiyomi.data.Vault_mangas
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.storage.service.StorageManager
 import tachiyomi.source.local.image.LocalCoverManager
@@ -77,6 +83,15 @@ class AppModule(val app: Application) : InjektModule {
                 mangasAdapter = Mangas.Adapter(
                     genreAdapter = StringListColumnAdapter,
                     update_strategyAdapter = UpdateStrategyColumnAdapter,
+                ),
+                vault_chapter_cache_stateAdapter = Vault_chapter_cache_state.Adapter(
+                    stateAdapter = VaultCacheStateColumnAdapter,
+                ),
+                vault_chaptersAdapter = Vault_chapters.Adapter(
+                    content_formatAdapter = VaultChapterContentFormatColumnAdapter,
+                ),
+                vault_mangasAdapter = Vault_mangas.Adapter(
+                    statusAdapter = VaultMangaStatusColumnAdapter,
                 ),
             )
         }

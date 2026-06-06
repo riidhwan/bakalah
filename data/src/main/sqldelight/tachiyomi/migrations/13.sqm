@@ -1,0 +1,145 @@
+CREATE TABLE content_vaults(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    identity TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL,
+    layout_version INTEGER NOT NULL,
+    root_revision_id TEXT NOT NULL,
+    root_revision_number INTEGER NOT NULL,
+    writer_id TEXT,
+    last_catalogue_refresh_at INTEGER,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE vault_mangas(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    title TEXT NOT NULL,
+    sort_key TEXT NOT NULL,
+    author TEXT,
+    artist TEXT,
+    description TEXT,
+    status INTEGER NOT NULL,
+    cover_id INTEGER,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
+    UNIQUE(vault_id, identity)
+);
+
+CREATE INDEX vault_mangas_vault_id_index ON vault_mangas(vault_id);
+CREATE INDEX vault_mangas_sort_key_index ON vault_mangas(vault_id, sort_key);
+
+CREATE TABLE vault_chapters(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    manga_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    title TEXT NOT NULL,
+    chapter_number REAL NOT NULL,
+    volume_number REAL,
+    scanlator TEXT,
+    source_order INTEGER NOT NULL,
+    content_path TEXT NOT NULL,
+    content_format INTEGER NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    checksum_sha256 TEXT NOT NULL,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    date_upload INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE,
+    UNIQUE(manga_id, identity)
+);
+
+CREATE INDEX vault_chapters_manga_id_index ON vault_chapters(manga_id);
+CREATE INDEX vault_chapters_source_order_index ON vault_chapters(manga_id, source_order);
+
+CREATE TABLE vault_labels(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    name TEXT NOT NULL,
+    sort_key TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
+    UNIQUE(vault_id, identity)
+);
+
+CREATE INDEX vault_labels_vault_id_index ON vault_labels(vault_id, sort_key);
+
+CREATE TABLE vault_manga_labels(
+    manga_id INTEGER NOT NULL,
+    label_id INTEGER NOT NULL,
+    PRIMARY KEY(manga_id, label_id),
+    FOREIGN KEY(manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE,
+    FOREIGN KEY(label_id) REFERENCES vault_labels(_id) ON DELETE CASCADE
+);
+
+CREATE TABLE vault_covers(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    manga_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    path TEXT NOT NULL,
+    media_type TEXT,
+    size_bytes INTEGER,
+    checksum_sha256 TEXT,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE,
+    UNIQUE(manga_id, identity)
+);
+
+CREATE INDEX vault_covers_manga_id_index ON vault_covers(manga_id);
+
+CREATE TABLE vault_reading_state(
+    chapter_id INTEGER NOT NULL PRIMARY KEY,
+    read INTEGER NOT NULL,
+    bookmark INTEGER NOT NULL,
+    last_page_read INTEGER NOT NULL,
+    last_read_at INTEGER,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE CASCADE
+);
+
+CREATE TABLE vault_chapter_cache_state(
+    chapter_id INTEGER NOT NULL PRIMARY KEY,
+    state INTEGER NOT NULL,
+    local_path TEXT,
+    size_bytes INTEGER,
+    checksum_sha256 TEXT,
+    last_verified_at INTEGER,
+    last_opened_at INTEGER,
+    updated_at INTEGER NOT NULL,
+    failure_reason TEXT,
+    FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE CASCADE
+);
+
+CREATE INDEX vault_chapter_cache_state_state_index ON vault_chapter_cache_state(state);
+
+CREATE TABLE vault_import_target_hints(
+    local_manga_id INTEGER NOT NULL PRIMARY KEY,
+    local_manga_identity TEXT,
+    vault_manga_id INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(vault_manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE
+);
+
+CREATE TABLE vault_manifest_snapshots(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    manga_id INTEGER,
+    manifest_path TEXT NOT NULL,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    body TEXT NOT NULL,
+    fetched_at INTEGER NOT NULL,
+    FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
+    FOREIGN KEY(manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE,
+    UNIQUE(vault_id, manifest_path, revision_id)
+);

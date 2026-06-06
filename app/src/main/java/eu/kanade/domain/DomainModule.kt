@@ -44,6 +44,7 @@ import tachiyomi.data.release.ReleaseServiceImpl
 import tachiyomi.data.source.SourceRepositoryImpl
 import tachiyomi.data.source.StubSourceRepositoryImpl
 import tachiyomi.data.track.TrackRepositoryImpl
+import tachiyomi.data.vault.VaultRepositoryImpl
 import tachiyomi.domain.category.interactor.CreateCategoryWithName
 import tachiyomi.domain.category.interactor.DeleteCategory
 import tachiyomi.domain.category.interactor.GetCategories
@@ -92,6 +93,13 @@ import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.domain.track.interactor.GetTracksPerManga
 import tachiyomi.domain.track.interactor.InsertTrack
 import tachiyomi.domain.track.repository.TrackRepository
+import tachiyomi.domain.vault.interactor.GetContentVault
+import tachiyomi.domain.vault.interactor.GetImportTargetHint
+import tachiyomi.domain.vault.interactor.GetVaultChapters
+import tachiyomi.domain.vault.interactor.GetVaultManga
+import tachiyomi.domain.vault.interactor.UpdateVaultIndex
+import tachiyomi.domain.vault.interactor.UpdateVaultReadingState
+import tachiyomi.domain.vault.repository.VaultRepository
 import uy.kohesive.injekt.api.InjektModule
 import uy.kohesive.injekt.api.InjektRegistrar
 import uy.kohesive.injekt.api.addFactory
@@ -168,6 +176,14 @@ class DomainModule : InjektModule {
         addFactory { UpsertHistory(get()) }
         addFactory { RemoveHistory(get()) }
         addFactory { GetTotalReadDuration(get()) }
+
+        addSingletonFactory<VaultRepository> { VaultRepositoryImpl(get()) }
+        addFactory { GetContentVault(get()) }
+        addFactory { GetVaultManga(get()) }
+        addFactory { GetVaultChapters(get()) }
+        addFactory { GetImportTargetHint(get()) }
+        addFactory { UpdateVaultIndex(get()) }
+        addFactory { UpdateVaultReadingState(get()) }
 
         addFactory { DeleteDownload(get(), get()) }
 

@@ -2,6 +2,9 @@ package tachiyomi.data
 
 import app.cash.sqldelight.ColumnAdapter
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
+import tachiyomi.domain.vault.model.VaultCacheState
+import tachiyomi.domain.vault.model.VaultChapterContentFormat
+import tachiyomi.domain.vault.model.VaultMangaStatus
 import java.util.Date
 
 object DateColumnAdapter : ColumnAdapter<Date, Long> {
@@ -26,4 +29,25 @@ object UpdateStrategyColumnAdapter : ColumnAdapter<UpdateStrategy, Long> {
         UpdateStrategy.entries.getOrElse(databaseValue.toInt()) { UpdateStrategy.ALWAYS_UPDATE }
 
     override fun encode(value: UpdateStrategy): Long = value.ordinal.toLong()
+}
+
+object VaultMangaStatusColumnAdapter : ColumnAdapter<VaultMangaStatus, Long> {
+    override fun decode(databaseValue: Long): VaultMangaStatus =
+        VaultMangaStatus.entries.getOrElse(databaseValue.toInt()) { VaultMangaStatus.UNKNOWN }
+
+    override fun encode(value: VaultMangaStatus): Long = value.ordinal.toLong()
+}
+
+object VaultChapterContentFormatColumnAdapter : ColumnAdapter<VaultChapterContentFormat, Long> {
+    override fun decode(databaseValue: Long): VaultChapterContentFormat =
+        VaultChapterContentFormat.entries.getOrElse(databaseValue.toInt()) { VaultChapterContentFormat.UNKNOWN }
+
+    override fun encode(value: VaultChapterContentFormat): Long = value.ordinal.toLong()
+}
+
+object VaultCacheStateColumnAdapter : ColumnAdapter<VaultCacheState, Long> {
+    override fun decode(databaseValue: Long): VaultCacheState =
+        VaultCacheState.entries.getOrElse(databaseValue.toInt()) { VaultCacheState.VAULT_ONLY }
+
+    override fun encode(value: VaultCacheState): Long = value.ordinal.toLong()
 }

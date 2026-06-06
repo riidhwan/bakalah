@@ -1,0 +1,226 @@
+package tachiyomi.data.vault
+
+import tachiyomi.domain.vault.model.ContentVault
+import tachiyomi.domain.vault.model.ContentVaultIdentity
+import tachiyomi.domain.vault.model.ImportTargetHint
+import tachiyomi.domain.vault.model.VaultCacheState
+import tachiyomi.domain.vault.model.VaultChapter
+import tachiyomi.domain.vault.model.VaultChapterCacheState
+import tachiyomi.domain.vault.model.VaultChapterContent
+import tachiyomi.domain.vault.model.VaultChapterContentFormat
+import tachiyomi.domain.vault.model.VaultCover
+import tachiyomi.domain.vault.model.VaultIdentity
+import tachiyomi.domain.vault.model.VaultLabel
+import tachiyomi.domain.vault.model.VaultManga
+import tachiyomi.domain.vault.model.VaultMangaStatus
+import tachiyomi.domain.vault.model.VaultManifestSnapshot
+import tachiyomi.domain.vault.model.VaultMetadata
+import tachiyomi.domain.vault.model.VaultReadingState
+import tachiyomi.domain.vault.model.VaultRevision
+
+object VaultMapper {
+    fun mapVault(
+        id: Long,
+        identity: String,
+        displayName: String,
+        layoutVersion: Long,
+        rootRevisionId: String,
+        rootRevisionNumber: Long,
+        writerId: String?,
+        lastCatalogueRefreshAt: Long?,
+        createdAt: Long,
+        updatedAt: Long,
+    ): ContentVault = ContentVault(
+        id = id,
+        identity = ContentVaultIdentity(identity),
+        displayName = displayName,
+        layoutVersion = layoutVersion,
+        rootRevision = VaultRevision(rootRevisionId, rootRevisionNumber),
+        writerId = writerId,
+        lastCatalogueRefreshAt = lastCatalogueRefreshAt,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+
+    fun mapManga(
+        id: Long,
+        vaultId: Long,
+        identity: String,
+        title: String,
+        sortKey: String,
+        author: String?,
+        artist: String?,
+        description: String?,
+        status: VaultMangaStatus,
+        coverId: Long?,
+        revisionId: String,
+        revisionNumber: Long,
+        createdAt: Long,
+        updatedAt: Long,
+    ): VaultManga = VaultManga(
+        id = id,
+        vaultId = vaultId,
+        identity = VaultIdentity(identity),
+        metadata = VaultMetadata(
+            title = title,
+            author = author,
+            artist = artist,
+            description = description,
+            status = status,
+        ),
+        sortKey = sortKey,
+        coverId = coverId,
+        revision = VaultRevision(revisionId, revisionNumber),
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+
+    fun mapChapter(
+        id: Long,
+        mangaId: Long,
+        identity: String,
+        title: String,
+        chapterNumber: Double,
+        volumeNumber: Double?,
+        scanlator: String?,
+        sourceOrder: Long,
+        contentPath: String,
+        contentFormat: VaultChapterContentFormat,
+        sizeBytes: Long,
+        checksumSha256: String,
+        revisionId: String,
+        revisionNumber: Long,
+        dateUpload: Long,
+        createdAt: Long,
+        updatedAt: Long,
+    ): VaultChapter = VaultChapter(
+        id = id,
+        mangaId = mangaId,
+        identity = VaultIdentity(identity),
+        title = title,
+        chapterNumber = chapterNumber,
+        volumeNumber = volumeNumber,
+        scanlator = scanlator,
+        sourceOrder = sourceOrder,
+        content = VaultChapterContent(
+            path = contentPath,
+            format = contentFormat,
+            sizeBytes = sizeBytes,
+            checksumSha256 = checksumSha256,
+        ),
+        revision = VaultRevision(revisionId, revisionNumber),
+        dateUpload = dateUpload,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+
+    fun mapLabel(
+        id: Long,
+        vaultId: Long,
+        identity: String,
+        name: String,
+        sortKey: String,
+        createdAt: Long,
+        updatedAt: Long,
+    ): VaultLabel = VaultLabel(
+        id = id,
+        vaultId = vaultId,
+        identity = VaultIdentity(identity),
+        name = name,
+        sortKey = sortKey,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+
+    fun mapReadingState(
+        chapterId: Long,
+        read: Boolean,
+        bookmark: Boolean,
+        lastPageRead: Long,
+        lastReadAt: Long?,
+        updatedAt: Long,
+    ): VaultReadingState = VaultReadingState(
+        chapterId = chapterId,
+        read = read,
+        bookmark = bookmark,
+        lastPageRead = lastPageRead,
+        lastReadAt = lastReadAt,
+        updatedAt = updatedAt,
+    )
+
+    fun mapCacheState(
+        chapterId: Long,
+        state: VaultCacheState,
+        localPath: String?,
+        sizeBytes: Long?,
+        checksumSha256: String?,
+        lastVerifiedAt: Long?,
+        lastOpenedAt: Long?,
+        updatedAt: Long,
+        failureReason: String?,
+    ): VaultChapterCacheState = VaultChapterCacheState(
+        chapterId = chapterId,
+        state = state,
+        localPath = localPath,
+        sizeBytes = sizeBytes,
+        checksumSha256 = checksumSha256,
+        lastVerifiedAt = lastVerifiedAt,
+        lastOpenedAt = lastOpenedAt,
+        updatedAt = updatedAt,
+        failureReason = failureReason,
+    )
+
+    fun mapImportTargetHint(
+        localMangaId: Long,
+        localMangaIdentity: String?,
+        vaultMangaId: Long,
+        updatedAt: Long,
+    ): ImportTargetHint = ImportTargetHint(
+        localMangaId = localMangaId,
+        localMangaIdentity = localMangaIdentity,
+        vaultMangaId = vaultMangaId,
+        updatedAt = updatedAt,
+    )
+
+    fun mapCover(
+        id: Long,
+        mangaId: Long,
+        identity: String,
+        path: String,
+        mediaType: String?,
+        sizeBytes: Long?,
+        checksumSha256: String?,
+        revisionId: String,
+        revisionNumber: Long,
+        updatedAt: Long,
+    ): VaultCover = VaultCover(
+        id = id,
+        mangaId = mangaId,
+        identity = VaultIdentity(identity),
+        path = path,
+        mediaType = mediaType,
+        sizeBytes = sizeBytes,
+        checksumSha256 = checksumSha256,
+        revision = VaultRevision(revisionId, revisionNumber),
+        updatedAt = updatedAt,
+    )
+
+    fun mapManifestSnapshot(
+        id: Long,
+        vaultId: Long,
+        mangaId: Long?,
+        manifestPath: String,
+        revisionId: String,
+        revisionNumber: Long,
+        body: String,
+        fetchedAt: Long,
+    ): VaultManifestSnapshot = VaultManifestSnapshot(
+        id = id,
+        vaultId = vaultId,
+        mangaId = mangaId,
+        manifestPath = manifestPath,
+        revision = VaultRevision(revisionId, revisionNumber),
+        body = body,
+        fetchedAt = fetchedAt,
+    )
+}
