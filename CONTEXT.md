@@ -20,6 +20,10 @@ _Avoid_: Legacy link, old link
 Names, text, icons, and release artifacts that identify the installed app to a person using or installing Bakalah.
 _Avoid_: Internal package name, namespace
 
+**Personal-Driven Maintenance**:
+Bakalah's maintenance stance where project direction, review attention, and accepted changes are primarily determined by the maintainer's personal use.
+_Avoid_: Community roadmap, open contribution queue, upstream support channel
+
 **Release Process**:
 The end-to-end practice for shipping a Bakalah version to users, from deciding the version through making release artifacts available.
 _Avoid_: Release workflow, build workflow, CI workflow
@@ -275,6 +279,10 @@ _Avoid_: Details JSON, chapter metadata file
 **Browse Area**:
 The feature area for remote sources, extension management, global search, and migration.
 _Avoid_: Local tab
+
+**Intentional Source Browsing**:
+A user-driven reading-discovery workflow where the user visits and browses chosen extension-backed sources when they want new content, instead of relying on bulk or background library chapter polling.
+_Avoid_: Site browsing, auto updates replacement, manual updates
 
 **Catalogue Latest Browsing**:
 Browsing a source-provided list of recently added or modified catalogue entries.

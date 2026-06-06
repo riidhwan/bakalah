@@ -1,86 +1,47 @@
-<div align="center">
+# Bakalah
 
-<a href="https://mihon.app">
-    <img src="./.github/assets/logo.png" alt="Mihon logo" title="Mihon logo" width="80"/>
-</a>
+Bakalah is a personal Android comic reader fork derived from [Mihon](https://mihon.app/).
 
-# Mihon [App](#)
+While it still builds on Mihon's reader, source, library, tracker, backup, and local-content foundations, Bakalah is moving in a different direction. The fork removes the bulk/background library update workflow and puts more weight on intentional browsing: visiting chosen extension-backed sources when looking for new content, closer to how someone would browse a site directly.
 
-### Full-featured reader
-Discover and read manga, webtoons, comics, and more – easier than ever on your Android device.
+Bakalah also focuses more on user-owned local content and cloud-backed content. Cloud-backed local content is still being built; today the repository contains early WebDAV setup and storage model work, with the intended experience documented in [Content Vault PRD](./docs/content-vault-prd.md).
 
-[![Discord server](https://img.shields.io/discord/1195734228319617024.svg?label=&labelColor=6A7EC2&color=7389D8&logo=discord&logoColor=FFFFFF)](https://discord.gg/mihon)
-[![GitHub downloads](https://img.shields.io/github/downloads/mihonapp/mihon/total?label=downloads&labelColor=27303D&color=0D1117&logo=github&logoColor=FFFFFF&style=flat)](https://mihon.app/download)
+## Project Direction
 
-[![CI](https://img.shields.io/github/actions/workflow/status/mihonapp/mihon/build.yml?labelColor=27303D)](https://github.com/mihonapp/mihon/actions/workflows/build_push.yml)
-[![License: Apache-2.0](https://img.shields.io/github/license/mihonapp/mihon?labelColor=27303D&color=0877d2)](/LICENSE)
-[![Translation status](https://img.shields.io/weblate/progress/mihon?labelColor=27303D&color=946300)](https://hosted.weblate.org/engage/mihon/)
+- Personal Android comic reader fork with its own app name, icon, application ID, updater target, and release process.
+- No Library Chapter Update System: no bulk/background chapter polling for library entries, recent-updates screens or widgets, update badges, update notifications, or related scheduling/settings.
+- Intentional Source Browsing remains central: users visit extension-backed sources when they want to find new content.
+- Local content remains important, with ongoing work toward a Content Vault for cloud-backed user-owned content.
+- Internal source package names still include Mihon and Tachiyomi namespaces where changing them would not affect the installed app identity.
 
-## Download
+For project-specific language, see [CONTEXT.md](./CONTEXT.md). For architecture and module ownership, see [docs/architecture.md](./docs/architecture.md).
 
-[![Mihon Stable](https://img.shields.io/github/release/mihonapp/mihon.svg?maxAge=3600&label=Stable&labelColor=06599d&color=043b69)](https://mihon.app/download)
-[![Mihon Beta](https://img.shields.io/github/v/release/mihonapp/mihon-preview.svg?maxAge=3600&label=Beta&labelColor=2c2c47&color=1c1c39)](https://mihon.app/download)
+## Build Locally
 
-*Requires Android 8.0 or higher.*
+Use the Gradle wrapper from the repository root:
 
-## Features
+```shell
+./gradlew assembleDebug
+```
 
-<div align="left">
+Useful checks:
 
-* Local reading of content.
-* A configurable reader with multiple viewers, reading directions and other settings.
-* Tracker support: [MyAnimeList](https://myanimelist.net/), [AniList](https://anilist.co/), [Kitsu](https://kitsu.app/), [MangaUpdates](https://mangaupdates.com), [Shikimori](https://shikimori.one), and [Bangumi](https://bgm.tv/) support.
-* Categories to organize your library.
-* Light and dark themes.
-* Schedule updating your library for new chapters.
-* Create backups locally to read offline or to your desired cloud service.
-* Plus much more...
+```shell
+./gradlew testDebugUnitTest
+./gradlew verifySqlDelightMigration
+./gradlew spotlessCheck
+```
 
-</div>
+Release preparation and publication are documented in [docs/release-process.md](./docs/release-process.md).
 
-## Contributing
+## Contributing and Support
 
-[Code of conduct](./CODE_OF_CONDUCT.md) · [Contributing guide](./CONTRIBUTING.md)
+Bakalah is mainly maintained for personal use. There is no guarantee that outside issues or pull requests will be reviewed, accepted, or aligned with the maintainer's current direction.
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+This repository is not the upstream Mihon support channel. For Mihon itself, use Mihon's own website, repository, and community channels.
 
-Before reporting a new issue, take a look at the [FAQ](https://mihon.app/docs/faq/general), the [changelog](https://mihon.app/changelogs/) and the already opened [issues](https://github.com/mihonapp/mihon/issues); if you got any questions, join our [Discord server](https://discord.gg/mihon).
+## Upstream and License
 
+Bakalah is derived from Mihon and keeps the same Apache-2.0 license. See [LICENSE](./LICENSE).
 
-### Repositories
-
-[![mihonapp/website - GitHub](https://github-readme-stats.vercel.app/api/pin/?username=mihonapp&repo=website&bg_color=161B22&text_color=c9d1d9&title_color=0877d2&icon_color=0877d2&border_radius=8&hide_border=true&description_lines_count=2)](https://github.com/mihonapp/website/)
-[![mihonapp/bitmap.kt - GitHub](https://github-readme-stats.vercel.app/api/pin/?username=mihonapp&repo=bitmap.kt&bg_color=161B22&text_color=c9d1d9&title_color=0877d2&icon_color=0877d2&border_radius=8&hide_border=true&description_lines_count=2)](https://github.com/mihonapp/bitmap.kt/)
-
-### Credits
-
-Thank you to all the people who have contributed!
-
-<a href="https://github.com/mihonapp/mihon/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=mihonapp/mihon" alt="Mihon app contributors" title="Mihon app contributors" width="800"/>
-</a>
-
-### Disclaimer
-
-The developer(s) of this application does not have any affiliation with the content providers available, and this application hosts zero content.
-
-### License
-
-<pre>
-Copyright © 2015 Javier Tomás
-Copyright © 2024 Mihon Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-</pre>
-
-</div>
+The app does not host content and is not affiliated with content providers used through sources or extensions.
