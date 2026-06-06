@@ -64,6 +64,26 @@ _Avoid_: Chapter list, history
 The top-level navigation destination for browsing manga stored in the user's local source directory.
 _Avoid_: Local source tab, downloads
 
+**Local Manga**:
+A manga whose chapters and metadata are owned by the user as local files rather than supplied by a remote source.
+_Avoid_: Downloaded manga, offline manga
+
+**Local Manga File Identity**:
+The stable identity of a Local Manga as a user-owned local series folder, independent from its editable display title.
+_Avoid_: Local manga title, folder title
+
+**Local Manga Metadata**:
+User-owned descriptive information for a Local Manga, such as title, creators, description, genres, and publication status.
+_Avoid_: Local details JSON, source metadata
+
+**Series-Level Metadata**:
+Local Manga Metadata that describes the manga as a whole rather than a specific chapter or local file operation.
+_Avoid_: Chapter metadata, cover metadata, folder metadata
+
+**Canonical Local Metadata File**:
+The user-editable file that represents Series-Level Metadata for a Local Manga.
+_Avoid_: Details JSON, chapter metadata file
+
 **Browse Area**:
 The feature area for remote sources, extension management, global search, and migration.
 _Avoid_: Local tab
