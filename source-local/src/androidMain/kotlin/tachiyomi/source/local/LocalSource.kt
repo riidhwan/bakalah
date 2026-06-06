@@ -150,6 +150,7 @@ actual class LocalSource(
                     SManga.create().apply {
                         title = mangaDir.name.orEmpty()
                         url = mangaDir.name.orEmpty()
+                        setMangaDetailsFromTopLevelMetadata(mangaDir, this)
                     }
                 }
             }
@@ -224,6 +225,20 @@ actual class LocalSource(
         }
 
         return@withIOContext manga
+    }
+
+    private fun setMangaDetailsFromTopLevelMetadata(
+        mangaDir: UniFile,
+        manga: SManga,
+    ) {
+        try {
+            val comicInfoFile = mangaDir.findFile(COMIC_INFO_FILE)
+            if (comicInfoFile != null) {
+                setMangaDetailsFromComicInfoFile(comicInfoFile.openInputStream(), manga)
+            }
+        } catch (e: Throwable) {
+            logcat(LogPriority.ERROR, e) { "Error setting manga details from local metadata for ${manga.title}" }
+        }
     }
 
     private fun <T> getComicInfoForChapter(chapter: UniFile, block: (InputStream) -> T): T? {

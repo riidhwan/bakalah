@@ -36,6 +36,7 @@ fun MangaToolbar(
     onClickEditCategory: (() -> Unit)?,
     onClickRefresh: () -> Unit,
     onClickMigrate: (() -> Unit)?,
+    onClickEditLocalMetadata: (() -> Unit)?,
     onClickEditNotes: () -> Unit,
 
     // For action mode
@@ -129,6 +130,14 @@ fun MangaToolbar(
                             AppBar.OverflowAction(
                                 title = stringResource(MR.strings.action_migrate),
                                 onClick = onClickMigrate,
+                            ),
+                        )
+                    }
+                    if (onClickEditLocalMetadata != null) {
+                        add(
+                            AppBar.OverflowAction(
+                                title = stringResource(MR.strings.action_edit),
+                                onClick = onClickEditLocalMetadata,
                             ),
                         )
                     }

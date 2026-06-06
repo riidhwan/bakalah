@@ -84,6 +84,8 @@ import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.i18n.MR
+import tachiyomi.source.local.LocalSource
+import tachiyomi.source.local.io.LocalSourceFileSystem
 import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -118,6 +120,7 @@ class MangaScreenModel(
     private val setMangaCategories: SetMangaCategories = Injekt.get(),
     private val mangaRepository: MangaRepository = Injekt.get(),
     private val filterChaptersForDownload: FilterChaptersForDownload = Injekt.get(),
+    private val localSourceFileSystem: LocalSourceFileSystem = Injekt.get(),
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
 
@@ -218,10 +221,11 @@ class MangaScreenModel(
             val needRefreshChapter = chapters.isEmpty()
 
             // Show what we have earlier
+            val source = Injekt.get<SourceManager>().getOrStub(manga.source)
             mutableState.update {
                 State.Success(
                     manga = manga,
-                    source = Injekt.get<SourceManager>().getOrStub(manga.source),
+                    source = source,
                     isFromSource = isFromSource,
                     chapters = chapters,
                     availableScanlators = getAvailableScanlators.await(mangaId),
@@ -229,6 +233,8 @@ class MangaScreenModel(
                     isRefreshingData = needRefreshInfo || needRefreshChapter,
                     dialog = null,
                     hideMissingChapters = libraryPreferences.hideMissingChapters.get(),
+                    canEditLocalMetadata = source is LocalSource &&
+                        localSourceFileSystem.getMangaDirectory(manga.url) != null,
                 )
             }
 
@@ -1139,6 +1145,7 @@ class MangaScreenModel(
             val dialog: Dialog? = null,
             val hasPromptedToAddBefore: Boolean = false,
             val hideMissingChapters: Boolean = false,
+            val canEditLocalMetadata: Boolean = false,
         ) : State {
             val processedChapters by lazy {
                 chapters.applyFilters(manga).toList()
