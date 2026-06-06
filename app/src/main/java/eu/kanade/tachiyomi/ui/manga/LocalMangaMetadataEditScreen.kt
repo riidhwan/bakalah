@@ -14,9 +14,9 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.presentation.manga.LocalMangaMetadataEditScreen
 import eu.kanade.presentation.util.Screen
+import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.coroutines.flow.update
 import logcat.LogPriority
 import tachiyomi.core.common.i18n.stringResource
@@ -202,7 +202,7 @@ class LocalMangaMetadataEditScreenModel(
         localSource: LocalSource,
     ) {
         try {
-            val refreshedManga = localSource.getMangaDetails(currentManga.toSManga())
+            val refreshedManga = localSource.getMangaDetails(currentManga.toLocalMetadataRefreshSManga())
             updateManga.awaitUpdateFromSource(
                 localManga = currentManga,
                 remoteManga = refreshedManga,
@@ -240,4 +240,12 @@ class LocalMangaMetadataEditScreenModel(
         val isSaving: Boolean = false,
         val isSaved: Boolean = false,
     )
+}
+
+internal fun Manga.toLocalMetadataRefreshSManga(): SManga {
+    return SManga.create().also {
+        it.url = url
+        it.title = title
+        it.initialized = initialized
+    }
 }
