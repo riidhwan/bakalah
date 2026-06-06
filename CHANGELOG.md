@@ -16,6 +16,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ### Changed
 - Hide Popular, Latest, and Filter controls from the Local source browse view.
+- Hide action buttons from Local source manga detail view.
 
 ## [v0.21.1] - 2026-06-05
 ### Improved
