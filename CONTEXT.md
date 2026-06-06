@@ -68,9 +68,197 @@ _Avoid_: Local source tab, downloads
 A manga whose chapters and metadata are owned by the user as local files rather than supplied by a remote source.
 _Avoid_: Downloaded manga, offline manga
 
+**Content Vault**:
+The authoritative user-owned collection of manga content that can outlive any one device's local storage.
+_Avoid_: Backup, cloud mirror, remote local source
+
+**Content Vault Identity**:
+The stable generated identity of one Content Vault, independent from its storage URL, path, or display name.
+_Avoid_: Vault path, provider account, vault title
+
+**Vault Feature**:
+The Bakalah feature area for browsing, capturing, publishing, caching, and evicting Content Vault content.
+_Avoid_: Local Source sync, backup sync, cloud downloads
+
+**Vault Collection**:
+The user's manga content collection in the Vault Feature, separate from the app Library.
+_Avoid_: Library, cloud library, synced library
+
+**Vault Label**:
+A user-owned organization marker for grouping content in the Vault Collection.
+_Avoid_: Library category, genre, source tag
+
+**Vault Surface**:
+The top-level app destination for browsing and managing the Vault Collection.
+_Avoid_: Local tab, library tab, sync settings
+
+**Vault Reading State**:
+The device-local read progress, read markers, and bookmarks for Vault Collection content.
+_Avoid_: Library state, history sync, tracking state
+
+**Vault Layout**:
+The versioned organization of catalogue records, metadata, and content files inside a Content Vault.
+_Avoid_: Folder mirror, storage box structure, local source tree
+
+**Vault Layout Version**:
+The compatibility marker that tells Bakalah whether it can safely read or migrate a Vault Layout.
+_Avoid_: App version, sync version, schema guess
+
+**Vault Root**:
+The storage location whose contents are owned by one Bakalah Content Vault.
+_Avoid_: Sync folder, import folder, cloud directory
+
+**WebDAV Vault Storage**:
+A WebDAV-accessible storage location used to hold a Bakalah Content Vault.
+_Avoid_: Hetzner sync, cloud source, remote filesystem
+
+**Vault Storage Provider**:
+A service that hosts WebDAV Vault Storage, such as Hetzner Storage Box.
+_Avoid_: Vault, source, sync target
+
+**Vault Credentials**:
+The device-local secret used to access WebDAV Vault Storage.
+_Avoid_: Backup setting, sync password, vault metadata
+
+**Vault Export View**:
+An optional human-readable representation of vault-owned content that is convenient to inspect but not authoritative.
+_Avoid_: Vault layout, source of truth, synced folder
+
+**Local Content Cache**:
+The subset of Content Vault manga content currently present on a device for browsing or reading.
+_Avoid_: Synced copy, offline backup, downloaded manga
+
+**Vault Cache Directory**:
+The app-managed device storage location for Local Content Cache files.
+_Avoid_: Local source directory, downloads directory, user manga folder
+
+**Local Cache Usage**:
+The amount of device storage currently used by Cached Chapters and vault transfer staging.
+_Avoid_: Vault size, downloads size, backup size
+
+**Vault Storage Usage**:
+The amount of storage currently used by the Content Vault on its Vault Storage Provider.
+_Avoid_: Cache size, local storage, download size
+
+**Vault Storage Quota**:
+The user's storage budget or provider-reported limit for a Content Vault.
+_Avoid_: Cache limit, download limit, device storage
+
+**Vault Catalogue**:
+The browseable record of Content Vault manga and chapters, including entries whose files are not currently on the device.
+_Avoid_: Local source listing, remote file list, cloud folder
+
+**Vault Revision**:
+The catalogue generation Bakalah uses to detect whether a local Vault Index is stale before publishing changes.
+_Avoid_: Sync timestamp, file modified time, app version
+
+**Vault Index**:
+Bakalah's local indexed copy of the Vault Catalogue and device-specific cache state.
+_Avoid_: Vault catalogue, local source cache, remote manifest
+
+**Vault Manifest Snapshot**:
+A local copy of a remote vault manifest kept for diagnostics or rebuilding the Vault Index.
+_Avoid_: Vault index, backup, editable metadata
+
+**Vault Metadata**:
+The user-owned descriptive information in the Vault Catalogue that is authoritative after content has been imported.
+_Avoid_: File metadata, local metadata, ComicInfo truth
+
+**Vault Cover**:
+The vault-owned image used to represent a manga in the Vault Catalogue.
+_Avoid_: Chapter cover, local thumbnail, cached page
+
+**Cached Chapter**:
+A chapter from the Content Vault whose readable content file is currently present on the device.
+_Avoid_: Downloaded chapter, synced chapter, offline chapter
+
+**Original Chapter File**:
+The chapter content file or folder as accepted into the Content Vault without conversion into a different reading format.
+_Avoid_: Canonical archive, normalized chapter, synced file
+
+**Captured Chapter File**:
+The chapter file Bakalah creates when Vault Capture collects page-based source content.
+_Avoid_: Download folder, normalized original, source file
+
+**Content Integrity**:
+The recorded evidence that vault-owned chapter content is complete and unchanged, such as file size and checksum.
+_Avoid_: Download status, file metadata, cache state
+
+**Staged Transfer**:
+A vault upload or download that remains hidden from normal catalogue and reading flows until content integrity is verified.
+_Avoid_: Partial sync, in-progress content, temporary chapter
+
+**Vault Transfer Queue**:
+The visible queue of vault operations that move or verify catalogue and chapter content.
+_Avoid_: Download queue, sync queue, background update
+
+**Vault Integrity Fault**:
+A detected problem showing that the Content Vault cannot be safely trusted or modified without user attention.
+_Avoid_: Sync error, download error, cache miss
+
+**Vault Import**:
+Adding user-owned manga content into the Content Vault from files already available to Bakalah.
+_Avoid_: Upload sync, backup, local import
+
+**Local-to-Vault Import**:
+Vault Import that copies existing Local Manga content into the Content Vault without changing the original Local Manga files.
+_Avoid_: Local cleanup, migration, local sync
+
+**Import Target Hint**:
+A device-local remembered association between a Local Manga and the Vault Manga it was previously imported into.
+_Avoid_: Vault identity, metadata match, source truth
+
+**Vault Capture**:
+The explicit act of adding manga or chapter content from an app source into the Content Vault.
+_Avoid_: Auto backup, download, library add
+
+**Vault Publish**:
+Sending Bakalah-owned catalogue, metadata, or content changes to the Content Vault.
+_Avoid_: Sync upload, save to cloud
+
+**Vault Writer**:
+The Bakalah installation currently allowed to publish authoritative changes to a Content Vault.
+_Avoid_: Sync client, primary device, owner device
+
+**Vault Writer Takeover**:
+The explicit user-approved replacement of the Vault Writer for a Content Vault.
+_Avoid_: Lock expiry, device sync, automatic failover
+
+**Vault Catalogue Refresh**:
+Updating Bakalah's local view of the Vault Catalogue without necessarily caching chapter content.
+_Avoid_: Pull sync, download all, local source refresh
+
+**Cache Eviction**:
+Removing Cached Chapter content from the device while preserving its Vault Catalogue record.
+_Avoid_: Delete chapter, unsync, remove from vault
+
+**Vault Deletion**:
+Permanently removing manga content or catalogue records from the Content Vault.
+_Avoid_: Delete download, remove from device, cleanup
+
+**Vault Trash**:
+The recoverable holding area for vault-owned content removed from the Vault Collection but not yet permanently deleted.
+_Avoid_: Cache eviction, delete downloads, archive
+
+**Cache-First Reading**:
+Opening vault-owned chapter content by caching the chapter on the device before handing it to the reader.
+_Avoid_: Streaming, remote reading, direct cloud read
+
+**Cache Policy**:
+The user's rules for which Content Vault chapters should remain cached on a device and which cached chapters may be evicted.
+_Avoid_: Auto sync settings, download settings, cleanup settings
+
 **Local Manga File Identity**:
 The stable identity of a Local Manga as a user-owned local series folder, independent from its editable display title.
 _Avoid_: Local manga title, folder title
+
+**Vault Identity**:
+The stable generated identity of vault-owned manga or chapter content, independent from titles, folder names, source URLs, and filenames.
+_Avoid_: File identity, source URL identity, title identity
+
+**Content Provenance**:
+Optional information about where vault-owned content originally came from, without controlling its identity or readability.
+_Avoid_: Source identity, canonical URL, required source
 
 **Local Manga Metadata**:
 User-owned descriptive information for a Local Manga, such as title, creators, description, genres, and publication status.
