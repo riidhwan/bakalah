@@ -14,6 +14,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ### Added
 - Add local manga metadata editing for title, author, artist, description, genres, and status.
 
+### Changed
+- Hide Popular, Latest, and Filter controls from the Local source browse view.
+
 ## [v0.21.1] - 2026-06-05
 ### Improved
 - Improve Local source browse performance by paging results, caching directory listings, and avoiding expensive per-entry file checks during browsing.
