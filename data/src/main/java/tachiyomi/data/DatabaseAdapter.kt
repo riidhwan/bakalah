@@ -50,7 +50,7 @@ object VaultMangaCollectionStateColumnAdapter : ColumnAdapter<VaultMangaCollecti
 
 object VaultChapterContentFormatColumnAdapter : ColumnAdapter<VaultChapterContentFormat, Long> {
     override fun decode(databaseValue: Long): VaultChapterContentFormat =
-        VaultChapterContentFormat.entries.getOrElse(databaseValue.toInt()) { VaultChapterContentFormat.UNKNOWN }
+        VaultChapterContentFormat.entries.getOrElse(databaseValue.toInt()) { VaultChapterContentFormat.CBZ }
 
     override fun encode(value: VaultChapterContentFormat): Long = value.ordinal.toLong()
 }

@@ -12,6 +12,7 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.util.Screen
+import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import kotlinx.coroutines.flow.collectLatest
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.MR
@@ -41,6 +42,9 @@ data class VaultMangaScreen(
             },
             onClickRetry = {
                 screenModel.retryChapter(it)
+            },
+            onClickRead = {
+                context.startActivity(ReaderActivity.newVaultIntent(context, mangaId, it.chapter.id))
             },
             onClickDelete = {
                 screenModel.deleteManga()

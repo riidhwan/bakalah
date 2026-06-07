@@ -24,7 +24,7 @@ The user wants a durable personal manga collection that outlives device storage 
 - Support remote-only vault entries through a local Vault Index.
 - Support chapter-level caching with cache-first reading.
 - Prevent accidental data loss by keeping Vault upload/caching behavior explicit and cache eviction local-only.
-- Preserve imported chapter files in their existing supported format, except selected Local Source directory chapters are converted in place to CBZ before Local-to-Vault Import.
+- Store readable Vault chapter content as CBZ files only, converting selected Local Source directory chapters in place to CBZ before Local-to-Vault Import.
 - Verify content integrity for vault uploads and cache downloads.
 - Keep Vault Reading State device-local permanently.
 
@@ -109,7 +109,7 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - The v1 UI entry point starts from Local Manga detail; a Vault Surface picker or launcher for choosing Local Manga is deferred.
 - Import must use existing Local Source recognition/parsing behavior.
 - Import must support chapter selection and default to all recognized chapters.
-- Import must copy/upload content into the Content Vault. When selected Local Source chapters are directories, import must clearly warn the user and replace each selected directory chapter with a validated CBZ file before upload.
+- Import must copy/upload CBZ content into the Content Vault. When selected Local Source chapters are directories, import must clearly warn the user and replace each selected directory chapter with a validated CBZ file before upload.
 - Imported source files must not count as Local Content Cache unless separately cached into the Vault Cache Directory.
 - Directory-to-CBZ conversion must stage writes, validate the archive, keep deterministic page ordering, avoid absolute archive entry paths, and leave the original directory intact if conversion fails.
 - Repeated imports should first use a device-local Import Target Hint when available.
@@ -134,11 +134,31 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Cache unit is the chapter.
 - Local Content Cache must live in an app-managed Vault Cache Directory, separate from Local Source and Downloads.
 - The Vault Cache Directory should be under Bakalah's user-selected base storage directory.
-- Cache-first reading must cache and verify a chapter before handing it to the reader.
+- The Vault Catalogue must record readable chapter content as CBZ.
+- Opening a Vault-only chapter from the Vault Surface must cache and verify it before launching the reader.
+- Initial cache-before-launch uses the normal visible Vault Transfer Queue/cache state, with Vault Surface navigation to the reader chained after successful verification.
+- Opening a Vault-only chapter with an existing queued or running cache job must attach to that job instead of enqueueing a duplicate cache job.
+- Moving to an uncached adjacent chapter inside a Vault Reader Session may perform Cache-First Reading in the reader before displaying pages.
+- Adjacent cache failures must keep the failed Vault Chapter visible in the reader sequence with retry rather than removing or silently skipping it.
+- Cache-first reading must only hand verified CBZ Cached Chapters to the reader.
+- Opening an already Cached Chapter must re-check local file existence, size, and checksum before handing it to the reader.
+- Cached Chapter `lastOpenedAt` should update only after the reader successfully displays a page from the verified CBZ.
+- Vault Reader Sessions must not automatically cache ahead into Vault-only chapters in v1; new cache transfers are created only when the user opens or navigates to that chapter.
+- If Vault Catalogue state changes while a Vault Reader Session is open, the current verified chapter may remain readable, but navigation must not enter newly trashed or removed adjacent content.
+- Vault Reader Session restore must use explicit Vault session identity and Vault Manga/Chapter identifiers, not temporary Library Manga/Chapter identifiers.
 - V1 must reuse existing reader UI/infrastructure where possible.
+- Reader integration should split shared reader UI/viewer orchestration from session-specific behavior through a small reader backend boundary, with separate Library and Vault implementations.
+- Vault Reader Sessions use Vault Catalogue chapter order by `sourceOrder`; Library chapter sorting and filtering preferences do not apply.
 - Vault Reading State must remain owned by the Vault Feature and device-local.
+- Vault Reading State covers page progress, read markers, bookmarks, and last-read timestamps; v1 does not add Vault read-duration history or tracker progress.
+- Vault Reading State should update `lastReadAt` when persisted page progress changes, including first displayed page and completion, while avoiding repeated writes for the same page index.
+- Vault Reader Sessions use global reader defaults for reading mode and orientation in v1; per-Vault Manga viewer flags are out of scope for cache-first reading.
+- Completing a Vault Chapter marks only that Vault Chapter read; Library duplicate-read propagation does not apply to Vault Reader Sessions.
+- Vault Reader Sessions may keep generic page image actions such as save, share, and copy when backed by a loaded page stream, but must not expose Library-specific cover mutation such as set-as-cover in this slice.
 - Cache eviction must remove only app-managed cached chapter content, never original Local Manga files and never vault-owned remote content.
 - Default cache policy should cache opened chapters and evict oldest read cached chapters when the user-set size limit is exceeded.
+- Cache policy enforcement after reader-triggered caching must protect the active Vault Reader Session's current chapter and immediate loaded neighbors.
+- Manual cache eviction must not remove a Cached Chapter that is part of an active Vault Reader Session's current chapter or immediate loaded neighbors on the device.
 - The user must be able to manually cache and evict selected chapters.
 - Local cache usage and remote vault storage usage must be shown separately.
 - Local cache limit is hard-enforced; remote vault quota is a soft warning.
@@ -155,6 +175,7 @@ Vault deletion must not delete original Local Manga files under `local/`, existi
 - Partial transfers must never become visible vault content or Cached Chapters.
 - Content Integrity must include at least size and checksum for each chapter content file.
 - Cache downloads must verify integrity before marking a chapter cached.
+- Open-time cache verification must mark missing local cache files as Vault-only and existing files with size/checksum mismatch as Integrity fault.
 - Import publish must verify integrity before updating the catalogue.
 - Cancellation must clean up unfinished staged artifacts where possible and must not roll back completed verified operations.
 - Failed jobs must remain visible and retryable.

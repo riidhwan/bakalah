@@ -114,6 +114,14 @@ class ReaderActivity : BaseActivity() {
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
         }
+
+        fun newVaultIntent(context: Context, mangaId: Long, chapterId: Long): Intent {
+            return Intent(context, ReaderActivity::class.java).apply {
+                putExtra("vault_manga", mangaId)
+                putExtra("vault_chapter", chapterId)
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+        }
     }
 
     private val readerPreferences = Injekt.get<ReaderPreferences>()
@@ -169,14 +177,20 @@ class ReaderActivity : BaseActivity() {
         binding.setComposeOverlay()
 
         if (viewModel.needsInit()) {
+            val vaultManga = intent.extras?.getLong("vault_manga", -1) ?: -1L
+            val vaultChapter = intent.extras?.getLong("vault_chapter", -1) ?: -1L
             val manga = intent.extras?.getLong("manga", -1) ?: -1L
             val chapter = intent.extras?.getLong("chapter", -1) ?: -1L
-            if (manga == -1L || chapter == -1L) {
+            if ((vaultManga == -1L || vaultChapter == -1L) && (manga == -1L || chapter == -1L)) {
                 finish()
                 return
             }
             lifecycleScope.launchNonCancellable {
-                val initResult = viewModel.init(manga, chapter)
+                val initResult = if (vaultManga != -1L && vaultChapter != -1L) {
+                    viewModel.initVault(vaultManga, vaultChapter)
+                } else {
+                    viewModel.init(manga, chapter)
+                }
                 if (!initResult.getOrDefault(false)) {
                     val exception = initResult.exceptionOrNull() ?: IllegalStateException("Unknown err")
                     withUIContext {
@@ -321,7 +335,7 @@ class ReaderActivity : BaseActivity() {
             is ReaderViewModel.Dialog.PageActions -> {
                 ReaderPageActionsDialog(
                     onDismissRequest = onDismissRequest,
-                    onSetAsCover = viewModel::setAsCover,
+                    onSetAsCover = if (state.isVaultSession) null else viewModel::setAsCover,
                     onShare = viewModel::shareImage,
                     onSave = viewModel::saveImage,
                 )
@@ -465,12 +479,16 @@ class ReaderActivity : BaseActivity() {
             mangaTitle = state.manga?.title,
             chapterTitle = state.currentChapter?.chapter?.name,
             navigateUp = onBackPressedDispatcher::onBackPressed,
-            onClickTopAppBar = ::openMangaScreen,
+            onClickTopAppBar = if (state.isVaultSession) {
+                {}
+            } else {
+                ::openMangaScreen
+            },
             bookmarked = state.bookmarked,
             onToggleBookmarked = viewModel::toggleChapterBookmark,
-            onOpenInWebView = ::openChapterInWebView.takeIf { isHttpSource },
-            onOpenInBrowser = ::openChapterInBrowser.takeIf { isHttpSource },
-            onShare = ::shareChapter.takeIf { isHttpSource },
+            onOpenInWebView = ::openChapterInWebView.takeIf { isHttpSource && !state.isVaultSession },
+            onOpenInBrowser = ::openChapterInBrowser.takeIf { isHttpSource && !state.isVaultSession },
+            onShare = ::shareChapter.takeIf { isHttpSource && !state.isVaultSession },
 
             chapterNavigatorType = if (isPagerType || !verticalNavigatorForLongStrip) {
                 if (state.viewer is R2LPagerViewer) {

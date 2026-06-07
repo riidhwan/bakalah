@@ -1,5 +1,6 @@
 package eu.kanade.presentation.vault
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -48,6 +49,7 @@ fun VaultMangaScreen(
     onClickCache: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickEvict: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRetry: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickDelete: () -> Unit,
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -100,6 +102,7 @@ fun VaultMangaScreen(
                 onClickCache = onClickCache,
                 onClickEvict = onClickEvict,
                 onClickRetry = onClickRetry,
+                onClickRead = onClickRead,
             )
         }
     }
@@ -135,6 +138,7 @@ private fun VaultChapterList(
     onClickCache: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickEvict: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRetry: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
 ) {
     FastScrollLazyColumn(
         contentPadding = contentPadding,
@@ -173,6 +177,7 @@ private fun VaultChapterList(
                 onClickCache = { onClickCache(item) },
                 onClickEvict = { onClickEvict(item) },
                 onClickRetry = { onClickRetry(item) },
+                onClickRead = { onClickRead(item) },
                 modifier = Modifier.animateItem(),
             )
         }
@@ -185,11 +190,13 @@ private fun VaultChapterListItem(
     onClickCache: () -> Unit,
     onClickEvict: () -> Unit,
     onClickRetry: () -> Unit,
+    onClickRead: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .clickable(onClick = onClickRead)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {

@@ -157,7 +157,7 @@ class BuildVaultCatalogueRefreshTest {
                 sourceOrder = 0,
                 content = VaultManifestChapterContent(
                     path = "content/chapter-1.cbz",
-                    format = VaultChapterContentFormat.ARCHIVE,
+                    format = VaultChapterContentFormat.CBZ,
                     integrity = VaultContentIntegrity(sizeBytes = 123, checksumSha256 = "chapter-checksum"),
                 ),
                 revisionId = "chapter-rev",

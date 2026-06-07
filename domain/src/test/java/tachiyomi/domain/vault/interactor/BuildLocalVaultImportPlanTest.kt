@@ -162,7 +162,7 @@ class BuildLocalVaultImportPlanTest {
         volumeNumber = null,
         scanlator = null,
         sourceOrder = 0,
-        contentFormat = VaultChapterContentFormat.ARCHIVE,
+        contentFormat = VaultChapterContentFormat.CBZ,
         sizeBytes = 10,
         checksumSha256 = checksum,
         dateUpload = 20,
@@ -203,7 +203,7 @@ class BuildLocalVaultImportPlanTest {
         sourceOrder = 0,
         content = VaultChapterContent(
             path = "content/$checksum.cbz",
-            format = VaultChapterContentFormat.ARCHIVE,
+            format = VaultChapterContentFormat.CBZ,
             sizeBytes = 10,
             checksumSha256 = checksum,
         ),

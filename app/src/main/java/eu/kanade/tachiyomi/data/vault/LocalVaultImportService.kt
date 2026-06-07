@@ -303,8 +303,8 @@ class LocalVaultImportService(
         val chapters = localSource.getChapterList(details).mapIndexedNotNull { index, chapter ->
             val fileName = chapter.url.substringAfter('/', missingDelimiterValue = chapter.url)
             val file = chapterFiles[fileName] ?: return@mapIndexedNotNull null
-            val format = file.toVaultContentFormat()
-            val digest = file.previewDigest(format)
+            if (!file.isDirectory && !file.isCbz()) return@mapIndexedNotNull null
+            val digest = file.previewDigest()
             ScannedLocalChapter(
                 file = file,
                 chapter = LocalVaultImportChapter(
@@ -314,11 +314,11 @@ class LocalVaultImportService(
                     volumeNumber = null,
                     scanlator = chapter.scanlator,
                     sourceOrder = index.toLong(),
-                    contentFormat = format,
+                    contentFormat = VaultChapterContentFormat.CBZ,
                     sizeBytes = digest.sizeBytes,
                     checksumSha256 = digest.sha256,
                     dateUpload = chapter.date_upload,
-                    requiresLocalCbzConversion = format == VaultChapterContentFormat.DIRECTORY,
+                    requiresLocalCbzConversion = file.isDirectory,
                 ),
             )
         }
@@ -383,7 +383,7 @@ class LocalVaultImportService(
             return copy(
                 file = archive,
                 chapter = chapter.copy(
-                    contentFormat = VaultChapterContentFormat.ARCHIVE,
+                    contentFormat = VaultChapterContentFormat.CBZ,
                     sizeBytes = digest.sizeBytes,
                     checksumSha256 = digest.sha256,
                     requiresLocalCbzConversion = false,
@@ -602,14 +602,6 @@ class LocalVaultImportService(
         }
     }
 
-    private fun UniFile.toVaultContentFormat(): VaultChapterContentFormat {
-        return when (Format.valueOf(this)) {
-            is Format.Archive -> VaultChapterContentFormat.ARCHIVE
-            is Format.Epub -> VaultChapterContentFormat.EPUB
-            is Format.Directory -> VaultChapterContentFormat.DIRECTORY
-        }
-    }
-
     private fun UniFile.digest(): FileDigest {
         val digest = MessageDigest.getInstance("SHA-256")
         var size = 0L
@@ -626,8 +618,8 @@ class LocalVaultImportService(
         return FileDigest(size, digest.digest().toHex())
     }
 
-    private fun UniFile.previewDigest(format: VaultChapterContentFormat): FileDigest {
-        if (format != VaultChapterContentFormat.DIRECTORY) return digest()
+    private fun UniFile.previewDigest(): FileDigest {
+        if (!isDirectory) return digest()
 
         return FileDigest(
             sizeBytes = length().takeIf { it >= 0 } ?: 0,
@@ -678,6 +670,11 @@ class LocalVaultImportService(
                 first.name.orEmpty().compareToCaseInsensitiveNaturalOrder(second.name.orEmpty())
             }
             .map { LocalPageEntry(file = it, relativePath = cbzEntryName(it.name.orEmpty())) }
+    }
+
+    private fun UniFile.isCbz(): Boolean {
+        return name.orEmpty().substringAfterLast('.', missingDelimiterValue = "").equals("cbz", ignoreCase = true) &&
+            Format.valueOf(this) is Format.Archive
     }
 
     private fun UniFile.relativePathFrom(root: UniFile): String {
