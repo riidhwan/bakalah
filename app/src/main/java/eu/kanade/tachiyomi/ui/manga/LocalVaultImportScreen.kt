@@ -365,15 +365,26 @@ class LocalVaultImportScreenModel(
                         it.duplicateState != LocalVaultImportDuplicateState.EXACT
                 }
 
-        val selectedSourceSizeBytes: Long
+        val selectedKnownSourceSizeBytes: Long
             get() = plan
                 ?.chapters
                 .orEmpty()
                 .filter {
                     it.chapter.selectionId in selectedChapterIds &&
-                        it.duplicateState != LocalVaultImportDuplicateState.EXACT
+                        it.duplicateState != LocalVaultImportDuplicateState.EXACT &&
+                        !it.chapter.requiresLocalCbzConversion
                 }
                 .sumOf { it.chapter.sizeBytes }
+
+        val hasSelectedKnownSourceSize: Boolean
+            get() = plan
+                ?.chapters
+                .orEmpty()
+                .any {
+                    it.chapter.selectionId in selectedChapterIds &&
+                        it.duplicateState != LocalVaultImportDuplicateState.EXACT &&
+                        !it.chapter.requiresLocalCbzConversion
+                }
     }
 
     sealed interface TargetSelection {
