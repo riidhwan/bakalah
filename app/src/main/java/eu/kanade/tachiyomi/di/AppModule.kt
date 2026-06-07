@@ -19,6 +19,7 @@ import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.vault.ContentVaultSetupService
 import eu.kanade.tachiyomi.data.vault.LocalVaultImportService
 import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshService
+import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionService
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -37,6 +38,7 @@ import tachiyomi.data.StringListColumnAdapter
 import tachiyomi.data.UpdateStrategyColumnAdapter
 import tachiyomi.data.VaultCacheStateColumnAdapter
 import tachiyomi.data.VaultChapterContentFormatColumnAdapter
+import tachiyomi.data.VaultMangaCollectionStateColumnAdapter
 import tachiyomi.data.VaultMangaStatusColumnAdapter
 import tachiyomi.data.VaultTransferStateColumnAdapter
 import tachiyomi.data.VaultTransferTypeColumnAdapter
@@ -98,6 +100,7 @@ class AppModule(val app: Application) : InjektModule {
                 ),
                 vault_mangasAdapter = Vault_mangas.Adapter(
                     statusAdapter = VaultMangaStatusColumnAdapter,
+                    collection_stateAdapter = VaultMangaCollectionStateColumnAdapter,
                 ),
                 vault_transfer_jobsAdapter = Vault_transfer_jobs.Adapter(
                     typeAdapter = VaultTransferTypeColumnAdapter,
@@ -133,6 +136,7 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { NetworkHelper(app, get()) }
         addSingletonFactory { ContentVaultSetupService(get(), get(), get(), get()) }
         addSingletonFactory { VaultCatalogueRefreshService(get(), get(), get(), get()) }
+        addSingletonFactory { VaultMangaDeletionService(get(), get(), get(), get(), get()) }
         addSingletonFactory { LocalVaultImportService(get(), get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { JavaScriptEngine(app) }
 

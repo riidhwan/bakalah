@@ -4,6 +4,7 @@ import app.cash.sqldelight.ColumnAdapter
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapterContentFormat
+import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.model.VaultTransferType
@@ -38,6 +39,13 @@ object VaultMangaStatusColumnAdapter : ColumnAdapter<VaultMangaStatus, Long> {
         VaultMangaStatus.entries.getOrElse(databaseValue.toInt()) { VaultMangaStatus.UNKNOWN }
 
     override fun encode(value: VaultMangaStatus): Long = value.ordinal.toLong()
+}
+
+object VaultMangaCollectionStateColumnAdapter : ColumnAdapter<VaultMangaCollectionState, Long> {
+    override fun decode(databaseValue: Long): VaultMangaCollectionState =
+        VaultMangaCollectionState.entries.getOrElse(databaseValue.toInt()) { VaultMangaCollectionState.ACTIVE }
+
+    override fun encode(value: VaultMangaCollectionState): Long = value.ordinal.toLong()
 }
 
 object VaultChapterContentFormatColumnAdapter : ColumnAdapter<VaultChapterContentFormat, Long> {

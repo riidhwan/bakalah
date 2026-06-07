@@ -1,0 +1,2 @@
+ALTER TABLE vault_mangas ADD COLUMN collection_state INTEGER AS VaultMangaCollectionState NOT NULL DEFAULT 0;
+ALTER TABLE vault_mangas ADD COLUMN trashed_at INTEGER;

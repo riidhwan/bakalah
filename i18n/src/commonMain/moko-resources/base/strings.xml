@@ -181,10 +181,12 @@
     <string name="vault_action_import_to_vault">Import to Vault</string>
     <string name="vault_action_cache">Cache</string>
     <string name="vault_action_evict">Evict cache</string>
+    <string name="vault_action_delete_manga">Delete from Vault</string>
     <string name="vault_action_import_unavailable">Local-to-Vault Import needs the import flow from the Local tab.</string>
     <string name="vault_action_cache_unavailable">Chapter caching needs the Vault transfer queue slice.</string>
     <string name="vault_action_evict_unavailable">Cache eviction needs the Vault cache policy slice.</string>
     <string name="vault_action_retry_unavailable">Retry needs the Vault transfer queue slice.</string>
+    <string name="vault_action_delete_unavailable">Vault deletion is unavailable.</string>
     <string name="vault_empty_no_configured_vault">No Content Vault is configured</string>
     <string name="vault_empty_collection">The Vault Collection is empty</string>
     <string name="vault_empty_chapters">No Vault Chapters found</string>
@@ -193,6 +195,10 @@
     <string name="vault_refresh_completed_details">Vault Catalogue refreshed: %1$d manga, %2$d chapters</string>
     <string name="vault_refresh_failed">Could not refresh Vault Catalogue</string>
     <string name="vault_refresh_failed_details">Could not refresh Vault Catalogue: %s</string>
+    <string name="vault_delete_manga_confirm_title">Delete from Vault?</string>
+    <string name="vault_delete_manga_confirm_message">This moves the manga to Vault Trash and removes only this device's app-managed Vault cache for it. Original Local Manga files and Downloads will not be deleted.</string>
+    <string name="vault_delete_manga_complete">Vault Manga moved to Trash</string>
+    <string name="vault_delete_manga_failed_details">Could not delete from Vault: %s</string>
     <string name="vault_local_cache_usage">Local Cache: %s</string>
     <string name="vault_storage_usage">Vault Storage: %s</string>
     <string name="vault_manga_count">%d Vault Manga</string>

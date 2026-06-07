@@ -8,6 +8,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.VaultChapterContentFormat
 import tachiyomi.domain.vault.model.VaultContentIntegrity
+import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultMangaManifest
 import tachiyomi.domain.vault.model.VaultMangaManifestPointer
 import tachiyomi.domain.vault.model.VaultMangaStatus
@@ -67,6 +68,33 @@ class BuildVaultCatalogueRefreshTest {
         )
 
         result shouldBe VaultCatalogueRefreshBuildResult.IdentityMismatch("manga/one-piece.json")
+    }
+
+    @Test
+    fun `build uses root pointer trash state as catalogue authority`() {
+        val root = rootManifest().copy(
+            manga = listOf(
+                rootManifest().manga.single().copy(
+                    collectionState = VaultMangaCollectionState.TRASHED,
+                    trashedAt = 1_200,
+                ),
+            ),
+        )
+        val result = builder.build(
+            rootManifestPath = "vault/content-vault.json",
+            rootManifestBody = codec.encodeRoot(root),
+            mangaManifestBodies = mapOf("manga/one-piece.json" to codec.encodeManga(mangaManifest())),
+            existingVault = null,
+            fetchedAt = 1_000,
+        )
+
+        (result is VaultCatalogueRefreshBuildResult.Success) shouldBe true
+        val refresh = (result as VaultCatalogueRefreshBuildResult.Success).refresh
+
+        refresh.manga.single().manga.collectionState shouldBe VaultMangaCollectionState.TRASHED
+        refresh.manga.single().manga.trashedAt shouldBe 1_200
+        refresh.activeManga shouldBe emptyList()
+        refresh.labels shouldBe emptyList()
     }
 
     private fun rootManifest() = VaultRootManifest(

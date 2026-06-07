@@ -20,6 +20,7 @@ import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
+import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultManifestSnapshot
 import tachiyomi.domain.vault.model.VaultMetadata
@@ -83,6 +84,32 @@ class VaultCachePolicyServiceTest {
         repository.cacheStates[1]?.state shouldBe VaultCacheState.CACHED
     }
 
+    @Test
+    fun `manga eviction removes only cached chapter files tracked by cache state`() = runTest {
+        val repository = FakeVaultRepository()
+        val local = FakeLocalStaging(
+            mutableMapOf(
+                "cache/manga/chapter-1.cbz" to byteArrayOf(1),
+                "local/original/chapter-1.cbz" to byteArrayOf(2),
+                "downloads/chapter-1.cbz" to byteArrayOf(3),
+            ),
+        )
+        val service = VaultCachePolicyService(repository, local, preferences()) { 100 }
+        repository.chapters += chapter(id = 1, contentPath = "remote/chapter-1.cbz")
+        repository.cacheStates[1] = cacheState(
+            chapterId = 1,
+            localPath = "cache/manga/chapter-1.cbz",
+            sizeBytes = 60,
+        )
+
+        val result = service.evictManga(mangaId = 1)
+
+        result.evictedChapterIds.shouldContainExactly(1)
+        local.files.keys.shouldContainExactly(setOf("local/original/chapter-1.cbz", "downloads/chapter-1.cbz"))
+        repository.cacheStates[1]?.state shouldBe VaultCacheState.VAULT_ONLY
+        repository.cacheStates[1]?.localPath shouldBe null
+    }
+
     private class FakeLocalStaging(
         val files: MutableMap<String, ByteArray> = mutableMapOf(),
     ) : VaultTransferLocalStaging {
@@ -100,6 +127,7 @@ class VaultCachePolicyServiceTest {
 
     private class FakeVaultRepository : VaultRepository {
         val cacheStates = mutableMapOf<Long, VaultChapterCacheState>()
+        val chapters = mutableListOf<VaultChapter>()
         val readChapterIds = mutableSetOf<Long>()
 
         override fun getVaultsAsFlow(): Flow<List<ContentVault>> = emptyFlow()
@@ -113,7 +141,7 @@ class VaultCachePolicyServiceTest {
         override fun getChaptersAsFlow(mangaId: Long): Flow<List<VaultChapter>> = emptyFlow()
         override fun getChaptersForVaultAsFlow(vaultId: Long): Flow<List<VaultChapter>> = emptyFlow()
         override suspend fun getChaptersForVault(vaultId: Long): List<VaultChapter> = emptyList()
-        override suspend fun getChapters(mangaId: Long): List<VaultChapter> = emptyList()
+        override suspend fun getChapters(mangaId: Long): List<VaultChapter> = chapters.filter { it.mangaId == mangaId }
         override suspend fun upsertChapters(mangaId: Long, chapters: List<VaultChapter>) = Unit
         override suspend fun getLabels(vaultId: Long): List<VaultLabel> = emptyList()
         override suspend fun upsertLabels(vaultId: Long, labels: List<VaultLabel>) = Unit
@@ -179,6 +207,8 @@ class VaultCachePolicyServiceTest {
                 status = VaultMangaStatus.UNKNOWN,
             ),
             sortKey = "manga",
+            collectionState = VaultMangaCollectionState.ACTIVE,
+            trashedAt = null,
             coverId = null,
             revision = VaultRevision("revision", 1),
             createdAt = 1,

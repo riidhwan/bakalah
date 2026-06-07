@@ -241,11 +241,11 @@ Removing Cached Chapter content from the device while preserving its Vault Catal
 _Avoid_: Delete chapter, unsync, remove from vault
 
 **Vault Deletion**:
-Permanently removing manga content or catalogue records from the Content Vault.
+Removing manga from the normal Vault Collection through a Vault-owned workflow; the current manga-level workflow moves content to Vault Trash rather than deleting Local Manga files, Downloads, or arbitrary local files.
 _Avoid_: Delete download, remove from device, cleanup
 
 **Vault Trash**:
-The recoverable holding area for vault-owned content removed from the Vault Collection but not yet permanently deleted.
+The recoverable holding area for vault-owned content removed from normal Vault browsing but still represented in the authoritative Vault Catalogue.
 _Avoid_: Cache eviction, delete downloads, archive
 
 **Cache-First Reading**:
