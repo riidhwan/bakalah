@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import tachiyomi.domain.vault.model.ContentVault
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ImportTargetHint
+import tachiyomi.domain.vault.model.VaultCatalogueRefresh
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
 import tachiyomi.domain.vault.model.VaultCover
@@ -54,4 +55,6 @@ interface VaultRepository {
     suspend fun getImportTargetHint(localMangaId: Long): ImportTargetHint?
 
     suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long
+
+    suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long
 }

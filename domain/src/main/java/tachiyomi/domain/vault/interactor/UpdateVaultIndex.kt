@@ -1,6 +1,7 @@
 package tachiyomi.domain.vault.interactor
 
 import tachiyomi.domain.vault.model.ContentVault
+import tachiyomi.domain.vault.model.VaultCatalogueRefresh
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.repository.VaultRepository
@@ -14,5 +15,9 @@ class UpdateVaultIndex(
 
     suspend fun replaceChapters(mangaId: Long, chapters: List<VaultChapter>) {
         repository.upsertChapters(mangaId, chapters)
+    }
+
+    suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long {
+        return repository.refreshCatalogue(refresh)
     }
 }

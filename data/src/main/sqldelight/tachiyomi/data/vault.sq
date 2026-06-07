@@ -194,6 +194,15 @@ FROM vault_mangas
 WHERE vault_id = :vaultId
 AND identity = :identity;
 
+deleteMangaNotInIdentities:
+DELETE FROM vault_mangas
+WHERE vault_id = :vaultId
+AND identity NOT IN :identities;
+
+deleteMangaForVault:
+DELETE FROM vault_mangas
+WHERE vault_id = :vaultId;
+
 upsertManga:
 INSERT INTO vault_mangas(
     _id, vault_id, identity, title, sort_key, author, artist, description, status, cover_id,
@@ -309,6 +318,15 @@ SELECT *
 FROM vault_covers
 WHERE manga_id = :mangaId
 AND identity = :identity;
+
+deleteCoversNotInIdentities:
+DELETE FROM vault_covers
+WHERE manga_id = :mangaId
+AND identity NOT IN :identities;
+
+deleteCoversForManga:
+DELETE FROM vault_covers
+WHERE manga_id = :mangaId;
 
 upsertReadingState:
 INSERT INTO vault_reading_state(chapter_id, read, bookmark, last_page_read, last_read_at, updated_at)
