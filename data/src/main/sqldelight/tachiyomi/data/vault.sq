@@ -230,6 +230,13 @@ FROM vault_chapters
 WHERE manga_id = :mangaId
 ORDER BY source_order;
 
+getChaptersForVault:
+SELECT vault_chapters.*
+FROM vault_chapters
+JOIN vault_mangas ON vault_mangas._id = vault_chapters.manga_id
+WHERE vault_mangas.vault_id = :vaultId
+ORDER BY vault_mangas.sort_key, vault_chapters.source_order;
+
 deleteChaptersNotInIdentities:
 DELETE FROM vault_chapters
 WHERE manga_id = :mangaId
@@ -366,6 +373,19 @@ getCacheState:
 SELECT *
 FROM vault_chapter_cache_state
 WHERE chapter_id = :chapterId;
+
+getCacheStatesForManga:
+SELECT vault_chapter_cache_state.*
+FROM vault_chapter_cache_state
+JOIN vault_chapters ON vault_chapters._id = vault_chapter_cache_state.chapter_id
+WHERE vault_chapters.manga_id = :mangaId;
+
+getCacheStatesForVault:
+SELECT vault_chapter_cache_state.*
+FROM vault_chapter_cache_state
+JOIN vault_chapters ON vault_chapters._id = vault_chapter_cache_state.chapter_id
+JOIN vault_mangas ON vault_mangas._id = vault_chapters.manga_id
+WHERE vault_mangas.vault_id = :vaultId;
 
 upsertImportTargetHint:
 INSERT INTO vault_import_target_hints(local_manga_id, local_manga_identity, vault_manga_id, updated_at)

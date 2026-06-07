@@ -34,6 +34,8 @@ interface VaultRepository {
 
     fun getChaptersAsFlow(mangaId: Long): Flow<List<VaultChapter>>
 
+    fun getChaptersForVaultAsFlow(vaultId: Long): Flow<List<VaultChapter>>
+
     suspend fun getChapters(mangaId: Long): List<VaultChapter>
 
     suspend fun upsertChapters(mangaId: Long, chapters: List<VaultChapter>)
@@ -53,6 +55,10 @@ interface VaultRepository {
     suspend fun upsertCacheState(state: VaultChapterCacheState)
 
     suspend fun getCacheState(chapterId: Long): VaultChapterCacheState?
+
+    fun getCacheStatesForMangaAsFlow(mangaId: Long): Flow<List<VaultChapterCacheState>>
+
+    fun getCacheStatesForVaultAsFlow(vaultId: Long): Flow<List<VaultChapterCacheState>>
 
     suspend fun upsertImportTargetHint(hint: ImportTargetHint)
 
