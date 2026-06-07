@@ -108,6 +108,12 @@ class VaultRepositoryImpl(
             .subscribeToList()
     }
 
+    override fun getChaptersForVaultAsFlow(vaultId: Long): Flow<List<VaultChapter>> {
+        return database.vaultQueries
+            .getChaptersForVault(vaultId, VaultMapper::mapChapter)
+            .subscribeToList()
+    }
+
     override suspend fun getChapters(mangaId: Long): List<VaultChapter> {
         return database.vaultQueries
             .getChaptersForManga(mangaId, VaultMapper::mapChapter)
@@ -235,6 +241,18 @@ class VaultRepositoryImpl(
         return database.vaultQueries
             .getCacheState(chapterId, VaultMapper::mapCacheState)
             .awaitAsOneOrNull()
+    }
+
+    override fun getCacheStatesForMangaAsFlow(mangaId: Long): Flow<List<VaultChapterCacheState>> {
+        return database.vaultQueries
+            .getCacheStatesForManga(mangaId, VaultMapper::mapCacheState)
+            .subscribeToList()
+    }
+
+    override fun getCacheStatesForVaultAsFlow(vaultId: Long): Flow<List<VaultChapterCacheState>> {
+        return database.vaultQueries
+            .getCacheStatesForVault(vaultId, VaultMapper::mapCacheState)
+            .subscribeToList()
     }
 
     override suspend fun upsertImportTargetHint(hint: ImportTargetHint) {

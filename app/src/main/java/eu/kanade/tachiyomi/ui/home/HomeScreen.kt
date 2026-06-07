@@ -43,6 +43,7 @@ import eu.kanade.tachiyomi.ui.library.LibraryTab
 import eu.kanade.tachiyomi.ui.local.LocalTab
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
 import eu.kanade.tachiyomi.ui.more.MoreTab
+import eu.kanade.tachiyomi.ui.vault.VaultTab
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -72,6 +73,7 @@ object HomeScreen : Screen() {
     private val TABS = listOf(
         LibraryTab,
         LocalTab,
+        VaultTab,
         HistoryTab,
         BrowseTab,
         MoreTab,
@@ -153,6 +155,7 @@ object HomeScreen : Screen() {
                         tabNavigator.current = when (it) {
                             is Tab.Library -> LibraryTab
                             Tab.Local -> LocalTab
+                            Tab.Vault -> VaultTab
                             Tab.History -> HistoryTab
                             is Tab.Browse -> {
                                 if (it.toExtensions) {
@@ -280,6 +283,7 @@ object HomeScreen : Screen() {
     sealed interface Tab {
         data class Library(val mangaIdToOpen: Long? = null) : Tab
         data object Local : Tab
+        data object Vault : Tab
         data object History : Tab
         data class Browse(val toExtensions: Boolean = false) : Tab
         data class More(val toDownloads: Boolean) : Tab
