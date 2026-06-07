@@ -4,6 +4,7 @@ import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.util.lang.compareToCaseInsensitiveNaturalOrder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -18,6 +19,7 @@ import okio.BufferedSink
 import okio.source
 import tachiyomi.core.common.storage.extension
 import tachiyomi.core.common.storage.nameWithoutExtension
+import tachiyomi.core.common.util.system.ImageUtil
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.vault.interactor.BuildLocalVaultImportPlan
@@ -54,9 +56,15 @@ import tachiyomi.source.local.LocalSource
 import tachiyomi.source.local.io.Format
 import tachiyomi.source.local.io.LocalSourceFileSystem
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.UUID
+import java.util.zip.CRC32
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
 class LocalVaultImportService(
     networkHelper: NetworkHelper,
@@ -167,7 +175,13 @@ class LocalVaultImportService(
         val mangaIdentity = target.mangaIdentity(remoteMangaManifest)
         val existingRemoteChapters = remoteMangaManifest?.chapters.orEmpty()
         val existingChecksums = existingRemoteChapters.map { it.content.integrity.checksumSha256 }.toSet()
-        val chaptersToImport = selectedChapters.filter { it.chapter.checksumSha256 !in existingChecksums }
+        val convertedSelectedChapters = runCatching {
+            convertDirectoryChaptersToCbz(selectedChapters)
+        }.getOrElse {
+            return LocalVaultImportResult.UploadFailed
+        }
+        val chaptersToImport = convertedSelectedChapters.filter { it.chapter.checksumSha256 !in existingChecksums }
+        val skippedDuplicateCount = convertedSelectedChapters.size - chaptersToImport.size
 
         webDav.createDirectory(config.rootPath.childPath("manga"))
         webDav.createDirectory(config.rootPath.childPath("content"))
@@ -262,14 +276,14 @@ class LocalVaultImportService(
                 ?: return LocalVaultImportResult.Imported(
                     mangaIdentity = VaultIdentity(mangaIdentity),
                     importedChapterCount = importedChapters.size,
-                    skippedExactDuplicateCount = selectedChapters.size - chaptersToImport.size,
+                    skippedExactDuplicateCount = skippedDuplicateCount,
                 ),
         )
 
         return LocalVaultImportResult.Imported(
             mangaIdentity = VaultIdentity(mangaIdentity),
             importedChapterCount = importedChapters.size,
-            skippedExactDuplicateCount = selectedChapters.size - chaptersToImport.size,
+            skippedExactDuplicateCount = skippedDuplicateCount,
         )
     }
 
@@ -292,6 +306,7 @@ class LocalVaultImportService(
             val fileName = chapter.url.substringAfter('/', missingDelimiterValue = chapter.url)
             val file = chapterFiles[fileName] ?: return@mapIndexedNotNull null
             val digest = file.digest()
+            val format = file.toVaultContentFormat()
             ScannedLocalChapter(
                 file = file,
                 chapter = LocalVaultImportChapter(
@@ -301,10 +316,11 @@ class LocalVaultImportService(
                     volumeNumber = null,
                     scanlator = chapter.scanlator,
                     sourceOrder = index.toLong(),
-                    contentFormat = file.toVaultContentFormat(),
+                    contentFormat = format,
                     sizeBytes = digest.sizeBytes,
                     checksumSha256 = digest.sha256,
                     dateUpload = chapter.date_upload,
+                    requiresLocalCbzConversion = format == VaultChapterContentFormat.DIRECTORY,
                 ),
             )
         }
@@ -326,6 +342,60 @@ class LocalVaultImportService(
     }
 
     private fun localSource(): LocalSource? = sourceManager.get(LocalSource.ID) as? LocalSource
+
+    private fun convertDirectoryChaptersToCbz(chapters: List<ScannedLocalChapter>): List<ScannedLocalChapter> {
+        return chapters.map { chapter ->
+            if (chapter.file.isDirectory) {
+                chapter.convertDirectoryToCbz()
+            } else {
+                chapter
+            }
+        }
+    }
+
+    private fun ScannedLocalChapter.convertDirectoryToCbz(): ScannedLocalChapter {
+        val parent = file.parentFile ?: error("Local chapter directory has no parent")
+        val finalName = collisionSafeCbzName(
+            baseName = file.nameWithoutExtension.orEmpty().ifBlank { file.name.orEmpty() },
+            existingNames = parent.listFiles().orEmpty().mapNotNull { it.name }.toSet(),
+        )
+        val tempName = ".$finalName.tmp-${UUID.randomUUID()}.cbz"
+        val tempFile = parent.createFile(tempName) ?: error("Could not create temporary CBZ")
+        try {
+            val entries = file.listReadablePageEntries()
+            require(entries.isNotEmpty()) { "Directory chapter has no readable image pages" }
+            tempFile.openOutputStream().use { output ->
+                writeStoredCbz(
+                    output = output,
+                    entries = entries.map { entry ->
+                        CbzEntry(
+                            name = entry.relativePath,
+                            openInputStream = { entry.file.openInputStream() },
+                        )
+                    },
+                )
+            }
+            validateCbz(tempFile, entries.map { it.relativePath })
+            if (!tempFile.renameTo(finalName)) {
+                error("Could not promote temporary CBZ")
+            }
+            val archive = parent.findFile(finalName) ?: error("Promoted CBZ is missing")
+            val digest = archive.digest()
+            file.deleteRecursively()
+            return copy(
+                file = archive,
+                chapter = chapter.copy(
+                    contentFormat = VaultChapterContentFormat.ARCHIVE,
+                    sizeBytes = digest.sizeBytes,
+                    checksumSha256 = digest.sha256,
+                    requiresLocalCbzConversion = false,
+                ),
+            )
+        } catch (e: Throwable) {
+            tempFile.delete()
+            throw e
+        }
+    }
 
     private fun Manga.toSourceManga(): SManga {
         return SManga.create().apply {
@@ -589,11 +659,39 @@ class LocalVaultImportService(
     private fun UniFile.listFilesRecursively(): List<UniFile> {
         return listFiles().orEmpty()
             .flatMap { file -> if (file.isDirectory) file.listFilesRecursively() else listOf(file) }
-            .sortedBy { it.uri.toString() }
+            .sortedWith { first, second ->
+                first.relativePathFrom(this).compareToCaseInsensitiveNaturalOrder(second.relativePathFrom(this))
+            }
+    }
+
+    private fun UniFile.listReadablePageEntries(): List<LocalPageEntry> {
+        return listFiles().orEmpty()
+            .filter { !it.isDirectory && ImageUtil.isImage(it.name) { it.openInputStream() } }
+            .sortedWith { first, second ->
+                first.name.orEmpty().compareToCaseInsensitiveNaturalOrder(second.name.orEmpty())
+            }
+            .map { LocalPageEntry(file = it, relativePath = cbzEntryName(it.name.orEmpty())) }
     }
 
     private fun UniFile.relativePathFrom(root: UniFile): String {
         return relativePathFromUriStrings(root.uri.toString(), uri.toString())
+    }
+
+    private fun UniFile.deleteRecursively() {
+        if (isDirectory) {
+            listFiles().orEmpty().forEach { it.deleteRecursively() }
+        }
+        delete()
+    }
+
+    private fun validateCbz(file: UniFile, expectedEntries: List<String>) {
+        require(file.length() > 0) { "CBZ is empty" }
+        val entries = ZipInputStream(file.openInputStream()).use { zip ->
+            generateSequence { zip.nextEntry }
+                .map { it.name }
+                .toList()
+        }
+        require(entries == expectedEntries) { "CBZ entries did not validate" }
     }
 
     private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
@@ -610,6 +708,11 @@ class LocalVaultImportService(
         val chapter: LocalVaultImportChapter,
     )
 
+    private data class LocalPageEntry(
+        val file: UniFile,
+        val relativePath: String,
+    )
+
     private data class FileDigest(
         val sizeBytes: Long,
         val sha256: String,
@@ -620,6 +723,58 @@ class LocalVaultImportService(
         private val OCTET_MEDIA_TYPE = "application/octet-stream".toMediaType()
         private val EMPTY_BODY = ByteArray(0).toRequestBody(null)
         private const val HTTP_METHOD_NOT_ALLOWED = 405
+    }
+}
+
+internal data class CbzEntry(
+    val name: String,
+    val openInputStream: () -> InputStream,
+)
+
+internal fun collisionSafeCbzName(baseName: String, existingNames: Set<String>): String {
+    val sanitized = baseName
+        .trim()
+        .replace(Regex("""[\\/:*?"<>|]"""), "_")
+        .trim('.')
+        .ifBlank { "chapter" }
+    val base = sanitized.removeSuffix(".cbz")
+    var candidate = "$base.cbz"
+    var index = 1
+    while (existingNames.any { it.equals(candidate, ignoreCase = true) }) {
+        candidate = "$base ($index).cbz"
+        index++
+    }
+    return candidate
+}
+
+internal fun cbzEntryName(name: String): String {
+    return name
+        .trim()
+        .replace('\\', '/')
+        .trim('/')
+        .split('/')
+        .filter { it.isNotBlank() }
+        .joinToString("/")
+}
+
+internal fun writeStoredCbz(
+    output: OutputStream,
+    entries: List<CbzEntry>,
+) {
+    ZipOutputStream(output).use { zip ->
+        entries.forEach { entry ->
+            val bytes = entry.openInputStream().use { it.readBytes() }
+            val crc = CRC32().apply { update(bytes) }
+            val zipEntry = ZipEntry(cbzEntryName(entry.name)).apply {
+                method = ZipEntry.STORED
+                size = bytes.size.toLong()
+                compressedSize = bytes.size.toLong()
+                this.crc = crc.value
+            }
+            zip.putNextEntry(zipEntry)
+            zip.write(bytes)
+            zip.closeEntry()
+        }
     }
 }
 

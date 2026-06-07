@@ -18,6 +18,7 @@ data class LocalVaultImportChapter(
     val sizeBytes: Long,
     val checksumSha256: String,
     val dateUpload: Long,
+    val requiresLocalCbzConversion: Boolean = false,
 )
 
 data class LocalVaultImportPlan(

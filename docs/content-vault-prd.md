@@ -23,8 +23,8 @@ The user wants a durable personal manga collection that outlives device storage 
 - Keep the Vault Collection separate from Library, Local Source, Downloads, Backup, and external trackers.
 - Support remote-only vault entries through a local Vault Index.
 - Support chapter-level caching with cache-first reading.
-- Prevent accidental data loss by making Local-to-Vault Import copy-only and cache eviction local-only.
-- Preserve imported chapter files in their existing supported format.
+- Prevent accidental data loss by keeping Vault upload/caching behavior explicit and cache eviction local-only.
+- Preserve imported chapter files in their existing supported format, except selected Local Source directory chapters are converted in place to CBZ before Local-to-Vault Import.
 - Verify content integrity for vault uploads and cache downloads.
 - Keep Vault Reading State device-local permanently.
 
@@ -37,7 +37,7 @@ The user wants a durable personal manga collection that outlives device storage 
 - No arbitrary remote-folder scanning in v1.
 - No periodic background sync or auto-capture.
 - No remote Vault Deletion or Vault Trash in the minimum v1 slice.
-- No app workflow that deletes the user's original Local Manga files.
+- No app workflow that deletes the user's original Local Manga files, except the explicit Local-to-Vault Import conversion that replaces selected directory chapters with validated CBZ files in Local Manga storage before upload.
 - No streaming remote chapter files directly from WebDAV in v1.
 - No multi-vault support in v1.
 - No physical deduplication of chapter content in v1.
@@ -109,8 +109,9 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - The v1 UI entry point starts from Local Manga detail; a Vault Surface picker or launcher for choosing Local Manga is deferred.
 - Import must use existing Local Source recognition/parsing behavior.
 - Import must support chapter selection and default to all recognized chapters.
-- Import must copy/upload content into the Content Vault and never move or delete original Local Manga files.
+- Import must copy/upload content into the Content Vault. When selected Local Source chapters are directories, import must clearly warn the user and replace each selected directory chapter with a validated CBZ file before upload.
 - Imported source files must not count as Local Content Cache unless separately cached into the Vault Cache Directory.
+- Directory-to-CBZ conversion must stage writes, validate the archive, keep deterministic page ordering, avoid absolute archive entry paths, and leave the original directory intact if conversion fails.
 - Repeated imports should first use a device-local Import Target Hint when available.
 - If no Import Target Hint is available, repeated imports should use exact normalized title matching.
 - If one exact normalized title match exists, import into that Vault Manga.
@@ -184,7 +185,7 @@ Internal staging paths, revisions, and checksums should be hidden from normal UI
 - A user can configure one generic WebDAV Content Vault and initialize an empty Vault Root.
 - A user can connect to an existing valid Content Vault and refresh its catalogue.
 - A non-vault mixed-use folder is rejected during setup.
-- A user can import selected chapters from an existing Local Manga into the Content Vault without changing or deleting original files.
+- A user can import selected chapters from an existing Local Manga into the Content Vault, with selected directory chapters first converted into validated CBZ archives in Local Manga storage.
 - Repeating an import can target an existing Vault Manga through Import Target Hint or exact normalized title matching.
 - Exact duplicate chapters are skipped by default.
 - The Vault Surface shows remote-only and cached chapters from the local Vault Index.
