@@ -13,6 +13,8 @@ import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultManifestSnapshot
 import tachiyomi.domain.vault.model.VaultReadingState
+import tachiyomi.domain.vault.model.VaultTransferJob
+import tachiyomi.domain.vault.model.VaultTransferState
 
 interface VaultRepository {
 
@@ -69,4 +71,14 @@ interface VaultRepository {
     suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long
 
     suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long
+
+    fun getTransferJobsForVaultAsFlow(vaultId: Long): Flow<List<VaultTransferJob>>
+
+    suspend fun getTransferJobsForVault(vaultId: Long): List<VaultTransferJob>
+
+    suspend fun getTransferJobsByState(states: List<VaultTransferState>): List<VaultTransferJob>
+
+    suspend fun getTransferJob(id: Long): VaultTransferJob?
+
+    suspend fun upsertTransferJob(job: VaultTransferJob): Long
 }

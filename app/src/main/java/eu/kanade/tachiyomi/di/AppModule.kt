@@ -38,9 +38,12 @@ import tachiyomi.data.UpdateStrategyColumnAdapter
 import tachiyomi.data.VaultCacheStateColumnAdapter
 import tachiyomi.data.VaultChapterContentFormatColumnAdapter
 import tachiyomi.data.VaultMangaStatusColumnAdapter
+import tachiyomi.data.VaultTransferStateColumnAdapter
+import tachiyomi.data.VaultTransferTypeColumnAdapter
 import tachiyomi.data.Vault_chapter_cache_state
 import tachiyomi.data.Vault_chapters
 import tachiyomi.data.Vault_mangas
+import tachiyomi.data.Vault_transfer_jobs
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.storage.service.StorageManager
 import tachiyomi.source.local.image.LocalCoverManager
@@ -95,6 +98,10 @@ class AppModule(val app: Application) : InjektModule {
                 ),
                 vault_mangasAdapter = Vault_mangas.Adapter(
                     statusAdapter = VaultMangaStatusColumnAdapter,
+                ),
+                vault_transfer_jobsAdapter = Vault_transfer_jobs.Adapter(
+                    typeAdapter = VaultTransferTypeColumnAdapter,
+                    stateAdapter = VaultTransferStateColumnAdapter,
                 ),
             )
         }

@@ -2,6 +2,8 @@ import kotlin.Boolean;
 import tachiyomi.domain.vault.model.VaultCacheState;
 import tachiyomi.domain.vault.model.VaultChapterContentFormat;
 import tachiyomi.domain.vault.model.VaultMangaStatus;
+import tachiyomi.domain.vault.model.VaultTransferState;
+import tachiyomi.domain.vault.model.VaultTransferType;
 
 CREATE TABLE content_vaults(
     _id INTEGER NOT NULL PRIMARY KEY,
@@ -126,6 +128,31 @@ CREATE TABLE vault_chapter_cache_state(
 );
 
 CREATE INDEX vault_chapter_cache_state_state_index ON vault_chapter_cache_state(state);
+
+CREATE TABLE vault_transfer_jobs(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    chapter_id INTEGER,
+    type INTEGER AS VaultTransferType NOT NULL,
+    state INTEGER AS VaultTransferState NOT NULL,
+    remote_path TEXT,
+    local_path TEXT,
+    staged_path TEXT,
+    size_bytes INTEGER,
+    checksum_sha256 TEXT,
+    failure_reason TEXT,
+    attempts INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    started_at INTEGER,
+    completed_at INTEGER,
+    FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
+    FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE SET NULL
+);
+
+CREATE INDEX vault_transfer_jobs_vault_id_index ON vault_transfer_jobs(vault_id, state, updated_at);
+CREATE INDEX vault_transfer_jobs_state_index ON vault_transfer_jobs(state, updated_at);
+CREATE INDEX vault_transfer_jobs_chapter_id_index ON vault_transfer_jobs(chapter_id);
 
 CREATE TABLE vault_import_target_hints(
     local_manga_id INTEGER NOT NULL PRIMARY KEY,
@@ -419,3 +446,48 @@ FROM vault_manifest_snapshots
 WHERE vault_id = :vaultId
 AND manifest_path = :manifestPath
 AND revision_id = :revisionId;
+
+getTransferJobsForVault:
+SELECT *
+FROM vault_transfer_jobs
+WHERE vault_id = :vaultId
+ORDER BY created_at, _id;
+
+getTransferJobsByState:
+SELECT *
+FROM vault_transfer_jobs
+WHERE state IN :states
+ORDER BY created_at, _id;
+
+getTransferJob:
+SELECT *
+FROM vault_transfer_jobs
+WHERE _id = :id;
+
+upsertTransferJob:
+INSERT INTO vault_transfer_jobs(
+    _id, vault_id, chapter_id, type, state, remote_path, local_path, staged_path, size_bytes, checksum_sha256,
+    failure_reason, attempts, created_at, updated_at, started_at, completed_at
+)
+VALUES (
+    nullif(:id, -1), :vaultId, :chapterId, :type, :state, :remotePath, :localPath, :stagedPath, :sizeBytes,
+    :checksumSha256, :failureReason, :attempts, :createdAt, :updatedAt, :startedAt, :completedAt
+)
+ON CONFLICT(_id) DO UPDATE SET
+    vault_id = excluded.vault_id,
+    chapter_id = excluded.chapter_id,
+    type = excluded.type,
+    state = excluded.state,
+    remote_path = excluded.remote_path,
+    local_path = excluded.local_path,
+    staged_path = excluded.staged_path,
+    size_bytes = excluded.size_bytes,
+    checksum_sha256 = excluded.checksum_sha256,
+    failure_reason = excluded.failure_reason,
+    attempts = excluded.attempts,
+    updated_at = excluded.updated_at,
+    started_at = excluded.started_at,
+    completed_at = excluded.completed_at;
+
+lastInsertedTransferJobId:
+SELECT last_insert_rowid();

@@ -18,6 +18,8 @@ import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultManifestSnapshot
 import tachiyomi.domain.vault.model.VaultReadingState
+import tachiyomi.domain.vault.model.VaultTransferJob
+import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.repository.VaultRepository
 
 class VaultRepositoryImpl(
@@ -484,6 +486,61 @@ class VaultRepositoryImpl(
                 }
 
             vaultId
+        }
+    }
+
+    override fun getTransferJobsForVaultAsFlow(vaultId: Long): Flow<List<VaultTransferJob>> {
+        return database.vaultQueries
+            .getTransferJobsForVault(vaultId, VaultMapper::mapTransferJob)
+            .subscribeToList()
+    }
+
+    override suspend fun getTransferJobsForVault(vaultId: Long): List<VaultTransferJob> {
+        return database.vaultQueries
+            .getTransferJobsForVault(vaultId, VaultMapper::mapTransferJob)
+            .awaitAsList()
+    }
+
+    override suspend fun getTransferJobsByState(states: List<VaultTransferState>): List<VaultTransferJob> {
+        if (states.isEmpty()) return emptyList()
+        return database.vaultQueries
+            .getTransferJobsByState(states, VaultMapper::mapTransferJob)
+            .awaitAsList()
+    }
+
+    override suspend fun getTransferJob(id: Long): VaultTransferJob? {
+        return database.vaultQueries
+            .getTransferJob(id, VaultMapper::mapTransferJob)
+            .awaitAsOneOrNull()
+    }
+
+    override suspend fun upsertTransferJob(job: VaultTransferJob): Long {
+        return database.transactionWithResult {
+            database.vaultQueries.upsertTransferJob(
+                id = job.id,
+                vaultId = job.vaultId,
+                chapterId = job.chapterId,
+                type = job.type,
+                state = job.state,
+                remotePath = job.remotePath,
+                localPath = job.localPath,
+                stagedPath = job.stagedPath,
+                sizeBytes = job.sizeBytes,
+                checksumSha256 = job.checksumSha256,
+                failureReason = job.failureReason,
+                attempts = job.attempts,
+                createdAt = job.createdAt,
+                updatedAt = job.updatedAt,
+                startedAt = job.startedAt,
+                completedAt = job.completedAt,
+            )
+            if (job.id != -1L) {
+                job.id
+            } else {
+                database.vaultQueries
+                    .lastInsertedTransferJobId()
+                    .awaitAsOne()
+            }
         }
     }
 }

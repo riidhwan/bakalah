@@ -188,6 +188,7 @@ private fun VaultChapterListItem(
                     leadingIcon = { Icon(Icons.Outlined.DeleteOutline, contentDescription = null) },
                     label = { Text(stringResource(MR.strings.vault_action_evict)) },
                 )
+                VaultCacheState.QUEUED,
                 VaultCacheState.FAILED,
                 VaultCacheState.INTEGRITY_FAULT,
                 -> AssistChip(
@@ -195,7 +196,6 @@ private fun VaultChapterListItem(
                     leadingIcon = { Icon(Icons.Outlined.Refresh, contentDescription = null) },
                     label = { Text(stringResource(MR.strings.action_retry)) },
                 )
-                VaultCacheState.QUEUED,
                 VaultCacheState.CACHING,
                 VaultCacheState.PUBLISHING,
                 -> Unit

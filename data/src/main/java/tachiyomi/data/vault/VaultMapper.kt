@@ -17,6 +17,9 @@ import tachiyomi.domain.vault.model.VaultManifestSnapshot
 import tachiyomi.domain.vault.model.VaultMetadata
 import tachiyomi.domain.vault.model.VaultReadingState
 import tachiyomi.domain.vault.model.VaultRevision
+import tachiyomi.domain.vault.model.VaultTransferJob
+import tachiyomi.domain.vault.model.VaultTransferState
+import tachiyomi.domain.vault.model.VaultTransferType
 
 object VaultMapper {
     fun mapVault(
@@ -222,5 +225,41 @@ object VaultMapper {
         revision = VaultRevision(revisionId, revisionNumber),
         body = body,
         fetchedAt = fetchedAt,
+    )
+
+    fun mapTransferJob(
+        id: Long,
+        vaultId: Long,
+        chapterId: Long?,
+        type: VaultTransferType,
+        state: VaultTransferState,
+        remotePath: String?,
+        localPath: String?,
+        stagedPath: String?,
+        sizeBytes: Long?,
+        checksumSha256: String?,
+        failureReason: String?,
+        attempts: Long,
+        createdAt: Long,
+        updatedAt: Long,
+        startedAt: Long?,
+        completedAt: Long?,
+    ): VaultTransferJob = VaultTransferJob(
+        id = id,
+        vaultId = vaultId,
+        chapterId = chapterId,
+        type = type,
+        state = state,
+        remotePath = remotePath,
+        localPath = localPath,
+        stagedPath = stagedPath,
+        sizeBytes = sizeBytes,
+        checksumSha256 = checksumSha256,
+        failureReason = failureReason,
+        attempts = attempts,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        startedAt = startedAt,
+        completedAt = completedAt,
     )
 }
