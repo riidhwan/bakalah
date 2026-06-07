@@ -106,6 +106,7 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 ### Local-to-Vault Import
 
 - V1 import is limited to existing Local Manga files already recognized by Bakalah Local Source.
+- The v1 UI entry point starts from Local Manga detail; a Vault Surface picker or launcher for choosing Local Manga is deferred.
 - Import must use existing Local Source recognition/parsing behavior.
 - Import must support chapter selection and default to all recognized chapters.
 - Import must copy/upload content into the Content Vault and never move or delete original Local Manga files.

@@ -30,15 +30,33 @@ class BuildLocalVaultImportPlan {
 
         return LocalVaultImportPlan(
             target = target,
-            chapters = localChapters.map { chapter ->
-                val duplicateState = chapter.duplicateState(existingChapters)
-                LocalVaultImportChapterPlan(
-                    chapter = chapter,
-                    duplicateState = duplicateState,
-                    selectedByDefault = duplicateState != LocalVaultImportDuplicateState.EXACT,
-                )
-            },
+            chapters = buildChapterPlans(localChapters, existingChapters),
         )
+    }
+
+    fun buildForTarget(
+        target: LocalVaultImportTarget,
+        localChapters: List<LocalVaultImportChapter>,
+        existingChapters: List<VaultChapter>,
+    ): LocalVaultImportPlan {
+        return LocalVaultImportPlan(
+            target = target,
+            chapters = buildChapterPlans(localChapters, existingChapters),
+        )
+    }
+
+    private fun buildChapterPlans(
+        localChapters: List<LocalVaultImportChapter>,
+        existingChapters: List<VaultChapter>,
+    ): List<LocalVaultImportChapterPlan> {
+        return localChapters.map { chapter ->
+            val duplicateState = chapter.duplicateState(existingChapters)
+            LocalVaultImportChapterPlan(
+                chapter = chapter,
+                duplicateState = duplicateState,
+                selectedByDefault = duplicateState != LocalVaultImportDuplicateState.EXACT,
+            )
+        }
     }
 
     private fun resolveTarget(

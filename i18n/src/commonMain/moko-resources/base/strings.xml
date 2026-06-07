@@ -177,6 +177,7 @@
     <!-- Content Vault -->
     <string name="vault_action_refresh_catalogue">Refresh catalogue</string>
     <string name="vault_action_import_local">Import from Local</string>
+    <string name="vault_action_import_to_vault">Import to Vault</string>
     <string name="vault_action_cache">Cache</string>
     <string name="vault_action_evict">Evict cache</string>
     <string name="vault_action_import_unavailable">Local-to-Vault Import needs the import flow from the Local tab.</string>
@@ -188,7 +189,9 @@
     <string name="vault_empty_chapters">No Vault Chapters found</string>
     <string name="vault_manga_not_found">Vault Manga not found</string>
     <string name="vault_refresh_completed">Vault Catalogue refreshed</string>
+    <string name="vault_refresh_completed_details">Vault Catalogue refreshed: %1$d manga, %2$d chapters</string>
     <string name="vault_refresh_failed">Could not refresh Vault Catalogue</string>
+    <string name="vault_refresh_failed_details">Could not refresh Vault Catalogue: %s</string>
     <string name="vault_local_cache_usage">Local Cache: %s</string>
     <string name="vault_storage_usage">Vault Storage: %s</string>
     <string name="vault_manga_count">%d Vault Manga</string>
@@ -208,6 +211,29 @@
     <string name="vault_state_cached">Cached</string>
     <string name="vault_state_failed">Failed</string>
     <string name="vault_state_integrity_fault">Integrity fault</string>
+    <string name="vault_import_title">Import to Vault</string>
+    <string name="vault_import_target">Import Target</string>
+    <string name="vault_import_target_create_new">Create new Vault Manga</string>
+    <string name="vault_import_target_hint">Import Target Hint</string>
+    <string name="vault_import_target_exact_title">Exact title match</string>
+    <string name="vault_import_target_user_selected">Selected target</string>
+    <string name="vault_import_target_required">Choose an Import Target before importing</string>
+    <string name="vault_import_chapters">Chapters</string>
+    <string name="vault_import_select_none">Select none</string>
+    <string name="vault_import_already_in_vault">Already in Vault</string>
+    <string name="vault_import_possible_duplicate">Possible duplicate</string>
+    <string name="vault_import_selected_count">%1$d selected · %2$d recognized</string>
+    <string name="vault_importing">Importing…</string>
+    <string name="vault_import_action_open_in_vault">Open in Vault</string>
+    <string name="vault_import_action_open_vault">Open Vault</string>
+    <string name="vault_import_success">%1$d imported · %2$d already in Vault</string>
+    <string name="vault_import_error_incomplete_configuration">No Content Vault is configured</string>
+    <string name="vault_import_error_missing_local_manga">Local Manga folder is missing or inaccessible</string>
+    <string name="vault_import_error_nothing_selected">Select at least one chapter to import</string>
+    <string name="vault_import_error_manifest_unavailable">Vault manifest is unavailable</string>
+    <string name="vault_import_error_identity_changed">Configured Content Vault identity changed</string>
+    <string name="vault_import_error_upload_failed">Could not import to Vault</string>
+    <string name="vault_import_error_load_failed">Could not load Local-to-Vault Import preview</string>
 
     <!-- Operations -->
     <string name="loading">Loading…</string>

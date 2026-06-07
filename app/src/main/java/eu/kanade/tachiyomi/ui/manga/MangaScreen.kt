@@ -164,6 +164,9 @@ class MangaScreen(
             onEditLocalMetadataClicked = {
                 navigator.push(LocalMangaMetadataEditScreen(successState.manga.id))
             }.takeIf { successState.canEditLocalMetadata },
+            onImportToVaultClicked = {
+                navigator.push(LocalVaultImportScreen(successState.manga.id))
+            }.takeIf { successState.canEditLocalMetadata },
             onEditNotesClicked = { navigator.push(MangaNotesScreen(manga = successState.manga)) },
             onMultiBookmarkClicked = screenModel::bookmarkChapters,
             onMultiMarkAsReadClicked = screenModel::markChaptersRead,

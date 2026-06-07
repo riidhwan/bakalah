@@ -90,20 +90,13 @@ class VaultCatalogueRefreshService(
 
     private suspend fun get(config: WebDavVaultConfig, path: String): String? = withContext(Dispatchers.IO) {
         val request = Request.Builder()
-            .url(config.serverUrl.toBaseUrl().resolvePath(path))
+            .url(config.serverUrl.resolveWebDavPath(path))
             .header("Authorization", Credentials.basic(config.username.trim(), config.password))
             .get()
             .build()
         client.newCall(request).await().use { response ->
             response.takeIf { it.isSuccessful }?.body?.string()
         }
-    }
-
-    private fun String.toBaseUrl(): String = trim().trimEnd('/')
-
-    private fun String.resolvePath(path: String): String {
-        val cleanPath = path.trim().trim('/')
-        return if (cleanPath.isBlank()) this else "$this/$cleanPath"
     }
 
     private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
