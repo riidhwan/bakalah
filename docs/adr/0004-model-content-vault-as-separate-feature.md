@@ -4,7 +4,7 @@ Bakalah will model user-owned remote manga content as a Content Vault with a ver
 
 Local Content Cache lives in an app-managed Vault Cache Directory rather than the user-managed Local Source directory, so cache eviction does not masquerade as deletion of Local Manga files.
 
-For v1, Vault Import is limited to content Bakalah can already read through existing Local Manga files; arbitrary remote-folder scanning and online-source Vault Capture are out of scope. Imported chapter files are preserved in their existing supported format. Later page-based source captures should be packaged as CBZ Captured Chapter Files before publishing without recompressing or transforming page bytes.
+For v1, Vault Import is limited to CBZ content and selected Local Source directory chapters that Bakalah can convert into validated CBZ files before upload; arbitrary remote-folder scanning and online-source Vault Capture are out of scope. Later page-based source captures should be packaged as CBZ Captured Chapter Files before publishing without recompressing or transforming page bytes.
 
 Vault Import from existing Local Manga files is copy/upload oriented and imported source files do not count as Local Content Cache unless Bakalah separately caches the vault-owned chapter into the app-managed Vault Cache Directory. For Local Source directory chapters selected in Local-to-Vault Import, Bakalah first converts the directory chapter into a validated CBZ archive in Local Manga storage, then uploads that CBZ; the original directory is removed only after the replacement archive is written and validated.
 
@@ -26,4 +26,4 @@ The Vault Index should be persisted in dedicated Vault tables in the existing SQ
 
 Vault manga and chapter concepts should use separate domain models from the existing Manga and Chapter models, with adapters only where existing reader infrastructure requires them.
 
-Vault reading should reuse existing reader UI and infrastructure where possible after Cache-First Reading has produced a verified cached chapter, while Vault Reading State remains owned by the Vault Feature.
+Vault reading should reuse existing reader UI and infrastructure where possible after Cache-First Reading has produced a verified cached CBZ chapter, while Vault Reading State remains owned by the Vault Feature. Reader integration uses a small backend/session boundary so shared reader UI and viewer orchestration can be reused while Library and Vault sessions own their different persistence, cache, history, tracking, and side-effect behavior. Vault Reader Session restore uses explicit Vault session identity and Vault Manga/Chapter identifiers rather than temporary Library Manga/Chapter identifiers. The Vault Catalogue records readable chapter content as CBZ.

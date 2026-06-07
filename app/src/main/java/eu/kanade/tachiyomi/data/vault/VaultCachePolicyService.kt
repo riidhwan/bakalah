@@ -51,7 +51,10 @@ class VaultCachePolicyService(
         return VaultMangaCacheEvictionResult(evictedChapterIds)
     }
 
-    suspend fun enforceLimit(vaultId: Long): VaultCacheLimitResult {
+    suspend fun enforceLimit(
+        vaultId: Long,
+        protectedChapterIds: Set<Long> = emptySet(),
+    ): VaultCacheLimitResult {
         val limit = preferences.localCacheLimitBytes.get().coerceAtLeast(0)
         var usage = repository.getLocalCacheUsageBytes(vaultId)
         if (usage <= limit) {
@@ -62,6 +65,7 @@ class VaultCachePolicyService(
         repository.getReadCacheStatesForVault(vaultId)
             .forEach { state ->
                 if (usage <= limit) return@forEach
+                if (state.chapterId in protectedChapterIds) return@forEach
                 evictState(state)
                 usage -= state.sizeBytes ?: 0L
                 evictedChapterIds += state.chapterId

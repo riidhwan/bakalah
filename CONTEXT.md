@@ -97,8 +97,8 @@ The top-level app destination for browsing and managing the Vault Collection.
 _Avoid_: Local tab, library tab, sync settings
 
 **Vault Reading State**:
-The device-local read progress, read markers, and bookmarks for Vault Collection content.
-_Avoid_: Library state, history sync, tracking state
+The device-local page progress, read markers, bookmarks, and last-read timestamps for Vault Collection content.
+_Avoid_: Library state, history sync, tracking state, read-duration history
 
 **Vault Layout**:
 The versioned organization of catalogue records, metadata, and content files inside a Content Vault.
@@ -177,8 +177,12 @@ A chapter from the Content Vault whose readable content file is currently presen
 _Avoid_: Downloaded chapter, synced chapter, offline chapter
 
 **Original Chapter File**:
-The chapter content file or folder as accepted into the Content Vault without conversion into a different reading format.
-_Avoid_: Canonical archive, normalized chapter, synced file
+The CBZ chapter content file accepted into the Content Vault as readable vault content.
+_Avoid_: Chapter folder, synced file
+
+**Vault CBZ Chapter**:
+A Vault Chapter whose readable content is a validated CBZ file recorded in the Vault Catalogue and eligible for Cache-First Reading.
+_Avoid_: Directory chapter
 
 **Captured Chapter File**:
 The chapter file Bakalah creates when Vault Capture collects page-based source content.
@@ -251,6 +255,10 @@ _Avoid_: Cache eviction, delete downloads, archive
 **Cache-First Reading**:
 Opening vault-owned chapter content by caching the chapter on the device before handing it to the reader.
 _Avoid_: Streaming, remote reading, direct cloud read
+
+**Vault Reader Session**:
+A reading session for Vault Collection content that reuses Bakalah's reader experience while keeping progress, bookmarks, cache metadata, history, and tracker behavior owned by the Vault Feature rather than the Library.
+_Avoid_: Library reading, fake manga session, synced reader session
 
 **Cache Policy**:
 The user's rules for which Content Vault chapters should remain cached on a device and which cached chapters may be evicted.

@@ -27,8 +27,5 @@ data class VaultChapterContent(
 )
 
 enum class VaultChapterContentFormat {
-    ARCHIVE,
-    EPUB,
-    DIRECTORY,
-    UNKNOWN,
+    CBZ,
 }

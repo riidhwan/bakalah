@@ -85,6 +85,28 @@ class VaultCachePolicyServiceTest {
     }
 
     @Test
+    fun `limit enforcement keeps protected read cached chapters`() = runTest {
+        val repository = FakeVaultRepository()
+        val local = FakeLocalStaging(
+            mutableMapOf(
+                "cache/protected.cbz" to byteArrayOf(1),
+                "cache/old.cbz" to byteArrayOf(2),
+            ),
+        )
+        val service = VaultCachePolicyService(repository, local, preferences(limitBytes = 50))
+        repository.cacheStates[1] = cacheState(chapterId = 1, localPath = "cache/protected.cbz", sizeBytes = 60)
+        repository.cacheStates[2] = cacheState(chapterId = 2, localPath = "cache/old.cbz", sizeBytes = 60)
+        repository.readChapterIds += setOf(1, 2)
+
+        val result = service.enforceLimit(vaultId = 7, protectedChapterIds = setOf(1))
+
+        result.evictedChapterIds.shouldContainExactly(2)
+        local.files.keys.shouldContainExactly("cache/protected.cbz")
+        repository.cacheStates[1]?.state shouldBe VaultCacheState.CACHED
+        repository.cacheStates[2]?.state shouldBe VaultCacheState.VAULT_ONLY
+    }
+
+    @Test
     fun `manga eviction removes only cached chapter files tracked by cache state`() = runTest {
         val repository = FakeVaultRepository()
         val local = FakeLocalStaging(
@@ -226,7 +248,7 @@ class VaultCachePolicyServiceTest {
             sourceOrder = id,
             content = VaultChapterContent(
                 path = contentPath,
-                format = VaultChapterContentFormat.ARCHIVE,
+                format = VaultChapterContentFormat.CBZ,
                 sizeBytes = 10,
                 checksumSha256 = "checksum",
             ),

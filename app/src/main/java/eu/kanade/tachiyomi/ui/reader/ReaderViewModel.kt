@@ -7,6 +7,7 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hippo.unifile.UniFile
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.chapter.model.toDbChapter
 import eu.kanade.domain.manga.interactor.SetMangaViewerFlags
@@ -15,6 +16,7 @@ import eu.kanade.domain.manga.model.readingMode
 import eu.kanade.domain.source.interactor.GetIncognitoState
 import eu.kanade.domain.track.interactor.TrackChapter
 import eu.kanade.domain.track.service.TrackPreferences
+import eu.kanade.tachiyomi.data.database.models.ChapterImpl
 import eu.kanade.tachiyomi.data.database.models.toDomainChapter
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.DownloadProvider
@@ -22,10 +24,18 @@ import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.saver.Image
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
+import eu.kanade.tachiyomi.data.vault.UniFileVaultTransferLocalStaging
+import eu.kanade.tachiyomi.data.vault.VaultCachePolicyService
+import eu.kanade.tachiyomi.data.vault.VaultReaderOpenResult
+import eu.kanade.tachiyomi.data.vault.VaultReaderOpenService
+import eu.kanade.tachiyomi.data.vault.VaultTransferService
+import eu.kanade.tachiyomi.data.vault.WebDavVaultTransferStorage
+import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.reader.loader.ChapterLoader
 import eu.kanade.tachiyomi.ui.reader.loader.DownloadPageLoader
+import eu.kanade.tachiyomi.ui.reader.loader.VaultPageLoader
 import eu.kanade.tachiyomi.ui.reader.model.InsertPage
 import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
@@ -55,6 +65,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
+import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.preference.toggle
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchNonCancellable
@@ -73,6 +84,13 @@ import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.domain.storage.service.StorageManager
+import tachiyomi.domain.vault.model.VaultChapter
+import tachiyomi.domain.vault.model.VaultManga
+import tachiyomi.domain.vault.model.VaultReadingState
+import tachiyomi.domain.vault.repository.VaultRepository
+import tachiyomi.domain.vault.service.ContentVaultPreferences
+import tachiyomi.i18n.MR
 import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -101,6 +119,10 @@ class ReaderViewModel @JvmOverloads constructor(
     private val setMangaViewerFlags: SetMangaViewerFlags = Injekt.get(),
     private val getIncognitoState: GetIncognitoState = Injekt.get(),
     private val libraryPreferences: LibraryPreferences = Injekt.get(),
+    private val vaultRepository: VaultRepository = Injekt.get(),
+    private val vaultPreferences: ContentVaultPreferences = Injekt.get(),
+    private val storageManager: StorageManager = Injekt.get(),
+    private val networkHelper: NetworkHelper = Injekt.get(),
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(State())
@@ -145,7 +167,12 @@ class ReaderViewModel @JvmOverloads constructor(
 
     private var chapterToDownload: Download? = null
 
+    private var readerSession: ReaderSession = ReaderSession.Library
+
+    private var lastPersistedVaultPage: Pair<Long, Int>? = null
+
     private val unfilteredChapterList by lazy {
+        if (readerSession is ReaderSession.Vault) return@lazy emptyList()
         val manga = manga!!
         runBlocking { getChaptersByMangaId.await(manga.id, applyScanlatorFilter = false) }
     }
@@ -155,6 +182,18 @@ class ReaderViewModel @JvmOverloads constructor(
      * time in a background thread to avoid blocking the UI.
      */
     private val chapterList by lazy {
+        val vaultSession = readerSession as? ReaderSession.Vault
+        if (vaultSession != null) {
+            return@lazy vaultSession.chapters
+                .sortedByDescending { it.sourceOrder }
+                .map { chapter ->
+                    val readingState = runBlocking {
+                        vaultRepository.getReadingState(chapter.id)
+                    } ?: VaultReadingState.empty(chapter.id, now = 0)
+                    ReaderChapter(chapter.toReaderChapter(vaultSession.manga.id, readingState))
+                }
+        }
+
         val manga = manga!!
         val chapters = runBlocking { getChaptersByMangaId.await(manga.id, applyScanlatorFilter = true) }
 
@@ -303,6 +342,44 @@ class ReaderViewModel @JvmOverloads constructor(
         }
     }
 
+    suspend fun initVault(mangaId: Long, initialChapterId: Long): Result<Boolean> {
+        if (!needsInit()) return Result.success(true)
+        return withIOContext {
+            try {
+                val context = Injekt.get<Application>()
+                val openResult = vaultOpenService()?.prepareChapter(mangaId, initialChapterId)
+                    ?: return@withIOContext Result.failure(IllegalStateException("Vault cache unavailable"))
+                val ready = when (openResult) {
+                    is VaultReaderOpenResult.Ready -> openResult
+                    VaultReaderOpenResult.NotFound -> return@withIOContext Result.success(false)
+                    is VaultReaderOpenResult.Failed -> {
+                        return@withIOContext Result.failure(IllegalStateException(openResult.reason))
+                    }
+                }
+
+                readerSession = ReaderSession.Vault(
+                    manga = ready.manga,
+                    chapters = vaultRepository.getChapters(mangaId),
+                )
+                mutableState.update {
+                    it.copy(
+                        manga = ready.manga.toReaderManga(),
+                        isVaultSession = true,
+                    )
+                }
+                if (chapterId == -1L) chapterId = initialChapterId
+
+                loadVaultChapter(context, chapterList.first { chapterId == it.chapter.id })
+                Result.success(true)
+            } catch (e: Throwable) {
+                if (e is CancellationException) {
+                    throw e
+                }
+                Result.failure(e)
+            }
+        }
+    }
+
     /**
      * Loads the given [chapter] with this [loader] and updates the currently active chapters.
      * Callers must handle errors.
@@ -336,13 +413,75 @@ class ReaderViewModel @JvmOverloads constructor(
         return newChapters
     }
 
+    private suspend fun loadVaultChapter(
+        context: Application,
+        chapter: ReaderChapter,
+    ): ViewerChapters {
+        val openResult = vaultOpenService()?.prepareChapter(chapter.chapter.manga_id!!, chapter.chapter.id!!)
+            ?: error("Vault cache unavailable")
+        val ready = when (openResult) {
+            is VaultReaderOpenResult.Ready -> openResult
+            VaultReaderOpenResult.NotFound -> error("Vault Chapter not found")
+            is VaultReaderOpenResult.Failed -> error(openResult.reason)
+        }
+        val file = resolveVaultCacheFile(ready.localPath) ?: error("Cached Vault Chapter not found")
+
+        if (chapter.state !is ReaderChapter.State.Loaded || chapter.pageLoader == null) {
+            val pageLoader = VaultPageLoader(context, file)
+            chapter.state = ReaderChapter.State.Loading
+            try {
+                chapter.pageLoader = pageLoader
+                val pages = pageLoader.getPages()
+                    .onEach { it.chapter = chapter }
+                if (pages.isEmpty()) {
+                    throw Exception(context.stringResource(MR.strings.page_list_empty_error))
+                }
+                if (!chapter.chapter.read) {
+                    chapter.requestedPage = chapter.chapter.last_page_read
+                }
+                chapter.state = ReaderChapter.State.Loaded(pages)
+            } catch (e: Throwable) {
+                pageLoader.recycle()
+                chapter.state = ReaderChapter.State.Error(e)
+                throw e
+            }
+        }
+
+        val chapterPos = chapterList.indexOf(chapter)
+        val newChapters = ViewerChapters(
+            chapter,
+            chapterList.getOrNull(chapterPos - 1),
+            chapterList.getOrNull(chapterPos + 1),
+        )
+
+        withUIContext {
+            mutableState.update {
+                newChapters.ref()
+                it.viewerChapters?.unref()
+
+                it.copy(
+                    viewerChapters = newChapters,
+                    bookmarked = newChapters.currChapter.chapter.bookmark,
+                )
+            }
+        }
+        vaultCachePolicy()?.markOpened(chapter.chapter.id!!)
+        vaultCachePolicy()?.enforceLimit(
+            vaultId = ready.manga.vaultId,
+            protectedChapterIds = listOfNotNull(
+                newChapters.currChapter.chapter.id,
+                newChapters.prevChapter?.chapter?.id,
+                newChapters.nextChapter?.chapter?.id,
+            ).toSet(),
+        )
+        return newChapters
+    }
+
     /**
      * Called when the user changed to the given [chapter] when changing pages from the viewer.
      * It's used only to set this chapter as active.
      */
     private fun loadNewChapter(chapter: ReaderChapter) {
-        val loader = loader ?: return
-
         viewModelScope.launchIO {
             logcat { "Loading ${chapter.chapter.url}" }
 
@@ -350,7 +489,13 @@ class ReaderViewModel @JvmOverloads constructor(
             restartReadTimer()
 
             try {
-                loadChapter(loader, chapter)
+                val vaultSession = readerSession is ReaderSession.Vault
+                if (vaultSession) {
+                    loadVaultChapter(Injekt.get(), chapter)
+                } else {
+                    val loader = loader ?: return@launchIO
+                    loadChapter(loader, chapter)
+                }
             } catch (e: Throwable) {
                 if (e is CancellationException) {
                     throw e
@@ -364,14 +509,17 @@ class ReaderViewModel @JvmOverloads constructor(
      * Called when the user is going to load the prev/next chapter through the toolbar buttons.
      */
     private suspend fun loadAdjacent(chapter: ReaderChapter) {
-        val loader = loader ?: return
-
         logcat { "Loading adjacent ${chapter.chapter.url}" }
 
         mutableState.update { it.copy(isLoadingAdjacentChapter = true) }
         try {
             withIOContext {
-                loadChapter(loader, chapter)
+                if (readerSession is ReaderSession.Vault) {
+                    loadVaultChapter(Injekt.get(), chapter)
+                } else {
+                    val loader = loader ?: return@withIOContext
+                    loadChapter(loader, chapter)
+                }
             }
         } catch (e: Throwable) {
             if (e is CancellationException) {
@@ -412,10 +560,14 @@ class ReaderViewModel @JvmOverloads constructor(
             return
         }
 
-        val loader = loader ?: return
         try {
             logcat { "Preloading ${chapter.chapter.url}" }
-            loader.loadChapter(chapter)
+            if (readerSession is ReaderSession.Vault) {
+                loadVaultChapter(Injekt.get(), chapter)
+            } else {
+                val loader = loader ?: return
+                loader.loadChapter(chapter)
+            }
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
@@ -456,7 +608,7 @@ class ReaderViewModel @JvmOverloads constructor(
         }
 
         val inDownloadRange = page.number.toDouble() / pages.size > 0.25
-        if (inDownloadRange) {
+        if (inDownloadRange && readerSession !is ReaderSession.Vault) {
             downloadNextChapters()
         }
 
@@ -541,6 +693,11 @@ class ReaderViewModel @JvmOverloads constructor(
         chapterPageIndex = pageIndex
 
         if (!incognitoMode && page.status !is Page.State.Error) {
+            if (readerSession is ReaderSession.Vault) {
+                updateVaultChapterProgress(readerChapter, pageIndex)
+                return
+            }
+
             readerChapter.chapter.last_page_read = pageIndex
 
             if (readerChapter.pages?.lastIndex == pageIndex) {
@@ -555,6 +712,26 @@ class ReaderViewModel @JvmOverloads constructor(
                 ),
             )
         }
+    }
+
+    private suspend fun updateVaultChapterProgress(readerChapter: ReaderChapter, pageIndex: Int) {
+        val chapterId = readerChapter.chapter.id!!
+        if (lastPersistedVaultPage == chapterId to pageIndex) return
+
+        val timestamp = Instant.now().toEpochMilli()
+        val current = vaultRepository.getReadingState(chapterId)
+            ?: VaultReadingState.empty(chapterId, timestamp)
+        val completed = readerChapter.pages?.lastIndex == pageIndex
+        val updated = current.copy(
+            read = current.read || completed,
+            lastPageRead = pageIndex.toLong(),
+            lastReadAt = timestamp,
+            updatedAt = timestamp,
+        )
+        vaultRepository.upsertReadingState(updated)
+        readerChapter.chapter.last_page_read = pageIndex
+        readerChapter.chapter.read = updated.read
+        lastPersistedVaultPage = chapterId to pageIndex
     }
 
     private suspend fun updateChapterProgressOnComplete(readerChapter: ReaderChapter) {
@@ -589,6 +766,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * Saves the chapter last read history if incognito mode isn't on.
      */
     suspend fun updateHistory() {
+        if (readerSession is ReaderSession.Vault) return
         getCurrentChapter()?.let { readerChapter ->
             if (incognitoMode) return@let
 
@@ -647,12 +825,24 @@ class ReaderViewModel @JvmOverloads constructor(
         chapter.bookmark = bookmarked
 
         viewModelScope.launchNonCancellable {
-            updateChapter.await(
-                ChapterUpdate(
-                    id = chapter.id!!,
-                    bookmark = bookmarked,
-                ),
-            )
+            if (readerSession is ReaderSession.Vault) {
+                val timestamp = Instant.now().toEpochMilli()
+                val current = vaultRepository.getReadingState(chapter.id!!)
+                    ?: VaultReadingState.empty(chapter.id!!, timestamp)
+                vaultRepository.upsertReadingState(
+                    current.copy(
+                        bookmark = bookmarked,
+                        updatedAt = timestamp,
+                    ),
+                )
+            } else {
+                updateChapter.await(
+                    ChapterUpdate(
+                        id = chapter.id!!,
+                        bookmark = bookmarked,
+                    ),
+                )
+            }
         }
 
         mutableState.update {
@@ -678,6 +868,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * Updates the viewer position for the open manga.
      */
     fun setMangaReadingMode(readingMode: ReadingMode) {
+        if (readerSession is ReaderSession.Vault) return
         val manga = manga ?: return
         runBlocking(Dispatchers.IO) {
             setMangaViewerFlags.awaitSetReadingMode(manga.id, readingMode.flagValue.toLong())
@@ -714,6 +905,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * Updates the orientation type for the open manga.
      */
     fun setMangaOrientationType(orientation: ReaderOrientation) {
+        if (readerSession is ReaderSession.Vault) return
         val manga = manga ?: return
         viewModelScope.launchIO {
             setMangaViewerFlags.awaitSetOrientation(manga.id, orientation.flagValue.toLong())
@@ -874,6 +1066,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * Sets the image of the selected page as cover and notifies the UI of the result.
      */
     fun setAsCover() {
+        if (readerSession is ReaderSession.Vault) return
         val page = (state.value.dialog as? Dialog.PageActions)?.page
         if (page?.status != Page.State.Ready) return
         val manga = manga ?: return
@@ -926,6 +1119,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * manager handles persisting it across process deaths.
      */
     private fun enqueueDeleteReadChapters(chapter: ReaderChapter) {
+        if (readerSession is ReaderSession.Vault) return
         if (!chapter.chapter.read) return
         val manga = manga ?: return
 
@@ -939,6 +1133,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * are ignored.
      */
     private fun deletePendingChapters() {
+        if (readerSession is ReaderSession.Vault) return
         viewModelScope.launchNonCancellable {
             downloadManager.deletePendingChapters()
         }
@@ -959,6 +1154,7 @@ class ReaderViewModel @JvmOverloads constructor(
         val dialog: Dialog? = null,
         val menuVisible: Boolean = false,
         @IntRange(from = -100, to = 100) val brightnessOverlayValue: Int = 0,
+        val isVaultSession: Boolean = false,
     ) {
         val currentChapter: ReaderChapter?
             get() = viewerChapters?.currChapter
@@ -984,5 +1180,86 @@ class ReaderViewModel @JvmOverloads constructor(
         data class SavedImage(val result: SaveImageResult) : Event
         data class ShareImage(val uri: Uri, val page: ReaderPage) : Event
         data class CopyImage(val uri: Uri) : Event
+    }
+
+    private fun vaultOpenService(): VaultReaderOpenService? {
+        val root = storageManager.getVaultCacheDirectory() ?: return null
+        val localStaging = UniFileVaultTransferLocalStaging(root)
+        return VaultReaderOpenService(
+            repository = vaultRepository,
+            preferences = vaultPreferences,
+            transferServiceFactory = {
+                val config = vaultPreferences.getWebDavConfig()
+                if (!config.isComplete) {
+                    null
+                } else {
+                    VaultTransferService(
+                        repository = vaultRepository,
+                        remoteStorage = WebDavVaultTransferStorage(networkHelper, config),
+                        localStaging = localStaging,
+                    )
+                }
+            },
+            localStaging = localStaging,
+        )
+    }
+
+    private fun vaultCachePolicy(): VaultCachePolicyService? {
+        val root = storageManager.getVaultCacheDirectory() ?: return null
+        return VaultCachePolicyService(
+            repository = vaultRepository,
+            localStaging = UniFileVaultTransferLocalStaging(root),
+            preferences = vaultPreferences,
+        )
+    }
+
+    private fun resolveVaultCacheFile(path: String): UniFile? {
+        return path.trim()
+            .split('/')
+            .map { it.trim() }
+            .filter { it.isNotBlank() && it != "." && it != ".." }
+            .fold(storageManager.getVaultCacheDirectory()) { parent, segment ->
+                parent?.findFile(segment)
+            }
+            ?.takeIf { it.isFile }
+    }
+
+    private fun VaultManga.toReaderManga(): Manga {
+        return Manga.create().copy(
+            id = id,
+            source = -1L,
+            title = metadata.title,
+            artist = metadata.artist,
+            author = metadata.author,
+            description = metadata.description,
+            status = metadata.status.ordinal.toLong(),
+            initialized = true,
+        )
+    }
+
+    private fun VaultChapter.toReaderChapter(mangaId: Long, readingState: VaultReadingState): ChapterImpl {
+        return ChapterImpl().apply {
+            id = this@toReaderChapter.id
+            manga_id = mangaId
+            url = "vault://${identity.value}"
+            name = title
+            scanlator = this@toReaderChapter.scanlator
+            read = readingState.read
+            bookmark = readingState.bookmark
+            last_page_read = readingState.lastPageRead.toInt()
+            date_upload = this@toReaderChapter.dateUpload
+            chapter_number = this@toReaderChapter.chapterNumber.toFloat()
+            source_order = this@toReaderChapter.sourceOrder.toInt()
+            last_modified = updatedAt
+        }
+    }
+
+    private sealed interface ReaderSession {
+        data object Library : ReaderSession
+
+        data class Vault(
+            val manga: VaultManga,
+            val chapters: List<VaultChapter>,
+        ) : ReaderSession
     }
 }

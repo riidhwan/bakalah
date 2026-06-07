@@ -28,7 +28,7 @@ import tachiyomi.presentation.core.i18n.stringResource
 @Composable
 fun ReaderPageActionsDialog(
     onDismissRequest: () -> Unit,
-    onSetAsCover: () -> Unit,
+    onSetAsCover: (() -> Unit)?,
     onShare: (Boolean) -> Unit,
     onSave: () -> Unit,
 ) {
@@ -39,12 +39,14 @@ fun ReaderPageActionsDialog(
             modifier = Modifier.padding(vertical = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
         ) {
-            ActionButton(
-                modifier = Modifier.weight(1f),
-                title = stringResource(MR.strings.set_as_cover),
-                icon = Icons.Outlined.Photo,
-                onClick = { showSetCoverDialog = true },
-            )
+            if (onSetAsCover != null) {
+                ActionButton(
+                    modifier = Modifier.weight(1f),
+                    title = stringResource(MR.strings.set_as_cover),
+                    icon = Icons.Outlined.Photo,
+                    onClick = { showSetCoverDialog = true },
+                )
+            }
             ActionButton(
                 modifier = Modifier.weight(1f),
                 title = stringResource(MR.strings.action_copy_to_clipboard),
@@ -78,7 +80,7 @@ fun ReaderPageActionsDialog(
     if (showSetCoverDialog) {
         SetCoverDialog(
             onConfirm = {
-                onSetAsCover()
+                onSetAsCover?.invoke()
                 showSetCoverDialog = false
             },
             onDismiss = { showSetCoverDialog = false },
