@@ -71,6 +71,7 @@ class LocalVaultImportScreen(
                         navigator.popUntilRoot()
                     }
             },
+            onDone = { navigator.pop() },
         )
     }
 }
@@ -363,6 +364,16 @@ class LocalVaultImportScreenModel(
                         it.chapter.requiresLocalCbzConversion &&
                         it.duplicateState != LocalVaultImportDuplicateState.EXACT
                 }
+
+        val selectedSourceSizeBytes: Long
+            get() = plan
+                ?.chapters
+                .orEmpty()
+                .filter {
+                    it.chapter.selectionId in selectedChapterIds &&
+                        it.duplicateState != LocalVaultImportDuplicateState.EXACT
+                }
+                .sumOf { it.chapter.sizeBytes }
     }
 
     sealed interface TargetSelection {

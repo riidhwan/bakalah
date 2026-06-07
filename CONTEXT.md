@@ -205,7 +205,7 @@ Adding user-owned manga content into the Content Vault from files already availa
 _Avoid_: Upload sync, backup, local import
 
 **Local-to-Vault Import**:
-Vault Import that copies existing Local Manga content into the Content Vault without changing the original Local Manga files.
+Vault Import that copies existing Local Manga content into the Content Vault without general cleanup or migration of the original Local Manga, except that selected directory chapters are converted into validated CBZ files in Local Manga storage before upload.
 _Avoid_: Local cleanup, migration, local sync
 
 **Import Target**:
