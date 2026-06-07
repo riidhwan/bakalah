@@ -59,7 +59,6 @@ data class VaultMangaScreen(
 
 fun VaultScreenModel.PendingAction.unavailableMessage(context: Context): String {
     val stringRes = when (this) {
-        VaultScreenModel.PendingAction.IMPORT -> MR.strings.vault_action_import_unavailable
         VaultScreenModel.PendingAction.CACHE -> MR.strings.vault_action_cache_unavailable
         VaultScreenModel.PendingAction.EVICT -> MR.strings.vault_action_evict_unavailable
         VaultScreenModel.PendingAction.RETRY -> MR.strings.vault_action_retry_unavailable

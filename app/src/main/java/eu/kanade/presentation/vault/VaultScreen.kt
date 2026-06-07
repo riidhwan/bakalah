@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Storage
@@ -52,7 +51,6 @@ fun VaultScreen(
     snackbarHostState: SnackbarHostState,
     onSearchQueryChange: (String?) -> Unit,
     onClickRefresh: () -> Unit,
-    onClickImport: () -> Unit,
     onClickManga: (Long) -> Unit,
     onFilterChange: (VaultScreenModel.Filter) -> Unit,
     onSortChange: (VaultScreenModel.Sort) -> Unit,
@@ -70,11 +68,6 @@ fun VaultScreen(
                                 title = stringResource(MR.strings.vault_action_refresh_catalogue),
                                 icon = Icons.Outlined.Refresh,
                                 onClick = onClickRefresh,
-                            ),
-                            AppBar.Action(
-                                title = stringResource(MR.strings.vault_action_import_local),
-                                icon = Icons.Outlined.FileUpload,
-                                onClick = onClickImport,
                             ),
                         ),
                     )

@@ -208,6 +208,10 @@ _Avoid_: Upload sync, backup, local import
 Vault Import that copies existing Local Manga content into the Content Vault without changing the original Local Manga files.
 _Avoid_: Local cleanup, migration, local sync
 
+**Import Target**:
+The Vault Manga that a Local-to-Vault Import will add selected chapters to, or the decision to create a new Vault Manga.
+_Avoid_: Import destination, matched manga, sync target
+
 **Import Target Hint**:
 A device-local remembered association between a Local Manga and the Vault Manga it was previously imported into.
 _Avoid_: Vault identity, metadata match, source truth

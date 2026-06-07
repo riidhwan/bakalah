@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.ui.vault
 
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshResult
 import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshService
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,12 +23,14 @@ import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.repository.VaultRepository
+import tachiyomi.domain.vault.service.ContentVaultPreferences
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
 class VaultScreenModel(
     private val getContentVault: GetContentVault = Injekt.get(),
     private val repository: VaultRepository = Injekt.get(),
+    private val preferences: ContentVaultPreferences = Injekt.get(),
     private val refreshService: VaultCatalogueRefreshService = Injekt.get(),
 ) : StateScreenModel<VaultScreenModel.State>(State()) {
 
@@ -44,8 +47,10 @@ class VaultScreenModel(
                     _events.send(Event.LoadFailed)
                 }
                 .collectLatest { vaults ->
+                    val configuredIdentity = preferences.configuredVaultIdentity.get().takeIf { it.isNotBlank() }
                     val selected = selectedVaultId.value
                         ?.takeIf { id -> vaults.any { it.id == id } }
+                        ?: vaults.firstOrNull { it.identity.value == configuredIdentity }?.id
                         ?: vaults.firstOrNull()?.id
                     selectedVaultId.value = selected
                     mutableState.update {
@@ -86,6 +91,10 @@ class VaultScreenModel(
                     }
                 }
         }
+
+        screenModelScope.launchIO {
+            refreshConfiguredVault(reportSuccess = false)
+        }
     }
 
     fun selectVault(vaultId: Long) {
@@ -107,12 +116,50 @@ class VaultScreenModel(
 
     fun refreshVault() {
         screenModelScope.launchIO {
-            runCatching { refreshService.refreshConfiguredVault() }
-                .onSuccess { _events.send(Event.RefreshCompleted) }
-                .onFailure {
-                    logcat(LogPriority.ERROR, it)
-                    _events.send(Event.RefreshFailed)
+            refreshConfiguredVault(reportSuccess = true)
+        }
+    }
+
+    private suspend fun refreshConfiguredVault(reportSuccess: Boolean) {
+        runCatching { refreshService.refreshConfiguredVault() }
+            .onSuccess { result ->
+                when (result) {
+                    is VaultCatalogueRefreshResult.Refreshed -> {
+                        repository.getVaultByIdentity(result.identity)
+                            ?.let { selectedVaultId.value = it.id }
+                        if (reportSuccess) {
+                            _events.send(
+                                Event.RefreshCompleted(
+                                    mangaCount = result.mangaCount,
+                                    chapterCount = result.chapterCount,
+                                ),
+                            )
+                        }
+                    }
+                    else -> {
+                        val detail = result.toFailureDetail()
+                        logcat(LogPriority.ERROR) { "Vault catalogue refresh failed: $detail" }
+                        _events.send(Event.RefreshFailed(detail))
+                    }
                 }
+            }
+            .onFailure {
+                logcat(LogPriority.ERROR, it)
+                _events.send(Event.RefreshFailed(it.message ?: it::class.simpleName.orEmpty()))
+            }
+    }
+
+    private fun VaultCatalogueRefreshResult.toFailureDetail(): String {
+        return when (this) {
+            VaultCatalogueRefreshResult.IncompleteConfiguration -> "Incomplete configuration"
+            VaultCatalogueRefreshResult.NotVault -> "Remote root is not a Bakalah Content Vault"
+            is VaultCatalogueRefreshResult.UnsupportedOlderVersion -> "Unsupported older layout version $layoutVersion"
+            is VaultCatalogueRefreshResult.UnsupportedNewerVersion -> "Unsupported newer layout version $layoutVersion"
+            is VaultCatalogueRefreshResult.IdentityChanged -> "Remote identity changed to ${remoteIdentity.value}"
+            is VaultCatalogueRefreshResult.ManifestNotFound -> "Manifest not found: $manifestPath"
+            is VaultCatalogueRefreshResult.IdentityMismatch -> "Manifest identity mismatch: $manifestPath"
+            is VaultCatalogueRefreshResult.Malformed -> "Malformed manifest: $manifestPath"
+            is VaultCatalogueRefreshResult.Refreshed -> "Refreshed $mangaCount manga, $chapterCount chapters"
         }
     }
 
@@ -192,7 +239,6 @@ class VaultScreenModel(
     }
 
     enum class PendingAction {
-        IMPORT,
         CACHE,
         EVICT,
         RETRY,
@@ -200,8 +246,11 @@ class VaultScreenModel(
 
     sealed interface Event {
         data object LoadFailed : Event
-        data object RefreshCompleted : Event
-        data object RefreshFailed : Event
+        data class RefreshCompleted(
+            val mangaCount: Int,
+            val chapterCount: Int,
+        ) : Event
+        data class RefreshFailed(val detail: String) : Event
         data class PendingActionUnavailable(val action: PendingAction) : Event
     }
 

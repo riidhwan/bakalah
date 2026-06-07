@@ -8,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.Credentials
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody
@@ -51,6 +53,8 @@ import tachiyomi.domain.vault.service.ContentVaultPreferences
 import tachiyomi.source.local.LocalSource
 import tachiyomi.source.local.io.Format
 import tachiyomi.source.local.io.LocalSourceFileSystem
+import java.io.ByteArrayOutputStream
+import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -67,17 +71,45 @@ class LocalVaultImportService(
     private val codec = VaultManifestCodec(json)
     private val planner = BuildLocalVaultImportPlan()
 
-    suspend fun preview(localManga: Manga): LocalVaultImportPreviewResult {
+    suspend fun preview(
+        localManga: Manga,
+        targetMangaId: Long? = null,
+        createNew: Boolean = false,
+    ): LocalVaultImportPreviewResult {
         val vault = configuredVault() ?: return LocalVaultImportPreviewResult.IncompleteConfiguration
         val scan = scanLocalManga(localManga) ?: return LocalVaultImportPreviewResult.LocalMangaNotFound
-        return LocalVaultImportPreviewResult.Success(
-            planner.build(
-                localManga = scan.manga,
+        val vaultManga = repository.getManga(vault.id)
+        val existingChapters = existingChaptersByMangaId(vault.id)
+        val suggestedPlan = planner.build(
+            localManga = scan.manga,
+            localChapters = scan.chapters.map { it.chapter },
+            vaultManga = vaultManga,
+            existingChaptersByMangaId = existingChapters,
+            hint = repository.getImportTargetHint(localManga.id),
+        )
+        val plan = when {
+            createNew -> planner.buildForTarget(
+                target = LocalVaultImportTarget.CreateNew,
                 localChapters = scan.chapters.map { it.chapter },
-                vaultManga = repository.getManga(vault.id),
-                existingChaptersByMangaId = existingChaptersByMangaId(vault.id),
-                hint = repository.getImportTargetHint(localManga.id),
-            ),
+                existingChapters = emptyList(),
+            )
+            targetMangaId != null -> {
+                val target = vaultManga.firstOrNull { it.id == targetMangaId }
+                    ?: return LocalVaultImportPreviewResult.Success(
+                        plan = suggestedPlan,
+                        availableTargets = vaultManga,
+                    )
+                planner.buildForTarget(
+                    target = LocalVaultImportTarget.Existing(target, LocalVaultImportTarget.Reason.USER_SELECTED),
+                    localChapters = scan.chapters.map { it.chapter },
+                    existingChapters = existingChapters[target.id].orEmpty(),
+                )
+            }
+            else -> suggestedPlan
+        }
+        return LocalVaultImportPreviewResult.Success(
+            plan = plan,
+            availableTargets = vaultManga,
         )
     }
 
@@ -346,6 +378,7 @@ class LocalVaultImportService(
             }
             basePath
         } else {
+            webDav.createDirectory(remoteBasePath)
             val extension = localChapter.file.extension?.let { ".$it" }.orEmpty()
             val path = "$basePath/${localChapter.file.nameWithoutExtension}$extension"
             if (!webDav.putFile(config.rootPath.childPath(path), localChapter.file)) {
@@ -385,7 +418,7 @@ class LocalVaultImportService(
     ) {
         suspend fun get(path: String): String? = withContext(Dispatchers.IO) {
             val request = Request.Builder()
-                .url(config.serverUrl.toBaseUrl().resolvePath(path))
+                .url(config.serverUrl.resolveWebDavPath(path))
                 .header("Authorization", Credentials.basic(config.username.trim(), config.password))
                 .get()
                 .build()
@@ -396,7 +429,7 @@ class LocalVaultImportService(
 
         suspend fun put(path: String, body: String): Boolean = withContext(Dispatchers.IO) {
             val request = Request.Builder()
-                .url(config.serverUrl.toBaseUrl().resolvePath(path))
+                .url(config.serverUrl.resolveWebDavPath(path))
                 .header("Authorization", Credentials.basic(config.username.trim(), config.password))
                 .put(body.toRequestBody(JSON_MEDIA_TYPE))
                 .build()
@@ -405,7 +438,7 @@ class LocalVaultImportService(
 
         suspend fun putFile(path: String, file: UniFile): Boolean = withContext(Dispatchers.IO) {
             val request = Request.Builder()
-                .url(config.serverUrl.toBaseUrl().resolvePath(path))
+                .url(config.serverUrl.resolveWebDavPath(path))
                 .header("Authorization", Credentials.basic(config.username.trim(), config.password))
                 .put(file.asRequestBody())
                 .build()
@@ -414,7 +447,7 @@ class LocalVaultImportService(
 
         suspend fun createDirectory(path: String): Boolean = withContext(Dispatchers.IO) {
             val request = Request.Builder()
-                .url(config.serverUrl.toBaseUrl().resolvePath(path, collection = true))
+                .url(config.serverUrl.resolveWebDavPath(path, collection = true))
                 .header("Authorization", Credentials.basic(config.username.trim(), config.password))
                 .method("MKCOL", EMPTY_BODY)
                 .build()
@@ -560,18 +593,10 @@ class LocalVaultImportService(
     }
 
     private fun UniFile.relativePathFrom(root: UniFile): String {
-        return uri.toString().removePrefix(root.uri.toString()).trimStart('/')
+        return relativePathFromUriStrings(root.uri.toString(), uri.toString())
     }
 
     private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
-
-    private fun String.toBaseUrl(): String = trim().trimEnd('/')
-
-    private fun String.resolvePath(path: String, collection: Boolean = false): String {
-        val cleanPath = path.trim().trim('/')
-        val resolved = if (cleanPath.isBlank()) this else "$this/$cleanPath"
-        return if (collection) resolved.trimEnd('/') + "/" else resolved
-    }
 
     private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
 
@@ -601,7 +626,10 @@ class LocalVaultImportService(
 sealed interface LocalVaultImportPreviewResult {
     data object IncompleteConfiguration : LocalVaultImportPreviewResult
     data object LocalMangaNotFound : LocalVaultImportPreviewResult
-    data class Success(val plan: LocalVaultImportPlan) : LocalVaultImportPreviewResult
+    data class Success(
+        val plan: LocalVaultImportPlan,
+        val availableTargets: List<VaultManga>,
+    ) : LocalVaultImportPreviewResult
 }
 
 sealed interface LocalVaultImportResult {
@@ -617,4 +645,53 @@ sealed interface LocalVaultImportResult {
         val importedChapterCount: Int,
         val skippedExactDuplicateCount: Int,
     ) : LocalVaultImportResult
+}
+
+internal fun String.resolveWebDavPath(path: String, collection: Boolean = false): HttpUrl {
+    val builder = trim().trimEnd('/').toHttpUrl().newBuilder()
+    path.trim().trim('/')
+        .split('/')
+        .filter { it.isNotBlank() }
+        .forEach { builder.addPathSegment(it) }
+    if (collection) {
+        builder.addPathSegment("")
+    }
+    return builder.build()
+}
+
+internal fun relativePathFromUriStrings(rootUri: String, fileUri: String): String {
+    return fileUri
+        .decodePercentEscapes()
+        .removePrefix(rootUri.decodePercentEscapes().trimEnd('/', '\\'))
+        .trimStart('/', '\\')
+}
+
+private fun String.decodePercentEscapes(): String {
+    val result = StringBuilder(length)
+    val bytes = ByteArrayOutputStream()
+
+    fun flushBytes() {
+        if (bytes.size() > 0) {
+            result.append(bytes.toByteArray().toString(StandardCharsets.UTF_8))
+            bytes.reset()
+        }
+    }
+
+    var index = 0
+    while (index < length) {
+        val char = this[index]
+        if (char == '%' && index + 2 < length) {
+            val value = substring(index + 1, index + 3).toIntOrNull(16)
+            if (value != null) {
+                bytes.write(value)
+                index += 3
+                continue
+            }
+        }
+        flushBytes()
+        result.append(char)
+        index++
+    }
+    flushBytes()
+    return result.toString()
 }

@@ -108,6 +108,34 @@ class BuildLocalVaultImportPlanTest {
         plan.chapters.map { it.selectedByDefault } shouldBe listOf(false, true, true)
     }
 
+    @Test
+    fun `target-specific plan uses selected target chapters for duplicate state`() {
+        val selectedTarget = vaultManga(id = 3, title = "One Piece Color")
+        val plan = builder.buildForTarget(
+            target = LocalVaultImportTarget.Existing(
+                manga = selectedTarget,
+                reason = LocalVaultImportTarget.Reason.USER_SELECTED,
+            ),
+            localChapters = listOf(
+                localChapter(selectionId = "new-for-target", title = "Chapter 1", chapterNumber = 1.0, checksum = "a"),
+                localChapter(selectionId = "same-for-target", title = "Chapter 2", chapterNumber = 2.0, checksum = "b"),
+            ),
+            existingChapters = listOf(
+                vaultChapter(title = "Chapter 2", chapterNumber = 2.0, checksum = "b"),
+            ),
+        )
+
+        plan.target shouldBe LocalVaultImportTarget.Existing(
+            manga = selectedTarget,
+            reason = LocalVaultImportTarget.Reason.USER_SELECTED,
+        )
+        plan.chapters.map { it.duplicateState } shouldBe listOf(
+            LocalVaultImportDuplicateState.NONE,
+            LocalVaultImportDuplicateState.EXACT,
+        )
+        plan.chapters.map { it.selectedByDefault } shouldBe listOf(true, false)
+    }
+
     private fun localManga(title: String) = LocalVaultImportManga(
         localMangaId = 10,
         localMangaIdentity = "local/$title",

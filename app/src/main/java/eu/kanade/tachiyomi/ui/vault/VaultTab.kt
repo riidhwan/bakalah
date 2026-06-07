@@ -46,9 +46,6 @@ data object VaultTab : Tab {
             snackbarHostState = snackbarHostState,
             onSearchQueryChange = screenModel::updateSearchQuery,
             onClickRefresh = screenModel::refreshVault,
-            onClickImport = {
-                screenModel.reportUnavailable(VaultScreenModel.PendingAction.IMPORT)
-            },
             onClickManga = { navigator.push(VaultMangaScreen(it)) },
             onFilterChange = screenModel::setFilter,
             onSortChange = screenModel::setSort,
@@ -63,10 +60,18 @@ data object VaultTab : Tab {
                 when (event) {
                     VaultScreenModel.Event.LoadFailed ->
                         snackbarHostState.showSnackbar(context.stringResource(MR.strings.internal_error))
-                    VaultScreenModel.Event.RefreshCompleted ->
-                        snackbarHostState.showSnackbar(context.stringResource(MR.strings.vault_refresh_completed))
-                    VaultScreenModel.Event.RefreshFailed ->
-                        snackbarHostState.showSnackbar(context.stringResource(MR.strings.vault_refresh_failed))
+                    is VaultScreenModel.Event.RefreshCompleted ->
+                        snackbarHostState.showSnackbar(
+                            context.stringResource(
+                                MR.strings.vault_refresh_completed_details,
+                                event.mangaCount,
+                                event.chapterCount,
+                            ),
+                        )
+                    is VaultScreenModel.Event.RefreshFailed ->
+                        snackbarHostState.showSnackbar(
+                            context.stringResource(MR.strings.vault_refresh_failed_details, event.detail),
+                        )
                     is VaultScreenModel.Event.PendingActionUnavailable ->
                         snackbarHostState.showSnackbar(event.action.unavailableMessage(context))
                 }
