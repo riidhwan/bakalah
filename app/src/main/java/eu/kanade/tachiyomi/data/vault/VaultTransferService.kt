@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.data.vault
 
+import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import kotlinx.coroutines.Dispatchers
@@ -408,6 +409,68 @@ class FileVaultTransferLocalStaging(
     private fun String.toFile(): File {
         val cleanPath = trim().trimStart('/')
         return File(root, cleanPath)
+    }
+}
+
+class UniFileVaultTransferLocalStaging(
+    private val root: UniFile,
+) : VaultTransferLocalStaging {
+    override suspend fun read(path: String): ByteArray? = withContext(Dispatchers.IO) {
+        path.resolveFile()?.takeIf { it.isFile }?.openInputStream()?.use { it.readBytes() }
+    }
+
+    override suspend fun write(path: String, bytes: ByteArray) = withContext(Dispatchers.IO) {
+        val file = path.resolveOrCreateFile()
+        file.openOutputStream().use { it.write(bytes) }
+    }
+
+    override suspend fun promote(stagedPath: String, finalPath: String) = withContext(Dispatchers.IO) {
+        val staged = stagedPath.resolveFile() ?: error("missing staged local")
+        val final = finalPath.resolveOrCreateFile()
+        staged.openInputStream().use { input ->
+            final.openOutputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        check(staged.delete()) { "local staged cleanup failed" }
+    }
+
+    override suspend fun delete(path: String) = withContext(Dispatchers.IO) {
+        path.resolveFile()?.deleteRecursively()
+        Unit
+    }
+
+    private fun String.resolveFile(): UniFile? {
+        return pathSegments().fold(root as UniFile?) { parent, segment ->
+            parent?.findFile(segment)
+        }
+    }
+
+    private fun String.resolveOrCreateFile(): UniFile {
+        val segments = pathSegments()
+        require(segments.isNotEmpty()) { "local path is blank" }
+        val parent = segments.dropLast(1).fold(root) { dir, segment ->
+            dir.findFile(segment)?.takeIf { it.isDirectory }
+                ?: dir.createDirectory(segment)
+                ?: error("could not create local directory")
+        }
+        val fileName = segments.last()
+        parent.findFile(fileName)?.delete()
+        return parent.createFile(fileName) ?: error("could not create local file")
+    }
+
+    private fun String.pathSegments(): List<String> {
+        return trim()
+            .split('/')
+            .map { it.trim() }
+            .filter { it.isNotBlank() && it != "." && it != ".." }
+    }
+
+    private fun UniFile.deleteRecursively() {
+        if (isDirectory) {
+            listFiles().orEmpty().forEach { it.deleteRecursively() }
+        }
+        delete()
     }
 }
 

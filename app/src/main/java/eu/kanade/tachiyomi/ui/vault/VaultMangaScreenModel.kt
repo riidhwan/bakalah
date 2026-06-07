@@ -1,9 +1,10 @@
 package eu.kanade.tachiyomi.ui.vault
 
-import android.app.Application
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import eu.kanade.tachiyomi.data.vault.FileVaultTransferLocalStaging
+import eu.kanade.tachiyomi.data.vault.UniFileVaultTransferLocalStaging
+import eu.kanade.tachiyomi.data.vault.VaultCacheEvictionResult
+import eu.kanade.tachiyomi.data.vault.VaultCachePolicyService
 import eu.kanade.tachiyomi.data.vault.VaultTransferResult
 import eu.kanade.tachiyomi.data.vault.VaultTransferService
 import eu.kanade.tachiyomi.data.vault.WebDavVaultTransferStorage
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.update
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.system.logcat
+import tachiyomi.domain.storage.service.StorageManager
 import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
@@ -28,14 +30,13 @@ import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import java.io.File
 
 class VaultMangaScreenModel(
     private val mangaId: Long,
     private val repository: VaultRepository = Injekt.get(),
     private val preferences: ContentVaultPreferences = Injekt.get(),
     private val networkHelper: NetworkHelper = Injekt.get(),
-    private val application: Application = Injekt.get(),
+    private val storageManager: StorageManager = Injekt.get(),
 ) : StateScreenModel<VaultMangaScreenModel.State>(State()) {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
@@ -77,12 +78,7 @@ class VaultMangaScreenModel(
                         it.copy(
                             isLoading = false,
                             chapters = chapters,
-                            localCacheUsageBytes = chapters.sumOf { item ->
-                                item.cacheState
-                                    ?.takeIf { state -> state.state == VaultCacheState.CACHED }
-                                    ?.sizeBytes
-                                    ?: 0L
-                            },
+                            localCacheUsageBytes = repository.getLocalCacheUsageBytes(manga.vaultId),
                             vaultStorageUsageBytes = chapters.sumOf { item -> item.chapter.content.sizeBytes },
                         )
                     }
@@ -103,8 +99,10 @@ class VaultMangaScreenModel(
                 val config = preferences.getWebDavConfig()
                 if (!config.isComplete) return@runCatching VaultTransferResult.Failed("incomplete configuration")
 
-                val service = transferService(config)
-                val localPath = item.chapter.cachePath(manga)
+                val localStaging = localStaging() ?: return@runCatching VaultTransferResult.Failed("cache unavailable")
+                val cachePolicy = cachePolicyService(localStaging)
+                val service = transferService(config, localStaging)
+                val localPath = cachePolicy.cachePath(manga, item.chapter)
                 val jobId = service.enqueue(
                     vaultId = manga.vaultId,
                     type = VaultTransferType.CACHE_CHAPTER,
@@ -114,7 +112,11 @@ class VaultMangaScreenModel(
                     sizeBytes = item.chapter.content.sizeBytes,
                     checksumSha256 = item.chapter.content.checksumSha256,
                 )
-                service.execute(jobId)
+                service.execute(jobId).also { result ->
+                    if (result == VaultTransferResult.Succeeded) {
+                        cachePolicy.enforceLimit(manga.vaultId)
+                    }
+                }
             }.getOrElse {
                 VaultTransferResult.Failed(it.message ?: "cache failed")
             }.let { result ->
@@ -131,6 +133,7 @@ class VaultMangaScreenModel(
                 val manga = mutableState.value.manga ?: return@launchIO
                 val config = preferences.getWebDavConfig()
                 if (!config.isComplete) return@runCatching VaultTransferResult.Failed("incomplete configuration")
+                val localStaging = localStaging() ?: return@runCatching VaultTransferResult.Failed("cache unavailable")
                 val job = repository.getTransferJobsForVault(manga.vaultId)
                     .lastOrNull {
                         it.chapterId == item.chapter.id &&
@@ -142,11 +145,16 @@ class VaultMangaScreenModel(
                     }
                     ?: return@runCatching null
 
-                val service = transferService(config)
+                val service = transferService(config, localStaging)
+                val cachePolicy = cachePolicyService(localStaging)
                 if (job.state == VaultTransferState.QUEUED) {
                     service.execute(job.id)
                 } else {
                     service.retry(job.id)
+                }.also { result ->
+                    if (result == VaultTransferResult.Succeeded) {
+                        cachePolicy.enforceLimit(manga.vaultId)
+                    }
                 }
             }.getOrElse {
                 VaultTransferResult.Failed(it.message ?: "cache retry failed")
@@ -163,34 +171,60 @@ class VaultMangaScreenModel(
             val config = preferences.getWebDavConfig()
             if (!config.isComplete) return
             val chapterIds = repository.getChapters(manga.id).map { it.id }.toSet()
-            val service = transferService(config)
+            val localStaging = localStaging() ?: return
+            val service = transferService(config, localStaging)
+            val cachePolicy = cachePolicyService(localStaging)
             repository.getTransferJobsForVault(manga.vaultId)
                 .filter {
                     it.type == VaultTransferType.CACHE_CHAPTER &&
                         it.state == VaultTransferState.QUEUED &&
                         it.chapterId in chapterIds
                 }
-                .forEach { service.execute(it.id) }
+                .forEach {
+                    if (service.execute(it.id) == VaultTransferResult.Succeeded) {
+                        cachePolicy.enforceLimit(manga.vaultId)
+                    }
+                }
         }.onFailure {
             logcat(LogPriority.ERROR, it)
         }
     }
 
-    private fun transferService(config: WebDavVaultConfig): VaultTransferService {
+    fun evictChapter(item: VaultChapterItem) {
+        screenModelScope.launchIO {
+            runCatching {
+                val localStaging = localStaging() ?: return@runCatching false
+                cachePolicyService(localStaging).evictChapter(item.chapter.id) == VaultCacheEvictionResult.Evicted
+            }.getOrElse {
+                logcat(LogPriority.ERROR, it)
+                false
+            }.let { evicted ->
+                if (!evicted) _events.send(Event.CacheFailed)
+            }
+        }
+    }
+
+    private fun transferService(
+        config: WebDavVaultConfig,
+        localStaging: UniFileVaultTransferLocalStaging,
+    ): VaultTransferService {
         return VaultTransferService(
             repository = repository,
             remoteStorage = WebDavVaultTransferStorage(networkHelper, config),
-            localStaging = FileVaultTransferLocalStaging(vaultCacheRoot()),
+            localStaging = localStaging,
         )
     }
 
-    private fun vaultCacheRoot(): File {
-        return File(application.filesDir, VAULT_CACHE_DIR).also { it.mkdirs() }
+    private fun cachePolicyService(localStaging: UniFileVaultTransferLocalStaging): VaultCachePolicyService {
+        return VaultCachePolicyService(
+            repository = repository,
+            localStaging = localStaging,
+            preferences = preferences,
+        )
     }
 
-    private fun VaultChapter.cachePath(manga: VaultManga): String {
-        val fileName = content.path.substringAfterLast('/').ifBlank { "${identity.value}.chapter" }
-        return "${manga.vaultId}/${manga.identity.value}/${identity.value}/$fileName"
+    private fun localStaging(): UniFileVaultTransferLocalStaging? {
+        return storageManager.getVaultCacheDirectory()?.let(::UniFileVaultTransferLocalStaging)
     }
 
     private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
@@ -216,8 +250,4 @@ class VaultMangaScreenModel(
         val localCacheUsageBytes: Long = 0,
         val vaultStorageUsageBytes: Long = 0,
     )
-
-    private companion object {
-        const val VAULT_CACHE_DIR = "vault-cache"
-    }
 }

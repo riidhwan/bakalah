@@ -49,6 +49,7 @@ import eu.kanade.presentation.more.settings.screen.data.StorageInfo
 import eu.kanade.presentation.more.settings.widget.BasePreferenceWidget
 import eu.kanade.presentation.more.settings.widget.PrefsHorizontalPadding
 import eu.kanade.presentation.util.relativeTimeSpanString
+import eu.kanade.presentation.vault.formatBytes
 import eu.kanade.tachiyomi.data.backup.create.BackupCreateJob
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
 import eu.kanade.tachiyomi.data.cache.ChapterCache
@@ -297,6 +298,18 @@ object SettingsDataScreen : SearchableSettings {
                     title = "Configured vault",
                     subtitle = configuredIdentity.ifBlank { "None" },
                     enabled = false,
+                ),
+                Preference.PreferenceItem.ListPreference(
+                    preference = preferences.localCacheLimitBytes,
+                    entries = mapOf(
+                        512L * 1024L * 1024L to "512 MB",
+                        1L * 1024L * 1024L * 1024L to "1 GB",
+                        2L * 1024L * 1024L * 1024L to "2 GB",
+                        5L * 1024L * 1024L * 1024L to "5 GB",
+                        10L * 1024L * 1024L * 1024L to "10 GB",
+                    ),
+                    title = "Local cache limit",
+                    subtitleProvider = { value, _ -> formatBytes(value) },
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = "Test WebDAV connection",

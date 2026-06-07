@@ -15,6 +15,10 @@ class ContentVaultPreferences(
         Preference.appStateKey("vault_configured_identity"),
         "",
     )
+    val localCacheLimitBytes: Preference<Long> = preferenceStore.getLong(
+        Preference.appStateKey("vault_local_cache_limit_bytes"),
+        DEFAULT_LOCAL_CACHE_LIMIT_BYTES,
+    )
 
     val webDavUsername: Preference<String> = preferenceStore.getString(
         Preference.privateKey("vault_webdav_username"),
@@ -40,5 +44,9 @@ class ContentVaultPreferences(
         webDavPassword.set(config.password)
         webDavRootPath.set(config.rootPath.trim())
         configuredVaultIdentity.set(identity.value)
+    }
+
+    companion object {
+        const val DEFAULT_LOCAL_CACHE_LIMIT_BYTES: Long = 2L * 1024L * 1024L * 1024L
     }
 }

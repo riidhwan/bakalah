@@ -64,6 +64,12 @@ interface VaultRepository {
 
     fun getCacheStatesForVaultAsFlow(vaultId: Long): Flow<List<VaultChapterCacheState>>
 
+    suspend fun getCacheStatesForVault(vaultId: Long): List<VaultChapterCacheState>
+
+    suspend fun getReadCacheStatesForVault(vaultId: Long): List<VaultChapterCacheState>
+
+    suspend fun getLocalCacheUsageBytes(vaultId: Long): Long
+
     suspend fun upsertImportTargetHint(hint: ImportTargetHint)
 
     suspend fun getImportTargetHint(localMangaId: Long): ImportTargetHint?

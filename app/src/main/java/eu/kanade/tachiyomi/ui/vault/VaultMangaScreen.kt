@@ -37,7 +37,7 @@ data class VaultMangaScreen(
                 screenModel.cacheChapter(it)
             },
             onClickEvict = {
-                screenModel.reportUnavailable(VaultScreenModel.PendingAction.EVICT)
+                screenModel.evictChapter(it)
             },
             onClickRetry = {
                 screenModel.retryChapter(it)

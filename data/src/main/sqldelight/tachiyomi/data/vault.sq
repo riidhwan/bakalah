@@ -414,6 +414,27 @@ JOIN vault_chapters ON vault_chapters._id = vault_chapter_cache_state.chapter_id
 JOIN vault_mangas ON vault_mangas._id = vault_chapters.manga_id
 WHERE vault_mangas.vault_id = :vaultId;
 
+getReadCacheStatesForVault:
+SELECT vault_chapter_cache_state.*
+FROM vault_chapter_cache_state
+JOIN vault_chapters ON vault_chapters._id = vault_chapter_cache_state.chapter_id
+JOIN vault_mangas ON vault_mangas._id = vault_chapters.manga_id
+JOIN vault_reading_state ON vault_reading_state.chapter_id = vault_chapter_cache_state.chapter_id
+WHERE vault_mangas.vault_id = :vaultId
+AND vault_chapter_cache_state.state = :state
+AND vault_reading_state.read = 1
+ORDER BY
+    coalesce(vault_chapter_cache_state.last_opened_at, vault_chapter_cache_state.last_verified_at, vault_chapter_cache_state.updated_at),
+    vault_chapter_cache_state.chapter_id;
+
+getLocalCacheUsageBytes:
+SELECT coalesce(sum(vault_chapter_cache_state.size_bytes), 0)
+FROM vault_chapter_cache_state
+JOIN vault_chapters ON vault_chapters._id = vault_chapter_cache_state.chapter_id
+JOIN vault_mangas ON vault_mangas._id = vault_chapters.manga_id
+WHERE vault_mangas.vault_id = :vaultId
+AND vault_chapter_cache_state.state = :state;
+
 upsertImportTargetHint:
 INSERT INTO vault_import_target_hints(local_manga_id, local_manga_identity, vault_manga_id, updated_at)
 VALUES (:localMangaId, :localMangaIdentity, :vaultMangaId, :updatedAt)
