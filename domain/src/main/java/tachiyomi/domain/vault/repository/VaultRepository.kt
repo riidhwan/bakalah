@@ -36,6 +36,8 @@ interface VaultRepository {
 
     fun getChaptersForVaultAsFlow(vaultId: Long): Flow<List<VaultChapter>>
 
+    suspend fun getChaptersForVault(vaultId: Long): List<VaultChapter>
+
     suspend fun getChapters(mangaId: Long): List<VaultChapter>
 
     suspend fun upsertChapters(mangaId: Long, chapters: List<VaultChapter>)

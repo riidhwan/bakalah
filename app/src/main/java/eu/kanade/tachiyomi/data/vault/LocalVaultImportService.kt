@@ -293,9 +293,7 @@ class LocalVaultImportService(
             ?.let { repository.getVaultByIdentity(ContentVaultIdentity(it)) }
 
     private suspend fun existingChaptersByMangaId(vaultId: Long): Map<Long, List<VaultChapter>> {
-        return repository.getManga(vaultId).associate { manga ->
-            manga.id to repository.getChapters(manga.id)
-        }
+        return repository.getChaptersForVault(vaultId).groupBy { it.mangaId }
     }
 
     private suspend fun scanLocalManga(manga: Manga): LocalMangaScan? = withContext(Dispatchers.IO) {
@@ -305,8 +303,8 @@ class LocalVaultImportService(
         val chapters = localSource.getChapterList(details).mapIndexedNotNull { index, chapter ->
             val fileName = chapter.url.substringAfter('/', missingDelimiterValue = chapter.url)
             val file = chapterFiles[fileName] ?: return@mapIndexedNotNull null
-            val digest = file.digest()
             val format = file.toVaultContentFormat()
+            val digest = file.previewDigest(format)
             ScannedLocalChapter(
                 file = file,
                 chapter = LocalVaultImportChapter(
@@ -628,6 +626,15 @@ class LocalVaultImportService(
         return FileDigest(size, digest.digest().toHex())
     }
 
+    private fun UniFile.previewDigest(format: VaultChapterContentFormat): FileDigest {
+        if (format != VaultChapterContentFormat.DIRECTORY) return digest()
+
+        return FileDigest(
+            sizeBytes = length().takeIf { it >= 0 } ?: 0,
+            sha256 = "$PENDING_DIRECTORY_CBZ_CHECKSUM_PREFIX$uri",
+        )
+    }
+
     private fun UniFile.updateDigest(digest: MessageDigest): Long {
         var size = 0L
         openInputStream().use { input ->
@@ -723,6 +730,7 @@ class LocalVaultImportService(
         private val OCTET_MEDIA_TYPE = "application/octet-stream".toMediaType()
         private val EMPTY_BODY = ByteArray(0).toRequestBody(null)
         private const val HTTP_METHOD_NOT_ALLOWED = 405
+        private const val PENDING_DIRECTORY_CBZ_CHECKSUM_PREFIX = "pending-directory-cbz:"
     }
 }
 

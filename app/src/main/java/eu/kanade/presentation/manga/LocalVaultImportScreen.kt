@@ -565,11 +565,18 @@ private fun ImportBottomBar(
                 }
             } else {
                 Text(
-                    text = stringResource(
-                        MR.strings.vault_import_selected_source_size,
-                        state.selectedImportableCount,
-                        formatImportBytes(state.selectedSourceSizeBytes),
-                    ),
+                    text = if (state.hasSelectedKnownSourceSize) {
+                        stringResource(
+                            MR.strings.vault_import_selected_known_source_size,
+                            state.selectedImportableCount,
+                            formatImportBytes(state.selectedKnownSourceSizeBytes),
+                        )
+                    } else {
+                        stringResource(
+                            MR.strings.vault_import_selected_count_only,
+                            state.selectedImportableCount,
+                        )
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Button(
@@ -665,10 +672,7 @@ private fun SkippedChapterItem(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = stringResource(
-                    MR.strings.vault_import_skipped_chapter_summary,
-                    formatImportBytes(item.chapter.sizeBytes),
-                ),
+                text = item.skippedSummary(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -680,12 +684,28 @@ private fun SkippedChapterItem(
 @Composable
 private fun LocalVaultImportChapterPlan.importableSummary(): String {
     return buildList {
-        add(formatImportBytes(chapter.sizeBytes))
+        chapter.previewSizeLabel()?.let { add(it) }
         duplicateState.label()?.let { add(it) }
         if (chapter.requiresLocalCbzConversion) {
             add(stringResource(MR.strings.vault_import_converts_to_cbz))
         }
     }.joinToString(" · ")
+}
+
+@Composable
+private fun LocalVaultImportChapterPlan.skippedSummary(): String {
+    return buildList {
+        chapter.previewSizeLabel()?.let { add(it) }
+        duplicateState.label()?.let { add(it) }
+    }.joinToString(" · ")
+}
+
+private fun tachiyomi.domain.vault.model.LocalVaultImportChapter.previewSizeLabel(): String? {
+    return if (requiresLocalCbzConversion) {
+        null
+    } else {
+        formatImportBytes(sizeBytes)
+    }
 }
 
 @Composable

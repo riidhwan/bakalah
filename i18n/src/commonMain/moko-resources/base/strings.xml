@@ -230,7 +230,9 @@
     <string name="vault_import_skipped_chapter_summary">%s · Already in Vault</string>
     <string name="vault_import_possible_duplicate">Possible duplicate</string>
     <string name="vault_import_selected_count">%1$d selected · %2$d recognized</string>
+    <string name="vault_import_selected_count_only">%d selected</string>
     <string name="vault_import_selected_source_size">%1$d selected · %2$s source size</string>
+    <string name="vault_import_selected_known_source_size">%1$d selected · %2$s known source size</string>
     <string name="vault_import_converts_to_cbz">Converts to CBZ</string>
     <string name="vault_import_cbz_conversion_notice">%d selected directory chapters will be converted to CBZ files in Local Manga before import.</string>
     <string name="vault_import_no_selected_chapters">No chapters selected</string>
