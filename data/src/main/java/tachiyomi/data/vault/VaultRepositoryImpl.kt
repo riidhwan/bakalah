@@ -61,6 +61,12 @@ class VaultRepositoryImpl(
             .subscribeToList()
     }
 
+    override suspend fun getManga(vaultId: Long): List<VaultManga> {
+        return database.vaultQueries
+            .getMangaForVault(vaultId, VaultMapper::mapManga)
+            .awaitAsList()
+    }
+
     override suspend fun getMangaById(id: Long): VaultManga? {
         return database.vaultQueries
             .getMangaById(id, VaultMapper::mapManga)
@@ -100,6 +106,12 @@ class VaultRepositoryImpl(
         return database.vaultQueries
             .getChaptersForManga(mangaId, VaultMapper::mapChapter)
             .subscribeToList()
+    }
+
+    override suspend fun getChapters(mangaId: Long): List<VaultChapter> {
+        return database.vaultQueries
+            .getChaptersForManga(mangaId, VaultMapper::mapChapter)
+            .awaitAsList()
     }
 
     override suspend fun upsertChapters(mangaId: Long, chapters: List<VaultChapter>) {
