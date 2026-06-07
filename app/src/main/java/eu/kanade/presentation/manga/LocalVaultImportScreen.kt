@@ -15,17 +15,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.components.AppBar
-import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.tachiyomi.ui.manga.LocalVaultImportScreenModel
 import tachiyomi.domain.vault.model.LocalVaultImportChapterPlan
 import tachiyomi.domain.vault.model.LocalVaultImportDuplicateState
@@ -48,6 +52,7 @@ import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.LoadingScreen
+import java.text.DecimalFormat
 
 @Composable
 fun LocalVaultImportScreen(
@@ -62,15 +67,28 @@ fun LocalVaultImportScreen(
     onImport: () -> Unit,
     onRetry: () -> Unit,
     onOpenVault: () -> Unit,
+    onDone: () -> Unit,
 ) {
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
                 title = stringResource(MR.strings.vault_import_title),
-                subtitle = state.mangaTitle.takeIf { it.isNotBlank() },
+                subtitle = state.mangaTitle
+                    .takeIf { it.isNotBlank() }
+                    ?.let { stringResource(MR.strings.vault_import_subtitle_from_local, it) },
                 navigateUp = navigateUp.takeUnless { state.isImporting },
                 scrollBehavior = scrollBehavior,
             )
+        },
+        bottomBar = {
+            if (!state.isLoading && state.plan != null) {
+                ImportBottomBar(
+                    state = state,
+                    onImport = onImport,
+                    onOpenVault = onOpenVault,
+                    onDone = onDone,
+                )
+            }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { contentPadding ->
@@ -90,9 +108,7 @@ fun LocalVaultImportScreen(
                 onChapterSelected = onChapterSelected,
                 onSelectAll = onSelectAll,
                 onSelectNone = onSelectNone,
-                onImport = onImport,
                 onRetry = onRetry,
-                onOpenVault = onOpenVault,
             )
         }
     }
@@ -143,10 +159,17 @@ private fun ImportContent(
     onChapterSelected: (String, Boolean) -> Unit,
     onSelectAll: () -> Unit,
     onSelectNone: () -> Unit,
-    onImport: () -> Unit,
     onRetry: () -> Unit,
-    onOpenVault: () -> Unit,
 ) {
+    val importableChapters = state.plan
+        ?.chapters
+        .orEmpty()
+        .filter { it.duplicateState != LocalVaultImportDuplicateState.EXACT }
+    val skippedChapters = state.plan
+        ?.chapters
+        .orEmpty()
+        .filter { it.duplicateState == LocalVaultImportDuplicateState.EXACT }
+
     LazyColumn(
         contentPadding = contentPadding,
     ) {
@@ -155,27 +178,57 @@ private fun ImportContent(
                 state = state,
                 onOpenSettings = onOpenSettings,
                 onTargetSelected = onTargetSelected,
-                onSelectAll = onSelectAll,
-                onSelectNone = onSelectNone,
-                onImport = onImport,
                 onRetry = onRetry,
-                onOpenVault = onOpenVault,
                 modifier = Modifier.animateItem(),
             )
         }
 
+        item(key = "chapter-header", contentType = "chapter-header") {
+            ChapterSectionHeader(
+                state = state,
+                onSelectAll = onSelectAll,
+                onSelectNone = onSelectNone,
+                modifier = Modifier.animateItem(),
+            )
+        }
+
+        if (importableChapters.isNotEmpty()) {
+            item(key = "importable-header", contentType = "section-header") {
+                ChapterGroupHeader(
+                    text = stringResource(MR.strings.vault_import_importable),
+                    modifier = Modifier.animateItem(),
+                )
+            }
+        }
         items(
-            items = state.plan?.chapters.orEmpty(),
+            items = importableChapters,
             key = { "import-chapter-${it.chapter.selectionId}" },
             contentType = { "import-chapter" },
         ) { item ->
             ChapterImportItem(
                 item = item,
                 checked = item.chapter.selectionId in state.selectedChapterIds,
-                enabled = !state.isImporting &&
-                    item.duplicateState != LocalVaultImportDuplicateState.EXACT &&
-                    state.success == null,
+                enabled = !state.isImporting && state.success == null,
                 onCheckedChange = { checked -> onChapterSelected(item.chapter.selectionId, checked) },
+                modifier = Modifier.animateItem(),
+            )
+        }
+
+        if (skippedChapters.isNotEmpty()) {
+            item(key = "skipped-header", contentType = "section-header") {
+                ChapterGroupHeader(
+                    text = stringResource(MR.strings.vault_import_skipped),
+                    modifier = Modifier.animateItem(),
+                )
+            }
+        }
+        items(
+            items = skippedChapters,
+            key = { "skipped-chapter-${it.chapter.selectionId}" },
+            contentType = { "skipped-chapter" },
+        ) { item ->
+            SkippedChapterItem(
+                item = item,
                 modifier = Modifier.animateItem(),
             )
         }
@@ -187,18 +240,14 @@ private fun ImportSummary(
     state: LocalVaultImportScreenModel.State,
     onOpenSettings: () -> Unit,
     onTargetSelected: (LocalVaultImportScreenModel.TargetSelection) -> Unit,
-    onSelectAll: () -> Unit,
-    onSelectNone: () -> Unit,
-    onImport: () -> Unit,
     onRetry: () -> Unit,
-    onOpenVault: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         TargetSelector(
             selectedTarget = state.selectedTarget,
@@ -208,39 +257,8 @@ private fun ImportSummary(
             onTargetSelected = onTargetSelected,
         )
 
-        Text(
-            text = stringResource(
-                MR.strings.vault_import_selected_count,
-                state.selectedImportableCount,
-                state.recognizedChapterCount,
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(
-                onClick = onSelectAll,
-                enabled = !state.isImporting && state.success == null,
-            ) {
-                Text(stringResource(MR.strings.action_select_all))
-            }
-            TextButton(
-                onClick = onSelectNone,
-                enabled = !state.isImporting && state.success == null,
-            ) {
-                Text(stringResource(MR.strings.vault_import_select_none))
-            }
-        }
-
-        if (state.selectedCbzConversionCount > 0 && state.success == null) {
-            Text(
-                text = stringResource(
-                    MR.strings.vault_import_cbz_conversion_notice,
-                    state.selectedCbzConversionCount,
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
+        if (state.success == null) {
+            PlannedChanges(state)
         }
 
         state.error?.let { error ->
@@ -262,44 +280,12 @@ private fun ImportSummary(
         }
 
         state.success?.let { success ->
-            Text(
-                text = stringResource(
-                    MR.strings.vault_import_success,
-                    success.importedChapterCount,
-                    success.skippedExactDuplicateCount,
-                ),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Button(onClick = onOpenVault) {
-                Text(
-                    stringResource(
-                        if (success.vaultMangaId != null) {
-                            MR.strings.vault_import_action_open_in_vault
-                        } else {
-                            MR.strings.vault_import_action_open_vault
-                        },
-                    ),
-                )
-            }
-        } ?: Button(
-            onClick = onImport,
-            enabled = state.selectedTarget != null &&
-                state.selectedImportableCount > 0 &&
-                !state.isImporting,
-        ) {
-            if (state.isImporting) {
-                CircularProgressIndicator(modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(MR.strings.vault_importing))
-            } else {
-                Icon(Icons.Outlined.CloudUpload, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(MR.strings.vault_action_import_to_vault))
-            }
+            ImportSuccessSummary(success)
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TargetSelector(
     selectedTarget: LocalVaultImportScreenModel.TargetSelection?,
@@ -309,48 +295,294 @@ private fun TargetSelector(
     onTargetSelected: (LocalVaultImportScreenModel.TargetSelection) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = enabled) { expanded = true },
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(MR.strings.vault_import_target),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = selectedTarget.label(targets),
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    planTarget?.reasonLabel()?.let { reason ->
+                        Text(
+                            text = reason,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null)
+            }
+        }
+
+        if (expanded) {
+            ModalBottomSheet(onDismissRequest = { expanded = false }) {
+                Column(
+                    modifier = Modifier.padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(MR.strings.vault_import_choose_target),
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    TargetSheetItem(
+                        label = stringResource(MR.strings.vault_import_target_create_new),
+                        selected = selectedTarget == LocalVaultImportScreenModel.TargetSelection.CreateNew,
+                        onClick = {
+                            expanded = false
+                            onTargetSelected(LocalVaultImportScreenModel.TargetSelection.CreateNew)
+                        },
+                    )
+                    targets.forEach { target ->
+                        TargetSheetItem(
+                            label = target.metadata.title,
+                            selected = selectedTarget == LocalVaultImportScreenModel.TargetSelection.Existing(
+                                target.id,
+                            ),
+                            onClick = {
+                                expanded = false
+                                onTargetSelected(LocalVaultImportScreenModel.TargetSelection.Existing(target.id))
+                            },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TargetSheetItem(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+            if (selected) {
+                Icon(Icons.Outlined.Check, contentDescription = null)
+            }
+        }
         Text(
-            text = stringResource(MR.strings.vault_import_target),
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun PlannedChanges(state: LocalVaultImportScreenModel.State) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(MR.strings.vault_import_planned_changes),
             style = MaterialTheme.typography.titleSmall,
         )
-        AssistChip(
-            onClick = { if (enabled) expanded = true },
-            enabled = enabled,
-            label = {
-                Text(
-                    selectedTarget.label(targets),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            },
-        )
-        planTarget?.reasonLabel()?.let { reason ->
+        if (state.selectedImportableCount == 0) {
             Text(
-                text = reason,
-                style = MaterialTheme.typography.bodySmall,
+                text = stringResource(MR.strings.vault_import_no_selected_chapters),
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(MR.strings.vault_import_target_create_new)) },
-                onClick = {
-                    expanded = false
-                    onTargetSelected(LocalVaultImportScreenModel.TargetSelection.CreateNew)
-                },
+        if (state.selectedCbzConversionCount > 0) {
+            Text(
+                text = stringResource(
+                    MR.strings.vault_import_cbz_conversion_plan,
+                    state.selectedCbzConversionCount,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            targets.forEach { target ->
-                DropdownMenuItem(
-                    text = { Text(target.metadata.title) },
-                    onClick = {
-                        expanded = false
-                        onTargetSelected(LocalVaultImportScreenModel.TargetSelection.Existing(target.id))
-                    },
+        }
+        val uploadAsIsCount = state.selectedImportableCount - state.selectedCbzConversionCount
+        if (uploadAsIsCount > 0) {
+            Text(
+                text = stringResource(MR.strings.vault_import_upload_as_is_plan, uploadAsIsCount),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ImportSuccessSummary(success: LocalVaultImportScreenModel.ImportSuccess) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = stringResource(MR.strings.vault_import_complete),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text = stringResource(
+                MR.strings.vault_import_success,
+                success.importedChapterCount,
+                success.skippedExactDuplicateCount,
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ChapterSectionHeader(
+    state: LocalVaultImportScreenModel.State,
+    onSelectAll: () -> Unit,
+    onSelectNone: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = stringResource(MR.strings.vault_import_chapters),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text = stringResource(
+                MR.strings.vault_import_selected_count,
+                state.selectedImportableCount,
+                state.recognizedChapterCount,
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(
+                onClick = onSelectAll,
+                enabled = !state.isImporting && state.success == null,
+            ) {
+                Text(stringResource(MR.strings.action_select_all))
+            }
+            TextButton(
+                onClick = onSelectNone,
+                enabled = !state.isImporting && state.success == null,
+            ) {
+                Text(stringResource(MR.strings.vault_import_select_none))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChapterGroupHeader(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun ImportBottomBar(
+    state: LocalVaultImportScreenModel.State,
+    onImport: () -> Unit,
+    onOpenVault: () -> Unit,
+    onDone: () -> Unit,
+) {
+    Surface(tonalElevation = 3.dp) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (state.isImporting) {
+                Text(
+                    text = stringResource(MR.strings.vault_import_phase_text),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Button(
+                    onClick = {},
+                    enabled = false,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(MR.strings.vault_importing))
+                }
+            } else if (state.success != null) {
+                Button(
+                    onClick = onOpenVault,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        stringResource(
+                            if (state.success.vaultMangaId != null) {
+                                MR.strings.vault_import_action_open_in_vault
+                            } else {
+                                MR.strings.vault_import_action_open_vault
+                            },
+                        ),
+                    )
+                }
+                TextButton(
+                    onClick = onDone,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(MR.strings.action_done))
+                }
+            } else {
+                Text(
+                    text = stringResource(
+                        MR.strings.vault_import_selected_source_size,
+                        state.selectedImportableCount,
+                        formatImportBytes(state.selectedSourceSizeBytes),
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Button(
+                    onClick = onImport,
+                    enabled = state.selectedTarget != null &&
+                        state.selectedImportableCount > 0 &&
+                        !state.isImporting,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Outlined.CloudUpload, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(MR.strings.vault_action_import_to_vault))
+                }
             }
         }
     }
@@ -368,7 +600,7 @@ private fun ChapterImportItem(
         modifier = modifier
             .fillMaxWidth()
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -387,32 +619,73 @@ private fun ChapterImportItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item.duplicateState.label()?.let { label ->
-                    AssistChip(
-                        onClick = {},
-                        leadingIcon = if (item.duplicateState == LocalVaultImportDuplicateState.POSSIBLE) {
-                            { Icon(Icons.Outlined.WarningAmber, contentDescription = null) }
-                        } else {
-                            null
-                        },
-                        label = { Text(label) },
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (item.duplicateState == LocalVaultImportDuplicateState.POSSIBLE) {
+                    Icon(
+                        imageVector = Icons.Outlined.WarningAmber,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Text(
-                    text = "${item.chapter.sizeBytes} bytes",
+                    text = item.importableSummary(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if (item.chapter.requiresLocalCbzConversion) {
-                    AssistChip(
-                        onClick = {},
-                        label = { Text(stringResource(MR.strings.vault_import_converts_to_cbz)) },
-                    )
-                }
             }
         }
     }
+    HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
+}
+
+@Composable
+private fun SkippedChapterItem(
+    item: LocalVaultImportChapterPlan,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 72.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = item.chapter.title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = stringResource(
+                    MR.strings.vault_import_skipped_chapter_summary,
+                    formatImportBytes(item.chapter.sizeBytes),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
+}
+
+@Composable
+private fun LocalVaultImportChapterPlan.importableSummary(): String {
+    return buildList {
+        add(formatImportBytes(chapter.sizeBytes))
+        duplicateState.label()?.let { add(it) }
+        if (chapter.requiresLocalCbzConversion) {
+            add(stringResource(MR.strings.vault_import_converts_to_cbz))
+        }
+    }.joinToString(" · ")
 }
 
 @Composable
@@ -488,3 +761,16 @@ private val LocalVaultImportScreenModel.ImportError.isRetryable: Boolean
         LocalVaultImportScreenModel.ImportError.NOTHING_SELECTED,
         -> false
     }
+
+private fun formatImportBytes(bytes: Long): String {
+    if (bytes <= 0) return "0 B"
+    val units = listOf("B", "KB", "MB", "GB", "TB")
+    var value = bytes.toDouble()
+    var unitIndex = 0
+    while (value >= 1024 && unitIndex < units.lastIndex) {
+        value /= 1024
+        unitIndex += 1
+    }
+    val pattern = if (value >= 10 || unitIndex == 0) "0" else "0.0"
+    return "${DecimalFormat(pattern).format(value)} ${units[unitIndex]}"
+}
