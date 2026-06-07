@@ -4,9 +4,6 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
@@ -15,9 +12,14 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.w3c.dom.Element
 import org.xml.sax.SAXNotRecognizedException
 import org.xml.sax.SAXNotSupportedException
+import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVault
 import tachiyomi.domain.vault.model.ContentVaultIdentity
+import tachiyomi.domain.vault.model.ROOT_VAULT_MANIFEST_NAME
+import tachiyomi.domain.vault.model.VaultManifestCodec
+import tachiyomi.domain.vault.model.VaultManifestReadResult
 import tachiyomi.domain.vault.model.VaultRevision
+import tachiyomi.domain.vault.model.VaultRootManifest
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
@@ -36,6 +38,7 @@ class ContentVaultSetupService(
     private val preferences: ContentVaultPreferences,
 ) {
     private val client = networkHelper.nonCloudflareClient
+    private val manifestCodec = VaultManifestCodec(json)
 
     suspend fun validate(config: WebDavVaultConfig, initializeEmptyRoot: Boolean): ContentVaultSetupResult {
         if (!config.isComplete) return ContentVaultSetupResult.IncompleteConfiguration
@@ -59,7 +62,7 @@ class ContentVaultSetupService(
                 is WebDavListResult.Failed -> return@runCatching ContentVaultSetupResult.ConnectionFailed
             }
 
-            val manifestPath = config.rootPath.childPath(ROOT_MANIFEST_NAME)
+            val manifestPath = config.rootPath.childPath(ROOT_VAULT_MANIFEST_NAME)
             val manifestEntry = children.firstOrNull { it.path.matchesWebDavPath(manifestPath) }
             when {
                 manifestEntry != null -> connectExisting(config, webDav, manifestPath)
@@ -116,12 +119,13 @@ class ContentVaultSetupService(
         manifestPath: String,
     ): ContentVaultSetupResult {
         val manifest = webDav.get(manifestPath)
-            ?.let { json.decodeFromString<RootManifest>(it) }
+            ?.let { body ->
+                when (val result = manifestCodec.decodeRoot(body)) {
+                    is VaultManifestReadResult.Success -> result.manifest
+                    else -> null
+                }
+            }
             ?: return ContentVaultSetupResult.InvalidManifest
-
-        if (manifest.app != APP_ID || manifest.layoutVersion > CURRENT_LAYOUT_VERSION) {
-            return ContentVaultSetupResult.InvalidManifest
-        }
 
         val now = System.currentTimeMillis()
         val identity = ContentVaultIdentity(manifest.identity)
@@ -155,10 +159,10 @@ class ContentVaultSetupService(
     ): ContentVaultSetupResult {
         val now = System.currentTimeMillis()
         val identity = ContentVaultIdentity(UUID.randomUUID().toString())
-        val manifest = RootManifest(
+        val manifest = VaultRootManifest(
             identity = identity.value,
             displayName = preferences.newVaultDisplayName.get().trim().ifBlank { DEFAULT_DISPLAY_NAME },
-            layoutVersion = CURRENT_LAYOUT_VERSION,
+            layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
             revisionId = VaultRevision.initial().id,
             revisionNumber = VaultRevision.initial().number,
             writerId = UUID.randomUUID().toString(),
@@ -166,7 +170,7 @@ class ContentVaultSetupService(
             updatedAt = now,
         )
 
-        if (!webDav.put(manifestPath, json.encodeToString(manifest))) {
+        if (!webDav.put(manifestPath, manifestCodec.encodeRoot(manifest))) {
             return ContentVaultSetupResult.ConnectionFailed
         }
 
@@ -296,9 +300,6 @@ class ContentVaultSetupService(
     }
 
     companion object {
-        private const val APP_ID = "bakalah-content-vault"
-        const val ROOT_MANIFEST_NAME = "content-vault.json"
-        const val CURRENT_LAYOUT_VERSION = 1L
         private const val DEFAULT_DISPLAY_NAME = "Content Vault"
         private const val HTTP_MULTI_STATUS = 207
         private const val HTTP_METHOD_NOT_ALLOWED = 405
@@ -339,17 +340,3 @@ private sealed interface WebDavListResult {
     data class Unauthorized(val statusCode: Int) : WebDavListResult
     data class Failed(val statusCode: Int) : WebDavListResult
 }
-
-@Serializable
-private data class RootManifest(
-    val app: String = "bakalah-content-vault",
-    @SerialName("contentVaultIdentity")
-    val identity: String,
-    val displayName: String,
-    val layoutVersion: Long,
-    val revisionId: String,
-    val revisionNumber: Long,
-    val writerId: String?,
-    val createdAt: Long,
-    val updatedAt: Long,
-)

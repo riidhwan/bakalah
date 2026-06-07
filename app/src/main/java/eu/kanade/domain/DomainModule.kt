@@ -93,6 +93,7 @@ import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.domain.track.interactor.GetTracksPerManga
 import tachiyomi.domain.track.interactor.InsertTrack
 import tachiyomi.domain.track.repository.TrackRepository
+import tachiyomi.domain.vault.interactor.CheckVaultRevision
 import tachiyomi.domain.vault.interactor.GetContentVault
 import tachiyomi.domain.vault.interactor.GetImportTargetHint
 import tachiyomi.domain.vault.interactor.GetVaultChapters
@@ -184,6 +185,7 @@ class DomainModule : InjektModule {
         addFactory { GetImportTargetHint(get()) }
         addFactory { UpdateVaultIndex(get()) }
         addFactory { UpdateVaultReadingState(get()) }
+        addFactory { CheckVaultRevision(get()) }
 
         addFactory { DeleteDownload(get(), get()) }
 

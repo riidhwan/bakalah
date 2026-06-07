@@ -9,6 +9,7 @@ import tachiyomi.data.subscribeToList
 import tachiyomi.domain.vault.model.ContentVault
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ImportTargetHint
+import tachiyomi.domain.vault.model.VaultCatalogueRefresh
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
 import tachiyomi.domain.vault.model.VaultCover
@@ -254,5 +255,199 @@ class VaultRepositoryImpl(
             .getManifestSnapshot(snapshot.vaultId, snapshot.manifestPath, snapshot.revision.id)
             .awaitAsOne()
             ._id
+    }
+
+    override suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long {
+        return database.transactionWithResult {
+            database.vaultQueries.upsertVault(
+                id = refresh.vault.id,
+                identity = refresh.vault.identity.value,
+                displayName = refresh.vault.displayName,
+                layoutVersion = refresh.vault.layoutVersion,
+                rootRevisionId = refresh.vault.rootRevision.id,
+                rootRevisionNumber = refresh.vault.rootRevision.number,
+                writerId = refresh.vault.writerId,
+                lastCatalogueRefreshAt = refresh.vault.lastCatalogueRefreshAt,
+                createdAt = refresh.vault.createdAt,
+                updatedAt = refresh.vault.updatedAt,
+            )
+            val vaultId = database.vaultQueries
+                .getVaultByIdentity(refresh.vault.identity.value)
+                .awaitAsOne()
+                ._id
+
+            if (refresh.manga.isEmpty()) {
+                database.vaultQueries.deleteMangaForVault(vaultId)
+            } else {
+                database.vaultQueries.deleteMangaNotInIdentities(
+                    vaultId = vaultId,
+                    identities = refresh.manga.map { it.manga.identity.value },
+                )
+            }
+
+            if (refresh.labels.isEmpty()) {
+                database.vaultQueries.deleteLabelsForVault(vaultId)
+            } else {
+                database.vaultQueries.deleteLabelsNotInIdentities(
+                    vaultId = vaultId,
+                    identities = refresh.labels.map { it.identity.value },
+                )
+                refresh.labels.forEach { label ->
+                    database.vaultQueries.upsertLabel(
+                        id = label.id,
+                        vaultId = vaultId,
+                        identity = label.identity.value,
+                        name = label.name,
+                        sortKey = label.sortKey,
+                        createdAt = label.createdAt,
+                        updatedAt = label.updatedAt,
+                    )
+                }
+            }
+            val labelIdsByIdentity = database.vaultQueries
+                .getLabels(vaultId, VaultMapper::mapLabel)
+                .awaitAsList()
+                .associate { it.identity to it.id }
+
+            refresh.manga.forEach { mangaRefresh ->
+                database.vaultQueries.upsertManga(
+                    id = mangaRefresh.manga.id,
+                    vaultId = vaultId,
+                    identity = mangaRefresh.manga.identity.value,
+                    title = mangaRefresh.manga.metadata.title,
+                    sortKey = mangaRefresh.manga.sortKey,
+                    author = mangaRefresh.manga.metadata.author,
+                    artist = mangaRefresh.manga.metadata.artist,
+                    description = mangaRefresh.manga.metadata.description,
+                    status = mangaRefresh.manga.metadata.status,
+                    coverId = null,
+                    revisionId = mangaRefresh.manga.revision.id,
+                    revisionNumber = mangaRefresh.manga.revision.number,
+                    createdAt = mangaRefresh.manga.createdAt,
+                    updatedAt = mangaRefresh.manga.updatedAt,
+                )
+                val mangaId = database.vaultQueries
+                    .getMangaByIdentity(vaultId, mangaRefresh.manga.identity.value)
+                    .awaitAsOne()
+                    ._id
+
+                val cover = mangaRefresh.cover
+                if (cover == null) {
+                    database.vaultQueries.deleteCoversForManga(mangaId)
+                } else {
+                    database.vaultQueries.deleteCoversNotInIdentities(
+                        mangaId = mangaId,
+                        identities = listOf(cover.identity.value),
+                    )
+                }
+
+                val coverId = cover?.let {
+                    database.vaultQueries.upsertCover(
+                        id = it.id,
+                        mangaId = mangaId,
+                        identity = it.identity.value,
+                        path = it.path,
+                        mediaType = it.mediaType,
+                        sizeBytes = it.sizeBytes,
+                        checksumSha256 = it.checksumSha256,
+                        revisionId = it.revision.id,
+                        revisionNumber = it.revision.number,
+                        updatedAt = it.updatedAt,
+                    )
+                    database.vaultQueries
+                        .getCoverByIdentity(mangaId, it.identity.value)
+                        .awaitAsOne()
+                        ._id
+                }
+
+                if (coverId != null) {
+                    database.vaultQueries.upsertManga(
+                        id = mangaId,
+                        vaultId = vaultId,
+                        identity = mangaRefresh.manga.identity.value,
+                        title = mangaRefresh.manga.metadata.title,
+                        sortKey = mangaRefresh.manga.sortKey,
+                        author = mangaRefresh.manga.metadata.author,
+                        artist = mangaRefresh.manga.metadata.artist,
+                        description = mangaRefresh.manga.metadata.description,
+                        status = mangaRefresh.manga.metadata.status,
+                        coverId = coverId,
+                        revisionId = mangaRefresh.manga.revision.id,
+                        revisionNumber = mangaRefresh.manga.revision.number,
+                        createdAt = mangaRefresh.manga.createdAt,
+                        updatedAt = mangaRefresh.manga.updatedAt,
+                    )
+                }
+
+                database.vaultQueries.deleteMangaLabels(mangaId)
+                mangaRefresh.labelIdentities
+                    .mapNotNull(labelIdsByIdentity::get)
+                    .forEach { labelId ->
+                        database.vaultQueries.insertMangaLabel(mangaId, labelId)
+                    }
+
+                if (mangaRefresh.chapters.isEmpty()) {
+                    database.vaultQueries.deleteChaptersForManga(mangaId)
+                } else {
+                    database.vaultQueries.deleteChaptersNotInIdentities(
+                        mangaId = mangaId,
+                        identities = mangaRefresh.chapters.map { it.identity.value },
+                    )
+                    mangaRefresh.chapters.forEach { chapter ->
+                        database.vaultQueries.upsertChapter(
+                            id = chapter.id,
+                            mangaId = mangaId,
+                            identity = chapter.identity.value,
+                            title = chapter.title,
+                            chapterNumber = chapter.chapterNumber,
+                            volumeNumber = chapter.volumeNumber,
+                            scanlator = chapter.scanlator,
+                            sourceOrder = chapter.sourceOrder,
+                            contentPath = chapter.content.path,
+                            contentFormat = chapter.content.format,
+                            sizeBytes = chapter.content.sizeBytes,
+                            checksumSha256 = chapter.content.checksumSha256,
+                            revisionId = chapter.revision.id,
+                            revisionNumber = chapter.revision.number,
+                            dateUpload = chapter.dateUpload,
+                            createdAt = chapter.createdAt,
+                            updatedAt = chapter.updatedAt,
+                        )
+                    }
+                }
+
+                refresh.snapshots
+                    .filter { it.manifestPath == mangaRefresh.manifestPath }
+                    .forEach { snapshot ->
+                        database.vaultQueries.upsertManifestSnapshot(
+                            id = snapshot.id,
+                            vaultId = vaultId,
+                            mangaId = mangaId,
+                            manifestPath = snapshot.manifestPath,
+                            revisionId = snapshot.revision.id,
+                            revisionNumber = snapshot.revision.number,
+                            body = snapshot.body,
+                            fetchedAt = snapshot.fetchedAt,
+                        )
+                    }
+            }
+
+            refresh.snapshots
+                .filter { it.mangaId == null }
+                .forEach { snapshot ->
+                    database.vaultQueries.upsertManifestSnapshot(
+                        id = snapshot.id,
+                        vaultId = vaultId,
+                        mangaId = null,
+                        manifestPath = snapshot.manifestPath,
+                        revisionId = snapshot.revision.id,
+                        revisionNumber = snapshot.revision.number,
+                        body = snapshot.body,
+                        fetchedAt = snapshot.fetchedAt,
+                    )
+                }
+
+            vaultId
+        }
     }
 }
