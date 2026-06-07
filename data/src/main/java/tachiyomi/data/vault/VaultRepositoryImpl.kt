@@ -9,6 +9,7 @@ import tachiyomi.data.subscribeToList
 import tachiyomi.domain.vault.model.ContentVault
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ImportTargetHint
+import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultCatalogueRefresh
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
@@ -261,6 +262,25 @@ class VaultRepositoryImpl(
         return database.vaultQueries
             .getCacheStatesForVault(vaultId, VaultMapper::mapCacheState)
             .subscribeToList()
+    }
+
+    override suspend fun getCacheStatesForVault(vaultId: Long): List<VaultChapterCacheState> {
+        return database.vaultQueries
+            .getCacheStatesForVault(vaultId, VaultMapper::mapCacheState)
+            .awaitAsList()
+    }
+
+    override suspend fun getReadCacheStatesForVault(vaultId: Long): List<VaultChapterCacheState> {
+        return database.vaultQueries
+            .getReadCacheStatesForVault(vaultId, VaultCacheState.CACHED, VaultMapper::mapCacheState)
+            .awaitAsList()
+    }
+
+    override suspend fun getLocalCacheUsageBytes(vaultId: Long): Long {
+        return database.vaultQueries
+            .getLocalCacheUsageBytes(vaultId, VaultCacheState.CACHED)
+            .awaitAsOne()
+            .toLong()
     }
 
     override suspend fun upsertImportTargetHint(hint: ImportTargetHint) {

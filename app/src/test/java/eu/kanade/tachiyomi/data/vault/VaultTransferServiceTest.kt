@@ -184,6 +184,9 @@ class VaultTransferServiceTest {
         override suspend fun getCacheState(chapterId: Long): VaultChapterCacheState? = cacheStates[chapterId]
         override fun getCacheStatesForMangaAsFlow(mangaId: Long): Flow<List<VaultChapterCacheState>> = emptyFlow()
         override fun getCacheStatesForVaultAsFlow(vaultId: Long): Flow<List<VaultChapterCacheState>> = emptyFlow()
+        override suspend fun getCacheStatesForVault(vaultId: Long): List<VaultChapterCacheState> = emptyList()
+        override suspend fun getReadCacheStatesForVault(vaultId: Long): List<VaultChapterCacheState> = emptyList()
+        override suspend fun getLocalCacheUsageBytes(vaultId: Long): Long = 0
         override suspend fun upsertImportTargetHint(hint: ImportTargetHint) = Unit
         override suspend fun getImportTargetHint(localMangaId: Long): ImportTargetHint? = null
         override suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long = unsupported()
