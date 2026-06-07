@@ -223,6 +223,8 @@
     <string name="vault_import_already_in_vault">Already in Vault</string>
     <string name="vault_import_possible_duplicate">Possible duplicate</string>
     <string name="vault_import_selected_count">%1$d selected · %2$d recognized</string>
+    <string name="vault_import_converts_to_cbz">Converts to CBZ</string>
+    <string name="vault_import_cbz_conversion_notice">%d selected directory chapters will be converted to CBZ files in Local Manga before import.</string>
     <string name="vault_importing">Importing…</string>
     <string name="vault_import_action_open_in_vault">Open in Vault</string>
     <string name="vault_import_action_open_vault">Open Vault</string>

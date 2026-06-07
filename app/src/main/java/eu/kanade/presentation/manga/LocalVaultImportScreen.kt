@@ -232,6 +232,17 @@ private fun ImportSummary(
             }
         }
 
+        if (state.selectedCbzConversionCount > 0 && state.success == null) {
+            Text(
+                text = stringResource(
+                    MR.strings.vault_import_cbz_conversion_notice,
+                    state.selectedCbzConversionCount,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+
         state.error?.let { error ->
             Text(
                 text = error.label(),
@@ -393,6 +404,12 @@ private fun ChapterImportItem(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (item.chapter.requiresLocalCbzConversion) {
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(stringResource(MR.strings.vault_import_converts_to_cbz)) },
+                    )
+                }
             }
         }
     }

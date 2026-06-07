@@ -353,6 +353,16 @@ class LocalVaultImportScreenModel(
 
         val recognizedChapterCount: Int
             get() = plan?.chapters.orEmpty().size
+
+        val selectedCbzConversionCount: Int
+            get() = plan
+                ?.chapters
+                .orEmpty()
+                .count {
+                    it.chapter.selectionId in selectedChapterIds &&
+                        it.chapter.requiresLocalCbzConversion &&
+                        it.duplicateState != LocalVaultImportDuplicateState.EXACT
+                }
     }
 
     sealed interface TargetSelection {

@@ -6,11 +6,11 @@ Local Content Cache lives in an app-managed Vault Cache Directory rather than th
 
 For v1, Vault Import is limited to content Bakalah can already read through existing Local Manga files; arbitrary remote-folder scanning and online-source Vault Capture are out of scope. Imported chapter files are preserved in their existing supported format. Later page-based source captures should be packaged as CBZ Captured Chapter Files before publishing without recompressing or transforming page bytes.
 
-Vault Import from existing Local Manga files is copy-only and never moves or deletes the user's Local Manga files. Imported source files do not count as Local Content Cache unless Bakalah separately caches the vault-owned chapter into the app-managed Vault Cache Directory.
+Vault Import from existing Local Manga files is copy/upload oriented and imported source files do not count as Local Content Cache unless Bakalah separately caches the vault-owned chapter into the app-managed Vault Cache Directory. For Local Source directory chapters selected in Local-to-Vault Import, Bakalah first converts the directory chapter into a validated CBZ archive in Local Manga storage, then uploads that CBZ; the original directory is removed only after the replacement archive is written and validated.
 
 Local-to-Vault Import uses existing Local Source recognition for v1 and supports chapter selection. Repeated imports first use a device-local Import Target Hint when available, then exact normalized title matching to find a single existing Vault Manga; if none exists, Bakalah creates a new Vault Manga, and if multiple exist, the user must choose or create new. Exact duplicate chapters are skipped by default and possible duplicates are flagged rather than overwritten silently.
 
-Vault workflows never offer to delete the user's original Local Manga files; any cleanup of those files remains outside Bakalah's vault behavior.
+Vault workflows never offer general cleanup of the user's original Local Manga files; any cleanup beyond the explicit directory-to-CBZ replacement during Local-to-Vault Import remains outside Bakalah's vault behavior.
 
 Vault Metadata edits update vault manifests and the local Vault Index in v1; they do not rewrite imported or cached chapter content files. Vault Covers are separate vault-owned catalogue assets rather than data derived from cached chapter availability.
 
