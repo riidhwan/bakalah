@@ -1,0 +1,24 @@
+CREATE TABLE vault_transfer_jobs(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    chapter_id INTEGER,
+    type INTEGER NOT NULL,
+    state INTEGER NOT NULL,
+    remote_path TEXT,
+    local_path TEXT,
+    staged_path TEXT,
+    size_bytes INTEGER,
+    checksum_sha256 TEXT,
+    failure_reason TEXT,
+    attempts INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    started_at INTEGER,
+    completed_at INTEGER,
+    FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
+    FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE SET NULL
+);
+
+CREATE INDEX vault_transfer_jobs_vault_id_index ON vault_transfer_jobs(vault_id, state, updated_at);
+CREATE INDEX vault_transfer_jobs_state_index ON vault_transfer_jobs(state, updated_at);
+CREATE INDEX vault_transfer_jobs_chapter_id_index ON vault_transfer_jobs(chapter_id);

@@ -34,13 +34,13 @@ data class VaultMangaScreen(
             snackbarHostState = snackbarHostState,
             navigateUp = navigator::pop,
             onClickCache = {
-                screenModel.reportUnavailable(VaultScreenModel.PendingAction.CACHE)
+                screenModel.cacheChapter(it)
             },
             onClickEvict = {
                 screenModel.reportUnavailable(VaultScreenModel.PendingAction.EVICT)
             },
             onClickRetry = {
-                screenModel.reportUnavailable(VaultScreenModel.PendingAction.RETRY)
+                screenModel.retryChapter(it)
             },
         )
 
@@ -48,6 +48,8 @@ data class VaultMangaScreen(
             screenModel.events.collectLatest { event ->
                 when (event) {
                     VaultMangaScreenModel.Event.LoadFailed ->
+                        snackbarHostState.showSnackbar(context.stringResource(MR.strings.internal_error))
+                    VaultMangaScreenModel.Event.CacheFailed ->
                         snackbarHostState.showSnackbar(context.stringResource(MR.strings.internal_error))
                     is VaultMangaScreenModel.Event.PendingActionUnavailable ->
                         snackbarHostState.showSnackbar(event.action.unavailableMessage(context))
