@@ -83,8 +83,8 @@ class VaultCatalogueRefreshService(
         repository.refreshCatalogue(refresh)
         return VaultCatalogueRefreshResult.Refreshed(
             identity = refresh.vault.identity,
-            mangaCount = refresh.manga.size,
-            chapterCount = refresh.manga.sumOf { it.chapters.size },
+            mangaCount = refresh.activeManga.size,
+            chapterCount = refresh.activeManga.sumOf { it.chapters.size },
         )
     }
 

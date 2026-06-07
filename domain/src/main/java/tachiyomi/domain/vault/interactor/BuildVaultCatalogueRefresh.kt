@@ -10,6 +10,7 @@ import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
+import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultMangaManifest
 import tachiyomi.domain.vault.model.VaultManifestCodec
 import tachiyomi.domain.vault.model.VaultManifestReadResult
@@ -55,7 +56,7 @@ class BuildVaultCatalogueRefresh(
             if (manifest.vaultIdentity != root.identity || manifest.mangaIdentity != pointer.identity) {
                 return VaultCatalogueRefreshBuildResult.IdentityMismatch(pointer.path)
             }
-            pointer.path to manifest
+            pointer to manifest
         }
 
         val identity = ContentVaultIdentity(root.identity)
@@ -72,7 +73,9 @@ class BuildVaultCatalogueRefresh(
         )
 
         val labels = decodedManga
-            .flatMap { (_, manifest) -> manifest.labels }
+            .flatMap { (pointer, manifest) ->
+                if (pointer.collectionState == VaultMangaCollectionState.ACTIVE) manifest.labels else emptyList()
+            }
             .distinctBy { it.identity }
             .map { label ->
                 VaultLabel(
@@ -86,8 +89,8 @@ class BuildVaultCatalogueRefresh(
                 )
             }
 
-        val manga = decodedManga.map { (path, manifest) ->
-            manifest.toRefresh(path, vault.id)
+        val manga = decodedManga.map { (pointer, manifest) ->
+            manifest.toRefresh(pointer, vault.id)
         }
 
         val snapshots = buildList {
@@ -102,15 +105,15 @@ class BuildVaultCatalogueRefresh(
                     fetchedAt = fetchedAt,
                 ),
             )
-            decodedManga.forEach { (path, manifest) ->
+            decodedManga.forEach { (pointer, manifest) ->
                 add(
                     VaultManifestSnapshot(
                         id = -1,
                         vaultId = vault.id,
                         mangaId = null,
-                        manifestPath = path,
+                        manifestPath = pointer.path,
                         revision = VaultRevision(manifest.revisionId, manifest.revisionNumber),
-                        body = mangaManifestBodies.getValue(path),
+                        body = mangaManifestBodies.getValue(pointer.path),
                         fetchedAt = fetchedAt,
                     ),
                 )
@@ -127,7 +130,10 @@ class BuildVaultCatalogueRefresh(
         )
     }
 
-    private fun VaultMangaManifest.toRefresh(path: String, vaultId: Long): VaultCatalogueMangaRefresh {
+    private fun VaultMangaManifest.toRefresh(
+        pointer: tachiyomi.domain.vault.model.VaultMangaManifestPointer,
+        vaultId: Long,
+    ): VaultCatalogueMangaRefresh {
         val revision = VaultRevision(revisionId, revisionNumber)
         val metadata = VaultMetadata(
             title = metadata.title,
@@ -136,6 +142,8 @@ class BuildVaultCatalogueRefresh(
             description = metadata.description,
             status = metadata.status,
         )
+        val effectiveCollectionState = pointer.collectionState
+        val effectiveTrashedAt = pointer.trashedAt
         return VaultCatalogueMangaRefresh(
             manga = VaultManga(
                 id = -1,
@@ -143,13 +151,19 @@ class BuildVaultCatalogueRefresh(
                 identity = VaultIdentity(mangaIdentity),
                 metadata = metadata,
                 sortKey = metadata.normalizedTitle,
+                collectionState = effectiveCollectionState,
+                trashedAt = effectiveTrashedAt,
                 coverId = null,
                 revision = revision,
                 createdAt = createdAt,
                 updatedAt = updatedAt,
             ),
-            manifestPath = path,
-            labelIdentities = labels.map { VaultIdentity(it.identity) },
+            manifestPath = pointer.path,
+            labelIdentities = if (effectiveCollectionState == VaultMangaCollectionState.ACTIVE) {
+                labels.map { VaultIdentity(it.identity) }
+            } else {
+                emptyList()
+            },
             cover = cover?.let {
                 VaultCover(
                     id = -1,

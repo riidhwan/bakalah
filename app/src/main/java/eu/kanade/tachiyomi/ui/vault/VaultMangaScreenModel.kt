@@ -5,6 +5,8 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.tachiyomi.data.vault.UniFileVaultTransferLocalStaging
 import eu.kanade.tachiyomi.data.vault.VaultCacheEvictionResult
 import eu.kanade.tachiyomi.data.vault.VaultCachePolicyService
+import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionResult
+import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionService
 import eu.kanade.tachiyomi.data.vault.VaultTransferResult
 import eu.kanade.tachiyomi.data.vault.VaultTransferService
 import eu.kanade.tachiyomi.data.vault.WebDavVaultTransferStorage
@@ -37,6 +39,7 @@ class VaultMangaScreenModel(
     private val preferences: ContentVaultPreferences = Injekt.get(),
     private val networkHelper: NetworkHelper = Injekt.get(),
     private val storageManager: StorageManager = Injekt.get(),
+    private val deletionService: VaultMangaDeletionService = Injekt.get(),
 ) : StateScreenModel<VaultMangaScreenModel.State>(State()) {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
@@ -204,6 +207,29 @@ class VaultMangaScreenModel(
         }
     }
 
+    fun deleteManga() {
+        screenModelScope.launchIO {
+            val manga = mutableState.value.manga ?: return@launchIO
+            mutableState.update { it.copy(isDeleting = true) }
+            val result = runCatching {
+                deletionService.moveToTrash(manga.id)
+            }.getOrElse {
+                logcat(LogPriority.ERROR, it)
+                VaultMangaDeletionResult.PublishFailed
+            }
+            when (result) {
+                is VaultMangaDeletionResult.Deleted -> {
+                    localStaging()?.let { localStaging ->
+                        cachePolicyService(localStaging).evictManga(manga.id)
+                    }
+                    _events.send(Event.DeleteCompleted)
+                }
+                else -> _events.send(Event.DeleteFailed(result.toFailureDetail()))
+            }
+            mutableState.update { it.copy(isDeleting = false) }
+        }
+    }
+
     private fun transferService(
         config: WebDavVaultConfig,
         localStaging: UniFileVaultTransferLocalStaging,
@@ -240,6 +266,8 @@ class VaultMangaScreenModel(
     sealed interface Event {
         data object LoadFailed : Event
         data object CacheFailed : Event
+        data object DeleteCompleted : Event
+        data class DeleteFailed(val detail: String) : Event
         data class PendingActionUnavailable(val action: VaultScreenModel.PendingAction) : Event
     }
 
@@ -249,5 +277,24 @@ class VaultMangaScreenModel(
         val chapters: List<VaultChapterItem> = emptyList(),
         val localCacheUsageBytes: Long = 0,
         val vaultStorageUsageBytes: Long = 0,
+        val isDeleting: Boolean = false,
     )
+}
+
+private fun VaultMangaDeletionResult.toFailureDetail(): String {
+    return when (this) {
+        is VaultMangaDeletionResult.Deleted -> "Deleted"
+        VaultMangaDeletionResult.IncompleteConfiguration -> "Incomplete configuration"
+        VaultMangaDeletionResult.VaultNotFound -> "Vault not found"
+        VaultMangaDeletionResult.MangaNotFound -> "Vault Manga not found"
+        VaultMangaDeletionResult.NotVault -> "Remote root is not a Bakalah Content Vault"
+        is VaultMangaDeletionResult.UnsupportedOlderVersion -> "Unsupported older layout version $layoutVersion"
+        is VaultMangaDeletionResult.UnsupportedNewerVersion -> "Unsupported newer layout version $layoutVersion"
+        is VaultMangaDeletionResult.IdentityChanged -> "Remote identity changed to ${remoteIdentity.value}"
+        is VaultMangaDeletionResult.RevisionMismatch -> "Vault revision changed to ${currentRevision.id}"
+        is VaultMangaDeletionResult.ManifestNotFound -> "Manifest not found: $manifestPath"
+        is VaultMangaDeletionResult.IdentityMismatch -> "Manifest identity mismatch: $manifestPath"
+        is VaultMangaDeletionResult.Malformed -> "Malformed manifest: $manifestPath"
+        VaultMangaDeletionResult.PublishFailed -> "Could not publish Vault deletion"
+    }
 }

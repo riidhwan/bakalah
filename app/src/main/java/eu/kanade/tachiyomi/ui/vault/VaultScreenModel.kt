@@ -242,6 +242,7 @@ class VaultScreenModel(
         CACHE,
         EVICT,
         RETRY,
+        DELETE,
     }
 
     sealed interface Event {

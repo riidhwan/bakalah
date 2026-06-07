@@ -143,6 +143,12 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Local cache usage and remote vault storage usage must be shown separately.
 - Local cache limit is hard-enforced; remote vault quota is a soft warning.
 
+### Vault Deletion and Trash
+
+Vault manga deletion is a follow-up workflow outside the minimum v1 slice. It moves manga-level Vault entries into a recoverable Trash state in the remote Vault Catalogue, removes them from normal Vault browsing after publish and refresh, and invalidates only app-managed Local Content Cache entries for that Vault Manga on the current device.
+
+Vault deletion must not delete original Local Manga files under `local/`, existing Downloads, or arbitrary user-managed storage. Permanent deletion, empty-trash behavior, individual chapter deletion, and automatic trash cleanup remain separate future workflows.
+
 ### Transfers and Integrity
 
 - Vault transfers must use staged upload/download paths.
@@ -201,7 +207,6 @@ Internal staging paths, revisions, and checksums should be hidden from normal UI
 
 - Online-source Vault Capture.
 - CBZ packaging for page-based captures without recompressing page bytes.
-- Vault Deletion and Vault Trash.
 - Restore from Vault Trash and permanent trash emptying.
 - Human-readable Vault Export View.
 - Diagnostics and repair tools for Vault Integrity Faults.

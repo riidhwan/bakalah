@@ -5,7 +5,10 @@ data class VaultCatalogueRefresh(
     val labels: List<VaultLabel>,
     val manga: List<VaultCatalogueMangaRefresh>,
     val snapshots: List<VaultManifestSnapshot>,
-)
+) {
+    val activeManga: List<VaultCatalogueMangaRefresh>
+        get() = manga.filter { it.manga.collectionState == VaultMangaCollectionState.ACTIVE }
+}
 
 data class VaultCatalogueMangaRefresh(
     val manga: VaultManga,

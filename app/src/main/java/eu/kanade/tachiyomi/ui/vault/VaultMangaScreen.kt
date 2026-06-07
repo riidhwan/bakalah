@@ -42,6 +42,9 @@ data class VaultMangaScreen(
             onClickRetry = {
                 screenModel.retryChapter(it)
             },
+            onClickDelete = {
+                screenModel.deleteManga()
+            },
         )
 
         LaunchedEffect(Unit) {
@@ -51,6 +54,14 @@ data class VaultMangaScreen(
                         snackbarHostState.showSnackbar(context.stringResource(MR.strings.internal_error))
                     VaultMangaScreenModel.Event.CacheFailed ->
                         snackbarHostState.showSnackbar(context.stringResource(MR.strings.internal_error))
+                    VaultMangaScreenModel.Event.DeleteCompleted -> {
+                        snackbarHostState.showSnackbar(context.stringResource(MR.strings.vault_delete_manga_complete))
+                        navigator.pop()
+                    }
+                    is VaultMangaScreenModel.Event.DeleteFailed ->
+                        snackbarHostState.showSnackbar(
+                            context.stringResource(MR.strings.vault_delete_manga_failed_details, event.detail),
+                        )
                     is VaultMangaScreenModel.Event.PendingActionUnavailable ->
                         snackbarHostState.showSnackbar(event.action.unavailableMessage(context))
                 }
@@ -64,6 +75,7 @@ fun VaultScreenModel.PendingAction.unavailableMessage(context: Context): String 
         VaultScreenModel.PendingAction.CACHE -> MR.strings.vault_action_cache_unavailable
         VaultScreenModel.PendingAction.EVICT -> MR.strings.vault_action_evict_unavailable
         VaultScreenModel.PendingAction.RETRY -> MR.strings.vault_action_retry_unavailable
+        VaultScreenModel.PendingAction.DELETE -> MR.strings.vault_action_delete_unavailable
     }
     return context.stringResource(stringRes)
 }

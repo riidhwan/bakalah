@@ -39,6 +39,18 @@ class VaultCachePolicyService(
         return VaultCacheEvictionResult.Evicted
     }
 
+    suspend fun evictManga(mangaId: Long): VaultMangaCacheEvictionResult {
+        val chapters = repository.getChapters(mangaId)
+        val evictedChapterIds = mutableListOf<Long>()
+        chapters.forEach { chapter ->
+            val state = repository.getCacheState(chapter.id) ?: return@forEach
+            if (state.localPath == null) return@forEach
+            evictState(state)
+            evictedChapterIds += chapter.id
+        }
+        return VaultMangaCacheEvictionResult(evictedChapterIds)
+    }
+
     suspend fun enforceLimit(vaultId: Long): VaultCacheLimitResult {
         val limit = preferences.localCacheLimitBytes.get().coerceAtLeast(0)
         var usage = repository.getLocalCacheUsageBytes(vaultId)
@@ -99,3 +111,7 @@ enum class VaultCacheEvictionResult {
     Evicted,
     NotCached,
 }
+
+data class VaultMangaCacheEvictionResult(
+    val evictedChapterIds: List<Long>,
+)
