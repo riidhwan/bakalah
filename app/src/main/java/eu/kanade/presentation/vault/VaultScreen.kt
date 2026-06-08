@@ -1,29 +1,28 @@
 package eu.kanade.presentation.vault
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
-import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,14 +34,18 @@ import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.presentation.components.SearchToolbar
+import eu.kanade.presentation.library.components.CommonMangaItemDefaults
+import eu.kanade.presentation.library.components.MangaCompactGridItem
 import eu.kanade.tachiyomi.ui.vault.VaultScreenModel
 import tachiyomi.domain.vault.model.ContentVault
 import tachiyomi.i18n.MR
-import tachiyomi.presentation.core.components.FastScrollLazyColumn
+import tachiyomi.presentation.core.components.Badge
+import tachiyomi.presentation.core.components.FastScrollLazyVerticalGrid
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.LoadingScreen
+import tachiyomi.presentation.core.util.plus
 import java.text.DecimalFormat
 
 @Composable
@@ -52,6 +55,7 @@ fun VaultScreen(
     onSearchQueryChange: (String?) -> Unit,
     onClickRefresh: () -> Unit,
     onClickManga: (Long) -> Unit,
+    onLoadCover: (Long) -> Unit,
     onFilterChange: (VaultScreenModel.Filter) -> Unit,
     onSortChange: (VaultScreenModel.Sort) -> Unit,
 ) {
@@ -62,6 +66,8 @@ fun VaultScreen(
                 searchQuery = state.searchQuery,
                 onChangeSearchQuery = onSearchQueryChange,
                 actions = {
+                    VaultFilterMenu(filter = state.filter, onFilterChange = onFilterChange)
+                    VaultSortMenu(sort = state.sort, onSortChange = onSortChange)
                     AppBarActions(
                         listOf(
                             AppBar.Action(
@@ -87,24 +93,21 @@ fun VaultScreen(
                 state = state,
                 contentPadding = contentPadding,
                 onClickManga = onClickManga,
-                onFilterChange = onFilterChange,
-                onSortChange = onSortChange,
+                onLoadCover = onLoadCover,
                 emptyMessage = MR.strings.vault_empty_collection,
             )
             state.visibleMangaItems.isEmpty() -> VaultList(
                 state = state,
                 contentPadding = contentPadding,
                 onClickManga = onClickManga,
-                onFilterChange = onFilterChange,
-                onSortChange = onSortChange,
+                onLoadCover = onLoadCover,
                 emptyMessage = MR.strings.no_results_found,
             )
             else -> VaultList(
                 state = state,
                 contentPadding = contentPadding,
                 onClickManga = onClickManga,
-                onFilterChange = onFilterChange,
-                onSortChange = onSortChange,
+                onLoadCover = onLoadCover,
                 emptyMessage = null,
             )
         }
@@ -116,33 +119,37 @@ private fun VaultList(
     state: VaultScreenModel.State,
     contentPadding: PaddingValues,
     onClickManga: (Long) -> Unit,
-    onFilterChange: (VaultScreenModel.Filter) -> Unit,
-    onSortChange: (VaultScreenModel.Sort) -> Unit,
+    onLoadCover: (Long) -> Unit,
     emptyMessage: dev.icerock.moko.resources.StringResource?,
 ) {
-    FastScrollLazyColumn(
-        contentPadding = contentPadding,
+    FastScrollLazyVerticalGrid(
+        columns = GridCells.Adaptive(128.dp),
+        contentPadding = contentPadding + PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(CommonMangaItemDefaults.GridVerticalSpacer),
+        horizontalArrangement = Arrangement.spacedBy(CommonMangaItemDefaults.GridHorizontalSpacer),
     ) {
-        item(key = "summary", contentType = "summary") {
+        item(
+            key = "summary",
+            contentType = "summary",
+            span = { GridItemSpan(maxLineSpan) },
+        ) {
             VaultSummary(
                 vault = state.selectedVault,
                 mangaCount = state.mangaItems.size,
                 localCacheUsageBytes = state.localCacheUsageBytes,
                 vaultStorageUsageBytes = state.vaultStorageUsageBytes,
-                filter = state.filter,
-                sort = state.sort,
-                onFilterChange = onFilterChange,
-                onSortChange = onSortChange,
                 modifier = Modifier.animateItem(),
             )
         }
         if (emptyMessage != null) {
-            item(key = "empty", contentType = "empty") {
+            item(
+                key = "empty",
+                contentType = "empty",
+                span = { GridItemSpan(maxLineSpan) },
+            ) {
                 EmptyScreen(
                     stringRes = emptyMessage,
-                    modifier = Modifier
-                        .fillParentMaxSize()
-                        .animateItem(),
+                    modifier = Modifier.animateItem(),
                 )
             }
         } else {
@@ -151,9 +158,11 @@ private fun VaultList(
                 key = { "vault-manga-${it.manga.id}" },
                 contentType = { "vault-manga" },
             ) { item ->
-                VaultMangaListItem(
+                VaultMangaGridItem(
                     item = item,
+                    coverUri = state.coverUris[item.manga.id],
                     onClick = { onClickManga(item.manga.id) },
+                    onLoadCover = { onLoadCover(item.manga.id) },
                     modifier = Modifier.animateItem(),
                 )
             }
@@ -167,50 +176,40 @@ private fun VaultSummary(
     mangaCount: Int,
     localCacheUsageBytes: Long,
     vaultStorageUsageBytes: Long,
-    filter: VaultScreenModel.Filter,
-    sort: VaultScreenModel.Sort,
-    onFilterChange: (VaultScreenModel.Filter) -> Unit,
-    onSortChange: (VaultScreenModel.Sort) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(
-            text = vault?.displayName ?: stringResource(MR.strings.label_vault),
-            style = MaterialTheme.typography.titleMedium,
+            text = buildString {
+                append(vault?.displayName ?: stringResource(MR.strings.label_vault))
+                append(" · ")
+                append(stringResource(MR.strings.vault_manga_count, mangaCount))
+                append(" · ")
+                append(stringResource(MR.strings.vault_local_cache_usage, formatBytes(localCacheUsageBytes)))
+            },
+            style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ElevatedAssistChip(
-                onClick = {},
-                leadingIcon = { Icon(Icons.Outlined.Storage, contentDescription = null) },
-                label = { Text(stringResource(MR.strings.vault_local_cache_usage, formatBytes(localCacheUsageBytes))) },
-            )
-            ElevatedAssistChip(
-                onClick = {},
-                leadingIcon = { Icon(Icons.Outlined.Cloud, contentDescription = null) },
-                label = { Text(stringResource(MR.strings.vault_storage_usage, formatBytes(vaultStorageUsageBytes))) },
-            )
-        }
         Text(
-            text = stringResource(MR.strings.vault_manga_count, mangaCount),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VaultFilterMenu(filter = filter, onFilterChange = onFilterChange)
-            VaultSortMenu(sort = sort, onSortChange = onSortChange)
-        }
-        Text(
-            text = vault?.lastCatalogueRefreshAt?.let {
-                stringResource(MR.strings.vault_last_catalogue_refresh_known)
-            } ?: stringResource(MR.strings.vault_last_catalogue_refresh_never),
+            text = buildString {
+                append(stringResource(MR.strings.vault_storage_usage, formatBytes(vaultStorageUsageBytes)))
+                append(" · ")
+                append(
+                    vault?.lastCatalogueRefreshAt?.let {
+                        stringResource(MR.strings.vault_last_catalogue_refresh_known)
+                    } ?: stringResource(MR.strings.vault_last_catalogue_refresh_never),
+                )
+            },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -221,11 +220,12 @@ private fun VaultFilterMenu(
     onFilterChange: (VaultScreenModel.Filter) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    AssistChip(
-        onClick = { expanded = true },
-        leadingIcon = { Icon(Icons.Outlined.FilterList, contentDescription = null) },
-        label = { Text(filter.label()) },
-    )
+    IconButton(onClick = { expanded = true }) {
+        Icon(
+            imageVector = Icons.Outlined.FilterList,
+            contentDescription = stringResource(MR.strings.action_filter),
+        )
+    }
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = { expanded = false },
@@ -248,11 +248,12 @@ private fun VaultSortMenu(
     onSortChange: (VaultScreenModel.Sort) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    AssistChip(
-        onClick = { expanded = true },
-        leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Sort, contentDescription = null) },
-        label = { Text(sort.label()) },
-    )
+    IconButton(onClick = { expanded = true }) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.Sort,
+            contentDescription = stringResource(MR.strings.action_sort),
+        )
+    }
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = { expanded = false },
@@ -270,55 +271,44 @@ private fun VaultSortMenu(
 }
 
 @Composable
-private fun VaultMangaListItem(
+private fun VaultMangaGridItem(
     item: VaultScreenModel.VaultMangaItem,
+    coverUri: String?,
     onClick: () -> Unit,
+    onLoadCover: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .clickable(onClick = onClick)
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = item.manga.metadata.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            if (item.failedCount > 0) {
-                Icon(
-                    imageVector = Icons.Outlined.ErrorOutline,
-                    contentDescription = stringResource(MR.strings.vault_state_failed),
-                    tint = MaterialTheme.colorScheme.error,
+    LaunchedEffect(item.manga.id) {
+        onLoadCover()
+    }
+    MangaCompactGridItem(
+        title = item.manga.metadata.title,
+        coverData = coverUri,
+        coverBadgeStart = {
+            if (item.cachedCount > 0) {
+                Badge(
+                    text = "${item.cachedCount}/${item.chapterCount}",
+                    color = MaterialTheme.colorScheme.tertiary,
+                    textColor = MaterialTheme.colorScheme.onTertiary,
                 )
             }
-        }
-        val author = item.manga.metadata.author ?: item.manga.metadata.artist
-        if (author != null) {
-            Text(
-                text = author,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Text(
-            text = stringResource(
-                MR.strings.vault_manga_chapter_summary,
-                item.chapterCount,
-                item.cachedCount,
-                item.queuedCount,
-            ),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+        },
+        coverBadgeEnd = {
+            when {
+                item.failedCount > 0 -> Badge(
+                    imageVector = Icons.Outlined.ErrorOutline,
+                    color = MaterialTheme.colorScheme.error,
+                    iconColor = MaterialTheme.colorScheme.onError,
+                )
+                item.queuedCount > 0 -> Badge(
+                    imageVector = Icons.Outlined.HourglassEmpty,
+                )
+            }
+        },
+        onClick = onClick,
+        onLongClick = onClick,
+        modifier = modifier,
+    )
 }
 
 @Composable

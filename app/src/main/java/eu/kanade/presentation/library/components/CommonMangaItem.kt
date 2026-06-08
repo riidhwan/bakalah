@@ -70,9 +70,10 @@ private const val GRID_SELECTED_COVER_ALPHA = 0.76f
  */
 @Composable
 fun MangaCompactGridItem(
-    coverData: MangaCoverModel,
+    coverData: Any?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     title: String? = null,
     onClickContinueReading: (() -> Unit)? = null,
@@ -84,6 +85,7 @@ fun MangaCompactGridItem(
         isSelected = isSelected,
         onClick = onClick,
         onLongClick = onLongClick,
+        modifier = modifier,
     ) {
         MangaGridCover(
             cover = {
