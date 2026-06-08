@@ -34,6 +34,24 @@ class VaultManifestCodecTest {
     }
 
     @Test
+    fun `non-vault root manifest is refused`() {
+        val result = codec.decodeRoot(
+            codec.encodeRoot(rootManifest().copy(app = "other-app")),
+        )
+
+        result shouldBe VaultManifestReadResult.NotVault
+    }
+
+    @Test
+    fun `unknown newer manga manifest is refused`() {
+        val result = codec.decodeManga(
+            codec.encodeManga(mangaManifest().copy(layoutVersion = CURRENT_VAULT_LAYOUT_VERSION + 1)),
+        )
+
+        result shouldBe VaultManifestReadResult.UnsupportedNewerVersion(CURRENT_VAULT_LAYOUT_VERSION + 1)
+    }
+
+    @Test
     fun `older layout is refused until a migrator exists`() {
         val result = codec.decodeRoot(codec.encodeRoot(rootManifest().copy(layoutVersion = 0)))
 
@@ -54,6 +72,17 @@ class VaultManifestCodecTest {
         revisionId = "rev-1",
         revisionNumber = 1,
         writerId = "writer-1",
+        createdAt = 10,
+        updatedAt = 20,
+    )
+
+    private fun mangaManifest() = VaultMangaManifest(
+        layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
+        vaultIdentity = "vault-1",
+        mangaIdentity = "manga-1",
+        revisionId = "manga-rev",
+        revisionNumber = 1,
+        metadata = VaultManifestMetadata(title = "One Piece"),
         createdAt = 10,
         updatedAt = 20,
     )

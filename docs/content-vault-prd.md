@@ -226,6 +226,8 @@ Internal staging paths, revisions, and checksums should be hidden from normal UI
 - Local cache usage and remote vault storage usage are displayed separately.
 - Unknown newer Vault Layout versions are refused.
 
+Release-readiness verification is tracked in `docs/content-vault-v1-readiness.md`.
+
 ## Future Work
 
 - Online-source Vault Capture.

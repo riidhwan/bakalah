@@ -66,6 +66,29 @@ class BuildLocalVaultImportPlanTest {
     }
 
     @Test
+    fun `stale import target hint falls back to exact title matching`() {
+        val match = vaultManga(id = 2, title = "One Piece")
+
+        val plan = builder.build(
+            localManga = localManga("One Piece"),
+            localChapters = emptyList(),
+            vaultManga = listOf(match),
+            existingChaptersByMangaId = emptyMap(),
+            hint = ImportTargetHint(
+                localMangaId = 10,
+                localMangaIdentity = "local/one-piece",
+                vaultMangaId = 99,
+                updatedAt = 1,
+            ),
+        )
+
+        plan.target shouldBe LocalVaultImportTarget.Existing(
+            manga = match,
+            reason = LocalVaultImportTarget.Reason.EXACT_TITLE_MATCH,
+        )
+    }
+
+    @Test
     fun `multiple normalized title matches require explicit choice`() {
         val first = vaultManga(id = 2, title = "One Piece")
         val second = vaultManga(id = 3, title = "one  piece")
@@ -135,6 +158,27 @@ class BuildLocalVaultImportPlanTest {
             LocalVaultImportDuplicateState.EXACT,
         )
         plan.chapters.map { it.selectedByDefault } shouldBe listOf(true, false)
+    }
+
+    @Test
+    fun `unknown chapter numbers do not create possible duplicates by number`() {
+        val target = vaultManga(id = 2, title = "One Piece")
+        val plan = builder.build(
+            localManga = localManga("One Piece"),
+            localChapters = listOf(
+                localChapter(selectionId = "unknown-number", title = "Special", chapterNumber = -1.0, checksum = "a"),
+            ),
+            vaultManga = listOf(target),
+            existingChaptersByMangaId = mapOf(
+                target.id to listOf(
+                    vaultChapter(title = "Different Special", chapterNumber = -1.0, checksum = "b"),
+                ),
+            ),
+            hint = null,
+        )
+
+        plan.chapters.single().duplicateState shouldBe LocalVaultImportDuplicateState.NONE
+        plan.chapters.single().selectedByDefault shouldBe true
     }
 
     private fun localManga(title: String) = LocalVaultImportManga(
