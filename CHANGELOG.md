@@ -11,7 +11,14 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+
+## [v0.22.0] - 2026-06-08
 ### Added
+- Add the Content Vault system for WebDAV-backed personal manga storage.
+- Add a dedicated Vault surface for browsing, searching, sorting, filtering, and managing vault manga outside Library and Local source.
+- Add Local-to-Vault import with chapter review, duplicate warnings, directory-to-CBZ conversion, metadata import, and import target hints.
+- Add Vault metadata, labels, sensitive label filtering, cover publishing, and permanent Vault manga deletion.
+- Add cache-first Vault reading with verified chapter caching, reader integration, reading state, manual cache/evict actions, and cache policy enforcement.
 - Add local manga metadata editing for title, author, artist, description, genres, and status.
 
 ### Changed
