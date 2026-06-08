@@ -144,6 +144,10 @@ _Avoid_: Vault size, downloads size, backup size
 The amount of storage currently used by the Content Vault on its Vault Storage Provider.
 _Avoid_: Cache size, local storage, download size
 
+**Vault Manga Storage Usage**:
+The amount of storage used by one Vault Manga's vault-owned chapter content.
+_Avoid_: Vault Storage Usage, local cache usage, manga cache size
+
 **Vault Storage Quota**:
 The user's storage budget or provider-reported limit for a Content Vault.
 _Avoid_: Cache limit, download limit, device storage

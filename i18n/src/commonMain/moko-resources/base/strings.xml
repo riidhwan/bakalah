@@ -181,6 +181,9 @@
     <string name="vault_action_import_to_vault">Import to Vault</string>
     <string name="vault_action_cache">Cache</string>
     <string name="vault_action_evict">Evict cache</string>
+    <string name="vault_action_evict_from_device">Evict from device</string>
+    <string name="vault_action_read_cached">Read cached</string>
+    <string name="vault_action_cache_first_chapter">Cache first chapter</string>
     <string name="vault_action_delete_manga">Delete from Vault</string>
     <string name="vault_action_import_unavailable">Local-to-Vault Import needs the import flow from the Local tab.</string>
     <string name="vault_action_cache_unavailable">Chapter caching needs the Vault transfer queue slice.</string>
@@ -203,7 +206,9 @@
     <string name="vault_storage_usage">Vault Storage: %s</string>
     <string name="vault_manga_count">%d Vault Manga</string>
     <string name="vault_manga_chapter_summary">%1$d chapters · %2$d cached · %3$d queued</string>
+    <string name="vault_manga_detail_stats">%1$d chapters · %2$d on device · %3$s in vault</string>
     <string name="vault_chapter_size">Size: %s</string>
+    <string name="vault_chapter_availability">%1$s · %2$s</string>
     <string name="vault_last_catalogue_refresh_known">Last catalogue refresh is available from the local Vault Index</string>
     <string name="vault_last_catalogue_refresh_never">No catalogue refresh recorded</string>
     <string name="vault_filter_all">All</string>
@@ -216,6 +221,8 @@
     <string name="vault_state_caching">Caching</string>
     <string name="vault_state_publishing">Publishing</string>
     <string name="vault_state_cached">Cached</string>
+    <string name="vault_state_on_device">On device</string>
+    <string name="vault_state_in_vault">In vault</string>
     <string name="vault_state_failed">Failed</string>
     <string name="vault_state_integrity_fault">Integrity fault</string>
     <string name="vault_import_title">Import to Vault</string>
