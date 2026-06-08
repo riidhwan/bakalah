@@ -38,6 +38,10 @@ Do not commit personal credentials or replacement service keys. Bakalah has its 
 
 ## Agent-Specific Instructions
 
+### Compact Operations
+
+For command-heavy work, follow `$compact-operations` even when another skill is active. Do not start large-repo exploration with broad `rg -n PATTERN .`; discover candidate files/modules first with `rg --files`, targeted roots, `rg -l`, or counts. Avoid watch modes, full logs, full JSON blobs, and repeated noisy polling unless needed. For Gradle/test/build commands, use `scripts/gradlew-compact` so full output goes to a gitignored temporary log and only the tail plus log path returns unless more output is needed.
+
 Before making non-trivial code changes, read the relevant docs:
 
 - Read `docs/architecture.md` when changing module boundaries, dependency direction, persistence, DI, source/extension behavior, UI architecture, or feature placement.
