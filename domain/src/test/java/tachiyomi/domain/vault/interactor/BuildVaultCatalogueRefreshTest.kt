@@ -71,6 +71,36 @@ class BuildVaultCatalogueRefreshTest {
     }
 
     @Test
+    fun `build reports missing manga manifest from root pointer`() {
+        val result = builder.build(
+            rootManifestPath = "vault/content-vault.json",
+            rootManifestBody = codec.encodeRoot(rootManifest()),
+            mangaManifestBodies = emptyMap(),
+            existingVault = null,
+            fetchedAt = 1_000,
+        )
+
+        result shouldBe VaultCatalogueRefreshBuildResult.MissingMangaManifest("manga/one-piece.json")
+    }
+
+    @Test
+    fun `build refuses unknown newer manga manifest version`() {
+        val result = builder.build(
+            rootManifestPath = "vault/content-vault.json",
+            rootManifestBody = codec.encodeRoot(rootManifest()),
+            mangaManifestBodies = mapOf(
+                "manga/one-piece.json" to codec.encodeManga(
+                    mangaManifest().copy(layoutVersion = CURRENT_VAULT_LAYOUT_VERSION + 1),
+                ),
+            ),
+            existingVault = null,
+            fetchedAt = 1_000,
+        )
+
+        result shouldBe VaultCatalogueRefreshBuildResult.UnsupportedNewerVersion(CURRENT_VAULT_LAYOUT_VERSION + 1)
+    }
+
+    @Test
     fun `build uses root pointer trash state as catalogue authority`() {
         val root = rootManifest().copy(
             manga = listOf(

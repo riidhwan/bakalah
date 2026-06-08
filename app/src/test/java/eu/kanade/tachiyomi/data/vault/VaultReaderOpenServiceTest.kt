@@ -72,6 +72,28 @@ class VaultReaderOpenServiceTest {
         repository.cacheStates[1]?.localPath shouldBe null
     }
 
+    @Test
+    fun `cached chapter with checksum mismatch becomes integrity fault and is not opened`() = runTest {
+        val repository = FakeVaultRepository()
+        val local = FakeLocalStaging(mutableMapOf("cache/chapter.cbz" to byteArrayOf(9, 9, 9)))
+        val expected = byteArrayOf(1, 2, 3).vaultTransferIntegrity()
+        repository.manga = manga()
+        repository.chapters += chapter(sizeBytes = expected.sizeBytes, checksumSha256 = expected.checksumSha256)
+        repository.cacheStates[1] = cacheState(
+            localPath = "cache/chapter.cbz",
+            sizeBytes = expected.sizeBytes,
+            checksumSha256 = expected.checksumSha256,
+        )
+        val service = service(repository, local)
+
+        val result = service.prepareChapter(mangaId = 1, chapterId = 1)
+
+        result shouldBe VaultReaderOpenResult.Failed("incomplete configuration")
+        repository.cacheStates[1]?.state shouldBe VaultCacheState.INTEGRITY_FAULT
+        repository.cacheStates[1]?.localPath shouldBe "cache/chapter.cbz"
+        repository.cacheStates[1]?.failureReason shouldBe "integrity mismatch"
+    }
+
     private fun service(
         repository: FakeVaultRepository,
         local: FakeLocalStaging,
