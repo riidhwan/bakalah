@@ -4,6 +4,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import tachiyomi.data.Database
 import tachiyomi.data.subscribeToList
 import tachiyomi.domain.vault.model.ContentVault
@@ -166,10 +167,49 @@ class VaultRepositoryImpl(
             .awaitAsList()
     }
 
+    override fun getLabelsAsFlow(vaultId: Long): Flow<List<VaultLabel>> {
+        return database.vaultQueries
+            .getLabelsForVault(vaultId, VaultMapper::mapLabel)
+            .subscribeToList()
+    }
+
     override suspend fun getLabelsForManga(mangaId: Long): List<VaultLabel> {
         return database.vaultQueries
             .getLabelsForManga(mangaId, VaultMapper::mapLabel)
             .awaitAsList()
+    }
+
+    override fun getLabelsByMangaForVaultAsFlow(vaultId: Long): Flow<Map<Long, List<VaultLabel>>> {
+        return database.vaultQueries
+            .getLabelsByMangaForVault(vaultId) {
+                    mangaId,
+                    id,
+                    labelVaultId,
+                    identity,
+                    name,
+                    sortKey,
+                    isSensitive,
+                    createdAt,
+                    updatedAt,
+                ->
+                mangaId to VaultMapper.mapLabel(
+                    id = id,
+                    vaultId = labelVaultId,
+                    identity = identity,
+                    name = name,
+                    sortKey = sortKey,
+                    isSensitive = isSensitive,
+                    createdAt = createdAt,
+                    updatedAt = updatedAt,
+                )
+            }
+            .subscribeToList()
+            .map { rows ->
+                rows.groupBy(
+                    keySelector = { it.first },
+                    valueTransform = { it.second },
+                )
+            }
     }
 
     override suspend fun upsertLabels(vaultId: Long, labels: List<VaultLabel>) {
@@ -185,6 +225,7 @@ class VaultRepositoryImpl(
                         identity = label.identity.value,
                         name = label.name,
                         sortKey = label.sortKey,
+                        isSensitive = label.isSensitive,
                         createdAt = label.createdAt,
                         updatedAt = label.updatedAt,
                     )
@@ -373,6 +414,7 @@ class VaultRepositoryImpl(
                         identity = label.identity.value,
                         name = label.name,
                         sortKey = label.sortKey,
+                        isSensitive = label.isSensitive,
                         createdAt = label.createdAt,
                         updatedAt = label.updatedAt,
                     )

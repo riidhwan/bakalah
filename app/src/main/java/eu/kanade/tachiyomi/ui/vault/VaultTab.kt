@@ -49,7 +49,9 @@ data object VaultTab : Tab {
             onClickManga = { navigator.push(VaultMangaScreen(it)) },
             onLoadCover = screenModel::loadCover,
             onFilterChange = screenModel::setFilter,
+            onLabelFilterChange = screenModel::setLabelFilter,
             onSortChange = screenModel::setSort,
+            onIncludeSensitiveChange = screenModel::setIncludeSensitiveContent,
         )
 
         LaunchedEffect(Unit) {

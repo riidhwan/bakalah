@@ -89,8 +89,12 @@ The user's manga content collection in the Vault Feature, separate from the app 
 _Avoid_: Library, cloud library, synced library
 
 **Vault Label**:
-A user-owned organization marker for grouping content in the Vault Collection.
-_Avoid_: Library category, genre, source tag
+A user-owned organization marker for grouping Vault Manga in the Vault Collection.
+_Avoid_: Vault category, Library category, genre, source tag
+
+**Sensitive Vault Label**:
+A Vault Label with sensitivity metadata that marks assigned Vault Manga as excluded from the default Vault Surface unless the user explicitly includes sensitive content.
+_Avoid_: 18+ label, hidden category, private genre
 
 **Vault Surface**:
 The top-level app destination for browsing and managing the Vault Collection.

@@ -51,6 +51,7 @@ Domain code does not perform Android storage, WebDAV, or SQLDelight work directl
 - `VaultReaderOpenService`: verifies cached chapters or performs cache-first download before reader launch.
 - `VaultCachePolicyService`: creates cache paths, marks opened cached chapters, evicts chapters, and enforces the local cache size limit.
 - `VaultMetadataPublishService`, `VaultCoverPublishService`, and `VaultMangaDeletionService`: publish catalogue mutations and refresh the local index afterward.
+  Vault label sensitivity is catalogue-owned metadata, while the user's include-sensitive Vault Surface setting is device-local.
 
 `app/src/main/java/eu/kanade/tachiyomi/ui/vault` owns screen models and navigation. `app/src/main/java/eu/kanade/presentation/vault` owns Compose rendering.
 
@@ -61,7 +62,7 @@ The remote Vault Root is app-owned. A valid root contains `content-vault.json`, 
 Current layout constants live in `VaultManifest.kt`:
 
 - `CONTENT_VAULT_APP_ID = "bakalah-content-vault"`
-- `CURRENT_VAULT_LAYOUT_VERSION = 1`
+- `CURRENT_VAULT_LAYOUT_VERSION = 3`
 - `ROOT_VAULT_MANIFEST_NAME = "content-vault.json"`
 
 The layout is hybrid:
@@ -163,7 +164,7 @@ Metadata, cover, and deletion operations follow the same publish shape:
 7. Promote staged writes into the final remote paths.
 8. Refresh the local index.
 
-`VaultMetadataPublishService` updates manga metadata and labels without rewriting chapter content. `VaultCoverPublishService` uploads a new vault-owned cover asset and updates the manga/root manifests. `VaultMangaDeletionService` removes the manga pointer from the root manifest, refreshes the index, deletes the remote manga manifest, chapter CBZ files, and cover assets as cleanup, and removes app-managed local state for that Vault Manga. It does not delete Local Manga files, Downloads, or arbitrary local files.
+`VaultMetadataPublishService` updates manga metadata, labels, and label sensitivity without rewriting chapter content. Vault Label identities remain stable across renames so label assignment and sensitivity are not tied to display names. Because labels are embedded in manga manifests in the current layout, renaming a label or changing sensitivity rewrites each manga manifest that already contains that label. `VaultCoverPublishService` uploads a new vault-owned cover asset and updates the manga/root manifests. `VaultMangaDeletionService` removes the manga pointer from the root manifest, refreshes the index, deletes the remote manga manifest, chapter CBZ files, and cover assets as cleanup, and removes app-managed local state for that Vault Manga. It does not delete Local Manga files, Downloads, or arbitrary local files.
 
 ## Transfers and Integrity
 
@@ -220,6 +221,7 @@ The local cache limit is read from `ContentVaultPreferences.localCacheLimitBytes
 - cache states for the selected vault
 
 It derives visible manga items, local cache usage, remote vault storage usage, failed/queued counts, search/filter/sort output, and cover cache requests.
+By default, the Vault Surface excludes Vault Manga that have any Sensitive Vault Label; direct filtering to a sensitive label or enabling the device-local include-sensitive setting includes them.
 
 `VaultMangaScreenModel` observes chapters and cache states for one manga. It coordinates cache, retry, eviction, metadata publish, cover publish, and deletion actions through app services. Compose screens render these derived states and send explicit user actions back to the screen models.
 

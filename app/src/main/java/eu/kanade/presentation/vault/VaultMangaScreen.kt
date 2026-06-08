@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -43,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -86,6 +88,12 @@ fun VaultMangaScreen(
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showMetadataEdit by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.metadataPublishSuccessCount) {
+        if (state.metadataPublishSuccessCount > 0) {
+            showMetadataEdit = false
+        }
+    }
 
     Scaffold(
         topBar = { scrollBehavior ->
@@ -310,10 +318,29 @@ private fun VaultMetadataEditDialog(
     var artist by remember(manga.id) { mutableStateOf(manga.metadata.artist.orEmpty()) }
     var description by remember(manga.id) { mutableStateOf(manga.metadata.description.orEmpty()) }
     var status by remember(manga.id) { mutableStateOf(manga.metadata.status) }
-    var labels by remember(manga.id, state.mangaLabels) {
-        mutableStateOf(state.mangaLabels.joinToString { it.name })
+    var newLabel by remember(manga.id) { mutableStateOf("") }
+    var labels by remember(manga.id, state.vaultLabels, state.mangaLabels) {
+        val assigned = state.mangaLabels.map { it.identity.value }.toSet()
+        mutableStateOf(
+            state.vaultLabels.map {
+                LabelEditRow(
+                    identity = it.identity.value,
+                    name = it.name,
+                    isSensitive = it.isSensitive,
+                    assigned = it.identity.value in assigned,
+                )
+            },
+        )
     }
     val titleError = title.isBlank()
+    val blankLabelNames = labels.any { it.name.isBlank() }
+    val duplicateLabelNames = labels
+        .map { normalizeLabelName(it.name) }
+        .filter { it.isNotBlank() }
+        .let { names -> names.size != names.distinct().size }
+    val newLabelName = newLabel.trim()
+    val canAddLabel = newLabelName.isNotBlank() &&
+        labels.none { normalizeLabelName(it.name) == normalizeLabelName(newLabelName) }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -358,17 +385,69 @@ private fun VaultMetadataEditDialog(
                     status = status,
                     onStatusChange = { status = it },
                 )
-                MetadataTextField(
-                    value = labels,
-                    onValueChange = { labels = it },
-                    label = stringResource(MR.strings.vault_metadata_labels),
-                    singleLine = true,
+                Text(
+                    text = stringResource(MR.strings.vault_metadata_labels),
+                    style = MaterialTheme.typography.titleSmall,
                 )
+                labels.forEachIndexed { index, label ->
+                    LabelEditItem(
+                        label = label,
+                        onAssignedChange = { assigned ->
+                            labels = labels.replace(index, label.copy(assigned = assigned))
+                        },
+                        onNameChange = { name ->
+                            labels = labels.replace(index, label.copy(name = name))
+                        },
+                        onSensitiveChange = { isSensitive ->
+                            labels = labels.replace(index, label.copy(isSensitive = isSensitive))
+                        },
+                    )
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    MetadataTextField(
+                        value = newLabel,
+                        onValueChange = { newLabel = it },
+                        label = stringResource(MR.strings.vault_metadata_new_label),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                    )
+                    TextButton(
+                        enabled = canAddLabel,
+                        onClick = {
+                            labels = labels + LabelEditRow(
+                                identity = null,
+                                name = newLabelName,
+                                isSensitive = false,
+                                assigned = true,
+                            )
+                            newLabel = ""
+                        },
+                    ) {
+                        Text(stringResource(MR.strings.action_add))
+                    }
+                }
+                if (duplicateLabelNames) {
+                    Text(
+                        text = stringResource(MR.strings.vault_metadata_label_duplicate),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                if (blankLabelNames) {
+                    Text(
+                        text = stringResource(MR.strings.vault_metadata_label_required),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(
-                enabled = !state.isPublishingMetadata && !titleError,
+                enabled = !state.isPublishingMetadata && !titleError && !duplicateLabelNames && !blankLabelNames,
                 onClick = {
                     onSave(
                         VaultMangaScreenModel.VaultMetadataEdit(
@@ -377,7 +456,16 @@ private fun VaultMetadataEditDialog(
                             artist = artist,
                             description = description,
                             status = status,
-                            labelNames = labels.split(','),
+                            labels = labels
+                                .filter { it.name.isNotBlank() }
+                                .map {
+                                    VaultMangaScreenModel.VaultLabelEdit(
+                                        identity = it.identity,
+                                        name = it.name,
+                                        isSensitive = it.isSensitive,
+                                        assigned = it.assigned,
+                                    )
+                                },
                         ),
                     )
                 },
@@ -392,6 +480,58 @@ private fun VaultMetadataEditDialog(
         },
     )
 }
+
+@Composable
+private fun LabelEditItem(
+    label: LabelEditRow,
+    onAssignedChange: (Boolean) -> Unit,
+    onNameChange: (String) -> Unit,
+    onSensitiveChange: (Boolean) -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(
+            checked = label.assigned,
+            onCheckedChange = onAssignedChange,
+        )
+        MetadataTextField(
+            value = label.name,
+            onValueChange = onNameChange,
+            label = stringResource(MR.strings.vault_metadata_label_name),
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Checkbox(
+                checked = label.isSensitive,
+                onCheckedChange = onSensitiveChange,
+            )
+            Text(
+                text = stringResource(MR.strings.vault_label_sensitive),
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+    }
+}
+
+private data class LabelEditRow(
+    val identity: String?,
+    val name: String,
+    val isSensitive: Boolean,
+    val assigned: Boolean,
+)
+
+private fun List<LabelEditRow>.replace(index: Int, value: LabelEditRow): List<LabelEditRow> {
+    return mapIndexed { currentIndex, currentValue ->
+        if (currentIndex == index) value else currentValue
+    }
+}
+
+private fun normalizeLabelName(name: String): String = name.trim().lowercase()
 
 @Composable
 private fun MetadataTextField(

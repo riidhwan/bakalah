@@ -9,7 +9,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.Sort
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.HourglassEmpty
@@ -57,7 +59,9 @@ fun VaultScreen(
     onClickManga: (Long) -> Unit,
     onLoadCover: (Long) -> Unit,
     onFilterChange: (VaultScreenModel.Filter) -> Unit,
+    onLabelFilterChange: (String?) -> Unit,
     onSortChange: (VaultScreenModel.Sort) -> Unit,
+    onIncludeSensitiveChange: (Boolean) -> Unit,
 ) {
     Scaffold(
         topBar = { scrollBehavior ->
@@ -67,9 +71,24 @@ fun VaultScreen(
                 onChangeSearchQuery = onSearchQueryChange,
                 actions = {
                     VaultFilterMenu(filter = state.filter, onFilterChange = onFilterChange)
+                    VaultLabelFilterMenu(
+                        labels = state.labels,
+                        selectedLabelIdentity = state.selectedLabelIdentity,
+                        onLabelFilterChange = onLabelFilterChange,
+                    )
                     VaultSortMenu(sort = state.sort, onSortChange = onSortChange)
                     AppBarActions(
                         listOf(
+                            AppBar.OverflowAction(
+                                title = stringResource(
+                                    if (state.includeSensitiveContent) {
+                                        MR.strings.vault_action_hide_sensitive
+                                    } else {
+                                        MR.strings.vault_action_include_sensitive
+                                    },
+                                ),
+                                onClick = { onIncludeSensitiveChange(!state.includeSensitiveContent) },
+                            ),
                             AppBar.Action(
                                 title = stringResource(MR.strings.vault_action_refresh_catalogue),
                                 icon = Icons.Outlined.Refresh,
@@ -303,12 +322,72 @@ private fun VaultMangaGridItem(
                 item.queuedCount > 0 -> Badge(
                     imageVector = Icons.Outlined.HourglassEmpty,
                 )
+                item.isSensitive -> Badge(
+                    text = stringResource(MR.strings.vault_label_sensitive),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    textColor = MaterialTheme.colorScheme.onErrorContainer,
+                )
             }
         },
         onClick = onClick,
         onLongClick = onClick,
         modifier = modifier,
     )
+}
+
+@Composable
+private fun VaultLabelFilterMenu(
+    labels: List<tachiyomi.domain.vault.model.VaultLabel>,
+    selectedLabelIdentity: String?,
+    onLabelFilterChange: (String?) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = labels.firstOrNull { it.identity.value == selectedLabelIdentity }
+    IconButton(onClick = { expanded = true }) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.Label,
+            contentDescription = stringResource(MR.strings.vault_filter_label),
+        )
+    }
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = { expanded = false },
+    ) {
+        DropdownMenuItem(
+            text = { Text(stringResource(MR.strings.vault_filter_all_labels)) },
+            leadingIcon = if (selected == null) {
+                { Icon(Icons.Outlined.Check, contentDescription = null) }
+            } else {
+                null
+            },
+            onClick = {
+                expanded = false
+                onLabelFilterChange(null)
+            },
+        )
+        labels.forEach { label ->
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        text = if (label.isSensitive) {
+                            stringResource(MR.strings.vault_filter_sensitive_label, label.name)
+                        } else {
+                            label.name
+                        },
+                    )
+                },
+                leadingIcon = if (label.identity.value == selectedLabelIdentity) {
+                    { Icon(Icons.Outlined.Check, contentDescription = null) }
+                } else {
+                    null
+                },
+                onClick = {
+                    expanded = false
+                    onLabelFilterChange(label.identity.value)
+                },
+            )
+        }
+    }
 }
 
 @Composable

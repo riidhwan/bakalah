@@ -6,6 +6,7 @@ import eu.kanade.tachiyomi.data.vault.UniFileVaultTransferLocalStaging
 import eu.kanade.tachiyomi.data.vault.VaultCacheEvictionResult
 import eu.kanade.tachiyomi.data.vault.VaultCachePolicyService
 import eu.kanade.tachiyomi.data.vault.VaultCoverPublishService
+import eu.kanade.tachiyomi.data.vault.VaultLabelPublishEdit
 import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionResult
 import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionService
 import eu.kanade.tachiyomi.data.vault.VaultMetadataPublishRequest
@@ -57,11 +58,13 @@ class VaultMangaScreenModel(
         screenModelScope.launchIO {
             val manga = repository.getMangaById(mangaId)
             val mangaLabels = manga?.let { loadedManga -> repository.getLabelsForManga(loadedManga.id) }.orEmpty()
+            val vaultLabels = manga?.let { loadedManga -> repository.getLabels(loadedManga.vaultId) }.orEmpty()
             mutableState.update {
                 it.copy(
                     manga = manga,
                     isLoading = manga == null,
                     mangaLabels = mangaLabels,
+                    vaultLabels = vaultLabels,
                 )
             }
             if (manga == null) {
@@ -252,7 +255,14 @@ class VaultMangaScreenModel(
                         artist = edit.artist,
                         description = edit.description,
                         status = edit.status,
-                        labelNames = edit.labelNames,
+                        labels = edit.labels.map {
+                            VaultLabelPublishEdit(
+                                identity = it.identity,
+                                name = it.name,
+                                isSensitive = it.isSensitive,
+                                assigned = it.assigned,
+                            )
+                        },
                     ),
                 )
             }.getOrElse {
@@ -262,6 +272,9 @@ class VaultMangaScreenModel(
             when (result) {
                 VaultMetadataPublishResult.Published -> {
                     reloadMangaMetadata()
+                    mutableState.update {
+                        it.copy(metadataPublishSuccessCount = it.metadataPublishSuccessCount + 1)
+                    }
                     _events.send(Event.MetadataPublished)
                 }
                 else -> _events.send(Event.MetadataPublishFailed(result.toFailureDetail()))
@@ -273,10 +286,12 @@ class VaultMangaScreenModel(
     private suspend fun reloadMangaMetadata() {
         val manga = repository.getMangaById(mangaId) ?: return
         val mangaLabels = repository.getLabelsForManga(manga.id)
+        val vaultLabels = repository.getLabels(manga.vaultId)
         mutableState.update {
             it.copy(
                 manga = manga,
                 mangaLabels = mangaLabels,
+                vaultLabels = vaultLabels,
             )
         }
     }
@@ -330,7 +345,14 @@ class VaultMangaScreenModel(
         val artist: String,
         val description: String,
         val status: VaultMangaStatus,
-        val labelNames: List<String>,
+        val labels: List<VaultLabelEdit>,
+    )
+
+    data class VaultLabelEdit(
+        val identity: String?,
+        val name: String,
+        val isSensitive: Boolean,
+        val assigned: Boolean,
     )
 
     sealed interface Event {
@@ -351,7 +373,9 @@ class VaultMangaScreenModel(
         val vaultStorageUsageBytes: Long = 0,
         val isDeleting: Boolean = false,
         val mangaLabels: List<VaultLabel> = emptyList(),
+        val vaultLabels: List<VaultLabel> = emptyList(),
         val isPublishingMetadata: Boolean = false,
+        val metadataPublishSuccessCount: Int = 0,
         val coverUri: String? = null,
     )
 }
@@ -402,6 +426,7 @@ private fun VaultMetadataPublishResult.toFailureDetail(): String {
         is VaultMetadataPublishResult.ManifestNotFound -> "Manifest not found: $manifestPath"
         is VaultMetadataPublishResult.IdentityMismatch -> "Manifest identity mismatch: $manifestPath"
         is VaultMetadataPublishResult.Malformed -> "Malformed manifest: $manifestPath"
+        VaultMetadataPublishResult.LabelNameConflict -> "Vault Label names must be unique"
         VaultMetadataPublishResult.PublishFailed -> "Could not publish Vault metadata"
     }
 }

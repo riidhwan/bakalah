@@ -81,6 +81,7 @@ class BuildVaultCatalogueRefresh(
                     identity = VaultIdentity(label.identity),
                     name = label.name,
                     sortKey = label.sortKey,
+                    isSensitive = label.isSensitive,
                     createdAt = label.createdAt,
                     updatedAt = label.updatedAt,
                 )

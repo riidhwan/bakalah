@@ -6,6 +6,7 @@ data class VaultLabel(
     val identity: VaultIdentity,
     val name: String,
     val sortKey: String,
+    val isSensitive: Boolean,
     val createdAt: Long,
     val updatedAt: Long,
 )

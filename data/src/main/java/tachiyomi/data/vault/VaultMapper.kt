@@ -123,6 +123,7 @@ object VaultMapper {
         identity: String,
         name: String,
         sortKey: String,
+        isSensitive: Boolean,
         createdAt: Long,
         updatedAt: Long,
     ): VaultLabel = VaultLabel(
@@ -131,6 +132,7 @@ object VaultMapper {
         identity = VaultIdentity(identity),
         name = name,
         sortKey = sortKey,
+        isSensitive = isSensitive,
         createdAt = createdAt,
         updatedAt = updatedAt,
     )
