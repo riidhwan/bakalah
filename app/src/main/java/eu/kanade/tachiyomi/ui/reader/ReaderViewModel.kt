@@ -26,6 +26,9 @@ import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
 import eu.kanade.tachiyomi.data.vault.UniFileVaultTransferLocalStaging
 import eu.kanade.tachiyomi.data.vault.VaultCachePolicyService
+import eu.kanade.tachiyomi.data.vault.VaultCoverPublishRequest
+import eu.kanade.tachiyomi.data.vault.VaultCoverPublishResult
+import eu.kanade.tachiyomi.data.vault.VaultCoverPublishService
 import eu.kanade.tachiyomi.data.vault.VaultReaderOpenResult
 import eu.kanade.tachiyomi.data.vault.VaultReaderOpenService
 import eu.kanade.tachiyomi.data.vault.VaultTransferService
@@ -123,6 +126,7 @@ class ReaderViewModel @JvmOverloads constructor(
     private val vaultPreferences: ContentVaultPreferences = Injekt.get(),
     private val storageManager: StorageManager = Injekt.get(),
     private val networkHelper: NetworkHelper = Injekt.get(),
+    private val vaultCoverPublishService: VaultCoverPublishService = Injekt.get(),
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(State())
@@ -1066,19 +1070,36 @@ class ReaderViewModel @JvmOverloads constructor(
      * Sets the image of the selected page as cover and notifies the UI of the result.
      */
     fun setAsCover() {
-        if (readerSession is ReaderSession.Vault) return
         val page = (state.value.dialog as? Dialog.PageActions)?.page
         if (page?.status != Page.State.Ready) return
-        val manga = manga ?: return
         val stream = page.stream ?: return
 
         viewModelScope.launchNonCancellable {
             val result = try {
-                manga.editCover(Injekt.get(), stream())
-                if (manga.isLocal() || manga.favorite) {
-                    SetAsCoverResult.Success
+                val vaultSession = readerSession as? ReaderSession.Vault
+                if (vaultSession != null) {
+                    val bytes = stream().use { it.readBytes() }
+                    when (
+                        vaultCoverPublishService.publish(
+                            VaultCoverPublishRequest(
+                                mangaId = vaultSession.manga.id,
+                                bytes = bytes,
+                                mediaType = null,
+                                fileName = "page-${page.number}",
+                            ),
+                        )
+                    ) {
+                        VaultCoverPublishResult.Published -> SetAsCoverResult.Success
+                        else -> SetAsCoverResult.Error
+                    }
                 } else {
-                    SetAsCoverResult.AddToLibraryFirst
+                    val manga = manga ?: return@launchNonCancellable
+                    manga.editCover(Injekt.get(), stream())
+                    if (manga.isLocal() || manga.favorite) {
+                        SetAsCoverResult.Success
+                    } else {
+                        SetAsCoverResult.AddToLibraryFirst
+                    }
                 }
             } catch (e: Exception) {
                 SetAsCoverResult.Error

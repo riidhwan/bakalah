@@ -367,6 +367,13 @@ FROM vault_covers
 WHERE manga_id = :mangaId
 AND identity = :identity;
 
+getCoverForManga:
+SELECT *
+FROM vault_covers
+WHERE manga_id = :mangaId
+ORDER BY updated_at DESC
+LIMIT 1;
+
 deleteCoversNotInIdentities:
 DELETE FROM vault_covers
 WHERE manga_id = :mangaId

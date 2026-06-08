@@ -127,6 +127,8 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Vault Labels are vault-owned organization markers, separate from Library categories and genres.
 - Vault Metadata edits must update manifests and the local Vault Index, not rewrite chapter content files.
 - Vault Covers must be separate vault-owned catalogue assets.
+- Local-to-Vault Import should import the Local Manga `cover.*` image as the initial Vault Cover when the target Vault Manga has no existing cover.
+- Users set or replace a Vault Cover from an already-loaded Vault Reader page through the same long-press page action used by Library reading, rather than by selecting an arbitrary local image.
 - Covers/thumbnails should be locally cached separately from chapter cache.
 
 ### Cache and Reading
@@ -154,7 +156,7 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Vault Reading State should update `lastReadAt` when persisted page progress changes, including first displayed page and completion, while avoiding repeated writes for the same page index.
 - Vault Reader Sessions use global reader defaults for reading mode and orientation in v1; per-Vault Manga viewer flags are out of scope for cache-first reading.
 - Completing a Vault Chapter marks only that Vault Chapter read; Library duplicate-read propagation does not apply to Vault Reader Sessions.
-- Vault Reader Sessions may keep generic page image actions such as save, share, and copy when backed by a loaded page stream, but must not expose Library-specific cover mutation such as set-as-cover in this slice.
+- Vault Reader Sessions may keep generic page image actions such as save, share, copy, and set-as-cover when backed by a loaded page stream. Vault set-as-cover publishes a vault-owned cover asset and updates manifests; it must not write to Library custom cover storage.
 - Cache eviction must remove only app-managed cached chapter content, never original Local Manga files and never vault-owned remote content.
 - Default cache policy should cache opened chapters and evict oldest read cached chapters when the user-set size limit is exceeded.
 - Cache policy enforcement after reader-triggered caching must protect the active Vault Reader Session's current chapter and immediate loaded neighbors.

@@ -224,6 +224,12 @@ class VaultRepositoryImpl(
             ._id
     }
 
+    override suspend fun getCoverForManga(mangaId: Long): VaultCover? {
+        return database.vaultQueries
+            .getCoverForManga(mangaId, VaultMapper::mapCover)
+            .awaitAsOneOrNull()
+    }
+
     override suspend fun upsertReadingState(state: VaultReadingState) {
         database.vaultQueries.upsertReadingState(
             chapterId = state.chapterId,

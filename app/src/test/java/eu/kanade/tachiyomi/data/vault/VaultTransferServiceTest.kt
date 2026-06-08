@@ -176,6 +176,7 @@ class VaultTransferServiceTest {
         override suspend fun getLabelsForManga(mangaId: Long): List<VaultLabel> = emptyList()
         override suspend fun upsertLabels(vaultId: Long, labels: List<VaultLabel>) = Unit
         override suspend fun setMangaLabels(mangaId: Long, labelIds: List<Long>) = Unit
+        override suspend fun getCoverForManga(mangaId: Long): VaultCover? = null
         override suspend fun upsertCover(cover: VaultCover): Long = unsupported()
         override suspend fun upsertReadingState(state: VaultReadingState) = Unit
         override suspend fun getReadingState(chapterId: Long): VaultReadingState? = null

@@ -335,7 +335,7 @@ class ReaderActivity : BaseActivity() {
             is ReaderViewModel.Dialog.PageActions -> {
                 ReaderPageActionsDialog(
                     onDismissRequest = onDismissRequest,
-                    onSetAsCover = if (state.isVaultSession) null else viewModel::setAsCover,
+                    onSetAsCover = viewModel::setAsCover,
                     onShare = viewModel::shareImage,
                     onSave = viewModel::saveImage,
                 )
