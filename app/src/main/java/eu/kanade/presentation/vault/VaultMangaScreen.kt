@@ -51,9 +51,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
@@ -241,7 +245,8 @@ private fun VaultMangaHeader(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            VaultCoverPlaceholder(
+            VaultCover(
+                coverUri = state.coverUri,
                 modifier = Modifier
                     .width(88.dp)
                     .aspectRatio(2f / 3f),
@@ -461,7 +466,8 @@ private fun VaultStatusDropdown(
 }
 
 @Composable
-private fun VaultCoverPlaceholder(
+private fun VaultCover(
+    coverUri: String?,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -469,12 +475,25 @@ private fun VaultCoverPlaceholder(
         color = MaterialTheme.colorScheme.surfaceVariant,
         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.LibraryBooks,
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-            )
+        Box {
+            if (coverUri != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(coverUri)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.LibraryBooks,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(32.dp),
+                )
+            }
         }
     }
 }

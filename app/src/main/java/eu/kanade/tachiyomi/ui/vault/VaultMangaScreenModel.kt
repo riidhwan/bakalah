@@ -5,6 +5,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.tachiyomi.data.vault.UniFileVaultTransferLocalStaging
 import eu.kanade.tachiyomi.data.vault.VaultCacheEvictionResult
 import eu.kanade.tachiyomi.data.vault.VaultCachePolicyService
+import eu.kanade.tachiyomi.data.vault.VaultCoverPublishService
 import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionResult
 import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionService
 import eu.kanade.tachiyomi.data.vault.VaultMetadataPublishRequest
@@ -45,6 +46,7 @@ class VaultMangaScreenModel(
     private val networkHelper: NetworkHelper = Injekt.get(),
     private val storageManager: StorageManager = Injekt.get(),
     private val deletionService: VaultMangaDeletionService = Injekt.get(),
+    private val coverPublishService: VaultCoverPublishService = Injekt.get(),
     private val metadataPublishService: VaultMetadataPublishService = Injekt.get(),
 ) : StateScreenModel<VaultMangaScreenModel.State>(State()) {
 
@@ -66,6 +68,7 @@ class VaultMangaScreenModel(
                 _events.send(Event.LoadFailed)
                 return@launchIO
             }
+            reloadCoverCache()
             resumeQueuedCacheJobs(manga)
 
             combine(
@@ -279,6 +282,16 @@ class VaultMangaScreenModel(
         }
     }
 
+    private suspend fun reloadCoverCache() {
+        val coverUri = runCatching {
+            coverPublishService.cacheCover(mangaId)
+        }.getOrElse {
+            logcat(LogPriority.ERROR, it)
+            null
+        }
+        mutableState.update { it.copy(coverUri = coverUri) }
+    }
+
     private fun transferService(
         config: WebDavVaultConfig,
         localStaging: UniFileVaultTransferLocalStaging,
@@ -340,6 +353,7 @@ class VaultMangaScreenModel(
         val isDeleting: Boolean = false,
         val mangaLabels: List<VaultLabel> = emptyList(),
         val isPublishingMetadata: Boolean = false,
+        val coverUri: String? = null,
     )
 }
 

@@ -52,6 +52,8 @@ interface VaultRepository {
 
     suspend fun setMangaLabels(mangaId: Long, labelIds: List<Long>)
 
+    suspend fun getCoverForManga(mangaId: Long): VaultCover?
+
     suspend fun upsertCover(cover: VaultCover): Long
 
     suspend fun upsertReadingState(state: VaultReadingState)

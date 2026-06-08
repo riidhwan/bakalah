@@ -43,6 +43,7 @@ import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultManifestChapter
 import tachiyomi.domain.vault.model.VaultManifestChapterContent
 import tachiyomi.domain.vault.model.VaultManifestCodec
+import tachiyomi.domain.vault.model.VaultManifestCover
 import tachiyomi.domain.vault.model.VaultManifestMetadata
 import tachiyomi.domain.vault.model.VaultManifestProvenance
 import tachiyomi.domain.vault.model.VaultManifestReadResult
@@ -53,6 +54,7 @@ import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
 import tachiyomi.source.local.LocalSource
+import tachiyomi.source.local.image.LocalCoverManager
 import tachiyomi.source.local.io.Format
 import tachiyomi.source.local.io.LocalSourceFileSystem
 import java.io.ByteArrayOutputStream
@@ -73,6 +75,7 @@ class LocalVaultImportService(
     private val preferences: ContentVaultPreferences,
     private val sourceManager: SourceManager,
     private val fileSystem: LocalSourceFileSystem,
+    private val coverManager: LocalCoverManager,
     private val refreshService: VaultCatalogueRefreshService,
 ) {
     private val client = networkHelper.nonCloudflareClient
@@ -204,6 +207,17 @@ class LocalVaultImportService(
         }.getOrElse {
             return LocalVaultImportResult.UploadFailed
         }
+        val importedCover = remoteMangaManifest?.cover ?: runCatching {
+            uploadCover(
+                webDav = webDav,
+                config = config,
+                mangaIdentity = mangaIdentity,
+                coverFile = scan.coverFile,
+                now = now,
+            )
+        }.getOrElse {
+            return LocalVaultImportResult.UploadFailed
+        }
 
         val metadata = target.metadata(scan.manga)
         val mangaRevision = remoteMangaManifest?.revisionNumber?.plus(1) ?: 1
@@ -216,7 +230,7 @@ class LocalVaultImportService(
             revisionNumber = mangaRevision,
             metadata = metadata.toManifestMetadata(),
             labels = remoteMangaManifest?.labels.orEmpty(),
-            cover = remoteMangaManifest?.cover,
+            cover = importedCover,
             chapters = (existingRemoteChapters + importedChapters)
                 .sortedWith(compareBy<VaultManifestChapter> { it.sourceOrder }.thenBy { it.title }),
             provenance = VaultManifestProvenance(
@@ -336,6 +350,7 @@ class LocalVaultImportService(
                 ),
             ),
             chapters = chapters,
+            coverFile = coverManager.find(manga.url),
         )
     }
 
@@ -454,6 +469,42 @@ class LocalVaultImportService(
             }
             path
         }
+    }
+
+    private suspend fun uploadCover(
+        webDav: WebDavClient,
+        config: WebDavVaultConfig,
+        mangaIdentity: String,
+        coverFile: UniFile?,
+        now: Long,
+    ): VaultManifestCover? {
+        coverFile ?: return null
+        val coverIdentity = UUID.randomUUID().toString()
+        val extension = coverFile.extension
+            ?.lowercase()
+            ?.takeIf { it.isNotBlank() && it.length <= 8 && it.all(Char::isLetterOrDigit) }
+            ?: "img"
+        val path = "content/$mangaIdentity/cover/$coverIdentity.$extension"
+        val digest = coverFile.digest()
+
+        webDav.createDirectory(config.rootPath.childPath("content/$mangaIdentity"))
+        webDav.createDirectory(config.rootPath.childPath("content/$mangaIdentity/cover"))
+        if (!webDav.putFile(config.rootPath.childPath(path), coverFile)) {
+            error("Failed to upload $path")
+        }
+
+        return VaultManifestCover(
+            identity = coverIdentity,
+            path = path,
+            mediaType = coverFile.coverMediaType(),
+            integrity = VaultContentIntegrity(
+                sizeBytes = digest.sizeBytes,
+                checksumSha256 = digest.sha256,
+            ),
+            revisionId = UUID.randomUUID().toString(),
+            revisionNumber = 1,
+            updatedAt = now,
+        )
     }
 
     private suspend fun readRootManifest(webDav: WebDavClient, path: String): VaultRootManifest? {
@@ -677,6 +728,16 @@ class LocalVaultImportService(
             Format.valueOf(this) is Format.Archive
     }
 
+    private fun UniFile.coverMediaType(): String? {
+        return when (extension?.lowercase()) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "webp" -> "image/webp"
+            "gif" -> "image/gif"
+            else -> null
+        }
+    }
+
     private fun UniFile.relativePathFrom(root: UniFile): String {
         return relativePathFromUriStrings(root.uri.toString(), uri.toString())
     }
@@ -705,6 +766,7 @@ class LocalVaultImportService(
     private data class LocalMangaScan(
         val manga: LocalVaultImportManga,
         val chapters: List<ScannedLocalChapter>,
+        val coverFile: UniFile?,
     )
 
     private data class ScannedLocalChapter(
