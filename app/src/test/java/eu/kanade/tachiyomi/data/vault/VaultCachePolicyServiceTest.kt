@@ -166,6 +166,7 @@ class VaultCachePolicyServiceTest {
         override suspend fun getChapters(mangaId: Long): List<VaultChapter> = chapters.filter { it.mangaId == mangaId }
         override suspend fun upsertChapters(mangaId: Long, chapters: List<VaultChapter>) = Unit
         override suspend fun getLabels(vaultId: Long): List<VaultLabel> = emptyList()
+        override suspend fun getLabelsForManga(mangaId: Long): List<VaultLabel> = emptyList()
         override suspend fun upsertLabels(vaultId: Long, labels: List<VaultLabel>) = Unit
         override suspend fun setMangaLabels(mangaId: Long, labelIds: List<Long>) = Unit
         override suspend fun upsertCover(cover: VaultCover): Long = unsupported()

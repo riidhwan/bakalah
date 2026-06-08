@@ -169,6 +169,12 @@ class VaultRepositoryImpl(
             .awaitAsList()
     }
 
+    override suspend fun getLabelsForManga(mangaId: Long): List<VaultLabel> {
+        return database.vaultQueries
+            .getLabelsForManga(mangaId, VaultMapper::mapLabel)
+            .awaitAsList()
+    }
+
     override suspend fun upsertLabels(vaultId: Long, labels: List<VaultLabel>) {
         database.transaction {
             if (labels.isEmpty()) {

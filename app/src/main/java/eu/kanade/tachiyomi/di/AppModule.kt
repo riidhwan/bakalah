@@ -20,6 +20,7 @@ import eu.kanade.tachiyomi.data.vault.ContentVaultSetupService
 import eu.kanade.tachiyomi.data.vault.LocalVaultImportService
 import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshService
 import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionService
+import eu.kanade.tachiyomi.data.vault.VaultMetadataPublishService
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -137,6 +138,7 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { ContentVaultSetupService(get(), get(), get(), get()) }
         addSingletonFactory { VaultCatalogueRefreshService(get(), get(), get(), get()) }
         addSingletonFactory { VaultMangaDeletionService(get(), get(), get(), get(), get()) }
+        addSingletonFactory { VaultMetadataPublishService(get(), get(), get(), get(), get()) }
         addSingletonFactory { LocalVaultImportService(get(), get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { JavaScriptEngine(app) }
 

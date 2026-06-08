@@ -46,6 +46,8 @@ interface VaultRepository {
 
     suspend fun getLabels(vaultId: Long): List<VaultLabel>
 
+    suspend fun getLabelsForManga(mangaId: Long): List<VaultLabel>
+
     suspend fun upsertLabels(vaultId: Long, labels: List<VaultLabel>)
 
     suspend fun setMangaLabels(mangaId: Long, labelIds: List<Long>)
