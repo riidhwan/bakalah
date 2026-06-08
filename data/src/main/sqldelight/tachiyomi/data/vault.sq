@@ -312,6 +312,13 @@ FROM vault_labels
 WHERE vault_id = :vaultId
 ORDER BY sort_key;
 
+getLabelsForManga:
+SELECT vault_labels.*
+FROM vault_labels
+JOIN vault_manga_labels ON vault_manga_labels.label_id = vault_labels._id
+WHERE vault_manga_labels.manga_id = :mangaId
+ORDER BY vault_labels.sort_key;
+
 deleteLabelsNotInIdentities:
 DELETE FROM vault_labels
 WHERE vault_id = :vaultId

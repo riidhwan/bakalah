@@ -49,6 +49,9 @@ data class VaultMangaScreen(
             onClickDelete = {
                 screenModel.deleteManga()
             },
+            onClickSaveMetadata = {
+                screenModel.publishMetadata(it)
+            },
         )
 
         LaunchedEffect(Unit) {
@@ -65,6 +68,14 @@ data class VaultMangaScreen(
                     is VaultMangaScreenModel.Event.DeleteFailed ->
                         snackbarHostState.showSnackbar(
                             context.stringResource(MR.strings.vault_delete_manga_failed_details, event.detail),
+                        )
+                    VaultMangaScreenModel.Event.MetadataPublished ->
+                        snackbarHostState.showSnackbar(
+                            context.stringResource(MR.strings.vault_metadata_publish_complete),
+                        )
+                    is VaultMangaScreenModel.Event.MetadataPublishFailed ->
+                        snackbarHostState.showSnackbar(
+                            context.stringResource(MR.strings.vault_metadata_publish_failed_details, event.detail),
                         )
                     is VaultMangaScreenModel.Event.PendingActionUnavailable ->
                         snackbarHostState.showSnackbar(event.action.unavailableMessage(context))

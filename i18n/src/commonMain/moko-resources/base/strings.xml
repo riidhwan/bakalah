@@ -184,6 +184,7 @@
     <string name="vault_action_evict_from_device">Evict from device</string>
     <string name="vault_action_read_cached">Read cached</string>
     <string name="vault_action_cache_first_chapter">Cache first chapter</string>
+    <string name="vault_action_edit_metadata">Edit</string>
     <string name="vault_action_delete_manga">Delete from Vault</string>
     <string name="vault_action_import_unavailable">Local-to-Vault Import needs the import flow from the Local tab.</string>
     <string name="vault_action_cache_unavailable">Chapter caching needs the Vault transfer queue slice.</string>
@@ -202,6 +203,10 @@
     <string name="vault_delete_manga_confirm_message">This moves the manga to Vault Trash and removes only this device's app-managed Vault cache for it. Original Local Manga files and Downloads will not be deleted.</string>
     <string name="vault_delete_manga_complete">Vault Manga moved to Trash</string>
     <string name="vault_delete_manga_failed_details">Could not delete from Vault: %s</string>
+    <string name="vault_metadata_edit_title">Edit Vault Metadata</string>
+    <string name="vault_metadata_labels">Vault Labels</string>
+    <string name="vault_metadata_publish_complete">Vault Metadata updated</string>
+    <string name="vault_metadata_publish_failed_details">Could not update Vault Metadata: %s</string>
     <string name="vault_local_cache_usage">Local Cache: %s</string>
     <string name="vault_storage_usage">Vault Storage: %s</string>
     <string name="vault_manga_count">%d Vault Manga</string>

@@ -14,8 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -25,9 +29,14 @@ import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -42,13 +51,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.icerock.moko.resources.StringResource
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.tachiyomi.ui.vault.VaultMangaScreenModel
 import tachiyomi.domain.vault.model.VaultCacheState
+import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.FastScrollLazyColumn
 import tachiyomi.presentation.core.components.material.Scaffold
@@ -66,8 +78,10 @@ fun VaultMangaScreen(
     onClickRetry: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickDelete: () -> Unit,
+    onClickSaveMetadata: (VaultMangaScreenModel.VaultMetadataEdit) -> Unit,
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var showMetadataEdit by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { scrollBehavior ->
@@ -77,6 +91,14 @@ fun VaultMangaScreen(
                 actions = {
                     AppBarActions(
                         listOf(
+                            AppBar.OverflowAction(
+                                title = stringResource(MR.strings.vault_action_edit_metadata),
+                                onClick = {
+                                    if (!state.isPublishingMetadata) {
+                                        showMetadataEdit = true
+                                    }
+                                },
+                            ),
                             AppBar.OverflowAction(
                                 title = stringResource(MR.strings.vault_action_delete_manga),
                                 onClick = {
@@ -133,6 +155,17 @@ fun VaultMangaScreen(
                 TextButton(onClick = { showDeleteConfirmation = false }) {
                     Text(stringResource(MR.strings.action_cancel))
                 }
+            },
+        )
+    }
+
+    if (showMetadataEdit && state.manga != null) {
+        VaultMetadataEditDialog(
+            state = state,
+            onDismissRequest = { showMetadataEdit = false },
+            onSave = {
+                showMetadataEdit = false
+                onClickSaveMetadata(it)
             },
         )
     }
@@ -232,6 +265,15 @@ private fun VaultMangaHeader(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                if (state.mangaLabels.isNotEmpty()) {
+                    Text(
+                        text = state.mangaLabels.joinToString { it.name },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 VaultMangaStats(
                     chapterCount = state.chapters.size,
                     cachedCount = cachedCount,
@@ -246,6 +288,173 @@ private fun VaultMangaHeader(
                         Text(it)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VaultMetadataEditDialog(
+    state: VaultMangaScreenModel.State,
+    onDismissRequest: () -> Unit,
+    onSave: (VaultMangaScreenModel.VaultMetadataEdit) -> Unit,
+) {
+    val manga = state.manga ?: return
+    var title by remember(manga.id) { mutableStateOf(manga.metadata.title) }
+    var author by remember(manga.id) { mutableStateOf(manga.metadata.author.orEmpty()) }
+    var artist by remember(manga.id) { mutableStateOf(manga.metadata.artist.orEmpty()) }
+    var description by remember(manga.id) { mutableStateOf(manga.metadata.description.orEmpty()) }
+    var status by remember(manga.id) { mutableStateOf(manga.metadata.status) }
+    var labels by remember(manga.id, state.mangaLabels) {
+        mutableStateOf(state.mangaLabels.joinToString { it.name })
+    }
+    val titleError = title.isBlank()
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(stringResource(MR.strings.vault_metadata_edit_title)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                MetadataTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = stringResource(MR.strings.title),
+                    isError = titleError,
+                    supportingText = if (titleError) {
+                        stringResource(MR.strings.local_manga_metadata_title_required)
+                    } else {
+                        null
+                    },
+                    singleLine = true,
+                )
+                MetadataTextField(
+                    value = author,
+                    onValueChange = { author = it },
+                    label = stringResource(MR.strings.author),
+                    singleLine = true,
+                )
+                MetadataTextField(
+                    value = artist,
+                    onValueChange = { artist = it },
+                    label = stringResource(MR.strings.artist),
+                    singleLine = true,
+                )
+                MetadataTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = stringResource(MR.strings.description),
+                    minLines = 3,
+                )
+                VaultStatusDropdown(
+                    status = status,
+                    onStatusChange = { status = it },
+                )
+                MetadataTextField(
+                    value = labels,
+                    onValueChange = { labels = it },
+                    label = stringResource(MR.strings.vault_metadata_labels),
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !state.isPublishingMetadata && !titleError,
+                onClick = {
+                    onSave(
+                        VaultMangaScreenModel.VaultMetadataEdit(
+                            title = title,
+                            author = author,
+                            artist = artist,
+                            description = description,
+                            status = status,
+                            labelNames = labels.split(','),
+                        ),
+                    )
+                },
+            ) {
+                Text(stringResource(MR.strings.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(MR.strings.action_cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun MetadataTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false,
+    supportingText: String? = null,
+    singleLine: Boolean = false,
+    minLines: Int = 1,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.fillMaxWidth(),
+        label = { Text(label) },
+        isError = isError,
+        supportingText = supportingText?.let { { Text(it) } },
+        singleLine = singleLine,
+        minLines = minLines,
+        keyboardOptions = KeyboardOptions(
+            imeAction = if (singleLine) ImeAction.Next else ImeAction.Default,
+        ),
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VaultStatusDropdown(
+    status: VaultMangaStatus,
+    onStatusChange: (VaultMangaStatus) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = remember { VaultMetadataStatusOption.entries }
+    val selected = options.firstOrNull { it.status == status } ?: VaultMetadataStatusOption.Unknown
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+    ) {
+        OutlinedTextField(
+            value = stringResource(selected.label),
+            onValueChange = {},
+            modifier = Modifier
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                .fillMaxWidth(),
+            readOnly = true,
+            label = { Text(stringResource(MR.strings.status)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(option.label)) },
+                    leadingIcon = if (option == selected) {
+                        { Icon(Icons.Outlined.Check, contentDescription = null) }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        onStatusChange(option.status)
+                        expanded = false
+                    },
+                )
             }
         }
     }
@@ -452,4 +661,17 @@ private fun VaultCacheState.availabilityLabel(): String {
 private fun VaultMangaScreenModel.State.primaryActionChapter(): VaultMangaScreenModel.VaultChapterItem? {
     return chapters.firstOrNull { it.state == VaultCacheState.CACHED }
         ?: chapters.firstOrNull { it.state == VaultCacheState.VAULT_ONLY }
+}
+
+private enum class VaultMetadataStatusOption(
+    val status: VaultMangaStatus,
+    val label: StringResource,
+) {
+    Unknown(VaultMangaStatus.UNKNOWN, MR.strings.unknown),
+    Ongoing(VaultMangaStatus.ONGOING, MR.strings.ongoing),
+    Completed(VaultMangaStatus.COMPLETED, MR.strings.completed),
+    Licensed(VaultMangaStatus.LICENSED, MR.strings.licensed),
+    PublishingFinished(VaultMangaStatus.PUBLISHING_FINISHED, MR.strings.publishing_finished),
+    Cancelled(VaultMangaStatus.CANCELLED, MR.strings.cancelled),
+    OnHiatus(VaultMangaStatus.ON_HIATUS, MR.strings.on_hiatus),
 }

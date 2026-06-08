@@ -7,6 +7,9 @@ import eu.kanade.tachiyomi.data.vault.VaultCacheEvictionResult
 import eu.kanade.tachiyomi.data.vault.VaultCachePolicyService
 import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionResult
 import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionService
+import eu.kanade.tachiyomi.data.vault.VaultMetadataPublishRequest
+import eu.kanade.tachiyomi.data.vault.VaultMetadataPublishResult
+import eu.kanade.tachiyomi.data.vault.VaultMetadataPublishService
 import eu.kanade.tachiyomi.data.vault.VaultTransferResult
 import eu.kanade.tachiyomi.data.vault.VaultTransferService
 import eu.kanade.tachiyomi.data.vault.WebDavVaultTransferStorage
@@ -24,7 +27,9 @@ import tachiyomi.domain.storage.service.StorageManager
 import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
+import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
+import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.model.VaultTransferType
 import tachiyomi.domain.vault.model.WebDavVaultConfig
@@ -40,6 +45,7 @@ class VaultMangaScreenModel(
     private val networkHelper: NetworkHelper = Injekt.get(),
     private val storageManager: StorageManager = Injekt.get(),
     private val deletionService: VaultMangaDeletionService = Injekt.get(),
+    private val metadataPublishService: VaultMetadataPublishService = Injekt.get(),
 ) : StateScreenModel<VaultMangaScreenModel.State>(State()) {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
@@ -48,10 +54,12 @@ class VaultMangaScreenModel(
     init {
         screenModelScope.launchIO {
             val manga = repository.getMangaById(mangaId)
+            val mangaLabels = manga?.let { loadedManga -> repository.getLabelsForManga(loadedManga.id) }.orEmpty()
             mutableState.update {
                 it.copy(
                     manga = manga,
                     isLoading = manga == null,
+                    mangaLabels = mangaLabels,
                 )
             }
             if (manga == null) {
@@ -230,6 +238,47 @@ class VaultMangaScreenModel(
         }
     }
 
+    fun publishMetadata(edit: VaultMetadataEdit) {
+        screenModelScope.launchIO {
+            mutableState.update { it.copy(isPublishingMetadata = true) }
+            val result = runCatching {
+                metadataPublishService.publish(
+                    VaultMetadataPublishRequest(
+                        mangaId = mangaId,
+                        title = edit.title,
+                        author = edit.author,
+                        artist = edit.artist,
+                        description = edit.description,
+                        status = edit.status,
+                        labelNames = edit.labelNames,
+                    ),
+                )
+            }.getOrElse {
+                logcat(LogPriority.ERROR, it)
+                VaultMetadataPublishResult.PublishFailed
+            }
+            when (result) {
+                VaultMetadataPublishResult.Published -> {
+                    reloadMangaMetadata()
+                    _events.send(Event.MetadataPublished)
+                }
+                else -> _events.send(Event.MetadataPublishFailed(result.toFailureDetail()))
+            }
+            mutableState.update { it.copy(isPublishingMetadata = false) }
+        }
+    }
+
+    private suspend fun reloadMangaMetadata() {
+        val manga = repository.getMangaById(mangaId) ?: return
+        val mangaLabels = repository.getLabelsForManga(manga.id)
+        mutableState.update {
+            it.copy(
+                manga = manga,
+                mangaLabels = mangaLabels,
+            )
+        }
+    }
+
     private fun transferService(
         config: WebDavVaultConfig,
         localStaging: UniFileVaultTransferLocalStaging,
@@ -263,11 +312,22 @@ class VaultMangaScreenModel(
             get() = cacheState?.state ?: VaultCacheState.VAULT_ONLY
     }
 
+    data class VaultMetadataEdit(
+        val title: String,
+        val author: String,
+        val artist: String,
+        val description: String,
+        val status: VaultMangaStatus,
+        val labelNames: List<String>,
+    )
+
     sealed interface Event {
         data object LoadFailed : Event
         data object CacheFailed : Event
         data object DeleteCompleted : Event
         data class DeleteFailed(val detail: String) : Event
+        data object MetadataPublished : Event
+        data class MetadataPublishFailed(val detail: String) : Event
         data class PendingActionUnavailable(val action: VaultScreenModel.PendingAction) : Event
     }
 
@@ -278,6 +338,8 @@ class VaultMangaScreenModel(
         val localCacheUsageBytes: Long = 0,
         val vaultStorageUsageBytes: Long = 0,
         val isDeleting: Boolean = false,
+        val mangaLabels: List<VaultLabel> = emptyList(),
+        val isPublishingMetadata: Boolean = false,
     )
 }
 
@@ -296,5 +358,24 @@ private fun VaultMangaDeletionResult.toFailureDetail(): String {
         is VaultMangaDeletionResult.IdentityMismatch -> "Manifest identity mismatch: $manifestPath"
         is VaultMangaDeletionResult.Malformed -> "Malformed manifest: $manifestPath"
         VaultMangaDeletionResult.PublishFailed -> "Could not publish Vault deletion"
+    }
+}
+
+private fun VaultMetadataPublishResult.toFailureDetail(): String {
+    return when (this) {
+        VaultMetadataPublishResult.Published -> "Published"
+        VaultMetadataPublishResult.TitleRequired -> "Title is required"
+        VaultMetadataPublishResult.IncompleteConfiguration -> "Incomplete configuration"
+        VaultMetadataPublishResult.VaultNotFound -> "Vault not found"
+        VaultMetadataPublishResult.MangaNotFound -> "Vault Manga not found"
+        VaultMetadataPublishResult.NotVault -> "Remote root is not a Bakalah Content Vault"
+        is VaultMetadataPublishResult.UnsupportedOlderVersion -> "Unsupported older layout version $layoutVersion"
+        is VaultMetadataPublishResult.UnsupportedNewerVersion -> "Unsupported newer layout version $layoutVersion"
+        is VaultMetadataPublishResult.IdentityChanged -> "Remote identity changed to ${remoteIdentity.value}"
+        is VaultMetadataPublishResult.RevisionMismatch -> "Vault revision changed to ${currentRevision.id}"
+        is VaultMetadataPublishResult.ManifestNotFound -> "Manifest not found: $manifestPath"
+        is VaultMetadataPublishResult.IdentityMismatch -> "Manifest identity mismatch: $manifestPath"
+        is VaultMetadataPublishResult.Malformed -> "Malformed manifest: $manifestPath"
+        VaultMetadataPublishResult.PublishFailed -> "Could not publish Vault metadata"
     }
 }
