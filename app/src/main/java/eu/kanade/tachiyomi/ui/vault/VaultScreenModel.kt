@@ -4,6 +4,7 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshResult
 import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshService
+import eu.kanade.tachiyomi.data.vault.VaultCoverPublishService
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
@@ -32,9 +33,11 @@ class VaultScreenModel(
     private val repository: VaultRepository = Injekt.get(),
     private val preferences: ContentVaultPreferences = Injekt.get(),
     private val refreshService: VaultCatalogueRefreshService = Injekt.get(),
+    private val coverPublishService: VaultCoverPublishService = Injekt.get(),
 ) : StateScreenModel<VaultScreenModel.State>(State()) {
 
     private val selectedVaultId = MutableStateFlow<Long?>(null)
+    private val requestedCoverIds = mutableSetOf<Long>()
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
@@ -117,6 +120,21 @@ class VaultScreenModel(
     fun refreshVault() {
         screenModelScope.launchIO {
             refreshConfiguredVault(reportSuccess = true)
+        }
+    }
+
+    fun loadCover(mangaId: Long) {
+        if (!requestedCoverIds.add(mangaId)) return
+        screenModelScope.launchIO {
+            val coverUri = runCatching {
+                coverPublishService.cacheCover(mangaId)
+            }.getOrElse {
+                logcat(LogPriority.ERROR, it)
+                null
+            } ?: return@launchIO
+            mutableState.update {
+                it.copy(coverUris = it.coverUris + (mangaId to coverUri))
+            }
         }
     }
 
@@ -265,6 +283,7 @@ class VaultScreenModel(
         val sort: Sort = Sort.TITLE,
         val localCacheUsageBytes: Long = 0,
         val vaultStorageUsageBytes: Long = 0,
+        val coverUris: Map<Long, String> = emptyMap(),
     ) {
         val selectedVault: ContentVault?
             get() = vaults.firstOrNull { it.id == selectedVaultId }
