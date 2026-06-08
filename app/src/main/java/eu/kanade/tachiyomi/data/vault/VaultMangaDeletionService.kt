@@ -9,13 +9,15 @@ import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import tachiyomi.domain.storage.service.StorageManager
+import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ROOT_VAULT_MANIFEST_NAME
 import tachiyomi.domain.vault.model.VaultCatalogueSummary
-import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultManifestCodec
 import tachiyomi.domain.vault.model.VaultManifestReadResult
 import tachiyomi.domain.vault.model.VaultRevision
+import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
@@ -28,15 +30,20 @@ class VaultMangaDeletionService(
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
     private val refreshService: VaultCatalogueRefreshService,
+    private val activeReaderSessions: ActiveVaultReaderSessions,
+    private val storageManager: StorageManager,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     private val client = networkHelper.nonCloudflareClient
     private val codec = VaultManifestCodec(json)
 
-    suspend fun moveToTrash(mangaId: Long): VaultMangaDeletionResult {
+    suspend fun delete(mangaId: Long): VaultMangaDeletionResult {
         val manga = repository.getMangaById(mangaId) ?: return VaultMangaDeletionResult.MangaNotFound
-        if (manga.collectionState == VaultMangaCollectionState.TRASHED) {
-            return VaultMangaDeletionResult.Deleted(manga.vaultId)
+        if (activeReaderSessions.isActive(mangaId)) {
+            return VaultMangaDeletionResult.BlockedByActiveReader
+        }
+        if (hasActiveTransfer(mangaId, manga.vaultId)) {
+            return VaultMangaDeletionResult.BlockedByActiveTransfer
         }
 
         val config = preferences.getWebDavConfig()
@@ -81,59 +88,35 @@ class VaultMangaDeletionService(
         if (remoteManga.vaultIdentity != root.identity || remoteManga.mangaIdentity != pointer.identity) {
             return VaultMangaDeletionResult.IdentityMismatch(pointer.path)
         }
+        if (hasActiveTransfer(mangaId, manga.vaultId, remoteManga.mangaIdentity)) {
+            return VaultMangaDeletionResult.BlockedByActiveTransfer
+        }
 
         val timestamp = now()
-        val mangaRevisionId = UUID.randomUUID().toString()
-        val mangaRevisionNumber = remoteManga.revisionNumber + 1
-        val trashedManga = remoteManga.copy(
-            collectionState = VaultMangaCollectionState.TRASHED,
-            trashedAt = timestamp,
-            revisionId = mangaRevisionId,
-            revisionNumber = mangaRevisionNumber,
-            updatedAt = timestamp,
-        )
         val updatedPointers = root.manga
-            .map {
-                if (it.identity == pointer.identity) {
-                    it.copy(
-                        collectionState = VaultMangaCollectionState.TRASHED,
-                        trashedAt = timestamp,
-                        revisionId = mangaRevisionId,
-                        revisionNumber = mangaRevisionNumber,
-                        updatedAt = timestamp,
-                    )
-                } else {
-                    it
-                }
-            }
-        val activePointers = updatedPointers.filter { it.collectionState == VaultMangaCollectionState.ACTIVE }
-        val activeChapterCount = if (pointer.collectionState == VaultMangaCollectionState.ACTIVE) {
-            (root.summary.chapterCount - remoteManga.chapters.size).coerceAtLeast(0)
-        } else {
-            root.summary.chapterCount
-        }
+            .filterNot { it.identity == pointer.identity }
         val updatedRoot = root.copy(
+            layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
             revisionId = UUID.randomUUID().toString(),
             revisionNumber = root.revisionNumber + 1,
             updatedAt = timestamp,
             summary = VaultCatalogueSummary(
-                mangaCount = activePointers.size.toLong(),
-                chapterCount = activeChapterCount,
+                mangaCount = updatedPointers.size.toLong(),
+                chapterCount = (root.summary.chapterCount - remoteManga.chapters.size).coerceAtLeast(0),
                 labelCount = root.summary.labelCount,
                 updatedAt = timestamp,
             ),
             manga = updatedPointers,
         )
 
-        if (!putStaged(config, mangaPath, codec.encodeManga(trashedManga))) {
-            return VaultMangaDeletionResult.PublishFailed
-        }
         if (!putStaged(config, rootPath, codec.encodeRoot(updatedRoot))) {
             return VaultMangaDeletionResult.PublishFailed
         }
 
-        return when (val refresh = refreshService.refreshConfiguredVault()) {
-            is VaultCatalogueRefreshResult.Refreshed -> VaultMangaDeletionResult.Deleted(manga.vaultId)
+        evictLocalCache(mangaId, manga.vaultId, remoteManga.mangaIdentity, remoteManga.cover?.path)
+
+        val refreshResult = when (val refresh = refreshService.refreshConfiguredVault()) {
+            is VaultCatalogueRefreshResult.Refreshed -> null
             VaultCatalogueRefreshResult.IncompleteConfiguration -> VaultMangaDeletionResult.IncompleteConfiguration
             VaultCatalogueRefreshResult.NotVault -> VaultMangaDeletionResult.NotVault
             is VaultCatalogueRefreshResult.UnsupportedOlderVersion ->
@@ -150,6 +133,43 @@ class VaultMangaDeletionService(
                 refresh.manifestPath,
             )
             is VaultCatalogueRefreshResult.Malformed -> VaultMangaDeletionResult.Malformed(refresh.manifestPath)
+        }
+        refreshResult?.let { return it }
+
+        repository.deleteMangaLocalState(mangaId)
+
+        val cleanupFailures = cleanupRemoteFiles(
+            config = config,
+            paths = buildList {
+                add(pointer.path)
+                addAll(remoteManga.chapters.map { it.content.path })
+                remoteManga.cover?.path?.let(::add)
+            },
+        )
+        return if (cleanupFailures.isEmpty()) {
+            VaultMangaDeletionResult.Deleted(manga.vaultId)
+        } else {
+            VaultMangaDeletionResult.DeletedWithCleanupFailures(
+                vaultId = manga.vaultId,
+                failedPaths = cleanupFailures,
+            )
+        }
+    }
+
+    private suspend fun hasActiveTransfer(
+        mangaId: Long,
+        vaultId: Long,
+        mangaIdentity: String? = null,
+    ): Boolean {
+        val chapterIds = repository.getChapters(mangaId).map { it.id }.toSet()
+        return repository.getTransferJobsForVault(vaultId).any { job ->
+            job.state in ACTIVE_TRANSFER_STATES &&
+                (
+                    job.chapterId in chapterIds ||
+                        mangaIdentity?.let { identity ->
+                            job.remotePath?.contains("content/$identity/") == true
+                        } == true
+                    )
         }
     }
 
@@ -204,24 +224,71 @@ class VaultMangaDeletionService(
         }
     }
 
-    private suspend fun delete(config: WebDavVaultConfig, path: String) {
+    private suspend fun cleanupRemoteFiles(config: WebDavVaultConfig, paths: List<String>): List<String> {
+        return paths.distinct().filterNot { delete(config, config.rootPath.childPath(it)) }
+    }
+
+    private suspend fun evictLocalCache(
+        mangaId: Long,
+        vaultId: Long,
+        mangaIdentity: String,
+        coverPath: String?,
+    ) {
+        val root = storageManager.getVaultCacheDirectory() ?: return
+        val localStaging = UniFileVaultTransferLocalStaging(root)
+        VaultCachePolicyService(
+            repository = repository,
+            localStaging = localStaging,
+            preferences = preferences,
+        ).evictManga(mangaId)
+        coverPath?.let {
+            localStaging.delete(
+                listOf(
+                    vaultId.toString(),
+                    mangaIdentity,
+                    "covers",
+                    it.substringAfterLast('/', "cover.img"),
+                ).joinToString("/") { segment -> segment.toCachePathSegment() },
+            )
+        }
+    }
+
+    private suspend fun delete(config: WebDavVaultConfig, path: String): Boolean = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(config.serverUrl.resolveWebDavPath(path))
             .header("Authorization", Credentials.basic(config.username.trim(), config.password))
             .delete()
             .build()
-        client.newCall(request).await().use { }
+        client.newCall(request).await().use { response ->
+            response.isSuccessful ||
+                response.code == HttpURLConnection.HTTP_NOT_FOUND ||
+                response.code == HttpURLConnection.HTTP_GONE
+        }
     }
 
     private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
 
+    private fun String.toCachePathSegment(): String {
+        return replace(Regex("""[^A-Za-z0-9._-]"""), "_")
+            .trim('_')
+            .takeIf { it.isNotBlank() }
+            ?: "item"
+    }
+
     private companion object {
         val JSON_MEDIA_TYPE = "application/json".toMediaType()
+        val ACTIVE_TRANSFER_STATES = setOf(VaultTransferState.QUEUED, VaultTransferState.RUNNING)
     }
 }
 
 sealed interface VaultMangaDeletionResult {
     data class Deleted(val vaultId: Long) : VaultMangaDeletionResult
+    data class DeletedWithCleanupFailures(
+        val vaultId: Long,
+        val failedPaths: List<String>,
+    ) : VaultMangaDeletionResult
+    data object BlockedByActiveTransfer : VaultMangaDeletionResult
+    data object BlockedByActiveReader : VaultMangaDeletionResult
     data object IncompleteConfiguration : VaultMangaDeletionResult
     data object VaultNotFound : VaultMangaDeletionResult
     data object MangaNotFound : VaultMangaDeletionResult

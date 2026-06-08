@@ -61,8 +61,10 @@ data class VaultMangaScreen(
                         snackbarHostState.showSnackbar(context.stringResource(MR.strings.internal_error))
                     VaultMangaScreenModel.Event.CacheFailed ->
                         snackbarHostState.showSnackbar(context.stringResource(MR.strings.internal_error))
-                    VaultMangaScreenModel.Event.DeleteCompleted -> {
-                        snackbarHostState.showSnackbar(context.stringResource(MR.strings.vault_delete_manga_complete))
+                    is VaultMangaScreenModel.Event.DeleteCompleted -> {
+                        snackbarHostState.showSnackbar(
+                            event.warningDetail ?: context.stringResource(MR.strings.vault_delete_manga_complete),
+                        )
                         navigator.pop()
                     }
                     is VaultMangaScreenModel.Event.DeleteFailed ->

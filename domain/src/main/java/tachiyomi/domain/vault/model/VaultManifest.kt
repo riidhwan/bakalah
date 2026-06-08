@@ -6,8 +6,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 const val CONTENT_VAULT_APP_ID = "bakalah-content-vault"
-const val CURRENT_VAULT_LAYOUT_VERSION = 1L
+const val CURRENT_VAULT_LAYOUT_VERSION = 2L
 const val ROOT_VAULT_MANIFEST_NAME = "content-vault.json"
+
+private const val MIN_SUPPORTED_VAULT_LAYOUT_VERSION = 1L
 
 @Serializable
 data class VaultRootManifest(
@@ -38,8 +40,6 @@ data class VaultMangaManifestPointer(
     val identity: String,
     val path: String,
     val title: String,
-    val collectionState: VaultMangaCollectionState = VaultMangaCollectionState.ACTIVE,
-    val trashedAt: Long? = null,
     val revisionId: String,
     val revisionNumber: Long,
     val updatedAt: Long,
@@ -54,8 +54,6 @@ data class VaultMangaManifest(
     val revisionId: String,
     val revisionNumber: Long,
     val metadata: VaultManifestMetadata,
-    val collectionState: VaultMangaCollectionState = VaultMangaCollectionState.ACTIVE,
-    val trashedAt: Long? = null,
     val labels: List<VaultManifestLabel> = emptyList(),
     val cover: VaultManifestCover? = null,
     val chapters: List<VaultManifestChapter> = emptyList(),
@@ -138,7 +136,9 @@ class VaultManifestCodec(
     fun encodeManga(manifest: VaultMangaManifest): String = json.encodeToString(manifest)
 
     fun decodeRoot(body: String): VaultManifestReadResult<VaultRootManifest> {
-        return decode(body) { json.decodeFromString<VaultRootManifest>(body) }
+        return decode(body) {
+            json.decodeFromString<LegacyVaultRootManifest>(body).toRootManifest()
+        }
     }
 
     fun decodeManga(body: String): VaultManifestReadResult<VaultMangaManifest> {
@@ -182,11 +182,74 @@ class VaultManifestCodec(
         }
 
         return when {
-            layoutVersion == CURRENT_VAULT_LAYOUT_VERSION -> VaultManifestCompatibility.Current
-            layoutVersion < CURRENT_VAULT_LAYOUT_VERSION -> VaultManifestCompatibility.UnsupportedOlder(layoutVersion)
+            layoutVersion in MIN_SUPPORTED_VAULT_LAYOUT_VERSION..CURRENT_VAULT_LAYOUT_VERSION ->
+                VaultManifestCompatibility.Current
+            layoutVersion < MIN_SUPPORTED_VAULT_LAYOUT_VERSION ->
+                VaultManifestCompatibility.UnsupportedOlder(layoutVersion)
             else -> VaultManifestCompatibility.UnsupportedNewer(layoutVersion)
         }
     }
+}
+
+@Serializable
+private data class LegacyVaultRootManifest(
+    val app: String = CONTENT_VAULT_APP_ID,
+    @SerialName("contentVaultIdentity")
+    val identity: String,
+    val displayName: String,
+    val layoutVersion: Long,
+    val revisionId: String,
+    val revisionNumber: Long,
+    val writerId: String?,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val summary: VaultCatalogueSummary = VaultCatalogueSummary(),
+    val manga: List<LegacyVaultMangaManifestPointer> = emptyList(),
+) {
+    fun toRootManifest(): VaultRootManifest = VaultRootManifest(
+        app = app,
+        identity = identity,
+        displayName = displayName,
+        layoutVersion = layoutVersion,
+        revisionId = revisionId,
+        revisionNumber = revisionNumber,
+        writerId = writerId,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        summary = summary,
+        manga = manga
+            .filter { it.legacyState != LegacyVaultMangaState.REMOVED }
+            .map {
+                VaultMangaManifestPointer(
+                    identity = it.identity,
+                    path = it.path,
+                    title = it.title,
+                    revisionId = it.revisionId,
+                    revisionNumber = it.revisionNumber,
+                    updatedAt = it.updatedAt,
+                )
+            },
+    )
+}
+
+@Serializable
+private data class LegacyVaultMangaManifestPointer(
+    val identity: String,
+    val path: String,
+    val title: String,
+    @SerialName("collectionState")
+    val legacyState: LegacyVaultMangaState = LegacyVaultMangaState.ACTIVE,
+    val revisionId: String,
+    val revisionNumber: Long,
+    val updatedAt: Long,
+)
+
+@Serializable
+private enum class LegacyVaultMangaState {
+    ACTIVE,
+
+    @SerialName("TRASHED")
+    REMOVED,
 }
 
 sealed interface VaultManifestReadResult<out T> {

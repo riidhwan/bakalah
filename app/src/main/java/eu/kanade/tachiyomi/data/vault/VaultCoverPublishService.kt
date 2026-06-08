@@ -11,6 +11,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.domain.storage.service.StorageManager
+import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ROOT_VAULT_MANIFEST_NAME
 import tachiyomi.domain.vault.model.VaultCatalogueSummary
@@ -107,6 +108,7 @@ class VaultCoverPublishService(
         val mangaRevisionId = UUID.randomUUID().toString()
         val mangaRevisionNumber = remoteManga.revisionNumber + 1
         val updatedManga = remoteManga.copy(
+            layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
             revisionId = mangaRevisionId,
             revisionNumber = mangaRevisionNumber,
             cover = VaultManifestCover(
@@ -137,6 +139,7 @@ class VaultCoverPublishService(
             }
             .sortedBy { VaultMetadata.normalizeTitle(it.title) }
         val updatedRoot = root.copy(
+            layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
             revisionId = UUID.randomUUID().toString(),
             revisionNumber = root.revisionNumber + 1,
             updatedAt = timestamp,

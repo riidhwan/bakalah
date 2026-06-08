@@ -16,6 +16,7 @@ import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.track.TrackerManager
+import eu.kanade.tachiyomi.data.vault.ActiveVaultReaderSessions
 import eu.kanade.tachiyomi.data.vault.ContentVaultSetupService
 import eu.kanade.tachiyomi.data.vault.LocalVaultImportService
 import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshService
@@ -40,7 +41,6 @@ import tachiyomi.data.StringListColumnAdapter
 import tachiyomi.data.UpdateStrategyColumnAdapter
 import tachiyomi.data.VaultCacheStateColumnAdapter
 import tachiyomi.data.VaultChapterContentFormatColumnAdapter
-import tachiyomi.data.VaultMangaCollectionStateColumnAdapter
 import tachiyomi.data.VaultMangaStatusColumnAdapter
 import tachiyomi.data.VaultTransferStateColumnAdapter
 import tachiyomi.data.VaultTransferTypeColumnAdapter
@@ -102,7 +102,6 @@ class AppModule(val app: Application) : InjektModule {
                 ),
                 vault_mangasAdapter = Vault_mangas.Adapter(
                     statusAdapter = VaultMangaStatusColumnAdapter,
-                    collection_stateAdapter = VaultMangaCollectionStateColumnAdapter,
                 ),
                 vault_transfer_jobsAdapter = Vault_transfer_jobs.Adapter(
                     typeAdapter = VaultTransferTypeColumnAdapter,
@@ -138,7 +137,8 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { NetworkHelper(app, get()) }
         addSingletonFactory { ContentVaultSetupService(get(), get(), get(), get()) }
         addSingletonFactory { VaultCatalogueRefreshService(get(), get(), get(), get()) }
-        addSingletonFactory { VaultMangaDeletionService(get(), get(), get(), get(), get()) }
+        addSingletonFactory { ActiveVaultReaderSessions() }
+        addSingletonFactory { VaultMangaDeletionService(get(), get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultCoverPublishService(get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultMetadataPublishService(get(), get(), get(), get(), get()) }
         addSingletonFactory { LocalVaultImportService(get(), get(), get(), get(), get(), get(), get(), get()) }

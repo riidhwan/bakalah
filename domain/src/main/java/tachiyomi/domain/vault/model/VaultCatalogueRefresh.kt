@@ -7,7 +7,7 @@ data class VaultCatalogueRefresh(
     val snapshots: List<VaultManifestSnapshot>,
 ) {
     val activeManga: List<VaultCatalogueMangaRefresh>
-        get() = manga.filter { it.manga.collectionState == VaultMangaCollectionState.ACTIVE }
+        get() = manga
 }
 
 data class VaultCatalogueMangaRefresh(

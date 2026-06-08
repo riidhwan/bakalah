@@ -36,7 +36,7 @@ The user wants a durable personal manga collection that outlives device storage 
 - No online-source Vault Capture in v1.
 - No arbitrary remote-folder scanning in v1.
 - No periodic background sync or auto-capture.
-- No remote Vault Deletion or Vault Trash in the minimum v1 slice.
+- No remote Vault Deletion in the minimum v1 slice.
 - No app workflow that deletes the user's original Local Manga files, except the explicit Local-to-Vault Import conversion that replaces selected directory chapters with validated CBZ files in Local Manga storage before upload.
 - No streaming remote chapter files directly from WebDAV in v1.
 - No multi-vault support in v1.
@@ -146,7 +146,7 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Opening an already Cached Chapter must re-check local file existence, size, and checksum before handing it to the reader.
 - Cached Chapter `lastOpenedAt` should update only after the reader successfully displays a page from the verified CBZ.
 - Vault Reader Sessions must not automatically cache ahead into Vault-only chapters in v1; new cache transfers are created only when the user opens or navigates to that chapter.
-- If Vault Catalogue state changes while a Vault Reader Session is open, the current verified chapter may remain readable, but navigation must not enter newly trashed or removed adjacent content.
+- If Vault Catalogue state changes while a Vault Reader Session is open, the current verified chapter may remain readable, but navigation must not enter removed adjacent content.
 - Vault Reader Session restore must use explicit Vault session identity and Vault Manga/Chapter identifiers, not temporary Library Manga/Chapter identifiers.
 - V1 must reuse existing reader UI/infrastructure where possible.
 - Reader integration should split shared reader UI/viewer orchestration from session-specific behavior through a small reader backend boundary, with separate Library and Vault implementations.
@@ -165,11 +165,11 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Local cache usage and remote vault storage usage must be shown separately.
 - Local cache limit is hard-enforced; remote vault quota is a soft warning.
 
-### Vault Deletion and Trash
+### Vault Deletion
 
-Vault manga deletion is a follow-up workflow outside the minimum v1 slice. It moves manga-level Vault entries into a recoverable Trash state in the remote Vault Catalogue, removes them from normal Vault browsing after publish and refresh, and invalidates only app-managed Local Content Cache entries for that Vault Manga on the current device.
+Vault manga deletion permanently removes manga-level Vault entries from the remote Vault Catalogue. It first removes the manga pointer from the root manifest as the authoritative deletion, then deletes the manga manifest, chapter CBZ files, and cover assets from WebDAV storage as cleanup.
 
-Vault deletion must not delete original Local Manga files under `local/`, existing Downloads, or arbitrary user-managed storage. Permanent deletion, empty-trash behavior, individual chapter deletion, and automatic trash cleanup remain separate future workflows.
+Vault deletion must not delete original Local Manga files under `local/`, existing Downloads, or arbitrary user-managed storage. Missing remote files during cleanup count as already clean; other cleanup failures should be reported after returning to the Vault Surface without rolling back the root manifest deletion. Individual chapter deletion remains a separate future workflow.
 
 ### Transfers and Integrity
 
@@ -232,7 +232,6 @@ Release-readiness verification is tracked in `docs/content-vault-v1-readiness.md
 
 - Online-source Vault Capture.
 - CBZ packaging for page-based captures without recompressing page bytes.
-- Restore from Vault Trash and permanent trash emptying.
 - Human-readable Vault Export View.
 - Diagnostics and repair tools for Vault Integrity Faults.
 - Multiple Content Vaults.

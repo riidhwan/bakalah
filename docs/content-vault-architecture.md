@@ -1,0 +1,257 @@
+# Content Vault Architecture
+
+This document describes the current technical architecture of Bakalah's Content Vault implementation. It complements the product requirements in `docs/content-vault-prd.md`, the release-readiness checklist in `docs/content-vault-v1-readiness.md`, and the architectural decision in `docs/adr/0004-model-content-vault-as-separate-feature.md`.
+
+## Architectural Intent
+
+The Content Vault is a separate feature for user-owned manga content stored in WebDAV-accessible remote storage. It is not the Library, not Local Source, not Downloads, not Backup, and not a blind folder sync.
+
+The core split is:
+
+- Remote Vault Catalogue: authoritative vault-owned records and content pointers stored as JSON manifests under the Vault Root.
+- Local Vault Index: device-local SQLDelight tables used for browsing, filtering, cache state, transfer state, and offline access to the last refreshed catalogue.
+- Local Content Cache: app-managed cached CBZ chapter files used for reading on the current device.
+- Vault Reading State: device-local read progress, bookmarks, and last-read timestamps, separate from Library history and tracking.
+
+The architecture deliberately allows a manga or chapter to exist in the Vault Catalogue even when the readable chapter file is not cached on the device.
+
+## Module Ownership
+
+The implementation follows the repository layering in `docs/architecture.md`.
+
+### Domain
+
+`domain/src/main/java/tachiyomi/domain/vault` owns stable vault contracts and business concepts:
+
+- `model`: vault identities, manifests, manga, chapters, covers, labels, cache states, reading state, import plans, revisions, transfer jobs, and WebDAV config.
+- `repository/VaultRepository.kt`: the persistence boundary used by interactors, app services, and screen models.
+- `interactor`: pure or mostly pure use cases such as catalogue refresh construction, import planning, revision checks, and simple read/write operations.
+- `service/ContentVaultPreferences.kt`: typed preferences for configured WebDAV storage, configured vault identity, private credentials, and local cache size limit.
+
+Domain code does not perform Android storage, WebDAV, or SQLDelight work directly.
+
+### Data
+
+`data/src/main/java/tachiyomi/data/vault` and `data/src/main/sqldelight/tachiyomi/data/vault.sq` implement the local Vault Index:
+
+- `VaultRepositoryImpl` implements `VaultRepository`.
+- `VaultMapper` maps SQLDelight rows into domain models.
+- `vault.sq` defines dedicated vault tables that stay separate from Library manga and chapter tables.
+
+`refreshCatalogue` is the main atomic index replacement workflow. It upserts the content vault record, labels, manga, covers, chapter rows, manga-label links, and manifest snapshots in one transaction.
+
+### App
+
+`app/src/main/java/eu/kanade/tachiyomi/data/vault` owns Android/runtime services:
+
+- `ContentVaultSetupService`: validates WebDAV configuration, rejects mixed-use roots, initializes empty roots, connects existing roots, and persists the configured vault identity.
+- `VaultCatalogueRefreshService`: downloads root and per-manga manifests, validates identity/layout compatibility, builds a domain refresh payload, and updates the local index.
+- `LocalVaultImportService`: scans Local Source manga, plans duplicates and target selection, converts selected directory chapters to CBZ, uploads chapter and cover content, publishes manifests, refreshes the index, and writes import target hints.
+- `VaultTransferService`: performs staged uploads/downloads, integrity verification, transfer job state updates, and cache state updates.
+- `VaultReaderOpenService`: verifies cached chapters or performs cache-first download before reader launch.
+- `VaultCachePolicyService`: creates cache paths, marks opened cached chapters, evicts chapters, and enforces the local cache size limit.
+- `VaultMetadataPublishService`, `VaultCoverPublishService`, and `VaultMangaDeletionService`: publish catalogue mutations and refresh the local index afterward.
+
+`app/src/main/java/eu/kanade/tachiyomi/ui/vault` owns screen models and navigation. `app/src/main/java/eu/kanade/presentation/vault` owns Compose rendering.
+
+## Remote Vault Layout
+
+The remote Vault Root is app-owned. A valid root contains `content-vault.json`, the root manifest defined by `VaultRootManifest`.
+
+Current layout constants live in `VaultManifest.kt`:
+
+- `CONTENT_VAULT_APP_ID = "bakalah-content-vault"`
+- `CURRENT_VAULT_LAYOUT_VERSION = 1`
+- `ROOT_VAULT_MANIFEST_NAME = "content-vault.json"`
+
+The layout is hybrid:
+
+- Root manifest: app marker, content vault identity, display name, layout version, root revision, writer id, summary counts, timestamps, and per-manga manifest pointers.
+- Manga manifest: manga identity, metadata, collection state, labels, cover reference, chapter records, provenance, revision, and timestamps.
+- Content files: chapter CBZ files and cover assets referenced by manifest paths under `content/...`.
+
+Current import paths follow this shape:
+
+```text
+content-vault.json
+manga/<manifest-id>.json
+content/<manga-identity>/<chapter-identity>/<chapter-file>.cbz
+content/<manga-identity>/cover/<cover-identity>.<extension>
+```
+
+The root and manga manifests are the authoritative catalogue. Remote folder listing is used for setup and targeted reads/writes, not as the browse model.
+
+## Manifest Compatibility and Identity
+
+`VaultManifestCodec` decodes root and manga manifests and rejects:
+
+- non-vault manifests where `app` is not Bakalah's Content Vault app id
+- older unsupported layout versions
+- newer unsupported layout versions
+- malformed JSON
+
+Every Content Vault has a stable `ContentVaultIdentity`. Setup, refresh, import, metadata publish, cover publish, deletion, and reader-adjacent workflows compare the configured local identity against the remote root identity before reusing local state or publishing changes.
+
+Manga manifests are also checked against their root pointers. A manga manifest must match both the root vault identity and the pointer's manga identity.
+
+## Local Vault Index
+
+The local index is stored in dedicated SQLDelight tables:
+
+- `content_vaults`: configured/refreshed vault metadata and root revision.
+- `vault_mangas`: vault manga metadata, sort key, cover pointer, and manga revision.
+- `vault_chapters`: chapter metadata, ordering, remote content path, content format, size, checksum, and chapter revision.
+- `vault_labels` and `vault_manga_labels`: vault-owned organization labels.
+- `vault_covers`: current cover metadata and remote cover path.
+- `vault_reading_state`: device-local read/bookmark/page state.
+- `vault_chapter_cache_state`: device-local cache state, cache path, verified integrity, open timestamps, and failure reason.
+- `vault_transfer_jobs`: visible upload/download/cache/publish job state.
+- `vault_import_target_hints`: device-local mapping from a Local Manga to the Vault Manga it was previously imported into.
+- `vault_manifest_snapshots`: raw fetched manifest bodies retained for diagnostics and index rebuilding.
+
+Normal Vault browsing reads the local index through `VaultRepository`. It does not query WebDAV live.
+
+## Catalogue Refresh
+
+Catalogue refresh is the bridge from remote authority to local index:
+
+1. `VaultCatalogueRefreshService` reads `content-vault.json`.
+2. It validates layout compatibility and configured identity.
+3. It downloads each manga manifest referenced by the root manifest.
+4. `BuildVaultCatalogueRefresh` validates pointer/manifest identities and converts manifests into domain index rows.
+5. `VaultRepository.refreshCatalogue` transactionally replaces stale index rows, upserts current rows, and stores manifest snapshots.
+
+Only manga referenced by the current remote root manifest remain represented in the local index after catalogue refresh. The local index does not keep a separate collection-state flag for deleted manga.
+
+## Local-to-Vault Import
+
+Local-to-Vault Import starts from an existing Local Manga detail screen.
+
+`LocalVaultImportService.preview` scans Local Source-recognized files and uses `BuildLocalVaultImportPlan` to resolve:
+
+- target manga through an import target hint when available
+- otherwise one exact normalized title match
+- target-choice-required when multiple exact matches exist
+- create-new when no match exists
+
+Chapter duplicate planning compares checksums for exact duplicates and title/chapter-number for possible duplicates. Exact duplicates are deselected by default.
+
+`LocalVaultImportService.import` publishes selected chapters:
+
+1. Re-read and validate the configured remote root manifest.
+2. Resolve the target manga or require explicit target selection.
+3. Convert selected directory chapters into validated CBZ archives before upload.
+4. Upload selected non-duplicate chapter content under `content/<manga>/<chapter>/...`.
+5. Upload an initial cover from Local Manga cover storage when the target has no remote cover.
+6. Write or update the manga manifest.
+7. Write the updated root manifest with incremented revision and summary counts.
+8. Refresh the local Vault Index.
+9. Persist an import target hint for repeated imports from the same Local Manga.
+
+Imported source files do not become Local Content Cache entries. Cache state is only established when a vault chapter is separately cached into the app-managed cache directory.
+
+## Publishing Mutations
+
+Metadata, cover, and deletion operations follow the same publish shape:
+
+1. Read the remote root manifest.
+2. Validate configured vault identity.
+3. Compare the local root revision against the remote root revision.
+4. Read and validate the target manga manifest.
+5. Upgrade written manifests to the current Vault Layout Version.
+6. Write staged remote content or manifests.
+7. Promote staged writes into the final remote paths.
+8. Refresh the local index.
+
+`VaultMetadataPublishService` updates manga metadata and labels without rewriting chapter content. `VaultCoverPublishService` uploads a new vault-owned cover asset and updates the manga/root manifests. `VaultMangaDeletionService` removes the manga pointer from the root manifest, refreshes the index, deletes the remote manga manifest, chapter CBZ files, and cover assets as cleanup, and removes app-managed local state for that Vault Manga. It does not delete Local Manga files, Downloads, or arbitrary local files.
+
+## Transfers and Integrity
+
+`VaultTransferService` models visible work through `vault_transfer_jobs`.
+
+Transfer types are:
+
+- `IMPORT_PUBLISH`
+- `METADATA_PUBLISH`
+- `CACHE_CHAPTER`
+- `CATALOGUE_REFRESH`
+
+Transfer states are:
+
+- `QUEUED`
+- `RUNNING`
+- `SUCCEEDED`
+- `FAILED`
+- `CANCELLED`
+- `INTEGRITY_FAULT`
+
+Uploads and downloads use staged paths. The service validates size and SHA-256 checksum before promoting staged content. Cache downloads update `vault_chapter_cache_state` to `CACHED` only after successful integrity verification. Failed or integrity-faulted work remains represented as job/cache state so the UI can expose retry.
+
+## Cache-First Reading
+
+Vault reading reuses the existing reader after a chapter has been verified as locally cached.
+
+`VaultReaderOpenService.prepareChapter` is the gate:
+
+1. Load the Vault Manga and Vault Chapter from the local index.
+2. If cache state is `CACHED`, re-read the local file and verify size/checksum against the chapter content record.
+3. If the local file is missing, demote the chapter to `VAULT_ONLY`.
+4. If integrity mismatches, mark `INTEGRITY_FAULT`.
+5. If not cached, enqueue or attach to a `CACHE_CHAPTER` transfer.
+6. Return a verified local cache path only after successful download and verification.
+
+`ReaderViewModel` then uses `VaultPageLoader` to read the verified cached CBZ through the existing reader flow. Vault progress remains in `vault_reading_state`; Library chapter state, history, and tracker behavior are not reused as authority for Vault chapters.
+
+## Cache Policy
+
+`VaultCachePolicyService` owns local cache paths and eviction rules.
+
+Cache paths are derived from the local vault id, manga identity, chapter identity, and remote file name, with path segments sanitized before use. Eviction deletes only app-managed cached chapter files through the local staging abstraction and resets the chapter cache state to `VAULT_ONLY`.
+
+The local cache limit is read from `ContentVaultPreferences.localCacheLimitBytes`, defaulting to 2 GiB. Limit enforcement evicts oldest read cached chapters first and accepts a protected chapter set for reader-sensitive flows.
+
+## UI and State Flow
+
+`VaultScreenModel` observes:
+
+- available content vaults
+- manga rows for the selected vault
+- chapters for the selected vault
+- cache states for the selected vault
+
+It derives visible manga items, local cache usage, remote vault storage usage, failed/queued counts, search/filter/sort output, and cover cache requests.
+
+`VaultMangaScreenModel` observes chapters and cache states for one manga. It coordinates cache, retry, eviction, metadata publish, cover publish, and deletion actions through app services. Compose screens render these derived states and send explicit user actions back to the screen models.
+
+## Dependency Injection
+
+Vault dependencies are registered through Injekt:
+
+- `PreferenceModule` registers `ContentVaultPreferences`.
+- `AppModule` registers the setup, refresh, deletion, cover publish, metadata publish, and import services.
+
+Some transfer and reader-open services are constructed at use sites because they need runtime storage roots or WebDAV configuration objects.
+
+## Boundaries and Non-Authority
+
+The current architecture keeps these boundaries explicit:
+
+- WebDAV is a storage transport, not the domain model.
+- Remote manifests are catalogue authority; local SQLDelight rows are an index/cache of that authority.
+- Local Source is an import source, not the Vault storage model.
+- Library manga/chapter tables are not used for Vault Manga identity or catalogue state.
+- Local Content Cache is device-local and disposable.
+- Vault Reading State is device-local and not published to the remote vault.
+- Vault Labels are separate from Library categories.
+- Vault Covers are separate from Library custom covers.
+
+## Verification Focus
+
+For architecture-affecting changes, verify the relevant layer:
+
+- Domain model/interactor changes: `scripts/gradlew-compact :domain:testDebugUnitTest`.
+- App service or reader/cache changes: `scripts/gradlew-compact :app:testDebugUnitTest`.
+- SQLDelight schema changes: `scripts/gradlew-compact verifySqlDelightMigration`.
+- Formatting: `scripts/gradlew-compact :app:spotlessCheck :domain:spotlessCheck :data:spotlessCheck`.
+
+Manual WebDAV, import, cache, and reading smoke coverage is tracked in `docs/content-vault-v1-readiness.md`.

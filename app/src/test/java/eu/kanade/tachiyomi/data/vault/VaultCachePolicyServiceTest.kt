@@ -20,7 +20,6 @@ import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
-import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultManifestSnapshot
 import tachiyomi.domain.vault.model.VaultMetadata
@@ -199,6 +198,7 @@ class VaultCachePolicyServiceTest {
         override suspend fun getImportTargetHint(localMangaId: Long): ImportTargetHint? = null
         override suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long = unsupported()
         override suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long = unsupported()
+        override suspend fun deleteMangaLocalState(mangaId: Long) = Unit
         override fun getTransferJobsForVaultAsFlow(vaultId: Long): Flow<List<VaultTransferJob>> = emptyFlow()
         override suspend fun getTransferJobsForVault(vaultId: Long): List<VaultTransferJob> = emptyList()
         override suspend fun getTransferJobsByState(
@@ -231,8 +231,6 @@ class VaultCachePolicyServiceTest {
                 status = VaultMangaStatus.UNKNOWN,
             ),
             sortKey = "manga",
-            collectionState = VaultMangaCollectionState.ACTIVE,
-            trashedAt = null,
             coverId = null,
             revision = VaultRevision("revision", 1),
             createdAt = 1,

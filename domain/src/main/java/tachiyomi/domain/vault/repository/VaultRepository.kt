@@ -82,6 +82,8 @@ interface VaultRepository {
 
     suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long
 
+    suspend fun deleteMangaLocalState(mangaId: Long)
+
     fun getTransferJobsForVaultAsFlow(vaultId: Long): Flow<List<VaultTransferJob>>
 
     suspend fun getTransferJobsForVault(vaultId: Long): List<VaultTransferJob>

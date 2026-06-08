@@ -24,6 +24,7 @@ import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.saver.Image
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
+import eu.kanade.tachiyomi.data.vault.ActiveVaultReaderSessions
 import eu.kanade.tachiyomi.data.vault.UniFileVaultTransferLocalStaging
 import eu.kanade.tachiyomi.data.vault.VaultCachePolicyService
 import eu.kanade.tachiyomi.data.vault.VaultCoverPublishRequest
@@ -127,6 +128,7 @@ class ReaderViewModel @JvmOverloads constructor(
     private val storageManager: StorageManager = Injekt.get(),
     private val networkHelper: NetworkHelper = Injekt.get(),
     private val vaultCoverPublishService: VaultCoverPublishService = Injekt.get(),
+    private val activeVaultReaderSessions: ActiveVaultReaderSessions = Injekt.get(),
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(State())
@@ -296,6 +298,8 @@ class ReaderViewModel @JvmOverloads constructor(
                 downloadManager.addDownloadsToStartOfQueue(listOf(it))
             }
         }
+        (readerSession as? ReaderSession.Vault)?.manga?.id?.let(activeVaultReaderSessions::clear)
+        super.onCleared()
     }
 
     /**
@@ -365,6 +369,7 @@ class ReaderViewModel @JvmOverloads constructor(
                     manga = ready.manga,
                     chapters = vaultRepository.getChapters(mangaId),
                 )
+                activeVaultReaderSessions.markActive(mangaId)
                 mutableState.update {
                     it.copy(
                         manga = ready.manga.toReaderManga(),

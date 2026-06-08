@@ -8,7 +8,6 @@ import org.junit.jupiter.api.parallel.ExecutionMode
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.VaultChapterContentFormat
 import tachiyomi.domain.vault.model.VaultContentIntegrity
-import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultMangaManifest
 import tachiyomi.domain.vault.model.VaultMangaManifestPointer
 import tachiyomi.domain.vault.model.VaultMangaStatus
@@ -101,19 +100,36 @@ class BuildVaultCatalogueRefreshTest {
     }
 
     @Test
-    fun `build uses root pointer trash state as catalogue authority`() {
-        val root = rootManifest().copy(
-            manga = listOf(
-                rootManifest().manga.single().copy(
-                    collectionState = VaultMangaCollectionState.TRASHED,
-                    trashedAt = 1_200,
-                ),
-            ),
-        )
+    fun `build drops legacy v1 trashed root pointers`() {
+        val rootBody = """
+            {
+              "app": "bakalah-content-vault",
+              "contentVaultIdentity": "vault-1",
+              "displayName": "My Vault",
+              "layoutVersion": 1,
+              "revisionId": "root-rev",
+              "revisionNumber": 7,
+              "writerId": "writer-1",
+              "createdAt": 10,
+              "updatedAt": 900,
+              "manga": [
+                {
+                  "identity": "manga-1",
+                  "path": "manga/one-piece.json",
+                  "title": "One Piece",
+                  "collectionState": "TRASHED",
+                  "trashedAt": 1200,
+                  "revisionId": "manga-rev",
+                  "revisionNumber": 2,
+                  "updatedAt": 900
+                }
+              ]
+            }
+        """.trimIndent()
         val result = builder.build(
             rootManifestPath = "vault/content-vault.json",
-            rootManifestBody = codec.encodeRoot(root),
-            mangaManifestBodies = mapOf("manga/one-piece.json" to codec.encodeManga(mangaManifest())),
+            rootManifestBody = rootBody,
+            mangaManifestBodies = emptyMap(),
             existingVault = null,
             fetchedAt = 1_000,
         )
@@ -121,8 +137,7 @@ class BuildVaultCatalogueRefreshTest {
         (result is VaultCatalogueRefreshBuildResult.Success) shouldBe true
         val refresh = (result as VaultCatalogueRefreshBuildResult.Success).refresh
 
-        refresh.manga.single().manga.collectionState shouldBe VaultMangaCollectionState.TRASHED
-        refresh.manga.single().manga.trashedAt shouldBe 1_200
+        refresh.manga shouldBe emptyList()
         refresh.activeManga shouldBe emptyList()
         refresh.labels shouldBe emptyList()
     }

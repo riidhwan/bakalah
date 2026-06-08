@@ -13,7 +13,6 @@ import tachiyomi.domain.vault.model.VaultChapterContent
 import tachiyomi.domain.vault.model.VaultChapterContentFormat
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultManga
-import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultMetadata
 import tachiyomi.domain.vault.model.VaultRevision
@@ -224,8 +223,6 @@ class BuildLocalVaultImportPlanTest {
             status = VaultMangaStatus.UNKNOWN,
         ),
         sortKey = VaultMetadata.normalizeTitle(title),
-        collectionState = VaultMangaCollectionState.ACTIVE,
-        trashedAt = null,
         coverId = null,
         revision = VaultRevision("rev-$id", 1),
         createdAt = 1,

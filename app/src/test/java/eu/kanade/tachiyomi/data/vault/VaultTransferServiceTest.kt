@@ -193,6 +193,7 @@ class VaultTransferServiceTest {
         override suspend fun getImportTargetHint(localMangaId: Long): ImportTargetHint? = null
         override suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long = unsupported()
         override suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long = unsupported()
+        override suspend fun deleteMangaLocalState(mangaId: Long) = Unit
         override fun getTransferJobsForVaultAsFlow(vaultId: Long): Flow<List<VaultTransferJob>> = emptyFlow()
         override suspend fun getTransferJobsForVault(vaultId: Long): List<VaultTransferJob> {
             return transferJobs.values.filter { it.vaultId == vaultId }

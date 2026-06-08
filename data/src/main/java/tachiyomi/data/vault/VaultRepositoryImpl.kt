@@ -17,7 +17,6 @@ import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
-import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultManifestSnapshot
 import tachiyomi.domain.vault.model.VaultReadingState
 import tachiyomi.domain.vault.model.VaultTransferJob
@@ -61,13 +60,13 @@ class VaultRepositoryImpl(
 
     override fun getMangaAsFlow(vaultId: Long): Flow<List<VaultManga>> {
         return database.vaultQueries
-            .getMangaForVault(vaultId, VaultMangaCollectionState.ACTIVE, VaultMapper::mapManga)
+            .getMangaForVault(vaultId, VaultMapper::mapManga)
             .subscribeToList()
     }
 
     override suspend fun getManga(vaultId: Long): List<VaultManga> {
         return database.vaultQueries
-            .getMangaForVault(vaultId, VaultMangaCollectionState.ACTIVE, VaultMapper::mapManga)
+            .getMangaForVault(vaultId, VaultMapper::mapManga)
             .awaitAsList()
     }
 
@@ -94,8 +93,6 @@ class VaultRepositoryImpl(
             artist = manga.metadata.artist,
             description = manga.metadata.description,
             status = manga.metadata.status,
-            collectionState = manga.collectionState,
-            trashedAt = manga.trashedAt,
             coverId = manga.coverId,
             revisionId = manga.revision.id,
             revisionNumber = manga.revision.number,
@@ -116,13 +113,13 @@ class VaultRepositoryImpl(
 
     override fun getChaptersForVaultAsFlow(vaultId: Long): Flow<List<VaultChapter>> {
         return database.vaultQueries
-            .getChaptersForVault(vaultId, VaultMangaCollectionState.ACTIVE, VaultMapper::mapChapter)
+            .getChaptersForVault(vaultId, VaultMapper::mapChapter)
             .subscribeToList()
     }
 
     override suspend fun getChaptersForVault(vaultId: Long): List<VaultChapter> {
         return database.vaultQueries
-            .getChaptersForVault(vaultId, VaultMangaCollectionState.ACTIVE, VaultMapper::mapChapter)
+            .getChaptersForVault(vaultId, VaultMapper::mapChapter)
             .awaitAsList()
     }
 
@@ -275,13 +272,13 @@ class VaultRepositoryImpl(
 
     override fun getCacheStatesForVaultAsFlow(vaultId: Long): Flow<List<VaultChapterCacheState>> {
         return database.vaultQueries
-            .getCacheStatesForVault(vaultId, VaultMangaCollectionState.ACTIVE, VaultMapper::mapCacheState)
+            .getCacheStatesForVault(vaultId, VaultMapper::mapCacheState)
             .subscribeToList()
     }
 
     override suspend fun getCacheStatesForVault(vaultId: Long): List<VaultChapterCacheState> {
         return database.vaultQueries
-            .getCacheStatesForVault(vaultId, VaultMangaCollectionState.ACTIVE, VaultMapper::mapCacheState)
+            .getCacheStatesForVault(vaultId, VaultMapper::mapCacheState)
             .awaitAsList()
     }
 
@@ -290,7 +287,6 @@ class VaultRepositoryImpl(
             .getReadCacheStatesForVault(
                 vaultId,
                 VaultCacheState.CACHED,
-                VaultMangaCollectionState.ACTIVE,
                 VaultMapper::mapCacheState,
             )
             .awaitAsList()
@@ -298,7 +294,7 @@ class VaultRepositoryImpl(
 
     override suspend fun getLocalCacheUsageBytes(vaultId: Long): Long {
         return database.vaultQueries
-            .getLocalCacheUsageBytes(vaultId, VaultCacheState.CACHED, VaultMangaCollectionState.ACTIVE)
+            .getLocalCacheUsageBytes(vaultId, VaultCacheState.CACHED)
             .awaitAsOne()
             .toLong()
     }
@@ -398,8 +394,6 @@ class VaultRepositoryImpl(
                     artist = mangaRefresh.manga.metadata.artist,
                     description = mangaRefresh.manga.metadata.description,
                     status = mangaRefresh.manga.metadata.status,
-                    collectionState = mangaRefresh.manga.collectionState,
-                    trashedAt = mangaRefresh.manga.trashedAt,
                     coverId = null,
                     revisionId = mangaRefresh.manga.revision.id,
                     revisionNumber = mangaRefresh.manga.revision.number,
@@ -451,8 +445,6 @@ class VaultRepositoryImpl(
                         artist = mangaRefresh.manga.metadata.artist,
                         description = mangaRefresh.manga.metadata.description,
                         status = mangaRefresh.manga.metadata.status,
-                        collectionState = mangaRefresh.manga.collectionState,
-                        trashedAt = mangaRefresh.manga.trashedAt,
                         coverId = coverId,
                         revisionId = mangaRefresh.manga.revision.id,
                         revisionNumber = mangaRefresh.manga.revision.number,
@@ -530,6 +522,13 @@ class VaultRepositoryImpl(
                 }
 
             vaultId
+        }
+    }
+
+    override suspend fun deleteMangaLocalState(mangaId: Long) {
+        database.transaction {
+            database.vaultQueries.deleteTransferJobsForManga(mangaId)
+            database.vaultQueries.deleteMangaById(mangaId)
         }
     }
 
