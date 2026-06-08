@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+log_dir="${GRADLE_COMPACT_LOG_DIR:-"$repo_root/.agent-tmp/gradle-logs"}"
+tail_lines="${GRADLE_COMPACT_TAIL:-40}"
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: $0 <gradle-args...>" >&2
+  echo "Example: $0 :app:testDebugUnitTest" >&2
+  exit 2
+fi
+
+if ! [[ "$tail_lines" =~ ^[0-9]+$ ]] || [[ "$tail_lines" -lt 1 ]]; then
+  echo "GRADLE_COMPACT_TAIL must be a positive integer, got: $tail_lines" >&2
+  exit 2
+fi
+
+mkdir -p "$log_dir"
+
+timestamp="$(date +%Y%m%d-%H%M%S)"
+safe_args="$(printf '%s ' "$@" | tr -cs '[:alnum:]_.=-' '-' | sed 's/^-//; s/-$//; s/--*/-/g')"
+safe_args="${safe_args:-gradle}"
+log="$log_dir/gradle-$timestamp-${safe_args:0:80}.log"
+
+has_console_plain=0
+for arg in "$@"; do
+  if [[ "$arg" == "--console=plain" || "$arg" == "--console" ]]; then
+    has_console_plain=1
+    break
+  fi
+done
+
+cmd=("$repo_root/gradlew" "$@")
+if [[ "$has_console_plain" -eq 0 ]]; then
+  cmd+=("--console=plain")
+fi
+
+"${cmd[@]}" >"$log" 2>&1
+status=$?
+
+ln -sfn "$log" "$log_dir/latest.log"
+
+tail -n "$tail_lines" "$log"
+printf '\n[gradle log] %s\n[exit] %s\n' "$log" "$status"
+
+exit "$status"

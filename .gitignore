@@ -13,5 +13,8 @@ gradle/build-logic
 # Configuration files
 local.properties
 
+# Agent temporary files
+.agent-tmp/
+
 # macOS specific files
 .DS_Store
