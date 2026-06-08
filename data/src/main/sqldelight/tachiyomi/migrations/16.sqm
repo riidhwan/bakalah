@@ -1,0 +1,61 @@
+DELETE FROM vault_mangas
+WHERE collection_state != 0;
+
+CREATE TABLE vault_mangas_without_trash(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    title TEXT NOT NULL,
+    sort_key TEXT NOT NULL,
+    author TEXT,
+    artist TEXT,
+    description TEXT,
+    status INTEGER NOT NULL,
+    cover_id INTEGER,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
+    UNIQUE(vault_id, identity)
+);
+
+INSERT INTO vault_mangas_without_trash(
+    _id,
+    vault_id,
+    identity,
+    title,
+    sort_key,
+    author,
+    artist,
+    description,
+    status,
+    cover_id,
+    revision_id,
+    revision_number,
+    created_at,
+    updated_at
+)
+SELECT
+    _id,
+    vault_id,
+    identity,
+    title,
+    sort_key,
+    author,
+    artist,
+    description,
+    status,
+    cover_id,
+    revision_id,
+    revision_number,
+    created_at,
+    updated_at
+FROM vault_mangas;
+
+DROP TABLE vault_mangas;
+
+ALTER TABLE vault_mangas_without_trash RENAME TO vault_mangas;
+
+CREATE INDEX vault_mangas_vault_id_index ON vault_mangas(vault_id);
+CREATE INDEX vault_mangas_sort_key_index ON vault_mangas(vault_id, sort_key);

@@ -97,6 +97,12 @@ Dependencies are resolved through Injekt in app/runtime code. New shared service
 
 The `app` module's `AndroidSourceManager` and `ExtensionManager` coordinate installed extensions, source discovery, source preferences, and runtime Android integration. Domain code should depend on source abstractions rather than concrete extension-loading details.
 
+## Content Vault Architecture
+
+The Content Vault is a separate user-owned content feature with dedicated domain models, SQLDelight index tables, app services, and UI surfaces. It keeps remote Vault Catalogue manifests, local Vault Index rows, Local Content Cache files, and Vault Reading State separate from Library, Local Source, Downloads, Backup, and trackers.
+
+The detailed current design is documented in `docs/content-vault-architecture.md`.
+
 ## UI Architecture
 
 UI is primarily Jetpack Compose, with some Android views and activities where needed for legacy or platform-specific flows. Reusable design components belong in `presentation-core`, including theme colors, typography, material wrappers, common list/grid components, screens, and icons.

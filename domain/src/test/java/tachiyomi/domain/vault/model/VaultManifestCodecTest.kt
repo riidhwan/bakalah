@@ -52,7 +52,15 @@ class VaultManifestCodecTest {
     }
 
     @Test
-    fun `older layout is refused until a migrator exists`() {
+    fun `legacy v1 layout is readable`() {
+        val result = codec.decodeRoot(codec.encodeRoot(rootManifest().copy(layoutVersion = 1)))
+
+        (result is VaultManifestReadResult.Success) shouldBe true
+        (result as VaultManifestReadResult.Success).manifest.layoutVersion shouldBe 1
+    }
+
+    @Test
+    fun `older unsupported layout is refused`() {
         val result = codec.decodeRoot(codec.encodeRoot(rootManifest().copy(layoutVersion = 0)))
 
         result shouldBe VaultManifestReadResult.UnsupportedOlderVersion(0)

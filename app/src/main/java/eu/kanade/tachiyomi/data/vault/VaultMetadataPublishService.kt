@@ -9,10 +9,10 @@ import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ROOT_VAULT_MANIFEST_NAME
 import tachiyomi.domain.vault.model.VaultCatalogueSummary
-import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultManifestCodec
 import tachiyomi.domain.vault.model.VaultManifestLabel
@@ -107,6 +107,7 @@ class VaultMetadataPublishService(
             now = timestamp,
         )
         val updatedManga = remoteManga.copy(
+            layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
             revisionId = mangaRevisionId,
             revisionNumber = mangaRevisionNumber,
             metadata = metadata,
@@ -128,22 +129,20 @@ class VaultMetadataPublishService(
                 }
             }
             .sortedBy { VaultMetadata.normalizeTitle(it.title) }
-        val activeManifests = remoteManifests.mapNotNull { (manifestPointer, manifest) ->
-            if (manifestPointer.collectionState != VaultMangaCollectionState.ACTIVE) {
-                null
-            } else if (manifestPointer.identity == pointer.identity) {
+        val activeManifests = remoteManifests.map { (manifestPointer, manifest) ->
+            if (manifestPointer.identity == pointer.identity) {
                 updatedManga
             } else {
                 manifest
             }
         }
-        val activePointers = updatedPointers.filter { it.collectionState == VaultMangaCollectionState.ACTIVE }
         val updatedRoot = root.copy(
+            layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
             revisionId = UUID.randomUUID().toString(),
             revisionNumber = root.revisionNumber + 1,
             updatedAt = timestamp,
             summary = VaultCatalogueSummary(
-                mangaCount = activePointers.size.toLong(),
+                mangaCount = updatedPointers.size.toLong(),
                 chapterCount = activeManifests.sumOf { it.chapters.size }.toLong(),
                 labelCount = activeManifests.flatMap { it.labels }.distinctBy { it.identity }.size.toLong(),
                 updatedAt = timestamp,

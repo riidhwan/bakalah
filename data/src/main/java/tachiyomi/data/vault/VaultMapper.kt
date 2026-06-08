@@ -12,7 +12,6 @@ import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
-import tachiyomi.domain.vault.model.VaultMangaCollectionState
 import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultManifestSnapshot
 import tachiyomi.domain.vault.model.VaultMetadata
@@ -56,8 +55,6 @@ object VaultMapper {
         artist: String?,
         description: String?,
         status: VaultMangaStatus,
-        collectionState: VaultMangaCollectionState,
-        trashedAt: Long?,
         coverId: Long?,
         revisionId: String,
         revisionNumber: Long,
@@ -75,8 +72,6 @@ object VaultMapper {
             status = status,
         ),
         sortKey = sortKey,
-        collectionState = collectionState,
-        trashedAt = trashedAt,
         coverId = coverId,
         revision = VaultRevision(revisionId, revisionNumber),
         createdAt = createdAt,

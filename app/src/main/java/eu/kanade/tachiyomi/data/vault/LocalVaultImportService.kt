@@ -263,6 +263,7 @@ class LocalVaultImportService(
         val rootRevision = rootManifest.revisionNumber + 1
         val oldTargetChapterCount = remoteMangaManifest?.chapters?.size ?: 0
         val updatedRoot = rootManifest.copy(
+            layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
             revisionId = UUID.randomUUID().toString(),
             revisionNumber = rootRevision,
             updatedAt = now,

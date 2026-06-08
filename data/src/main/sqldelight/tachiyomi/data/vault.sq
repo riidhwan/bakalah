@@ -1,7 +1,6 @@
 import kotlin.Boolean;
 import tachiyomi.domain.vault.model.VaultCacheState;
 import tachiyomi.domain.vault.model.VaultChapterContentFormat;
-import tachiyomi.domain.vault.model.VaultMangaCollectionState;
 import tachiyomi.domain.vault.model.VaultMangaStatus;
 import tachiyomi.domain.vault.model.VaultTransferState;
 import tachiyomi.domain.vault.model.VaultTransferType;
@@ -29,8 +28,6 @@ CREATE TABLE vault_mangas(
     artist TEXT,
     description TEXT,
     status INTEGER AS VaultMangaStatus NOT NULL,
-    collection_state INTEGER AS VaultMangaCollectionState NOT NULL DEFAULT 0,
-    trashed_at INTEGER,
     cover_id INTEGER,
     revision_id TEXT NOT NULL,
     revision_number INTEGER NOT NULL,
@@ -211,7 +208,6 @@ getMangaForVault:
 SELECT *
 FROM vault_mangas
 WHERE vault_id = :vaultId
-AND collection_state = :activeState
 ORDER BY sort_key;
 
 getMangaById:
@@ -234,14 +230,18 @@ deleteMangaForVault:
 DELETE FROM vault_mangas
 WHERE vault_id = :vaultId;
 
+deleteMangaById:
+DELETE FROM vault_mangas
+WHERE _id = :id;
+
 upsertManga:
 INSERT INTO vault_mangas(
-    _id, vault_id, identity, title, sort_key, author, artist, description, status, collection_state, trashed_at, cover_id,
+    _id, vault_id, identity, title, sort_key, author, artist, description, status, cover_id,
     revision_id, revision_number, created_at, updated_at
 )
 VALUES (
-    nullif(:id, -1), :vaultId, :identity, :title, :sortKey, :author, :artist, :description, :status,
-    :collectionState, :trashedAt, :coverId, :revisionId, :revisionNumber, :createdAt, :updatedAt
+    nullif(:id, -1), :vaultId, :identity, :title, :sortKey, :author, :artist, :description, :status, :coverId,
+    :revisionId, :revisionNumber, :createdAt, :updatedAt
 )
 ON CONFLICT(vault_id, identity) DO UPDATE SET
     title = excluded.title,
@@ -250,8 +250,6 @@ ON CONFLICT(vault_id, identity) DO UPDATE SET
     artist = excluded.artist,
     description = excluded.description,
     status = excluded.status,
-    collection_state = excluded.collection_state,
-    trashed_at = excluded.trashed_at,
     cover_id = excluded.cover_id,
     revision_id = excluded.revision_id,
     revision_number = excluded.revision_number,
@@ -268,7 +266,6 @@ SELECT vault_chapters.*
 FROM vault_chapters
 JOIN vault_mangas ON vault_mangas._id = vault_chapters.manga_id
 WHERE vault_mangas.vault_id = :vaultId
-AND vault_mangas.collection_state = :activeState
 ORDER BY vault_mangas.sort_key, vault_chapters.source_order;
 
 deleteChaptersNotInIdentities:
@@ -433,8 +430,7 @@ SELECT vault_chapter_cache_state.*
 FROM vault_chapter_cache_state
 JOIN vault_chapters ON vault_chapters._id = vault_chapter_cache_state.chapter_id
 JOIN vault_mangas ON vault_mangas._id = vault_chapters.manga_id
-WHERE vault_mangas.vault_id = :vaultId
-AND vault_mangas.collection_state = :activeState;
+WHERE vault_mangas.vault_id = :vaultId;
 
 getReadCacheStatesForVault:
 SELECT vault_chapter_cache_state.*
@@ -444,7 +440,6 @@ JOIN vault_mangas ON vault_mangas._id = vault_chapters.manga_id
 JOIN vault_reading_state ON vault_reading_state.chapter_id = vault_chapter_cache_state.chapter_id
 WHERE vault_mangas.vault_id = :vaultId
 AND vault_chapter_cache_state.state = :state
-AND vault_mangas.collection_state = :activeState
 AND vault_reading_state.read = 1
 ORDER BY
     coalesce(vault_chapter_cache_state.last_opened_at, vault_chapter_cache_state.last_verified_at, vault_chapter_cache_state.updated_at),
@@ -456,8 +451,7 @@ FROM vault_chapter_cache_state
 JOIN vault_chapters ON vault_chapters._id = vault_chapter_cache_state.chapter_id
 JOIN vault_mangas ON vault_mangas._id = vault_chapters.manga_id
 WHERE vault_mangas.vault_id = :vaultId
-AND vault_chapter_cache_state.state = :state
-AND vault_mangas.collection_state = :activeState;
+AND vault_chapter_cache_state.state = :state;
 
 upsertImportTargetHint:
 INSERT INTO vault_import_target_hints(local_manga_id, local_manga_identity, vault_manga_id, updated_at)
@@ -497,6 +491,14 @@ SELECT *
 FROM vault_transfer_jobs
 WHERE vault_id = :vaultId
 ORDER BY created_at, _id;
+
+deleteTransferJobsForManga:
+DELETE FROM vault_transfer_jobs
+WHERE chapter_id IN (
+    SELECT _id
+    FROM vault_chapters
+    WHERE manga_id = :mangaId
+);
 
 getTransferJobsByState:
 SELECT *

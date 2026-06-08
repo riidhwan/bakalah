@@ -223,17 +223,16 @@ class VaultMangaScreenModel(
             val manga = mutableState.value.manga ?: return@launchIO
             mutableState.update { it.copy(isDeleting = true) }
             val result = runCatching {
-                deletionService.moveToTrash(manga.id)
+                deletionService.delete(manga.id)
             }.getOrElse {
                 logcat(LogPriority.ERROR, it)
                 VaultMangaDeletionResult.PublishFailed
             }
             when (result) {
-                is VaultMangaDeletionResult.Deleted -> {
-                    localStaging()?.let { localStaging ->
-                        cachePolicyService(localStaging).evictManga(manga.id)
-                    }
-                    _events.send(Event.DeleteCompleted)
+                is VaultMangaDeletionResult.Deleted,
+                is VaultMangaDeletionResult.DeletedWithCleanupFailures,
+                -> {
+                    _events.send(Event.DeleteCompleted(result.cleanupWarningDetail()))
                 }
                 else -> _events.send(Event.DeleteFailed(result.toFailureDetail()))
             }
@@ -337,7 +336,7 @@ class VaultMangaScreenModel(
     sealed interface Event {
         data object LoadFailed : Event
         data object CacheFailed : Event
-        data object DeleteCompleted : Event
+        data class DeleteCompleted(val warningDetail: String? = null) : Event
         data class DeleteFailed(val detail: String) : Event
         data object MetadataPublished : Event
         data class MetadataPublishFailed(val detail: String) : Event
@@ -360,6 +359,11 @@ class VaultMangaScreenModel(
 private fun VaultMangaDeletionResult.toFailureDetail(): String {
     return when (this) {
         is VaultMangaDeletionResult.Deleted -> "Deleted"
+        is VaultMangaDeletionResult.DeletedWithCleanupFailures -> {
+            "Deleted, but cleanup failed for ${failedPaths.size} remote file(s)"
+        }
+        VaultMangaDeletionResult.BlockedByActiveTransfer -> "Vault Manga has an active transfer"
+        VaultMangaDeletionResult.BlockedByActiveReader -> "Vault Manga is open in the reader"
         VaultMangaDeletionResult.IncompleteConfiguration -> "Incomplete configuration"
         VaultMangaDeletionResult.VaultNotFound -> "Vault not found"
         VaultMangaDeletionResult.MangaNotFound -> "Vault Manga not found"
@@ -372,6 +376,14 @@ private fun VaultMangaDeletionResult.toFailureDetail(): String {
         is VaultMangaDeletionResult.IdentityMismatch -> "Manifest identity mismatch: $manifestPath"
         is VaultMangaDeletionResult.Malformed -> "Malformed manifest: $manifestPath"
         VaultMangaDeletionResult.PublishFailed -> "Could not publish Vault deletion"
+    }
+}
+
+private fun VaultMangaDeletionResult.cleanupWarningDetail(): String? {
+    return when (this) {
+        is VaultMangaDeletionResult.DeletedWithCleanupFailures ->
+            "Cleanup failed for ${failedPaths.size} remote file(s)"
+        else -> null
     }
 }
 
