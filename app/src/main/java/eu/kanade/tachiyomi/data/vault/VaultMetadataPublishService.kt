@@ -89,11 +89,7 @@ class VaultMetadataPublishService(
             }
             manifest
         }
-        val remoteManga = remoteManifests[pointer] ?: return VaultMetadataPublishResult.MangaNotFound
-
         val timestamp = now()
-        val mangaRevisionId = UUID.randomUUID().toString()
-        val mangaRevisionNumber = remoteManga.revisionNumber + 1
         val metadata = VaultManifestMetadata(
             title = title,
             author = request.author.trimToNull(),
@@ -101,41 +97,52 @@ class VaultMetadataPublishService(
             description = request.description.trimToNull(),
             status = request.status,
         )
-        val labels = buildLabels(
-            requestedNames = request.labelNames,
+        val labelPlan = buildLabelPlan(
+            edits = request.labels,
             existingLabels = remoteManifests.values.flatMap { it.labels },
             now = timestamp,
         )
-        val updatedManga = remoteManga.copy(
-            layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
-            revisionId = mangaRevisionId,
-            revisionNumber = mangaRevisionNumber,
-            metadata = metadata,
-            labels = labels,
-            updatedAt = timestamp,
-        )
+            ?: return VaultMetadataPublishResult.LabelNameConflict
 
-        val updatedPointers = root.manga
-            .map {
-                if (it.identity == pointer.identity) {
-                    it.copy(
-                        title = title,
-                        revisionId = mangaRevisionId,
-                        revisionNumber = mangaRevisionNumber,
-                        updatedAt = timestamp,
-                    )
-                } else {
-                    it
-                }
+        val updatedManifestEntries = remoteManifests.map { (manifestPointer, manifest) ->
+            val updatedLabels = if (manifestPointer.identity == pointer.identity) {
+                labelPlan.assignedLabels
+            } else {
+                manifest.labels
+                    .map { labelPlan.editedByIdentity[it.identity] ?: it }
+                    .sortedBy { it.sortKey }
             }
-            .sortedBy { VaultMetadata.normalizeTitle(it.title) }
-        val activeManifests = remoteManifests.map { (manifestPointer, manifest) ->
-            if (manifestPointer.identity == pointer.identity) {
-                updatedManga
+            val updatedMetadata = if (manifestPointer.identity == pointer.identity) metadata else manifest.metadata
+            val changed = manifestPointer.identity == pointer.identity || updatedLabels != manifest.labels
+            val updatedManifest = if (changed) {
+                manifest.copy(
+                    layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
+                    revisionId = UUID.randomUUID().toString(),
+                    revisionNumber = manifest.revisionNumber + 1,
+                    metadata = updatedMetadata,
+                    labels = updatedLabels,
+                    updatedAt = timestamp,
+                )
             } else {
                 manifest
             }
+            manifestPointer to updatedManifest
         }
+        val activeManifests = updatedManifestEntries.map { it.second }
+        val updatedPointers = updatedManifestEntries
+            .map { (manifestPointer, manifest) ->
+                if (manifest.revisionId != manifestPointer.revisionId) {
+                    manifestPointer.copy(
+                        title = manifest.metadata.title,
+                        revisionId = manifest.revisionId,
+                        revisionNumber = manifest.revisionNumber,
+                        updatedAt = timestamp,
+                    )
+                } else {
+                    manifestPointer
+                }
+            }
+            .sortedBy { VaultMetadata.normalizeTitle(it.title) }
         val updatedRoot = root.copy(
             layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
             revisionId = UUID.randomUUID().toString(),
@@ -150,9 +157,13 @@ class VaultMetadataPublishService(
             manga = updatedPointers,
         )
 
-        if (!putStaged(config, config.rootPath.childPath(pointer.path), codec.encodeManga(updatedManga))) {
-            return VaultMetadataPublishResult.PublishFailed
-        }
+        updatedManifestEntries
+            .filter { (manifestPointer, manifest) -> manifest.revisionId != manifestPointer.revisionId }
+            .forEach { (manifestPointer, manifest) ->
+                if (!putStaged(config, config.rootPath.childPath(manifestPointer.path), codec.encodeManga(manifest))) {
+                    return VaultMetadataPublishResult.PublishFailed
+                }
+            }
         if (!putStaged(config, rootPath, codec.encodeRoot(updatedRoot))) {
             return VaultMetadataPublishResult.PublishFailed
         }
@@ -175,32 +186,67 @@ class VaultMetadataPublishService(
         }
     }
 
-    private fun buildLabels(
-        requestedNames: List<String>,
+    private fun buildLabelPlan(
+        edits: List<VaultLabelPublishEdit>,
         existingLabels: List<VaultManifestLabel>,
         now: Long,
-    ): List<VaultManifestLabel> {
-        val existingBySortKey = existingLabels.associateBy { it.sortKey }
-        return requestedNames
-            .mapNotNull { it.trim().takeIf(String::isNotBlank) }
-            .distinctBy { VaultMetadata.normalizeTitle(it) }
-            .map { name ->
-                val sortKey = VaultMetadata.normalizeTitle(name)
-                existingBySortKey[sortKey]
-                    ?.copy(
-                        name = name,
-                        sortKey = sortKey,
-                        updatedAt = now,
-                    )
-                    ?: VaultManifestLabel(
-                        identity = UUID.randomUUID().toString(),
-                        name = name,
-                        sortKey = sortKey,
-                        createdAt = now,
-                        updatedAt = now,
-                    )
+    ): LabelPublishPlan? {
+        val normalizedEdits = edits
+            .mapNotNull { edit ->
+                val name = edit.name.trim()
+                name
+                    .takeIf(String::isNotBlank)
+                    ?.let {
+                        edit.copy(
+                            identity = edit.identity?.trim()?.takeIf(String::isNotBlank),
+                            name = name,
+                        )
+                    }
             }
-            .sortedBy { it.sortKey }
+        if (normalizedEdits.map { VaultMetadata.normalizeTitle(it.name) }.distinct().size != normalizedEdits.size) {
+            return null
+        }
+
+        val existingByIdentity = existingLabels
+            .distinctBy { it.identity }
+            .associateBy { it.identity }
+        val usedNewIdentities = mutableSetOf<String>()
+        val editedLabels = normalizedEdits.map { edit ->
+            val existing = edit.identity?.let(existingByIdentity::get)
+            val identity = existing?.identity ?: edit.identity ?: generateIdentity(usedNewIdentities)
+            val sortKey = VaultMetadata.normalizeTitle(edit.name)
+            existing
+                ?.copy(
+                    name = edit.name,
+                    sortKey = sortKey,
+                    isSensitive = edit.isSensitive,
+                    updatedAt = now,
+                )
+                ?: VaultManifestLabel(
+                    identity = identity,
+                    name = edit.name,
+                    sortKey = sortKey,
+                    isSensitive = edit.isSensitive,
+                    createdAt = now,
+                    updatedAt = now,
+                )
+        }
+
+        return LabelPublishPlan(
+            editedByIdentity = editedLabels.associateBy { it.identity },
+            assignedLabels = normalizedEdits
+                .zip(editedLabels)
+                .filter { (edit, _) -> edit.assigned }
+                .map { (_, label) -> label }
+                .sortedBy { it.sortKey },
+        )
+    }
+
+    private fun generateIdentity(used: MutableSet<String>): String {
+        while (true) {
+            val identity = UUID.randomUUID().toString()
+            if (used.add(identity)) return identity
+        }
     }
 
     private suspend fun get(config: WebDavVaultConfig, path: String): String? = withContext(Dispatchers.IO) {
@@ -279,7 +325,19 @@ data class VaultMetadataPublishRequest(
     val artist: String,
     val description: String,
     val status: VaultMangaStatus,
-    val labelNames: List<String>,
+    val labels: List<VaultLabelPublishEdit>,
+)
+
+data class VaultLabelPublishEdit(
+    val identity: String?,
+    val name: String,
+    val isSensitive: Boolean,
+    val assigned: Boolean,
+)
+
+private data class LabelPublishPlan(
+    val editedByIdentity: Map<String, VaultManifestLabel>,
+    val assignedLabels: List<VaultManifestLabel>,
 )
 
 sealed interface VaultMetadataPublishResult {
@@ -296,5 +354,6 @@ sealed interface VaultMetadataPublishResult {
     data class ManifestNotFound(val manifestPath: String) : VaultMetadataPublishResult
     data class IdentityMismatch(val manifestPath: String) : VaultMetadataPublishResult
     data class Malformed(val manifestPath: String) : VaultMetadataPublishResult
+    data object LabelNameConflict : VaultMetadataPublishResult
     data object PublishFailed : VaultMetadataPublishResult
 }

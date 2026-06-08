@@ -64,6 +64,7 @@ The Vault Surface should support:
 - Trigger cache-first reading for vault-only chapters.
 - Import existing Local Manga content into the vault.
 - Edit basic Vault Metadata and Vault Labels.
+- Mark Vault Labels as sensitive so matching Vault Manga are hidden from default browsing unless sensitive content is explicitly included.
 - Manually cache and evict selected chapters.
 - Show local cache usage separately from remote vault storage usage.
 
@@ -125,6 +126,10 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Vault Metadata is authoritative after import.
 - V1 metadata editing should support basic manga-level fields such as title, author/artist, description, status, and labels.
 - Vault Labels are vault-owned organization markers, separate from Library categories and genres.
+- Vault Label identity must remain stable across renames so assigned Vault Manga and sensitivity survive display-name changes.
+- Sensitive Vault Labels are vault-owned label metadata; a Vault Manga with any Sensitive Vault Label must be excluded from default Vault Surface results unless the user explicitly includes sensitive content or directly filters to that sensitive label.
+- The user's include-sensitive browsing choice is device-local and must not change remote Vault Catalogue metadata.
+- Adding Vault Label sensitivity bumps the Vault Layout Version; migration from older layouts treats all existing labels as non-sensitive until changed by the user.
 - Vault Metadata edits must update manifests and the local Vault Index, not rewrite chapter content files.
 - Vault Covers must be separate vault-owned catalogue assets.
 - Local-to-Vault Import should import the Local Manga `cover.*` image as the initial Vault Cover when the target Vault Manga has no existing cover.

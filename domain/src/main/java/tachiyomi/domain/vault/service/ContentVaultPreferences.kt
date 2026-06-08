@@ -19,6 +19,10 @@ class ContentVaultPreferences(
         Preference.appStateKey("vault_local_cache_limit_bytes"),
         DEFAULT_LOCAL_CACHE_LIMIT_BYTES,
     )
+    val includeSensitiveContent: Preference<Boolean> = preferenceStore.getBoolean(
+        Preference.appStateKey("vault_include_sensitive_content"),
+        false,
+    )
 
     val webDavUsername: Preference<String> = preferenceStore.getString(
         Preference.privateKey("vault_webdav_username"),

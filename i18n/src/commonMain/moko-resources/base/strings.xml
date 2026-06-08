@@ -186,6 +186,8 @@
     <string name="vault_action_cache_first_chapter">Cache first chapter</string>
     <string name="vault_action_edit_metadata">Edit</string>
     <string name="vault_action_delete_manga">Delete from Vault</string>
+    <string name="vault_action_include_sensitive">Include sensitive</string>
+    <string name="vault_action_hide_sensitive">Hide sensitive</string>
     <string name="vault_action_import_unavailable">Local-to-Vault Import needs the import flow from the Local tab.</string>
     <string name="vault_action_cache_unavailable">Chapter caching needs the Vault transfer queue slice.</string>
     <string name="vault_action_evict_unavailable">Cache eviction needs the Vault cache policy slice.</string>
@@ -205,6 +207,11 @@
     <string name="vault_delete_manga_failed_details">Could not delete from Vault: %s</string>
     <string name="vault_metadata_edit_title">Edit Vault Metadata</string>
     <string name="vault_metadata_labels">Vault Labels</string>
+    <string name="vault_metadata_new_label">New label</string>
+    <string name="vault_metadata_label_name">Label name</string>
+    <string name="vault_metadata_label_required">Label names cannot be blank</string>
+    <string name="vault_metadata_label_duplicate">Vault Label names must be unique</string>
+    <string name="vault_label_sensitive">Sensitive</string>
     <string name="vault_metadata_publish_complete">Vault Metadata updated</string>
     <string name="vault_metadata_publish_failed_details">Could not update Vault Metadata: %s</string>
     <string name="vault_local_cache_usage">Local Cache: %s</string>
@@ -221,6 +228,9 @@
     <string name="vault_filter_vault_only">Vault-only</string>
     <string name="vault_filter_queued">Queued</string>
     <string name="vault_filter_failed">Failed</string>
+    <string name="vault_filter_label">Filter by label</string>
+    <string name="vault_filter_all_labels">All labels</string>
+    <string name="vault_filter_sensitive_label">%s (Sensitive)</string>
     <string name="vault_state_vault_only">Vault-only</string>
     <string name="vault_state_queued">Queued</string>
     <string name="vault_state_caching">Caching</string>

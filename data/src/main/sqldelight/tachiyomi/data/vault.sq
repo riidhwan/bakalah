@@ -71,6 +71,7 @@ CREATE TABLE vault_labels(
     identity TEXT NOT NULL,
     name TEXT NOT NULL,
     sort_key TEXT NOT NULL,
+    is_sensitive INTEGER AS Boolean NOT NULL,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
     FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
@@ -309,12 +310,26 @@ FROM vault_labels
 WHERE vault_id = :vaultId
 ORDER BY sort_key;
 
+getLabelsForVault:
+SELECT *
+FROM vault_labels
+WHERE vault_id = :vaultId
+ORDER BY sort_key;
+
 getLabelsForManga:
 SELECT vault_labels.*
 FROM vault_labels
 JOIN vault_manga_labels ON vault_manga_labels.label_id = vault_labels._id
 WHERE vault_manga_labels.manga_id = :mangaId
 ORDER BY vault_labels.sort_key;
+
+getLabelsByMangaForVault:
+SELECT vault_manga_labels.manga_id, vault_labels.*
+FROM vault_manga_labels
+JOIN vault_labels ON vault_labels._id = vault_manga_labels.label_id
+JOIN vault_mangas ON vault_mangas._id = vault_manga_labels.manga_id
+WHERE vault_mangas.vault_id = :vaultId
+ORDER BY vault_mangas.sort_key, vault_labels.sort_key;
 
 deleteLabelsNotInIdentities:
 DELETE FROM vault_labels
@@ -326,11 +341,12 @@ DELETE FROM vault_labels
 WHERE vault_id = :vaultId;
 
 upsertLabel:
-INSERT INTO vault_labels(_id, vault_id, identity, name, sort_key, created_at, updated_at)
-VALUES (nullif(:id, -1), :vaultId, :identity, :name, :sortKey, :createdAt, :updatedAt)
+INSERT INTO vault_labels(_id, vault_id, identity, name, sort_key, is_sensitive, created_at, updated_at)
+VALUES (nullif(:id, -1), :vaultId, :identity, :name, :sortKey, :isSensitive, :createdAt, :updatedAt)
 ON CONFLICT(vault_id, identity) DO UPDATE SET
     name = excluded.name,
     sort_key = excluded.sort_key,
+    is_sensitive = excluded.is_sensitive,
     updated_at = excluded.updated_at;
 
 deleteMangaLabels:

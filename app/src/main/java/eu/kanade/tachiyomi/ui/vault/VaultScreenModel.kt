@@ -22,6 +22,7 @@ import tachiyomi.domain.vault.model.ContentVault
 import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
+import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
@@ -70,12 +71,14 @@ class VaultScreenModel(
             selectedVaultId
                 .flatMapLatest { vaultId ->
                     if (vaultId == null) {
-                        flowOf(VaultIndex(emptyList(), emptyList(), emptyList()))
+                        flowOf(VaultIndex(emptyList(), emptyList(), emptyList(), emptyList(), emptyMap()))
                     } else {
                         combine(
                             repository.getMangaAsFlow(vaultId),
                             repository.getChaptersForVaultAsFlow(vaultId),
                             repository.getCacheStatesForVaultAsFlow(vaultId),
+                            repository.getLabelsAsFlow(vaultId),
+                            repository.getLabelsByMangaForVaultAsFlow(vaultId),
                             ::VaultIndex,
                         )
                     }
@@ -88,6 +91,7 @@ class VaultScreenModel(
                     mutableState.update { state ->
                         state.copy(
                             mangaItems = index.toMangaItems(),
+                            labels = index.labels,
                             localCacheUsageBytes = index.localCacheUsageBytes,
                             vaultStorageUsageBytes = index.vaultStorageUsageBytes,
                         )
@@ -97,6 +101,13 @@ class VaultScreenModel(
 
         screenModelScope.launchIO {
             refreshConfiguredVault(reportSuccess = false)
+        }
+
+        screenModelScope.launchIO {
+            preferences.includeSensitiveContent.changes()
+                .collectLatest { includeSensitive ->
+                    mutableState.update { it.copy(includeSensitiveContent = includeSensitive) }
+                }
         }
     }
 
@@ -115,6 +126,14 @@ class VaultScreenModel(
 
     fun setSort(sort: Sort) {
         mutableState.update { it.copy(sort = sort) }
+    }
+
+    fun setLabelFilter(labelIdentity: String?) {
+        mutableState.update { it.copy(selectedLabelIdentity = labelIdentity) }
+    }
+
+    fun setIncludeSensitiveContent(include: Boolean) {
+        preferences.includeSensitiveContent.set(include)
     }
 
     fun refreshVault() {
@@ -195,8 +214,11 @@ class VaultScreenModel(
             val states = chapters.map { chapter ->
                 cacheByChapter[chapter.id]?.state ?: VaultCacheState.VAULT_ONLY
             }
+            val labels = labelsByManga[manga.id].orEmpty()
             VaultMangaItem(
                 manga = manga,
+                labels = labels,
+                isSensitive = labels.any { it.isSensitive },
                 chapterCount = chapters.size,
                 cachedCount = states.count { it == VaultCacheState.CACHED },
                 failedCount = states.count { it == VaultCacheState.FAILED || it == VaultCacheState.INTEGRITY_FAULT },
@@ -221,6 +243,8 @@ class VaultScreenModel(
         val manga: List<VaultManga>,
         val chapters: List<VaultChapter>,
         val cacheStates: List<VaultChapterCacheState>,
+        val labels: List<VaultLabel>,
+        val labelsByManga: Map<Long, List<VaultLabel>>,
     ) {
         val localCacheUsageBytes: Long
             get() = cacheStates
@@ -233,6 +257,8 @@ class VaultScreenModel(
 
     data class VaultMangaItem(
         val manga: VaultManga,
+        val labels: List<VaultLabel>,
+        val isSensitive: Boolean,
         val chapterCount: Int,
         val cachedCount: Int,
         val failedCount: Int,
@@ -280,7 +306,10 @@ class VaultScreenModel(
         val mangaItems: List<VaultMangaItem> = emptyList(),
         val searchQuery: String? = null,
         val filter: Filter = Filter.ALL,
+        val selectedLabelIdentity: String? = null,
         val sort: Sort = Sort.TITLE,
+        val labels: List<VaultLabel> = emptyList(),
+        val includeSensitiveContent: Boolean = false,
         val localCacheUsageBytes: Long = 0,
         val vaultStorageUsageBytes: Long = 0,
         val coverUris: Map<Long, String> = emptyMap(),
@@ -291,13 +320,27 @@ class VaultScreenModel(
         val visibleMangaItems: List<VaultMangaItem>
             get() {
                 val query = searchQuery?.trim()?.lowercase().orEmpty()
+                val selectedLabel = labels.firstOrNull { it.identity.value == selectedLabelIdentity }
+                val selectedSensitiveLabel = selectedLabel?.takeIf { it.isSensitive }
                 return mangaItems
                     .asSequence()
+                    .filter { item ->
+                        when {
+                            includeSensitiveContent -> true
+                            selectedSensitiveLabel != null ->
+                                item.labels.any { it.identity == selectedSensitiveLabel.identity }
+                            else -> !item.isSensitive
+                        }
+                    }
+                    .filter { item ->
+                        selectedLabel == null || item.labels.any { it.identity == selectedLabel.identity }
+                    }
                     .filter { item ->
                         query.isBlank() ||
                             item.manga.metadata.title.lowercase().contains(query) ||
                             item.manga.metadata.author?.lowercase()?.contains(query) == true ||
-                            item.manga.metadata.artist?.lowercase()?.contains(query) == true
+                            item.manga.metadata.artist?.lowercase()?.contains(query) == true ||
+                            item.labels.any { it.name.lowercase().contains(query) }
                     }
                     .filter { item ->
                         when (filter) {
