@@ -52,6 +52,16 @@ class LocalVaultImportServiceTest {
     }
 
     @Test
+    fun `directory cbz base name preserves decimal chapter names`() {
+        val name = collisionSafeCbzName(
+            baseName = directoryChapterCbzBaseName("6.5"),
+            existingNames = setOf("6.cbz"),
+        )
+
+        name shouldBe "6.5.cbz"
+    }
+
+    @Test
     fun `stored cbz preserves entry order and bytes`() {
         val output = ByteArrayOutputStream()
 

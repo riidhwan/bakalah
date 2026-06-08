@@ -354,7 +354,7 @@ class LocalVaultImportService(
     private fun ScannedLocalChapter.convertDirectoryToCbz(): ScannedLocalChapter {
         val parent = file.parentFile ?: error("Local chapter directory has no parent")
         val finalName = collisionSafeCbzName(
-            baseName = file.nameWithoutExtension.orEmpty().ifBlank { file.name.orEmpty() },
+            baseName = directoryChapterCbzBaseName(file.name),
             existingNames = parent.listFiles().orEmpty().mapNotNull { it.name }.toSet(),
         )
         val tempName = ".$finalName.tmp-${UUID.randomUUID()}.cbz"
@@ -750,6 +750,10 @@ internal fun collisionSafeCbzName(baseName: String, existingNames: Set<String>):
         index++
     }
     return candidate
+}
+
+internal fun directoryChapterCbzBaseName(directoryName: String?): String {
+    return directoryName.orEmpty()
 }
 
 internal fun cbzEntryName(name: String): String {
