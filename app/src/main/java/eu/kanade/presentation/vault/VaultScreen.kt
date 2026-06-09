@@ -1,6 +1,7 @@
 package eu.kanade.presentation.vault
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -171,7 +173,7 @@ private fun VaultList(
                 contentType = "empty",
                 span = { GridItemSpan(maxLineSpan) },
             ) {
-                EmptyScreen(
+                VaultGridEmptyItem(
                     stringRes = emptyMessage,
                     modifier = Modifier.animateItem(),
                 )
@@ -191,6 +193,25 @@ private fun VaultList(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun VaultGridEmptyItem(
+    stringRes: dev.icerock.moko.resources.StringResource,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 64.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(stringRes),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
