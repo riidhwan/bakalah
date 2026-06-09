@@ -30,6 +30,13 @@ object Notifications {
     const val ID_LIBRARY_SIZE_WARNING = -103
 
     /**
+     * Notification channel and ids used by Content Vault operations.
+     */
+    private const val GROUP_VAULT = "group_vault"
+    const val CHANNEL_VAULT_PROGRESS = "vault_progress_channel"
+    const val ID_VAULT_IMPORT_PROGRESS = -801
+
+    /**
      * Notification channel and ids used by the downloader.
      */
     private const val GROUP_DOWNLOADER = "group_downloader"
@@ -102,6 +109,9 @@ object Notifications {
                 buildNotificationChannelGroup(GROUP_LIBRARY) {
                     setName(context.stringResource(MR.strings.label_library))
                 },
+                buildNotificationChannelGroup(GROUP_VAULT) {
+                    setName(context.stringResource(MR.strings.label_vault))
+                },
                 buildNotificationChannelGroup(GROUP_APK_UPDATES) {
                     setName(context.stringResource(MR.strings.channel_app_and_ext_updates))
                 },
@@ -138,6 +148,11 @@ object Notifications {
                     setGroup(GROUP_BACKUP_RESTORE)
                     setShowBadge(false)
                     setSound(null, null)
+                },
+                buildNotificationChannel(CHANNEL_VAULT_PROGRESS, IMPORTANCE_LOW) {
+                    setName(context.stringResource(MR.strings.channel_progress))
+                    setGroup(GROUP_VAULT)
+                    setShowBadge(false)
                 },
                 buildNotificationChannel(CHANNEL_INCOGNITO_MODE, IMPORTANCE_LOW) {
                     setName(context.stringResource(MR.strings.pref_incognito_mode))

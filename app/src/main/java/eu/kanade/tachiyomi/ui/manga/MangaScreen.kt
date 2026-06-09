@@ -62,6 +62,8 @@ import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.LoadingScreen
 
 class MangaScreen(
@@ -88,6 +90,7 @@ class MangaScreen(
         val screenModel = rememberScreenModel {
             MangaScreenModel(context, lifecycleOwner.lifecycle, mangaId, fromSource)
         }
+        val importOngoingMessage = stringResource(MR.strings.vault_import_ongoing)
 
         val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -165,7 +168,14 @@ class MangaScreen(
                 navigator.push(LocalMangaMetadataEditScreen(successState.manga.id))
             }.takeIf { successState.canEditLocalMetadata },
             onImportToVaultClicked = {
-                navigator.push(LocalVaultImportScreen(successState.manga.id))
+                navigator.push(
+                    LocalVaultImportScreen(
+                        mangaId = successState.manga.id,
+                        onImportStarted = {
+                            screenModel.showSnackbar(importOngoingMessage)
+                        },
+                    ),
+                )
             }.takeIf { successState.canEditLocalMetadata },
             onEditNotesClicked = { navigator.push(MangaNotesScreen(manga = successState.manga)) },
             onMultiBookmarkClicked = screenModel::bookmarkChapters,

@@ -133,6 +133,12 @@ class MangaScreenModel(
     val source: Source?
         get() = successState?.source
 
+    fun showSnackbar(message: String) {
+        screenModelScope.launch {
+            snackbarHostState.showSnackbar(message = message)
+        }
+    }
+
     private val isFavorited: Boolean
         get() = manga?.favorite ?: false
 

@@ -28,8 +28,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -57,7 +55,6 @@ import java.text.DecimalFormat
 @Composable
 fun LocalVaultImportScreen(
     state: LocalVaultImportScreenModel.State,
-    snackbarHostState: SnackbarHostState,
     navigateUp: () -> Unit,
     onOpenSettings: () -> Unit,
     onTargetSelected: (LocalVaultImportScreenModel.TargetSelection) -> Unit,
@@ -66,8 +63,6 @@ fun LocalVaultImportScreen(
     onSelectNone: () -> Unit,
     onImport: () -> Unit,
     onRetry: () -> Unit,
-    onOpenVault: () -> Unit,
-    onDone: () -> Unit,
 ) {
     Scaffold(
         topBar = { scrollBehavior ->
@@ -85,12 +80,9 @@ fun LocalVaultImportScreen(
                 ImportBottomBar(
                     state = state,
                     onImport = onImport,
-                    onOpenVault = onOpenVault,
-                    onDone = onDone,
                 )
             }
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { contentPadding ->
         when {
             state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
@@ -208,7 +200,7 @@ private fun ImportContent(
             ChapterImportItem(
                 item = item,
                 checked = item.chapter.selectionId in state.selectedChapterIds,
-                enabled = !state.isImporting && state.success == null,
+                enabled = !state.isImporting,
                 onCheckedChange = { checked -> onChapterSelected(item.chapter.selectionId, checked) },
                 modifier = Modifier.animateItem(),
             )
@@ -253,13 +245,11 @@ private fun ImportSummary(
             selectedTarget = state.selectedTarget,
             planTarget = state.plan?.target,
             targets = state.availableTargets,
-            enabled = !state.isImporting && state.success == null,
+            enabled = !state.isImporting,
             onTargetSelected = onTargetSelected,
         )
 
-        if (state.success == null) {
-            PlannedChanges(state)
-        }
+        PlannedChanges(state)
 
         state.error?.let { error ->
             Text(
@@ -277,10 +267,6 @@ private fun ImportSummary(
                     Text(stringResource(MR.strings.action_retry))
                 }
             }
-        }
-
-        state.success?.let { success ->
-            ImportSuccessSummary(success)
         }
     }
 }
@@ -439,25 +425,6 @@ private fun PlannedChanges(state: LocalVaultImportScreenModel.State) {
 }
 
 @Composable
-private fun ImportSuccessSummary(success: LocalVaultImportScreenModel.ImportSuccess) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = stringResource(MR.strings.vault_import_complete),
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Text(
-            text = stringResource(
-                MR.strings.vault_import_success,
-                success.importedChapterCount,
-                success.skippedExactDuplicateCount,
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
 private fun ChapterSectionHeader(
     state: LocalVaultImportScreenModel.State,
     onSelectAll: () -> Unit,
@@ -486,13 +453,13 @@ private fun ChapterSectionHeader(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(
                 onClick = onSelectAll,
-                enabled = !state.isImporting && state.success == null,
+                enabled = !state.isImporting,
             ) {
                 Text(stringResource(MR.strings.action_select_all))
             }
             TextButton(
                 onClick = onSelectNone,
-                enabled = !state.isImporting && state.success == null,
+                enabled = !state.isImporting,
             ) {
                 Text(stringResource(MR.strings.vault_import_select_none))
             }
@@ -517,8 +484,6 @@ private fun ChapterGroupHeader(
 private fun ImportBottomBar(
     state: LocalVaultImportScreenModel.State,
     onImport: () -> Unit,
-    onOpenVault: () -> Unit,
-    onDone: () -> Unit,
 ) {
     Surface(tonalElevation = 3.dp) {
         Column(
@@ -541,27 +506,6 @@ private fun ImportBottomBar(
                     CircularProgressIndicator(modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(MR.strings.vault_importing))
-                }
-            } else if (state.success != null) {
-                Button(
-                    onClick = onOpenVault,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        stringResource(
-                            if (state.success.vaultMangaId != null) {
-                                MR.strings.vault_import_action_open_in_vault
-                            } else {
-                                MR.strings.vault_import_action_open_vault
-                            },
-                        ),
-                    )
-                }
-                TextButton(
-                    onClick = onDone,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(MR.strings.action_done))
                 }
             } else {
                 Text(
@@ -762,6 +706,8 @@ private fun LocalVaultImportScreenModel.ImportError.label(): String {
             MR.strings.vault_import_error_identity_changed
         LocalVaultImportScreenModel.ImportError.UPLOAD_FAILED ->
             MR.strings.vault_import_error_upload_failed
+        LocalVaultImportScreenModel.ImportError.ALREADY_RUNNING ->
+            MR.strings.vault_import_error_already_running
         LocalVaultImportScreenModel.ImportError.LOAD_FAILED ->
             MR.strings.vault_import_error_load_failed
     }
@@ -779,6 +725,7 @@ private val LocalVaultImportScreenModel.ImportError.isRetryable: Boolean
         LocalVaultImportScreenModel.ImportError.LOCAL_MANGA_NOT_FOUND,
         LocalVaultImportScreenModel.ImportError.TARGET_REQUIRED,
         LocalVaultImportScreenModel.ImportError.NOTHING_SELECTED,
+        LocalVaultImportScreenModel.ImportError.ALREADY_RUNNING,
         -> false
     }
 
