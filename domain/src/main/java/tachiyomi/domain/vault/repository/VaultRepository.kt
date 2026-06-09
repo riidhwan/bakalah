@@ -68,6 +68,8 @@ interface VaultRepository {
 
     suspend fun getCacheState(chapterId: Long): VaultChapterCacheState?
 
+    suspend fun deleteCacheStates(chapterIds: List<Long>)
+
     fun getCacheStatesForMangaAsFlow(mangaId: Long): Flow<List<VaultChapterCacheState>>
 
     fun getCacheStatesForVaultAsFlow(vaultId: Long): Flow<List<VaultChapterCacheState>>
@@ -81,6 +83,10 @@ interface VaultRepository {
     suspend fun upsertImportTargetHint(hint: ImportTargetHint)
 
     suspend fun getImportTargetHint(localMangaId: Long): ImportTargetHint?
+
+    fun getImportTargetHintAsFlow(localMangaId: Long): Flow<ImportTargetHint?>
+
+    suspend fun deleteImportTargetHint(localMangaId: Long)
 
     suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long
 

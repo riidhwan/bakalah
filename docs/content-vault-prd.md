@@ -108,9 +108,31 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 
 - V1 import is limited to existing Local Manga files already recognized by Bakalah Local Source.
 - The v1 UI entry point starts from Local Manga detail; a Vault Surface picker or launcher for choosing Local Manga is deferred.
+- Local Manga detail should show the current Import Target Hint, or an unlinked target setup affordance, under the manga title using the same icon-and-text metadata-row style as author/artist rows, and allow changing that target from the same manga-scoped area.
+- The under-title target row should show the target Vault Manga title when linked, "Link vault target" when unlinked, "Vault target unavailable" when stale, and "Set up content vault" when the Content Vault is unconfigured.
+- Target setup should allow intentionally unlinking a Local Manga by clearing only the device-local Import Target Hint. Relinking from a stale state should replace the stale hint without a separate clear step.
+- An unlinked Local Manga should not show Import Duplicate Candidate indicators from exact-title matching alone. Exact-title matches may be suggested during target setup, but a real selected or persisted Import Target is required for visible target state and duplicate indicators.
+- Add to Vault from an unlinked Local Manga should require explicit target choice. Exact-title matches should be suggestions only, not auto-selected targets.
+- If the Content Vault is not configured, the under-title target row should remain visible for Local Manga as a setup affordance that routes to vault setup.
+- Local-to-Vault Import should not use a top-menu "Import to Vault" action; selected chapter import should be started from Local Manga chapter selection with an "Add to Vault" action.
+- Add to Vault requires at least one selected chapter and is not available directly from the under-title target row.
+- If selected chapter import starts before a Local Manga has a valid Import Target Hint, the flow should route through target setup while preserving the selected chapters.
+- If Add to Vault starts with a valid linked target, target setup should be skipped and the flow should proceed directly to any required Vault Chapter Replacement confirmation.
+- If Add to Vault starts with a stale target hint, it should behave like an unlinked manga and route through target setup while preserving selected chapters.
+- Intentional unlinking should not disable Add to Vault; selected chapter import from an unlinked Local Manga still routes through target setup.
+- If selected chapter import starts before the Content Vault is configured, the flow should route to vault setup while preserving selection, but should not auto-start import after setup completes.
+- Changing the Import Target should preserve current chapter selection, immediately refresh Import Duplicate Candidate indicators for the new target, and rely on explicit Vault Chapter Replacement confirmation for any selected duplicates.
+- Import Target Hints should be persisted only after a successful import publish, not when the user merely chooses a pending target.
+- When target setup is opened directly from the under-title target row without a pending Add to Vault action, choosing an existing Vault Manga should persist the Import Target Hint immediately. Choosing "Create new Vault Manga" remains pending until an import succeeds.
+- Direct target setup from the under-title row should offer existing targets and unlink only; "Create new Vault Manga" should appear only in target setup for a pending Add to Vault action with selected chapters.
+- If an Import Target Hint points to a Vault Manga no longer present in the local Vault Index, Local Manga detail should present the manga as unlinked or stale and require target setup again.
+- Import Target Hints should not carry across a configured Content Vault identity change; Local Manga target setup should be required again for the new vault.
+- Manual target linking from the under-title row should update only the device-local Import Target Hint and should not publish vault metadata or provenance changes.
+- Local Manga detail should live-update Import Target Hint validity and Import Duplicate Candidate indicators while the screen is open as the local Vault Index changes.
+- Directory-to-CBZ conversion should not be indicated on normal Local Manga chapter rows.
 - Import must use existing Local Source recognition/parsing behavior.
 - Import must support chapter selection and default to all recognized chapters.
-- Import must copy/upload CBZ content into the Content Vault. When selected Local Source chapters are directories, import must clearly warn the user and replace each selected directory chapter with a validated CBZ file before upload.
+- Import must copy/upload CBZ content into the Content Vault. When selected Local Source chapters are directories, import should automatically replace each selected directory chapter with a validated CBZ file before upload without a separate conversion confirmation.
 - Imported source files must not count as Local Content Cache unless separately cached into the Vault Cache Directory.
 - Directory-to-CBZ conversion must stage writes, validate the archive, keep deterministic page ordering, avoid absolute archive entry paths, and leave the original directory intact if conversion fails.
 - Repeated imports should first use a device-local Import Target Hint when available.
@@ -118,9 +140,27 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - If one exact normalized title match exists, import into that Vault Manga.
 - If no exact match exists, create a new Vault Manga.
 - If multiple exact matches exist, ask the user to choose or create new.
+- Target setup should allow linking to any Vault Manga regardless of Vault Label sensitivity and should search target choices by title.
+- Choosing "Create new Vault Manga" in target setup should not require an additional confirmation before Add to Vault.
 - Import Duplicate Candidate chapters should be flagged, deselected by default, and still remain selectable.
+- Import Duplicate Candidate indicators on Local Manga chapter rows apply only against the current valid Import Target.
+- Local Manga chapter-row Import Duplicate Candidate indicators are informational; replacement details are shown in the explicit Vault Chapter Replacement confirmation.
+- Import Duplicate Candidate indicators on Local Manga chapter rows should use a calm vault-status style rather than warning styling, and duplicate-indicated rows should remain visually selectable like normal rows.
+- Select all includes duplicate-indicated chapters; explicit Vault Chapter Replacement confirmation remains the safety gate.
+- Selected Import Duplicate Candidate chapters require explicit user confirmation before becoming Vault Chapter Replacements.
+- Vault Chapter Replacement confirmation should list the selected duplicate Local Chapter titles, capped when needed, rather than comparing local and vault titles.
+- Vault Chapter Replacement should preserve the replaced Vault Chapter identity and catalogue position while updating vault-owned readable content and integrity data.
+- Vault Chapter Replacement should preserve existing Vault Chapter metadata and source order; metadata edits remain a separate vault catalogue workflow.
+- Vault Chapter Replacement should publish replacement content at a new remote content path, update the existing Vault Chapter's content pointer and integrity data, invalidate stale local cache state unless the new content is separately verified in the Vault Cache Directory, and clean up the old remote content file after successful publish where possible.
 - Import duplicate planning should use the physical chapter file name basename rather than checksums, chapter numbers, or parsed chapter titles.
+- Import duplicate indicators should consider only chapters already present in the local Vault Index for the current Import Target, not in-flight uploads.
 - Reimported chapters must never overwrite existing Vault Chapters silently.
+- After an Add to Vault job is accepted, Local Manga chapter selection should clear. Failed jobs should not automatically restore previous selection.
+- Add to Vault applies to all selected Local Manga chapters even if later filtering or sorting hides some selected chapters. Read, bookmark, and download state do not affect Add to Vault eligibility.
+- Add to Vault should be available through Local Manga chapter multi-selection only, including the single selected chapter case. It should not add a separate per-row chapter action.
+- Add to Vault should not be hidden based on network heuristics; remote publish failures should surface through the existing visible job or transfer failure path.
+- While a Local-to-Vault Import job for the same Local Manga is running, the under-title target row may remain visible but target changes should be disabled.
+- Add to Vault should respect the current global single Local-to-Vault Import job behavior and show a busy/in-progress state when another import job is already running.
 
 ### Metadata, Labels, and Covers
 
@@ -222,7 +262,7 @@ Internal staging paths, revisions, and checksums should be hidden from normal UI
 - A non-vault mixed-use folder is rejected during setup.
 - A user can import selected chapters from an existing Local Manga into the Content Vault, with selected directory chapters first converted into validated CBZ archives in Local Manga storage.
 - Repeating an import can target an existing Vault Manga through Import Target Hint or exact normalized title matching.
-- Import Duplicate Candidate chapters are flagged, deselected by default, and still selectable.
+- Import Duplicate Candidate chapters are flagged, deselected by default, still selectable, and replace existing Vault Chapters only after explicit confirmation.
 - The Vault Surface shows remote-only and cached chapters from the local Vault Index.
 - A user can edit basic Vault Metadata and Vault Labels.
 - A user can cache a vault-only chapter and read it after integrity verification.

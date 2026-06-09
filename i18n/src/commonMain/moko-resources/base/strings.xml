@@ -179,6 +179,7 @@
     <string name="vault_action_refresh_catalogue">Refresh catalogue</string>
     <string name="vault_action_import_local">Import from Local</string>
     <string name="vault_action_import_to_vault">Import to Vault</string>
+    <string name="vault_action_add_to_vault">Add to Vault</string>
     <string name="vault_action_cache">Cache</string>
     <string name="vault_action_evict">Evict cache</string>
     <string name="vault_action_evict_from_device">Evict from device</string>
@@ -244,6 +245,10 @@
     <string name="vault_import_subtitle_from_local">From Local Manga · %s</string>
     <string name="vault_import_target">Import Target</string>
     <string name="vault_import_choose_target">Choose Import Target</string>
+    <string name="vault_import_link_target">Link vault</string>
+    <string name="vault_import_target_unavailable">Vault target unavailable</string>
+    <string name="vault_import_setup_content_vault">Set up content vault</string>
+    <string name="vault_import_unlink_target">Unlink target</string>
     <string name="vault_import_target_create_new">Create new Vault Manga</string>
     <string name="vault_import_target_hint">Import Target Hint</string>
     <string name="vault_import_target_exact_title">Exact title match</string>
@@ -254,6 +259,10 @@
     <string name="vault_import_importable">Importable</string>
     <string name="vault_import_select_none">Select none</string>
     <string name="vault_import_possible_duplicate">Possible duplicate</string>
+    <string name="vault_import_duplicate_indicator">In Vault</string>
+    <string name="vault_import_replace_confirm_title">Replace Vault Chapters?</string>
+    <string name="vault_import_replace_confirm_message">These selected Local Manga chapters match existing Vault Chapters for the current target. Their vault content will be replaced after import.</string>
+    <string name="vault_import_replace_confirm_more">And %d more</string>
     <string name="vault_import_selected_count">%1$d selected · %2$d recognized</string>
     <string name="vault_import_selected_count_only">%d selected</string>
     <string name="vault_import_selected_source_size">%1$d selected · %2$s source size</string>

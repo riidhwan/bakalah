@@ -232,6 +232,10 @@ _Avoid_: Vault identity, metadata match, source truth
 A Local-to-Vault Import chapter whose user-owned chapter file name appears to match a chapter already present in the chosen Import Target.
 _Avoid_: Exact duplicate, checksum duplicate
 
+**Vault Chapter Replacement**:
+Replacing an existing Vault Chapter's vault-owned readable content through an explicit user-approved Local-to-Vault Import of an Import Duplicate Candidate.
+_Avoid_: Silent overwrite, duplicate import
+
 **Vault Capture**:
 The explicit act of adding manga or chapter content from an app source into the Content Vault.
 _Avoid_: Auto backup, download, library add

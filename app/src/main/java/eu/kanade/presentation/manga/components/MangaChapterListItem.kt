@@ -51,6 +51,7 @@ fun MangaChapterListItem(
     date: String?,
     readProgress: String?,
     scanlator: String?,
+    status: String? = null,
     read: Boolean,
     bookmark: Boolean,
     selected: Boolean,
@@ -143,6 +144,15 @@ fun MangaChapterListItem(
                                 .copy(alpha = if (read) DISABLED_ALPHA else SECONDARY_ALPHA),
                         )
                     ProvideTextStyle(value = subtitleStyle) {
+                        if (status != null) {
+                            Text(
+                                text = status,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            if (date != null || readProgress != null || scanlator != null) DotSeparatorText()
+                        }
                         if (date != null) {
                             Text(
                                 text = date,

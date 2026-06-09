@@ -111,10 +111,11 @@ fun MangaScreen(
     onEditFetchIntervalClicked: (() -> Unit)?,
     onMigrateClicked: (() -> Unit)?,
     onEditLocalMetadataClicked: (() -> Unit)?,
-    onImportToVaultClicked: (() -> Unit)?,
+    onVaultTargetClicked: () -> Unit,
     onEditNotesClicked: () -> Unit,
 
     // For bottom action menu
+    onAddToVaultClicked: () -> Unit,
     onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
     onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
@@ -162,8 +163,9 @@ fun MangaScreen(
             onEditIntervalClicked = onEditFetchIntervalClicked,
             onMigrateClicked = onMigrateClicked,
             onEditLocalMetadataClicked = onEditLocalMetadataClicked,
-            onImportToVaultClicked = onImportToVaultClicked,
+            onVaultTargetClicked = onVaultTargetClicked,
             onEditNotesClicked = onEditNotesClicked,
+            onAddToVaultClicked = onAddToVaultClicked,
             onMultiBookmarkClicked = onMultiBookmarkClicked,
             onMultiMarkAsReadClicked = onMultiMarkAsReadClicked,
             onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
@@ -200,8 +202,9 @@ fun MangaScreen(
             onEditIntervalClicked = onEditFetchIntervalClicked,
             onMigrateClicked = onMigrateClicked,
             onEditLocalMetadataClicked = onEditLocalMetadataClicked,
-            onImportToVaultClicked = onImportToVaultClicked,
+            onVaultTargetClicked = onVaultTargetClicked,
             onEditNotesClicked = onEditNotesClicked,
+            onAddToVaultClicked = onAddToVaultClicked,
             onMultiBookmarkClicked = onMultiBookmarkClicked,
             onMultiMarkAsReadClicked = onMultiMarkAsReadClicked,
             onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
@@ -248,10 +251,11 @@ private fun MangaScreenSmallImpl(
     onEditIntervalClicked: (() -> Unit)?,
     onMigrateClicked: (() -> Unit)?,
     onEditLocalMetadataClicked: (() -> Unit)?,
-    onImportToVaultClicked: (() -> Unit)?,
+    onVaultTargetClicked: () -> Unit,
     onEditNotesClicked: () -> Unit,
 
     // For bottom action menu
+    onAddToVaultClicked: () -> Unit,
     onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
     onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
@@ -309,7 +313,6 @@ private fun MangaScreenSmallImpl(
                 onClickRefresh = onRefresh,
                 onClickMigrate = onMigrateClicked,
                 onClickEditLocalMetadata = onEditLocalMetadataClicked,
-                onClickImportToVault = onImportToVaultClicked,
                 onClickEditNotes = onEditNotesClicked,
                 actionModeCounter = selectedChapterCount,
                 onCancelActionMode = { onAllChapterSelected(false) },
@@ -330,6 +333,7 @@ private fun MangaScreenSmallImpl(
                 onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
                 onDownloadChapter = onDownloadChapter,
                 onMultiDeleteClicked = onMultiDeleteClicked,
+                onAddToVaultClicked = onAddToVaultClicked.takeIf { state.manga.isLocal() },
                 fillFraction = 1f,
             )
         },
@@ -392,6 +396,8 @@ private fun MangaScreenSmallImpl(
                             isStubSource = remember { state.source is StubSource },
                             onCoverClick = onCoverClicked,
                             doSearch = onSearch,
+                            localVaultImport = state.localVaultImport,
+                            onVaultTargetClick = onVaultTargetClicked,
                         )
                     }
 
@@ -496,10 +502,11 @@ fun MangaScreenLargeImpl(
     onEditIntervalClicked: (() -> Unit)?,
     onMigrateClicked: (() -> Unit)?,
     onEditLocalMetadataClicked: (() -> Unit)?,
-    onImportToVaultClicked: (() -> Unit)?,
+    onVaultTargetClicked: () -> Unit,
     onEditNotesClicked: () -> Unit,
 
     // For bottom action menu
+    onAddToVaultClicked: () -> Unit,
     onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
     onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
@@ -550,7 +557,6 @@ fun MangaScreenLargeImpl(
                 onClickRefresh = onRefresh,
                 onClickMigrate = onMigrateClicked,
                 onClickEditLocalMetadata = onEditLocalMetadataClicked,
-                onClickImportToVault = onImportToVaultClicked,
                 onClickEditNotes = onEditNotesClicked,
                 onCancelActionMode = { onAllChapterSelected(false) },
                 actionModeCounter = selectedChapterCount,
@@ -575,6 +581,7 @@ fun MangaScreenLargeImpl(
                     onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
                     onDownloadChapter = onDownloadChapter,
                     onMultiDeleteClicked = onMultiDeleteClicked,
+                    onAddToVaultClicked = onAddToVaultClicked.takeIf { state.manga.isLocal() },
                     fillFraction = 0.5f,
                 )
             }
@@ -634,6 +641,8 @@ fun MangaScreenLargeImpl(
                             isStubSource = remember { state.source is StubSource },
                             onCoverClick = onCoverClicked,
                             doSearch = onSearch,
+                            localVaultImport = state.localVaultImport,
+                            onVaultTargetClick = onVaultTargetClicked,
                         )
                         if (!state.source.isLocal()) {
                             MangaActionRow(
@@ -715,6 +724,7 @@ private fun SharedMangaBottomActionMenu(
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
     onMultiDeleteClicked: (List<Chapter>) -> Unit,
+    onAddToVaultClicked: (() -> Unit)?,
     fillFraction: Float,
     modifier: Modifier = Modifier,
 ) {
@@ -746,6 +756,7 @@ private fun SharedMangaBottomActionMenu(
         }.takeIf {
             selected.fastAny { it.downloadState == Download.State.DOWNLOADED }
         },
+        onAddToVaultClicked = onAddToVaultClicked,
     )
 }
 
@@ -796,6 +807,8 @@ private fun LazyListScope.sharedChapterItems(
                             )
                         },
                     scanlator = item.chapter.scanlator.takeIf { !it.isNullOrBlank() },
+                    status = stringResource(MR.strings.vault_import_duplicate_indicator)
+                        .takeIf { item.importDuplicate },
                     read = item.chapter.read,
                     bookmark = item.chapter.bookmark,
                     selected = item.selected,

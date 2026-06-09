@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -90,6 +91,8 @@ import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.ui.manga.LocalVaultImportState
+import eu.kanade.tachiyomi.ui.manga.LocalVaultImportTargetState
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes
@@ -119,6 +122,8 @@ fun MangaInfoBox(
     onCoverClick: () -> Unit,
     doSearch: (query: String, global: Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    localVaultImport: LocalVaultImportState? = null,
+    onVaultTargetClick: () -> Unit = {},
 ) {
     Box(modifier = modifier) {
         // Backdrop
@@ -155,6 +160,8 @@ fun MangaInfoBox(
                     isStubSource = isStubSource,
                     onCoverClick = onCoverClick,
                     doSearch = doSearch,
+                    localVaultImport = localVaultImport,
+                    onVaultTargetClick = onVaultTargetClick,
                 )
             } else {
                 MangaAndSourceTitlesLarge(
@@ -164,6 +171,8 @@ fun MangaInfoBox(
                     isStubSource = isStubSource,
                     onCoverClick = onCoverClick,
                     doSearch = doSearch,
+                    localVaultImport = localVaultImport,
+                    onVaultTargetClick = onVaultTargetClick,
                 )
             }
         }
@@ -348,6 +357,8 @@ private fun MangaAndSourceTitlesLarge(
     isStubSource: Boolean,
     onCoverClick: () -> Unit,
     doSearch: (query: String, global: Boolean) -> Unit,
+    localVaultImport: LocalVaultImportState?,
+    onVaultTargetClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -374,6 +385,8 @@ private fun MangaAndSourceTitlesLarge(
             isStubSource = isStubSource,
             doSearch = doSearch,
             textAlign = TextAlign.Center,
+            localVaultImport = localVaultImport,
+            onVaultTargetClick = onVaultTargetClick,
         )
     }
 }
@@ -386,6 +399,8 @@ private fun MangaAndSourceTitlesSmall(
     isStubSource: Boolean,
     onCoverClick: () -> Unit,
     doSearch: (query: String, global: Boolean) -> Unit,
+    localVaultImport: LocalVaultImportState?,
+    onVaultTargetClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -416,6 +431,8 @@ private fun MangaAndSourceTitlesSmall(
                 sourceName = sourceName,
                 isStubSource = isStubSource,
                 doSearch = doSearch,
+                localVaultImport = localVaultImport,
+                onVaultTargetClick = onVaultTargetClick,
             )
         }
     }
@@ -431,6 +448,8 @@ private fun ColumnScope.MangaContentInfo(
     isStubSource: Boolean,
     doSearch: (query: String, global: Boolean) -> Unit,
     textAlign: TextAlign? = LocalTextStyle.current.textAlign,
+    localVaultImport: LocalVaultImportState? = null,
+    onVaultTargetClick: () -> Unit = {},
 ) {
     val context = LocalContext.current
     Text(
@@ -451,6 +470,12 @@ private fun ColumnScope.MangaContentInfo(
     )
 
     Spacer(modifier = Modifier.height(2.dp))
+
+    LocalVaultTargetRow(
+        localVaultImport = localVaultImport,
+        textAlign = textAlign,
+        onVaultTargetClick = onVaultTargetClick,
+    )
 
     Row(
         modifier = Modifier.secondaryItemAlpha(),
@@ -564,6 +589,53 @@ private fun ColumnScope.MangaContentInfo(
                 maxLines = 1,
             )
         }
+    }
+}
+
+@Composable
+private fun ColumnScope.LocalVaultTargetRow(
+    localVaultImport: LocalVaultImportState?,
+    textAlign: TextAlign?,
+    onVaultTargetClick: () -> Unit,
+) {
+    localVaultImport?.let {
+        val rowModifier = Modifier.secondaryItemAlpha()
+            .let { modifier ->
+                if (it.isImportRunning) {
+                    modifier
+                } else {
+                    modifier.clickableNoIndication { onVaultTargetClick() }
+                }
+            }
+        Row(
+            modifier = rowModifier,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.CloudUpload,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                text = it.targetState.label(),
+                style = MaterialTheme.typography.titleSmall,
+                textAlign = textAlign,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Spacer(modifier = Modifier.height(2.dp))
+    }
+}
+
+@Composable
+private fun LocalVaultImportTargetState.label(): String {
+    return when (this) {
+        LocalVaultImportTargetState.SetupContentVault -> stringResource(MR.strings.vault_import_setup_content_vault)
+        LocalVaultImportTargetState.Stale -> stringResource(MR.strings.vault_import_target_unavailable)
+        LocalVaultImportTargetState.Unlinked -> stringResource(MR.strings.vault_import_link_target)
+        is LocalVaultImportTargetState.Linked -> title
     }
 }
 

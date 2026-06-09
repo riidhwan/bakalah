@@ -20,6 +20,8 @@ import okio.source
 import tachiyomi.core.common.storage.extension
 import tachiyomi.core.common.storage.nameWithoutExtension
 import tachiyomi.core.common.util.system.ImageUtil
+import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
+import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.vault.interactor.BuildLocalVaultImportPlan
@@ -77,6 +79,7 @@ class LocalVaultImportService(
     private val fileSystem: LocalSourceFileSystem,
     private val coverManager: LocalCoverManager,
     private val refreshService: VaultCatalogueRefreshService,
+    private val getChaptersByMangaId: GetChaptersByMangaId,
 ) {
     private val client = networkHelper.nonCloudflareClient
     private val codec = VaultManifestCodec(json)
@@ -134,7 +137,10 @@ class LocalVaultImportService(
         val config = preferences.getWebDavConfig()
         val vault = configuredVault() ?: return LocalVaultImportResult.IncompleteConfiguration
         val expectedVaultIdentity = preferences.configuredVaultIdentity.get().takeIf { it.isNotBlank() }
-        val scan = scanLocalManga(localManga) ?: return LocalVaultImportResult.LocalMangaNotFound
+        val scan = scanLocalManga(
+            manga = localManga,
+            selectedChapterIds = selectedChapterIds,
+        ) ?: return LocalVaultImportResult.LocalMangaNotFound
         val vaultManga = repository.getManga(vault.id)
         val existingChapters = existingChaptersByMangaId(vault.id)
         val plan = planner.build(
@@ -189,38 +195,47 @@ class LocalVaultImportService(
         }
         val mangaIdentity = target.mangaIdentity(remoteMangaManifest)
         val existingRemoteChapters = remoteMangaManifest?.chapters.orEmpty()
-        val convertedSelectedChapters = runCatching {
-            convertDirectoryChaptersToCbz(
-                chapters = selectedChapters,
-                onChapterConverted = { chapter ->
-                    updateProgress(chapter)
-                },
-            )
-        }.getOrElse {
-            return LocalVaultImportResult.UploadFailed
-        }
 
         webDav.createDirectory(config.rootPath.childPath("manga"))
         webDav.createDirectory(config.rootPath.childPath("content"))
+        val existingRemoteChaptersByFileKey = existingRemoteChapters
+            .associateBy { it.content.path.substringAfterLast('/').duplicateFileKey() }
+        val replacedChapterIdentities = mutableSetOf<String>()
+        val replacedRemoteContentPaths = mutableSetOf<String>()
         val importedChapters = runCatching {
-            convertedSelectedChapters.map { localChapter ->
+            selectedChapters.map { localChapter ->
                 updateProgress(localChapter)
-                val chapterIdentity = UUID.randomUUID().toString()
+                val preparedChapter = localChapter.convertDirectoryToCbzIfNeeded()
+                val replacement = existingRemoteChaptersByFileKey[
+                    localChapter.chapter.sourceFileName.duplicateFileKey(),
+                ]
+                val chapterIdentity = replacement?.identity ?: UUID.randomUUID().toString()
+                val contentIdentity = if (replacement == null) chapterIdentity else UUID.randomUUID().toString()
                 val contentPath = uploadChapter(
                     webDav = webDav,
                     config = config,
                     mangaIdentity = mangaIdentity,
-                    chapterIdentity = chapterIdentity,
-                    localChapter = localChapter,
+                    contentIdentity = contentIdentity,
+                    localChapter = preparedChapter,
                 )
-                localChapter.toManifestChapter(
-                    identity = chapterIdentity,
-                    contentPath = contentPath,
-                    now = now,
-                )
+                if (replacement != null) {
+                    replacedChapterIdentities += replacement.identity
+                    replacedRemoteContentPaths += replacement.content.path
+                    preparedChapter.toReplacementManifestChapter(
+                        existing = replacement,
+                        contentPath = contentPath,
+                        now = now,
+                    )
+                } else {
+                    preparedChapter.toManifestChapter(
+                        identity = chapterIdentity,
+                        contentPath = contentPath,
+                        now = now,
+                    )
+                }
                     .also {
                         progressCurrent += 1
-                        updateProgress(localChapter)
+                        updateProgress(preparedChapter)
                     }
             }
         }.getOrElse {
@@ -250,7 +265,11 @@ class LocalVaultImportService(
             metadata = metadata.toManifestMetadata(),
             labels = remoteMangaManifest?.labels.orEmpty(),
             cover = importedCover,
-            chapters = (existingRemoteChapters + importedChapters)
+            chapters = (
+                existingRemoteChapters.filterNot {
+                    it.identity in replacedChapterIdentities
+                } + importedChapters
+                )
                 .sortedWith(compareBy<VaultManifestChapter> { it.sourceOrder }.thenBy { it.title }),
             provenance = VaultManifestProvenance(
                 importedFrom = "local",
@@ -296,6 +315,8 @@ class LocalVaultImportService(
         )
         if (!webDav.put(rootPath, codec.encodeRoot(updatedRoot))) return LocalVaultImportResult.UploadFailed
 
+        cleanupReplacedRemoteContent(webDav, config, replacedRemoteContentPaths)
+        invalidateReplacementCacheState(target, replacedChapterIdentities)
         repository.upsertImportTargetHint(
             refreshLocalIndex(vault.identity, mangaIdentity)
                 .takeIf { it != -1L }
@@ -328,7 +349,14 @@ class LocalVaultImportService(
         return repository.getChaptersForVault(vaultId).groupBy { it.mangaId }
     }
 
-    private suspend fun scanLocalManga(manga: Manga): LocalMangaScan? = withContext(Dispatchers.IO) {
+    private suspend fun scanLocalManga(
+        manga: Manga,
+        selectedChapterIds: Set<String>? = null,
+    ): LocalMangaScan? = withContext(Dispatchers.IO) {
+        if (selectedChapterIds != null) {
+            return@withContext scanSelectedLocalManga(manga, selectedChapterIds)
+        }
+
         val localSource = localSource() ?: return@withContext null
         val details = manga.toSourceManga()
         val chapterFiles = fileSystem.getFilesInMangaDirectory(manga.url).associateBy { it.name.orEmpty() }
@@ -373,19 +401,40 @@ class LocalVaultImportService(
         )
     }
 
+    private suspend fun scanSelectedLocalManga(
+        manga: Manga,
+        selectedChapterIds: Set<String>,
+    ): LocalMangaScan? {
+        val details = manga.toSourceManga()
+        val chapterFiles = fileSystem.getFilesInMangaDirectory(manga.url).associateBy { it.name.orEmpty() }
+        val chapters = getChaptersByMangaId.await(manga.id)
+            .filter { it.url in selectedChapterIds }
+            .mapNotNull { chapter ->
+                val fileName = chapter.url.substringAfter('/', missingDelimiterValue = chapter.url)
+                val file = chapterFiles[fileName] ?: return@mapNotNull null
+                if (!file.isDirectory && !file.isCbz()) return@mapNotNull null
+                val digest = file.previewDigest()
+                ScannedLocalChapter(
+                    file = file,
+                    chapter = chapter.toLocalVaultImportChapter(
+                        sourceFileName = file.name.orEmpty(),
+                        sizeBytes = digest.sizeBytes,
+                        checksumSha256 = digest.sha256,
+                        requiresLocalCbzConversion = file.isDirectory,
+                    ),
+                )
+            }
+        return LocalMangaScan(
+            manga = details.toLocalVaultImportManga(manga),
+            chapters = chapters,
+            coverFile = coverManager.find(manga.url),
+        )
+    }
+
     private fun localSource(): LocalSource? = sourceManager.get(LocalSource.ID) as? LocalSource
 
-    private fun convertDirectoryChaptersToCbz(
-        chapters: List<ScannedLocalChapter>,
-        onChapterConverted: (ScannedLocalChapter) -> Unit,
-    ): List<ScannedLocalChapter> {
-        return chapters.map { chapter ->
-            if (chapter.file.isDirectory) {
-                chapter.convertDirectoryToCbz().also(onChapterConverted)
-            } else {
-                chapter
-            }
-        }
+    private fun ScannedLocalChapter.convertDirectoryToCbzIfNeeded(): ScannedLocalChapter {
+        return if (file.isDirectory) convertDirectoryToCbz() else this
     }
 
     private fun ScannedLocalChapter.convertDirectoryToCbz(): ScannedLocalChapter {
@@ -445,6 +494,43 @@ class LocalVaultImportService(
         }
     }
 
+    private fun SManga.toLocalVaultImportManga(manga: Manga): LocalVaultImportManga {
+        return LocalVaultImportManga(
+            localMangaId = manga.id,
+            localMangaIdentity = manga.url,
+            title = title,
+            metadata = VaultMetadata(
+                title = title,
+                author = author,
+                artist = artist,
+                description = description,
+                status = status.toVaultStatus(),
+            ),
+        )
+    }
+
+    private fun Chapter.toLocalVaultImportChapter(
+        sourceFileName: String,
+        sizeBytes: Long,
+        checksumSha256: String,
+        requiresLocalCbzConversion: Boolean,
+    ): LocalVaultImportChapter {
+        return LocalVaultImportChapter(
+            selectionId = url,
+            sourceFileName = sourceFileName,
+            title = name,
+            chapterNumber = chapterNumber,
+            volumeNumber = null,
+            scanlator = scanlator,
+            sourceOrder = sourceOrder,
+            contentFormat = VaultChapterContentFormat.CBZ,
+            sizeBytes = sizeBytes,
+            checksumSha256 = checksumSha256,
+            dateUpload = dateUpload,
+            requiresLocalCbzConversion = requiresLocalCbzConversion,
+        )
+    }
+
     private fun resolveTarget(
         target: LocalVaultImportTarget,
         vaultManga: List<VaultManga>,
@@ -466,10 +552,10 @@ class LocalVaultImportService(
         webDav: WebDavClient,
         config: WebDavVaultConfig,
         mangaIdentity: String,
-        chapterIdentity: String,
+        contentIdentity: String,
         localChapter: ScannedLocalChapter,
     ): String {
-        val basePath = "content/$mangaIdentity/$chapterIdentity"
+        val basePath = "content/$mangaIdentity/$contentIdentity"
         val remoteBasePath = config.rootPath.childPath(basePath)
         webDav.createDirectory(config.rootPath.childPath("content/$mangaIdentity"))
         return if (localChapter.file.isDirectory) {
@@ -555,6 +641,27 @@ class LocalVaultImportService(
             ?: -1
     }
 
+    private suspend fun cleanupReplacedRemoteContent(
+        webDav: WebDavClient,
+        config: WebDavVaultConfig,
+        paths: Set<String>,
+    ) {
+        paths.forEach { path ->
+            runCatching { webDav.delete(config.rootPath.childPath(path)) }
+        }
+    }
+
+    private suspend fun invalidateReplacementCacheState(
+        target: ImportTarget,
+        replacedChapterIdentities: Set<String>,
+    ) {
+        if (target !is ImportTarget.Existing || replacedChapterIdentities.isEmpty()) return
+        val replacedChapterIds = repository.getChapters(target.manga.id)
+            .filter { it.identity.value in replacedChapterIdentities }
+            .map { it.id }
+        repository.deleteCacheStates(replacedChapterIds)
+    }
+
     private inner class WebDavClient(
         private val config: WebDavVaultConfig,
     ) {
@@ -595,6 +702,17 @@ class LocalVaultImportService(
                 .build()
             client.newCall(request).await().use { response ->
                 response.isSuccessful || response.code == HTTP_METHOD_NOT_ALLOWED
+            }
+        }
+
+        suspend fun delete(path: String): Boolean = withContext(Dispatchers.IO) {
+            val request = Request.Builder()
+                .url(config.serverUrl.resolveWebDavPath(path))
+                .header("Authorization", Credentials.basic(config.username.trim(), config.password))
+                .delete()
+                .build()
+            client.newCall(request).await().use { response ->
+                response.isSuccessful || response.code == HTTP_NOT_FOUND
             }
         }
 
@@ -653,6 +771,24 @@ class LocalVaultImportService(
         revisionNumber = 1,
         dateUpload = chapter.dateUpload,
         createdAt = now,
+        updatedAt = now,
+    )
+
+    private fun ScannedLocalChapter.toReplacementManifestChapter(
+        existing: VaultManifestChapter,
+        contentPath: String,
+        now: Long,
+    ) = existing.copy(
+        content = VaultManifestChapterContent(
+            path = contentPath,
+            format = chapter.contentFormat,
+            integrity = VaultContentIntegrity(
+                sizeBytes = chapter.sizeBytes,
+                checksumSha256 = chapter.checksumSha256,
+            ),
+        ),
+        revisionId = UUID.randomUUID().toString(),
+        revisionNumber = existing.revisionNumber + 1,
         updatedAt = now,
     )
 
@@ -812,6 +948,7 @@ class LocalVaultImportService(
         private val OCTET_MEDIA_TYPE = "application/octet-stream".toMediaType()
         private val EMPTY_BODY = ByteArray(0).toRequestBody(null)
         private const val HTTP_METHOD_NOT_ALLOWED = 405
+        private const val HTTP_NOT_FOUND = 404
         private const val PENDING_DIRECTORY_CBZ_CHECKSUM_PREFIX = "pending-directory-cbz:"
     }
 }
@@ -942,4 +1079,11 @@ private fun String.decodePercentEscapes(): String {
     }
     flushBytes()
     return result.toString()
+}
+
+private fun String.duplicateFileKey(): String {
+    val trimmed = trim()
+    return trimmed
+        .substringBeforeLast('.', missingDelimiterValue = trimmed)
+        .lowercase()
 }
