@@ -129,6 +129,7 @@ class LocalVaultImportService(
         selectedChapterIds: Set<String>? = null,
         targetMangaId: Long? = null,
         createNew: Boolean = false,
+        progress: (LocalVaultImportProgress) -> Unit = {},
     ): LocalVaultImportResult {
         val config = preferences.getWebDavConfig()
         val vault = configuredVault() ?: return LocalVaultImportResult.IncompleteConfiguration
@@ -152,6 +153,17 @@ class LocalVaultImportService(
             .toSet()
         val selectedChapters = scan.chapters.filter { it.chapter.selectionId in selectedIds }
         if (selectedChapters.isEmpty()) return LocalVaultImportResult.NothingSelected(plan)
+        val progressTotal = selectedChapters.size.coerceAtLeast(1)
+        var progressCurrent = 0
+        fun updateProgress(chapter: ScannedLocalChapter) {
+            progress(
+                LocalVaultImportProgress(
+                    current = progressCurrent.coerceAtMost(progressTotal),
+                    total = progressTotal,
+                    chapterTitle = chapter.chapter.title,
+                ),
+            )
+        }
 
         val webDav = WebDavClient(config)
         val rootPath = config.rootPath.childPath(ROOT_VAULT_MANIFEST_NAME)
@@ -179,7 +191,12 @@ class LocalVaultImportService(
         val existingRemoteChapters = remoteMangaManifest?.chapters.orEmpty()
         val existingChecksums = existingRemoteChapters.map { it.content.integrity.checksumSha256 }.toSet()
         val convertedSelectedChapters = runCatching {
-            convertDirectoryChaptersToCbz(selectedChapters)
+            convertDirectoryChaptersToCbz(
+                chapters = selectedChapters,
+                onChapterConverted = { chapter ->
+                    updateProgress(chapter)
+                },
+            )
         }.getOrElse {
             return LocalVaultImportResult.UploadFailed
         }
@@ -190,6 +207,7 @@ class LocalVaultImportService(
         webDav.createDirectory(config.rootPath.childPath("content"))
         val importedChapters = runCatching {
             chaptersToImport.map { localChapter ->
+                updateProgress(localChapter)
                 val chapterIdentity = UUID.randomUUID().toString()
                 val contentPath = uploadChapter(
                     webDav = webDav,
@@ -203,10 +221,20 @@ class LocalVaultImportService(
                     contentPath = contentPath,
                     now = now,
                 )
+                    .also {
+                        progressCurrent += 1
+                        updateProgress(localChapter)
+                    }
             }
         }.getOrElse {
             return LocalVaultImportResult.UploadFailed
         }
+        convertedSelectedChapters
+            .filter { it.chapter.checksumSha256 in existingChecksums }
+            .forEach { localChapter ->
+                progressCurrent += 1
+                updateProgress(localChapter)
+            }
         val importedCover = remoteMangaManifest?.cover ?: runCatching {
             uploadCover(
                 webDav = webDav,
@@ -357,10 +385,13 @@ class LocalVaultImportService(
 
     private fun localSource(): LocalSource? = sourceManager.get(LocalSource.ID) as? LocalSource
 
-    private fun convertDirectoryChaptersToCbz(chapters: List<ScannedLocalChapter>): List<ScannedLocalChapter> {
+    private fun convertDirectoryChaptersToCbz(
+        chapters: List<ScannedLocalChapter>,
+        onChapterConverted: (ScannedLocalChapter) -> Unit,
+    ): List<ScannedLocalChapter> {
         return chapters.map { chapter ->
             if (chapter.file.isDirectory) {
-                chapter.convertDirectoryToCbz()
+                chapter.convertDirectoryToCbz().also(onChapterConverted)
             } else {
                 chapter
             }

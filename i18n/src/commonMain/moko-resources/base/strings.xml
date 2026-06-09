@@ -268,6 +268,9 @@
     <string name="vault_import_upload_as_is_plan">%d chapters will be uploaded as-is</string>
     <string name="vault_importing">Importing…</string>
     <string name="vault_import_phase_text">Converting selected directory chapters and uploading to Vault</string>
+    <string name="vault_import_progress_title">Importing to Vault · %s</string>
+    <string name="vault_import_progress_detail">Processing %s</string>
+    <string name="vault_import_ongoing">Import is running in the background</string>
     <string name="vault_import_complete">Import complete</string>
     <string name="vault_import_action_open_in_vault">Open in Vault</string>
     <string name="vault_import_action_open_vault">Open Vault</string>
@@ -278,6 +281,8 @@
     <string name="vault_import_error_manifest_unavailable">Vault manifest is unavailable</string>
     <string name="vault_import_error_identity_changed">Configured Content Vault identity changed</string>
     <string name="vault_import_error_upload_failed">Could not import to Vault</string>
+    <string name="vault_import_error_background_failed">The background import failed. Check the Vault configuration and try again.</string>
+    <string name="vault_import_error_already_running">This import is already running in the background</string>
     <string name="vault_import_error_load_failed">Could not load Local-to-Vault Import preview</string>
 
     <!-- Operations -->
