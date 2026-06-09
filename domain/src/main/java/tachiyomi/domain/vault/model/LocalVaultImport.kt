@@ -9,6 +9,7 @@ data class LocalVaultImportManga(
 
 data class LocalVaultImportChapter(
     val selectionId: String,
+    val sourceFileName: String,
     val title: String,
     val chapterNumber: Double,
     val volumeNumber: Double?,
@@ -34,7 +35,6 @@ data class LocalVaultImportChapterPlan(
 
 enum class LocalVaultImportDuplicateState {
     NONE,
-    EXACT,
     POSSIBLE,
 }
 

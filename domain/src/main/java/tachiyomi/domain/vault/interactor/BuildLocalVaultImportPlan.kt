@@ -54,7 +54,7 @@ class BuildLocalVaultImportPlan {
             LocalVaultImportChapterPlan(
                 chapter = chapter,
                 duplicateState = duplicateState,
-                selectedByDefault = duplicateState != LocalVaultImportDuplicateState.EXACT,
+                selectedByDefault = duplicateState == LocalVaultImportDuplicateState.NONE,
             )
         }
     }
@@ -80,15 +80,9 @@ class BuildLocalVaultImportPlan {
     private fun LocalVaultImportChapter.duplicateState(
         existingChapters: List<VaultChapter>,
     ): LocalVaultImportDuplicateState {
-        if (existingChapters.any { it.content.checksumSha256 == checksumSha256 }) {
-            return LocalVaultImportDuplicateState.EXACT
-        }
-
-        val normalizedTitle = title.normalizedChapterTitle()
-        val possibleDuplicate = existingChapters.any { chapter ->
-            chapter.title.normalizedChapterTitle() == normalizedTitle ||
-                (chapter.chapterNumber == chapterNumber && chapterNumber >= 0)
-        }
+        val localFileKey = sourceFileName.duplicateFileKey()
+        val possibleDuplicate = localFileKey.isNotBlank() &&
+            existingChapters.any { it.content.path.substringAfterLast('/').duplicateFileKey() == localFileKey }
         return if (possibleDuplicate) {
             LocalVaultImportDuplicateState.POSSIBLE
         } else {
@@ -96,9 +90,10 @@ class BuildLocalVaultImportPlan {
         }
     }
 
-    private fun String.normalizedChapterTitle(): String {
-        return trim()
+    private fun String.duplicateFileKey(): String {
+        val trimmed = trim()
+        return trimmed
+            .substringBeforeLast('.', missingDelimiterValue = trimmed)
             .lowercase()
-            .replace(Regex("\\s+"), " ")
     }
 }

@@ -55,7 +55,6 @@ class LocalVaultImportJob(
                     is LocalVaultImportResult.Imported -> {
                         notifier.showComplete(
                             importedChapterCount = result.importedChapterCount,
-                            skippedExactDuplicateCount = result.skippedExactDuplicateCount,
                         )
                         Result.success()
                     }

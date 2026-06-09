@@ -22,7 +22,6 @@ import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.model.Manga
-import tachiyomi.domain.vault.model.LocalVaultImportDuplicateState
 import tachiyomi.domain.vault.model.LocalVaultImportPlan
 import tachiyomi.domain.vault.model.LocalVaultImportTarget
 import tachiyomi.domain.vault.model.VaultManga
@@ -125,7 +124,6 @@ class LocalVaultImportScreenModel(
             ?.chapters
             ?.firstOrNull { it.chapter.selectionId == selectionId }
             ?: return
-        if (chapter.duplicateState == LocalVaultImportDuplicateState.EXACT) return
 
         mutableState.update {
             val selectedIds = if (selected) {
@@ -266,7 +264,6 @@ class LocalVaultImportScreenModel(
             get() = plan
                 ?.chapters
                 .orEmpty()
-                .filter { it.duplicateState != LocalVaultImportDuplicateState.EXACT }
                 .map { it.chapter.selectionId }
                 .toSet()
 
@@ -282,8 +279,7 @@ class LocalVaultImportScreenModel(
                 .orEmpty()
                 .count {
                     it.chapter.selectionId in selectedChapterIds &&
-                        it.chapter.requiresLocalCbzConversion &&
-                        it.duplicateState != LocalVaultImportDuplicateState.EXACT
+                        it.chapter.requiresLocalCbzConversion
                 }
 
         val selectedKnownSourceSizeBytes: Long
@@ -292,7 +288,6 @@ class LocalVaultImportScreenModel(
                 .orEmpty()
                 .filter {
                     it.chapter.selectionId in selectedChapterIds &&
-                        it.duplicateState != LocalVaultImportDuplicateState.EXACT &&
                         !it.chapter.requiresLocalCbzConversion
                 }
                 .sumOf { it.chapter.sizeBytes }
@@ -303,7 +298,6 @@ class LocalVaultImportScreenModel(
                 .orEmpty()
                 .any {
                     it.chapter.selectionId in selectedChapterIds &&
-                        it.duplicateState != LocalVaultImportDuplicateState.EXACT &&
                         !it.chapter.requiresLocalCbzConversion
                 }
     }
@@ -328,7 +322,7 @@ class LocalVaultImportScreenModel(
 
 private val LocalVaultImportPlan.defaultSelectedChapterIds: Set<String>
     get() = chapters
-        .filter { it.selectedByDefault && it.duplicateState != LocalVaultImportDuplicateState.EXACT }
+        .filter { it.selectedByDefault }
         .map { it.chapter.selectionId }
         .toSet()
 
