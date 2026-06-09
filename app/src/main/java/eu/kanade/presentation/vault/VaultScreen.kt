@@ -3,6 +3,7 @@ package eu.kanade.presentation.vault
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -15,7 +16,6 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.HourglassEmpty
-import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +43,7 @@ import tachiyomi.domain.vault.model.ContentVault
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.Badge
 import tachiyomi.presentation.core.components.FastScrollLazyVerticalGrid
+import tachiyomi.presentation.core.components.material.PullRefresh
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
@@ -89,11 +90,6 @@ fun VaultScreen(
                                 ),
                                 onClick = { onIncludeSensitiveChange(!state.includeSensitiveContent) },
                             ),
-                            AppBar.Action(
-                                title = stringResource(MR.strings.vault_action_refresh_catalogue),
-                                icon = Icons.Outlined.Refresh,
-                                onClick = onClickRefresh,
-                            ),
                         ),
                     )
                 },
@@ -102,33 +98,41 @@ fun VaultScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { contentPadding ->
-        when {
-            state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
-            state.vaults.isEmpty() -> EmptyScreen(
-                stringRes = MR.strings.vault_empty_no_configured_vault,
-                modifier = Modifier.padding(contentPadding),
-            )
-            state.mangaItems.isEmpty() -> VaultList(
-                state = state,
-                contentPadding = contentPadding,
-                onClickManga = onClickManga,
-                onLoadCover = onLoadCover,
-                emptyMessage = MR.strings.vault_empty_collection,
-            )
-            state.visibleMangaItems.isEmpty() -> VaultList(
-                state = state,
-                contentPadding = contentPadding,
-                onClickManga = onClickManga,
-                onLoadCover = onLoadCover,
-                emptyMessage = MR.strings.no_results_found,
-            )
-            else -> VaultList(
-                state = state,
-                contentPadding = contentPadding,
-                onClickManga = onClickManga,
-                onLoadCover = onLoadCover,
-                emptyMessage = null,
-            )
+        PullRefresh(
+            refreshing = state.isRefreshing,
+            onRefresh = onClickRefresh,
+            enabled = !state.isLoading,
+            modifier = Modifier.fillMaxSize(),
+            indicatorPadding = PaddingValues(top = contentPadding.calculateTopPadding()),
+        ) {
+            when {
+                state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
+                state.vaults.isEmpty() -> EmptyScreen(
+                    stringRes = MR.strings.vault_empty_no_configured_vault,
+                    modifier = Modifier.padding(contentPadding),
+                )
+                state.mangaItems.isEmpty() -> VaultList(
+                    state = state,
+                    contentPadding = contentPadding,
+                    onClickManga = onClickManga,
+                    onLoadCover = onLoadCover,
+                    emptyMessage = MR.strings.vault_empty_collection,
+                )
+                state.visibleMangaItems.isEmpty() -> VaultList(
+                    state = state,
+                    contentPadding = contentPadding,
+                    onClickManga = onClickManga,
+                    onLoadCover = onLoadCover,
+                    emptyMessage = MR.strings.no_results_found,
+                )
+                else -> VaultList(
+                    state = state,
+                    contentPadding = contentPadding,
+                    onClickManga = onClickManga,
+                    onLoadCover = onLoadCover,
+                    emptyMessage = null,
+                )
+            }
         }
     }
 }
@@ -143,6 +147,7 @@ private fun VaultList(
 ) {
     FastScrollLazyVerticalGrid(
         columns = GridCells.Adaptive(128.dp),
+        modifier = Modifier.fillMaxSize(),
         contentPadding = contentPadding + PaddingValues(8.dp),
         verticalArrangement = Arrangement.spacedBy(CommonMangaItemDefaults.GridVerticalSpacer),
         horizontalArrangement = Arrangement.spacedBy(CommonMangaItemDefaults.GridHorizontalSpacer),

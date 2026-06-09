@@ -137,8 +137,14 @@ class VaultScreenModel(
     }
 
     fun refreshVault() {
+        if (state.value.isRefreshing) return
         screenModelScope.launchIO {
-            refreshConfiguredVault(reportSuccess = true)
+            mutableState.update { it.copy(isRefreshing = true) }
+            try {
+                refreshConfiguredVault(reportSuccess = true)
+            } finally {
+                mutableState.update { it.copy(isRefreshing = false) }
+            }
         }
     }
 
@@ -310,6 +316,7 @@ class VaultScreenModel(
         val sort: Sort = Sort.TITLE,
         val labels: List<VaultLabel> = emptyList(),
         val includeSensitiveContent: Boolean = false,
+        val isRefreshing: Boolean = false,
         val localCacheUsageBytes: Long = 0,
         val vaultStorageUsageBytes: Long = 0,
         val coverUris: Map<Long, String> = emptyMap(),
