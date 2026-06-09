@@ -118,8 +118,9 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - If one exact normalized title match exists, import into that Vault Manga.
 - If no exact match exists, create a new Vault Manga.
 - If multiple exact matches exist, ask the user to choose or create new.
-- Exact duplicate chapters should be skipped by default.
-- Possible duplicate chapters should be flagged and never overwrite silently.
+- Import Duplicate Candidate chapters should be flagged, deselected by default, and still remain selectable.
+- Import duplicate planning should use the physical chapter file name basename rather than checksums, chapter numbers, or parsed chapter titles.
+- Reimported chapters must never overwrite existing Vault Chapters silently.
 
 ### Metadata, Labels, and Covers
 
@@ -221,7 +222,7 @@ Internal staging paths, revisions, and checksums should be hidden from normal UI
 - A non-vault mixed-use folder is rejected during setup.
 - A user can import selected chapters from an existing Local Manga into the Content Vault, with selected directory chapters first converted into validated CBZ archives in Local Manga storage.
 - Repeating an import can target an existing Vault Manga through Import Target Hint or exact normalized title matching.
-- Exact duplicate chapters are skipped by default.
+- Import Duplicate Candidate chapters are flagged, deselected by default, and still selectable.
 - The Vault Surface shows remote-only and cached chapters from the local Vault Index.
 - A user can edit basic Vault Metadata and Vault Labels.
 - A user can cache a vault-only chapter and read it after integrity verification.

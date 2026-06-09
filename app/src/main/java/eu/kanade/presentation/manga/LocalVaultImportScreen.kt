@@ -153,14 +153,7 @@ private fun ImportContent(
     onSelectNone: () -> Unit,
     onRetry: () -> Unit,
 ) {
-    val importableChapters = state.plan
-        ?.chapters
-        .orEmpty()
-        .filter { it.duplicateState != LocalVaultImportDuplicateState.EXACT }
-    val skippedChapters = state.plan
-        ?.chapters
-        .orEmpty()
-        .filter { it.duplicateState == LocalVaultImportDuplicateState.EXACT }
+    val importableChapters = state.plan?.chapters.orEmpty()
 
     LazyColumn(
         contentPadding = contentPadding,
@@ -202,25 +195,6 @@ private fun ImportContent(
                 checked = item.chapter.selectionId in state.selectedChapterIds,
                 enabled = !state.isImporting,
                 onCheckedChange = { checked -> onChapterSelected(item.chapter.selectionId, checked) },
-                modifier = Modifier.animateItem(),
-            )
-        }
-
-        if (skippedChapters.isNotEmpty()) {
-            item(key = "skipped-header", contentType = "section-header") {
-                ChapterGroupHeader(
-                    text = stringResource(MR.strings.vault_import_skipped),
-                    modifier = Modifier.animateItem(),
-                )
-            }
-        }
-        items(
-            items = skippedChapters,
-            key = { "skipped-chapter-${it.chapter.selectionId}" },
-            contentType = { "skipped-chapter" },
-        ) { item ->
-            SkippedChapterItem(
-                item = item,
                 modifier = Modifier.animateItem(),
             )
         }
@@ -594,38 +568,6 @@ private fun ChapterImportItem(
 }
 
 @Composable
-private fun SkippedChapterItem(
-    item: LocalVaultImportChapterPlan,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(start = 72.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                text = item.chapter.title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = item.skippedSummary(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-    HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
-}
-
-@Composable
 private fun LocalVaultImportChapterPlan.importableSummary(): String {
     return buildList {
         chapter.previewSizeLabel()?.let { add(it) }
@@ -633,14 +575,6 @@ private fun LocalVaultImportChapterPlan.importableSummary(): String {
         if (chapter.requiresLocalCbzConversion) {
             add(stringResource(MR.strings.vault_import_converts_to_cbz))
         }
-    }.joinToString(" · ")
-}
-
-@Composable
-private fun LocalVaultImportChapterPlan.skippedSummary(): String {
-    return buildList {
-        chapter.previewSizeLabel()?.let { add(it) }
-        duplicateState.label()?.let { add(it) }
     }.joinToString(" · ")
 }
 
@@ -684,7 +618,6 @@ private fun LocalVaultImportTarget.reasonLabel(): String? {
 private fun LocalVaultImportDuplicateState.label(): String? {
     return when (this) {
         LocalVaultImportDuplicateState.NONE -> null
-        LocalVaultImportDuplicateState.EXACT -> stringResource(MR.strings.vault_import_already_in_vault)
         LocalVaultImportDuplicateState.POSSIBLE -> stringResource(MR.strings.vault_import_possible_duplicate)
     }
 }

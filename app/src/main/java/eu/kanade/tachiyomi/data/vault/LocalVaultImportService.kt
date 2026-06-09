@@ -189,7 +189,6 @@ class LocalVaultImportService(
         }
         val mangaIdentity = target.mangaIdentity(remoteMangaManifest)
         val existingRemoteChapters = remoteMangaManifest?.chapters.orEmpty()
-        val existingChecksums = existingRemoteChapters.map { it.content.integrity.checksumSha256 }.toSet()
         val convertedSelectedChapters = runCatching {
             convertDirectoryChaptersToCbz(
                 chapters = selectedChapters,
@@ -200,13 +199,11 @@ class LocalVaultImportService(
         }.getOrElse {
             return LocalVaultImportResult.UploadFailed
         }
-        val chaptersToImport = convertedSelectedChapters.filter { it.chapter.checksumSha256 !in existingChecksums }
-        val skippedDuplicateCount = convertedSelectedChapters.size - chaptersToImport.size
 
         webDav.createDirectory(config.rootPath.childPath("manga"))
         webDav.createDirectory(config.rootPath.childPath("content"))
         val importedChapters = runCatching {
-            chaptersToImport.map { localChapter ->
+            convertedSelectedChapters.map { localChapter ->
                 updateProgress(localChapter)
                 val chapterIdentity = UUID.randomUUID().toString()
                 val contentPath = uploadChapter(
@@ -229,12 +226,6 @@ class LocalVaultImportService(
         }.getOrElse {
             return LocalVaultImportResult.UploadFailed
         }
-        convertedSelectedChapters
-            .filter { it.chapter.checksumSha256 in existingChecksums }
-            .forEach { localChapter ->
-                progressCurrent += 1
-                updateProgress(localChapter)
-            }
         val importedCover = remoteMangaManifest?.cover ?: runCatching {
             uploadCover(
                 webDav = webDav,
@@ -319,14 +310,12 @@ class LocalVaultImportService(
                 ?: return LocalVaultImportResult.Imported(
                     mangaIdentity = VaultIdentity(mangaIdentity),
                     importedChapterCount = importedChapters.size,
-                    skippedExactDuplicateCount = skippedDuplicateCount,
                 ),
         )
 
         return LocalVaultImportResult.Imported(
             mangaIdentity = VaultIdentity(mangaIdentity),
             importedChapterCount = importedChapters.size,
-            skippedExactDuplicateCount = skippedDuplicateCount,
         )
     }
 
@@ -352,6 +341,7 @@ class LocalVaultImportService(
                 file = file,
                 chapter = LocalVaultImportChapter(
                     selectionId = chapter.url,
+                    sourceFileName = file.name.orEmpty(),
                     title = chapter.name,
                     chapterNumber = chapter.chapter_number.toDouble(),
                     volumeNumber = null,
@@ -430,6 +420,7 @@ class LocalVaultImportService(
             return copy(
                 file = archive,
                 chapter = chapter.copy(
+                    sourceFileName = archive.name.orEmpty(),
                     contentFormat = VaultChapterContentFormat.CBZ,
                     sizeBytes = digest.sizeBytes,
                     checksumSha256 = digest.sha256,
@@ -901,7 +892,6 @@ sealed interface LocalVaultImportResult {
     data class Imported(
         val mangaIdentity: VaultIdentity,
         val importedChapterCount: Int,
-        val skippedExactDuplicateCount: Int,
     ) : LocalVaultImportResult
 }
 

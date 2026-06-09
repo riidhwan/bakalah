@@ -31,7 +31,7 @@ Use Hetzner Storage Box or another WebDAV provider with equivalent support for `
 - Repeat import for the same Local Manga and confirm the Import Target Hint selects the existing Vault Manga.
 - Remove the hint or use another local entry with the same normalized title and confirm a single exact match selects the existing Vault Manga.
 - Create two exact normalized title matches and confirm the import UI requires an explicit target choice.
-- Confirm exact duplicate chapters are skipped by default and possible duplicates remain selected but visibly warned.
+- Confirm Import Duplicate Candidate chapters are detected by physical chapter file name basename, visibly warned, deselected by default, and still selectable.
 - Trigger an upload failure and confirm the import remains retryable without partially published catalogue content.
 - After a successful import, use Open in Vault and confirm navigation lands on the imported Vault Manga.
 

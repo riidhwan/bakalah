@@ -104,28 +104,43 @@ class BuildLocalVaultImportPlanTest {
     }
 
     @Test
-    fun `exact duplicate chapters are skipped by default and possible duplicates are flagged`() {
+    fun `filename duplicate chapters are flagged and deselected by default`() {
         val target = vaultManga(id = 2, title = "One Piece")
         val plan = builder.build(
             localManga = localManga("One Piece"),
             localChapters = listOf(
-                localChapter(selectionId = "same-checksum", title = "Chapter 1", chapterNumber = 1.0, checksum = "a"),
-                localChapter(selectionId = "same-number", title = "Different", chapterNumber = 2.0, checksum = "b"),
-                localChapter(selectionId = "new", title = "Chapter 3", chapterNumber = 3.0, checksum = "c"),
+                localChapter(
+                    fileName = "Chapter 1.cbz",
+                    title = "Different Title",
+                    chapterNumber = 10.0,
+                    checksum = "new",
+                ),
+                localChapter(fileName = "Chapter 2.cbz", title = "Chapter 2", chapterNumber = 2.0, checksum = "same"),
+                localChapter(fileName = "Chapter 3.cbz", title = "Chapter 3", chapterNumber = 3.0, checksum = "c"),
             ),
             vaultManga = listOf(target),
             existingChaptersByMangaId = mapOf(
                 target.id to listOf(
-                    vaultChapter(title = "Chapter 1", chapterNumber = 1.0, checksum = "a"),
-                    vaultChapter(title = "Chapter 2", chapterNumber = 2.0, checksum = "other"),
+                    vaultChapter(
+                        path = "content/manga/chapter/Chapter 1.cbz",
+                        title = "Chapter 1",
+                        chapterNumber = 1.0,
+                        checksum = "a",
+                    ),
+                    vaultChapter(
+                        path = "content/manga/chapter/Different.cbz",
+                        title = "Chapter 2",
+                        chapterNumber = 2.0,
+                        checksum = "same",
+                    ),
                 ),
             ),
             hint = null,
         )
 
         plan.chapters.map { it.duplicateState } shouldBe listOf(
-            LocalVaultImportDuplicateState.EXACT,
             LocalVaultImportDuplicateState.POSSIBLE,
+            LocalVaultImportDuplicateState.NONE,
             LocalVaultImportDuplicateState.NONE,
         )
         plan.chapters.map { it.selectedByDefault } shouldBe listOf(false, true, true)
@@ -140,11 +155,16 @@ class BuildLocalVaultImportPlanTest {
                 reason = LocalVaultImportTarget.Reason.USER_SELECTED,
             ),
             localChapters = listOf(
-                localChapter(selectionId = "new-for-target", title = "Chapter 1", chapterNumber = 1.0, checksum = "a"),
-                localChapter(selectionId = "same-for-target", title = "Chapter 2", chapterNumber = 2.0, checksum = "b"),
+                localChapter(fileName = "Chapter 1.cbz", title = "Chapter 1", chapterNumber = 1.0, checksum = "a"),
+                localChapter(fileName = "Chapter 2.cbz", title = "Chapter 2", chapterNumber = 2.0, checksum = "b"),
             ),
             existingChapters = listOf(
-                vaultChapter(title = "Chapter 2", chapterNumber = 2.0, checksum = "b"),
+                vaultChapter(
+                    path = "content/manga/chapter/Chapter 2.cbz",
+                    title = "Different",
+                    chapterNumber = 20.0,
+                    checksum = "different",
+                ),
             ),
         )
 
@@ -154,30 +174,35 @@ class BuildLocalVaultImportPlanTest {
         )
         plan.chapters.map { it.duplicateState } shouldBe listOf(
             LocalVaultImportDuplicateState.NONE,
-            LocalVaultImportDuplicateState.EXACT,
+            LocalVaultImportDuplicateState.POSSIBLE,
         )
         plan.chapters.map { it.selectedByDefault } shouldBe listOf(true, false)
     }
 
     @Test
-    fun `unknown chapter numbers do not create possible duplicates by number`() {
+    fun `matching extension is not required for filename duplicates`() {
         val target = vaultManga(id = 2, title = "One Piece")
         val plan = builder.build(
             localManga = localManga("One Piece"),
             localChapters = listOf(
-                localChapter(selectionId = "unknown-number", title = "Special", chapterNumber = -1.0, checksum = "a"),
+                localChapter(fileName = "Special", title = "Special", chapterNumber = -1.0, checksum = "a"),
             ),
             vaultManga = listOf(target),
             existingChaptersByMangaId = mapOf(
                 target.id to listOf(
-                    vaultChapter(title = "Different Special", chapterNumber = -1.0, checksum = "b"),
+                    vaultChapter(
+                        path = "content/manga/chapter/special.cbz",
+                        title = "Different Special",
+                        chapterNumber = -1.0,
+                        checksum = "b",
+                    ),
                 ),
             ),
             hint = null,
         )
 
-        plan.chapters.single().duplicateState shouldBe LocalVaultImportDuplicateState.NONE
-        plan.chapters.single().selectedByDefault shouldBe true
+        plan.chapters.single().duplicateState shouldBe LocalVaultImportDuplicateState.POSSIBLE
+        plan.chapters.single().selectedByDefault shouldBe false
     }
 
     private fun localManga(title: String) = LocalVaultImportManga(
@@ -194,12 +219,13 @@ class BuildLocalVaultImportPlanTest {
     )
 
     private fun localChapter(
-        selectionId: String,
+        fileName: String,
         title: String,
         chapterNumber: Double,
         checksum: String,
     ) = tachiyomi.domain.vault.model.LocalVaultImportChapter(
-        selectionId = selectionId,
+        selectionId = "local/$fileName",
+        sourceFileName = fileName,
         title = title,
         chapterNumber = chapterNumber,
         volumeNumber = null,
@@ -230,6 +256,7 @@ class BuildLocalVaultImportPlanTest {
     )
 
     private fun vaultChapter(
+        path: String,
         title: String,
         chapterNumber: Double,
         checksum: String,
@@ -243,7 +270,7 @@ class BuildLocalVaultImportPlanTest {
         scanlator = null,
         sourceOrder = 0,
         content = VaultChapterContent(
-            path = "content/$checksum.cbz",
+            path = path,
             format = VaultChapterContentFormat.CBZ,
             sizeBytes = 10,
             checksumSha256 = checksum,

@@ -135,14 +135,14 @@ Local-to-Vault Import starts from an existing Local Manga detail screen.
 - target-choice-required when multiple exact matches exist
 - create-new when no match exists
 
-Chapter duplicate planning compares checksums for exact duplicates and title/chapter-number for possible duplicates. Exact duplicates are deselected by default.
+Chapter duplicate planning compares the physical chapter file name basename against existing remote chapter content path basenames. Matching Import Duplicate Candidate chapters are flagged, deselected by default, and remain selectable. Checksums are reserved for content integrity and are not used to plan import duplicates.
 
 `LocalVaultImportService.import` publishes selected chapters:
 
 1. Re-read and validate the configured remote root manifest.
 2. Resolve the target manga or require explicit target selection.
 3. Convert selected directory chapters into validated CBZ archives before upload.
-4. Upload selected non-duplicate chapter content under `content/<manga>/<chapter>/...`.
+4. Upload selected chapter content under `content/<manga>/<chapter>/...`.
 5. Upload an initial cover from Local Manga cover storage when the target has no remote cover.
 6. Write or update the manga manifest.
 7. Write the updated root manifest with incremented revision and summary counts.

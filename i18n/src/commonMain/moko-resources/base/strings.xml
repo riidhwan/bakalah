@@ -252,10 +252,7 @@
     <string name="vault_import_planned_changes">Planned changes</string>
     <string name="vault_import_chapters">Chapters</string>
     <string name="vault_import_importable">Importable</string>
-    <string name="vault_import_skipped">Skipped</string>
     <string name="vault_import_select_none">Select none</string>
-    <string name="vault_import_already_in_vault">Already in Vault</string>
-    <string name="vault_import_skipped_chapter_summary">%s · Already in Vault</string>
     <string name="vault_import_possible_duplicate">Possible duplicate</string>
     <string name="vault_import_selected_count">%1$d selected · %2$d recognized</string>
     <string name="vault_import_selected_count_only">%d selected</string>
@@ -274,7 +271,7 @@
     <string name="vault_import_complete">Import complete</string>
     <string name="vault_import_action_open_in_vault">Open in Vault</string>
     <string name="vault_import_action_open_vault">Open Vault</string>
-    <string name="vault_import_success">%1$d imported · %2$d already in Vault</string>
+    <string name="vault_import_success">%d imported</string>
     <string name="vault_import_error_incomplete_configuration">No Content Vault is configured</string>
     <string name="vault_import_error_missing_local_manga">Local Manga folder is missing or inaccessible</string>
     <string name="vault_import_error_nothing_selected">Select at least one chapter to import</string>

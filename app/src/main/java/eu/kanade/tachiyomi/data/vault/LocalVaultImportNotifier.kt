@@ -57,7 +57,7 @@ class LocalVaultImportNotifier(
         )
     }
 
-    fun showComplete(importedChapterCount: Int, skippedExactDuplicateCount: Int) {
+    fun showComplete(importedChapterCount: Int) {
         context.notify(
             Notifications.ID_VAULT_IMPORT_PROGRESS,
             progressNotificationBuilder
@@ -68,7 +68,6 @@ class LocalVaultImportNotifier(
                     context.stringResource(
                         MR.strings.vault_import_success,
                         importedChapterCount,
-                        skippedExactDuplicateCount,
                     ),
                 )
                 .setProgress(0, 0, false)
