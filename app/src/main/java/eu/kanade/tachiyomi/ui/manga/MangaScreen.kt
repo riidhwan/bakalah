@@ -31,7 +31,9 @@ import eu.kanade.presentation.components.NavigatorAdaptiveSheet
 import eu.kanade.presentation.manga.ChapterSettingsDialog
 import eu.kanade.presentation.manga.DuplicateMangaDialog
 import eu.kanade.presentation.manga.EditCoverAction
+import eu.kanade.presentation.manga.LocalVaultTargetSetupDialog
 import eu.kanade.presentation.manga.MangaScreen
+import eu.kanade.presentation.manga.VaultChapterReplacementDialog
 import eu.kanade.presentation.manga.components.DeleteChaptersDialog
 import eu.kanade.presentation.manga.components.MangaCoverDialog
 import eu.kanade.presentation.manga.components.ScanlatorFilterDialog
@@ -90,7 +92,6 @@ class MangaScreen(
         val screenModel = rememberScreenModel {
             MangaScreenModel(context, lifecycleOwner.lifecycle, mangaId, fromSource)
         }
-        val importOngoingMessage = stringResource(MR.strings.vault_import_ongoing)
 
         val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -167,17 +168,17 @@ class MangaScreen(
             onEditLocalMetadataClicked = {
                 navigator.push(LocalMangaMetadataEditScreen(successState.manga.id))
             }.takeIf { successState.canEditLocalMetadata },
-            onImportToVaultClicked = {
-                navigator.push(
-                    LocalVaultImportScreen(
-                        mangaId = successState.manga.id,
-                        onImportStarted = {
-                            screenModel.showSnackbar(importOngoingMessage)
-                        },
-                    ),
-                )
-            }.takeIf { successState.canEditLocalMetadata },
+            onVaultTargetClicked = {
+                screenModel.openLocalVaultTargetRow {
+                    navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage))
+                }
+            },
             onEditNotesClicked = { navigator.push(MangaNotesScreen(manga = successState.manga)) },
+            onAddToVaultClicked = {
+                screenModel.startAddToVault {
+                    navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage))
+                }
+            },
             onMultiBookmarkClicked = screenModel::bookmarkChapters,
             onMultiMarkAsReadClicked = screenModel::markChaptersRead,
             onMarkPreviousAsReadClicked = screenModel::markPreviousChapterRead,
@@ -229,6 +230,25 @@ class MangaScreen(
                     target = dialog.target,
                     // Initiated from the context of [dialog.target] so we show [dialog.current].
                     onClickTitle = { navigator.push(MangaScreen(dialog.current.id)) },
+                    onDismissRequest = onDismissRequest,
+                )
+            }
+            is MangaScreenModel.Dialog.LocalVaultTargetSetup -> {
+                LocalVaultTargetSetupDialog(
+                    targets = dialog.targets,
+                    exactTitleCandidateIds = dialog.exactTitleCandidateIds,
+                    selectedTarget = dialog.selectedTarget,
+                    allowCreateNew = dialog.allowCreateNew,
+                    allowUnlink = dialog.allowUnlink,
+                    pendingAddToVault = dialog.pendingAddToVault,
+                    onTargetSelected = screenModel::selectLocalVaultTarget,
+                    onDismissRequest = onDismissRequest,
+                )
+            }
+            is MangaScreenModel.Dialog.LocalVaultReplaceChapters -> {
+                VaultChapterReplacementDialog(
+                    chapterTitles = dialog.chapterTitles,
+                    onConfirm = screenModel::confirmLocalVaultReplacement,
                     onDismissRequest = onDismissRequest,
                 )
             }

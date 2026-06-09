@@ -178,6 +178,9 @@ class VaultCachePolicyServiceTest {
             cacheStates[state.chapterId] = state
         }
         override suspend fun getCacheState(chapterId: Long): VaultChapterCacheState? = cacheStates[chapterId]
+        override suspend fun deleteCacheStates(chapterIds: List<Long>) {
+            chapterIds.forEach(cacheStates::remove)
+        }
         override fun getCacheStatesForMangaAsFlow(mangaId: Long): Flow<List<VaultChapterCacheState>> = emptyFlow()
         override fun getCacheStatesForVaultAsFlow(vaultId: Long): Flow<List<VaultChapterCacheState>> = emptyFlow()
         override suspend fun getCacheStatesForVault(vaultId: Long): List<VaultChapterCacheState> {
@@ -198,6 +201,8 @@ class VaultCachePolicyServiceTest {
         }
         override suspend fun upsertImportTargetHint(hint: ImportTargetHint) = Unit
         override suspend fun getImportTargetHint(localMangaId: Long): ImportTargetHint? = null
+        override fun getImportTargetHintAsFlow(localMangaId: Long): Flow<ImportTargetHint?> = emptyFlow()
+        override suspend fun deleteImportTargetHint(localMangaId: Long) = Unit
         override suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long = unsupported()
         override suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long = unsupported()
         override suspend fun deleteMangaLocalState(mangaId: Long) = Unit

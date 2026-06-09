@@ -3,6 +3,9 @@ package tachiyomi.data.vault
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToOneOrNull
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import tachiyomi.data.Database
@@ -305,6 +308,12 @@ class VaultRepositoryImpl(
             .awaitAsOneOrNull()
     }
 
+    override suspend fun deleteCacheStates(chapterIds: List<Long>) {
+        if (chapterIds.isNotEmpty()) {
+            database.vaultQueries.deleteCacheStates(chapterIds)
+        }
+    }
+
     override fun getCacheStatesForMangaAsFlow(mangaId: Long): Flow<List<VaultChapterCacheState>> {
         return database.vaultQueries
             .getCacheStatesForManga(mangaId, VaultMapper::mapCacheState)
@@ -353,6 +362,17 @@ class VaultRepositoryImpl(
         return database.vaultQueries
             .getImportTargetHint(localMangaId, VaultMapper::mapImportTargetHint)
             .awaitAsOneOrNull()
+    }
+
+    override fun getImportTargetHintAsFlow(localMangaId: Long): Flow<ImportTargetHint?> {
+        return database.vaultQueries
+            .getImportTargetHintAsFlow(localMangaId, VaultMapper::mapImportTargetHint)
+            .asFlow()
+            .mapToOneOrNull(Dispatchers.IO)
+    }
+
+    override suspend fun deleteImportTargetHint(localMangaId: Long) {
+        database.vaultQueries.deleteImportTargetHint(localMangaId)
     }
 
     override suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long {

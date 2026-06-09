@@ -435,6 +435,10 @@ SELECT *
 FROM vault_chapter_cache_state
 WHERE chapter_id = :chapterId;
 
+deleteCacheStates:
+DELETE FROM vault_chapter_cache_state
+WHERE chapter_id IN :chapterIds;
+
 getCacheStatesForManga:
 SELECT vault_chapter_cache_state.*
 FROM vault_chapter_cache_state
@@ -480,6 +484,15 @@ ON CONFLICT(local_manga_id) DO UPDATE SET
 getImportTargetHint:
 SELECT *
 FROM vault_import_target_hints
+WHERE local_manga_id = :localMangaId;
+
+getImportTargetHintAsFlow:
+SELECT *
+FROM vault_import_target_hints
+WHERE local_manga_id = :localMangaId;
+
+deleteImportTargetHint:
+DELETE FROM vault_import_target_hints
 WHERE local_manga_id = :localMangaId;
 
 upsertManifestSnapshot:
