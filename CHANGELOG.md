@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+
+## [v0.23.0] - 2026-06-09
 ### Changed
 - Replace the Vault screen top-bar refresh action with pull-to-refresh.
 - Integrate "Import to Vault" into the Local Manga detail screen.
