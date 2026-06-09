@@ -151,6 +151,9 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Vault Chapter Replacement confirmation should list the selected duplicate Local Chapter titles, capped when needed, rather than comparing local and vault titles.
 - Vault Chapter Replacement should preserve the replaced Vault Chapter identity and catalogue position while updating vault-owned readable content and integrity data.
 - Vault Chapter Replacement should preserve existing Vault Chapter metadata and source order; metadata edits remain a separate vault catalogue workflow.
+- New non-duplicate Local-to-Vault Import chapters should use Vault Import Filename Order across the full target manga chapter set so the latest full physical chapter file name appears first, matching Local and Library chapter lists.
+- Each successful Local-to-Vault Import publish should normalize the full target manga's non-replacement catalogue order, repairing earlier unstable import order the next time that manga is imported.
+- Catalogue refresh should not rewrite remote manifests to repair chapter order, and this ordering rule does not require a Vault Layout migration for existing manifests.
 - Vault Chapter Replacement should publish replacement content at a new remote content path, update the existing Vault Chapter's content pointer and integrity data, invalidate stale local cache state unless the new content is separately verified in the Vault Cache Directory, and clean up the old remote content file after successful publish where possible.
 - Import duplicate planning should use the physical chapter file name basename rather than checksums, chapter numbers, or parsed chapter titles.
 - Import duplicate indicators should consider only chapters already present in the local Vault Index for the current Import Target, not in-flight uploads.

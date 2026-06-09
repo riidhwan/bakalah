@@ -12,6 +12,10 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.23.1] - 2026-06-09
+### Fixed
+- Fix Local-to-Vault Import assigning unstable Vault Chapter order by using latest-first physical chapter filenames.
+
 ## [v0.23.0] - 2026-06-09
 ### Changed
 - Replace the Vault screen top-bar refresh action with pull-to-refresh.
