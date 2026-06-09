@@ -13,6 +13,10 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ## [Unreleased]
 ### Changed
 - Replace the Vault screen top-bar refresh action with pull-to-refresh.
+- Integrate "Import to Vault" into the Local Manga detail screen.
+
+### Improved
+- Improve Vault Manga label management with detail-screen label chips, direct sensitivity/removal actions, and searchable add-label autocomplete.
 
 ## [v0.22.0] - 2026-06-08
 ### Added

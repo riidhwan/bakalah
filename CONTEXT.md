@@ -92,6 +92,10 @@ _Avoid_: Library, cloud library, synced library
 A user-owned organization marker for grouping Vault Manga in the Vault Collection.
 _Avoid_: Vault category, Library category, genre, source tag
 
+**Vault Label Assignment**:
+The association that makes one Vault Label apply to one Vault Manga.
+_Avoid_: Label deletion, manga label, tag deletion
+
 **Sensitive Vault Label**:
 A Vault Label with sensitivity metadata that marks assigned Vault Manga as excluded from the default Vault Surface unless the user explicitly includes sensitive content.
 _Avoid_: 18+ label, hidden category, private genre

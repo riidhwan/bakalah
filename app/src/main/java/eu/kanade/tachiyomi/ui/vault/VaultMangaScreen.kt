@@ -52,6 +52,18 @@ data class VaultMangaScreen(
             onClickSaveMetadata = {
                 screenModel.publishMetadata(it)
             },
+            onClickAssignLabel = {
+                screenModel.assignLabel(it)
+            },
+            onClickCreateLabel = {
+                screenModel.createLabel(it)
+            },
+            onClickRemoveLabel = {
+                screenModel.removeLabelAssignment(it)
+            },
+            onClickToggleLabelSensitivity = {
+                screenModel.toggleLabelSensitivity(it)
+            },
         )
 
         LaunchedEffect(Unit) {
