@@ -207,11 +207,12 @@
     <string name="vault_delete_manga_complete">Vault Manga moved to Trash</string>
     <string name="vault_delete_manga_failed_details">Could not delete from Vault: %s</string>
     <string name="vault_metadata_edit_title">Edit Vault Metadata</string>
-    <string name="vault_metadata_labels">Vault Labels</string>
-    <string name="vault_metadata_new_label">New label</string>
-    <string name="vault_metadata_label_name">Label name</string>
-    <string name="vault_metadata_label_required">Label names cannot be blank</string>
     <string name="vault_metadata_label_duplicate">Vault Label names must be unique</string>
+    <string name="vault_label_add">Add Vault Label</string>
+    <string name="vault_label_search_or_new">Search or create label</string>
+    <string name="vault_label_mark_sensitive">Mark as sensitive</string>
+    <string name="vault_label_mark_not_sensitive">Mark as not sensitive</string>
+    <string name="vault_label_remove_from_manga">Remove</string>
     <string name="vault_label_sensitive">Sensitive</string>
     <string name="vault_metadata_publish_complete">Vault Metadata updated</string>
     <string name="vault_metadata_publish_failed_details">Could not update Vault Metadata: %s</string>

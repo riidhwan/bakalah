@@ -1,9 +1,11 @@
 package eu.kanade.presentation.vault
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Download
@@ -28,7 +31,6 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -37,9 +39,12 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -66,6 +71,7 @@ import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.tachiyomi.ui.vault.VaultMangaScreenModel
 import tachiyomi.domain.vault.model.VaultCacheState
+import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.FastScrollLazyColumn
@@ -85,6 +91,10 @@ fun VaultMangaScreen(
     onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickDelete: () -> Unit,
     onClickSaveMetadata: (VaultMangaScreenModel.VaultMetadataEdit) -> Unit,
+    onClickAssignLabel: (VaultLabel) -> Unit,
+    onClickCreateLabel: (String) -> Unit,
+    onClickRemoveLabel: (VaultLabel) -> Unit,
+    onClickToggleLabelSensitivity: (VaultLabel) -> Unit,
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showMetadataEdit by remember { mutableStateOf(false) }
@@ -144,6 +154,10 @@ fun VaultMangaScreen(
                 onClickEvict = onClickEvict,
                 onClickRetry = onClickRetry,
                 onClickRead = onClickRead,
+                onClickAssignLabel = onClickAssignLabel,
+                onClickCreateLabel = onClickCreateLabel,
+                onClickRemoveLabel = onClickRemoveLabel,
+                onClickToggleLabelSensitivity = onClickToggleLabelSensitivity,
             )
         }
     }
@@ -191,6 +205,10 @@ private fun VaultChapterList(
     onClickEvict: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRetry: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onClickAssignLabel: (VaultLabel) -> Unit,
+    onClickCreateLabel: (String) -> Unit,
+    onClickRemoveLabel: (VaultLabel) -> Unit,
+    onClickToggleLabelSensitivity: (VaultLabel) -> Unit,
 ) {
     FastScrollLazyColumn(
         contentPadding = contentPadding,
@@ -207,6 +225,10 @@ private fun VaultChapterList(
                         }
                     }
                 },
+                onClickAssignLabel = onClickAssignLabel,
+                onClickCreateLabel = onClickCreateLabel,
+                onClickRemoveLabel = onClickRemoveLabel,
+                onClickToggleLabelSensitivity = onClickToggleLabelSensitivity,
                 modifier = Modifier.animateItem(),
             )
         }
@@ -231,9 +253,15 @@ private fun VaultChapterList(
 private fun VaultMangaHeader(
     state: VaultMangaScreenModel.State,
     onPrimaryAction: () -> Unit,
+    onClickAssignLabel: (VaultLabel) -> Unit,
+    onClickCreateLabel: (String) -> Unit,
+    onClickRemoveLabel: (VaultLabel) -> Unit,
+    onClickToggleLabelSensitivity: (VaultLabel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val manga = state.manga ?: return
+    var selectedLabel by remember { mutableStateOf<VaultLabel?>(null) }
+    var showAddLabel by remember { mutableStateOf(false) }
     val cachedCount = state.chapters.count { it.state == VaultCacheState.CACHED }
     val primaryAction = state.primaryActionChapter()
     val primaryActionText = when {
@@ -278,15 +306,11 @@ private fun VaultMangaHeader(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (state.mangaLabels.isNotEmpty()) {
-                    Text(
-                        text = state.mangaLabels.joinToString { it.name },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                VaultLabelChips(
+                    labels = state.mangaLabels,
+                    onClickLabel = { selectedLabel = it },
+                    onClickAdd = { showAddLabel = true },
+                )
                 VaultMangaStats(
                     chapterCount = state.chapters.size,
                     cachedCount = cachedCount,
@@ -304,6 +328,267 @@ private fun VaultMangaHeader(
             }
         }
     }
+
+    selectedLabel?.let { label ->
+        VaultLabelActionSheet(
+            label = label,
+            onToggleSensitivity = {
+                selectedLabel = null
+                onClickToggleLabelSensitivity(label)
+            },
+            onRemove = {
+                selectedLabel = null
+                onClickRemoveLabel(label)
+            },
+            onDismissRequest = { selectedLabel = null },
+        )
+    }
+
+    if (showAddLabel) {
+        VaultAddLabelDialog(
+            state = state,
+            onAssignLabel = {
+                showAddLabel = false
+                onClickAssignLabel(it)
+            },
+            onCreateLabel = {
+                showAddLabel = false
+                onClickCreateLabel(it)
+            },
+            onDismissRequest = { showAddLabel = false },
+        )
+    }
+}
+
+@Composable
+private fun VaultLabelChips(
+    labels: List<VaultLabel>,
+    onClickLabel: (VaultLabel) -> Unit,
+    onClickAdd: () -> Unit,
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        labels.forEach { label ->
+            VaultLabelChip(
+                label = label,
+                onClick = { onClickLabel(label) },
+            )
+        }
+        SuggestionChip(
+            onClick = onClickAdd,
+            label = {
+                Icon(
+                    imageVector = Icons.Outlined.Add,
+                    contentDescription = stringResource(MR.strings.vault_label_add),
+                    modifier = Modifier.size(18.dp),
+                )
+            },
+        )
+    }
+}
+
+@Composable
+private fun VaultLabelChip(
+    label: VaultLabel,
+    onClick: () -> Unit,
+) {
+    val colors = if (label.isSensitive) {
+        SuggestionChipDefaults.suggestionChipColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            labelColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        )
+    } else {
+        SuggestionChipDefaults.suggestionChipColors()
+    }
+    SuggestionChip(
+        onClick = onClick,
+        label = {
+            Text(
+                text = label.name,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        colors = colors,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VaultLabelActionSheet(
+    label: VaultLabel,
+    onToggleSensitivity: () -> Unit,
+    onRemove: () -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismissRequest) {
+        Column(
+            modifier = Modifier.padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = label.name,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            VaultLabelSheetItem(
+                label = stringResource(
+                    if (label.isSensitive) {
+                        MR.strings.vault_label_mark_not_sensitive
+                    } else {
+                        MR.strings.vault_label_mark_sensitive
+                    },
+                ),
+                onClick = onToggleSensitivity,
+            )
+            VaultLabelSheetItem(
+                label = stringResource(MR.strings.vault_label_remove_from_manga),
+                onClick = onRemove,
+            )
+        }
+    }
+}
+
+@Composable
+private fun VaultLabelSheetItem(
+    label: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun VaultAddLabelDialog(
+    state: VaultMangaScreenModel.State,
+    onAssignLabel: (VaultLabel) -> Unit,
+    onCreateLabel: (String) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    var newLabel by remember { mutableStateOf("") }
+    val assigned = state.mangaLabels.map { it.identity.value }.toSet()
+    val newLabelName = newLabel.trim()
+    val labelQuery = normalizeLabelName(newLabelName)
+    val unassignedLabels = if (labelQuery.isBlank()) {
+        emptyList()
+    } else {
+        state.vaultLabels
+            .filterNot { it.identity.value in assigned }
+            .filter { normalizeLabelName(it.name).contains(labelQuery) }
+            .sortedBy { it.sortKey }
+            .take(MAX_LABEL_AUTOCOMPLETE_RESULT_COUNT)
+    }
+    val duplicateLabelName = newLabelName.isNotBlank() &&
+        state.vaultLabels.any { normalizeLabelName(it.name) == normalizeLabelName(newLabelName) }
+    val canCreateLabel = newLabelName.isNotBlank() && !duplicateLabelName
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(stringResource(MR.strings.vault_label_add)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                MetadataTextField(
+                    value = newLabel,
+                    onValueChange = { newLabel = it },
+                    label = stringResource(MR.strings.vault_label_search_or_new),
+                    singleLine = true,
+                )
+                if (duplicateLabelName) {
+                    Text(
+                        text = stringResource(MR.strings.vault_metadata_label_duplicate),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                if (unassignedLabels.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    ) {
+                        Column {
+                            unassignedLabels.forEach { label ->
+                                VaultAddLabelItem(
+                                    label = label,
+                                    onClick = { onAssignLabel(label) },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = canCreateLabel,
+                onClick = { onCreateLabel(newLabelName) },
+            ) {
+                Text(stringResource(MR.strings.action_add))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(MR.strings.action_cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun VaultAddLabelItem(
+    label: VaultLabel,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label.name,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (label.isSensitive) {
+            Surface(
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Text(
+                    text = stringResource(MR.strings.vault_label_sensitive),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -318,29 +603,8 @@ private fun VaultMetadataEditDialog(
     var artist by remember(manga.id) { mutableStateOf(manga.metadata.artist.orEmpty()) }
     var description by remember(manga.id) { mutableStateOf(manga.metadata.description.orEmpty()) }
     var status by remember(manga.id) { mutableStateOf(manga.metadata.status) }
-    var newLabel by remember(manga.id) { mutableStateOf("") }
-    var labels by remember(manga.id, state.vaultLabels, state.mangaLabels) {
-        val assigned = state.mangaLabels.map { it.identity.value }.toSet()
-        mutableStateOf(
-            state.vaultLabels.map {
-                LabelEditRow(
-                    identity = it.identity.value,
-                    name = it.name,
-                    isSensitive = it.isSensitive,
-                    assigned = it.identity.value in assigned,
-                )
-            },
-        )
-    }
+    val labels = remember(manga.id, state.vaultLabels, state.mangaLabels) { state.labelEdits() }
     val titleError = title.isBlank()
-    val blankLabelNames = labels.any { it.name.isBlank() }
-    val duplicateLabelNames = labels
-        .map { normalizeLabelName(it.name) }
-        .filter { it.isNotBlank() }
-        .let { names -> names.size != names.distinct().size }
-    val newLabelName = newLabel.trim()
-    val canAddLabel = newLabelName.isNotBlank() &&
-        labels.none { normalizeLabelName(it.name) == normalizeLabelName(newLabelName) }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -385,69 +649,11 @@ private fun VaultMetadataEditDialog(
                     status = status,
                     onStatusChange = { status = it },
                 )
-                Text(
-                    text = stringResource(MR.strings.vault_metadata_labels),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                labels.forEachIndexed { index, label ->
-                    LabelEditItem(
-                        label = label,
-                        onAssignedChange = { assigned ->
-                            labels = labels.replace(index, label.copy(assigned = assigned))
-                        },
-                        onNameChange = { name ->
-                            labels = labels.replace(index, label.copy(name = name))
-                        },
-                        onSensitiveChange = { isSensitive ->
-                            labels = labels.replace(index, label.copy(isSensitive = isSensitive))
-                        },
-                    )
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    MetadataTextField(
-                        value = newLabel,
-                        onValueChange = { newLabel = it },
-                        label = stringResource(MR.strings.vault_metadata_new_label),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                    )
-                    TextButton(
-                        enabled = canAddLabel,
-                        onClick = {
-                            labels = labels + LabelEditRow(
-                                identity = null,
-                                name = newLabelName,
-                                isSensitive = false,
-                                assigned = true,
-                            )
-                            newLabel = ""
-                        },
-                    ) {
-                        Text(stringResource(MR.strings.action_add))
-                    }
-                }
-                if (duplicateLabelNames) {
-                    Text(
-                        text = stringResource(MR.strings.vault_metadata_label_duplicate),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                if (blankLabelNames) {
-                    Text(
-                        text = stringResource(MR.strings.vault_metadata_label_required),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
             }
         },
         confirmButton = {
             TextButton(
-                enabled = !state.isPublishingMetadata && !titleError && !duplicateLabelNames && !blankLabelNames,
+                enabled = !state.isPublishingMetadata && !titleError,
                 onClick = {
                     onSave(
                         VaultMangaScreenModel.VaultMetadataEdit(
@@ -456,16 +662,7 @@ private fun VaultMetadataEditDialog(
                             artist = artist,
                             description = description,
                             status = status,
-                            labels = labels
-                                .filter { it.name.isNotBlank() }
-                                .map {
-                                    VaultMangaScreenModel.VaultLabelEdit(
-                                        identity = it.identity,
-                                        name = it.name,
-                                        isSensitive = it.isSensitive,
-                                        assigned = it.assigned,
-                                    )
-                                },
+                            labels = labels,
                         ),
                     )
                 },
@@ -481,57 +678,21 @@ private fun VaultMetadataEditDialog(
     )
 }
 
-@Composable
-private fun LabelEditItem(
-    label: LabelEditRow,
-    onAssignedChange: (Boolean) -> Unit,
-    onNameChange: (String) -> Unit,
-    onSensitiveChange: (Boolean) -> Unit,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(
-            checked = label.assigned,
-            onCheckedChange = onAssignedChange,
-        )
-        MetadataTextField(
-            value = label.name,
-            onValueChange = onNameChange,
-            label = stringResource(MR.strings.vault_metadata_label_name),
-            modifier = Modifier.weight(1f),
-            singleLine = true,
-        )
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Checkbox(
-                checked = label.isSensitive,
-                onCheckedChange = onSensitiveChange,
-            )
-            Text(
-                text = stringResource(MR.strings.vault_label_sensitive),
-                style = MaterialTheme.typography.labelSmall,
-            )
-        }
-    }
-}
-
-private data class LabelEditRow(
-    val identity: String?,
-    val name: String,
-    val isSensitive: Boolean,
-    val assigned: Boolean,
-)
-
-private fun List<LabelEditRow>.replace(index: Int, value: LabelEditRow): List<LabelEditRow> {
-    return mapIndexed { currentIndex, currentValue ->
-        if (currentIndex == index) value else currentValue
-    }
-}
-
 private fun normalizeLabelName(name: String): String = name.trim().lowercase()
+
+private const val MAX_LABEL_AUTOCOMPLETE_RESULT_COUNT = 1
+
+private fun VaultMangaScreenModel.State.labelEdits(): List<VaultMangaScreenModel.VaultLabelEdit> {
+    val assigned = mangaLabels.map { it.identity.value }.toSet()
+    return vaultLabels.map {
+        VaultMangaScreenModel.VaultLabelEdit(
+            identity = it.identity.value,
+            name = it.name,
+            isSensitive = it.isSensitive,
+            assigned = it.identity.value in assigned,
+        )
+    }
+}
 
 @Composable
 private fun MetadataTextField(

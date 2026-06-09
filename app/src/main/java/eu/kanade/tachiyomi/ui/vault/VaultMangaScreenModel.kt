@@ -283,6 +283,74 @@ class VaultMangaScreenModel(
         }
     }
 
+    fun assignLabel(label: VaultLabel) {
+        publishLabelEdit(
+            editLabel = { edit ->
+                edit.copy(assigned = edit.identity == label.identity.value || edit.assigned)
+            },
+        )
+    }
+
+    fun createLabel(name: String) {
+        val labelName = name.trim()
+        if (labelName.isBlank()) return
+        publishLabelEdit(
+            editLabel = { it },
+            extraLabels = {
+                listOf(
+                    VaultLabelEdit(
+                        identity = null,
+                        name = labelName,
+                        isSensitive = false,
+                        assigned = true,
+                    ),
+                )
+            },
+        )
+    }
+
+    fun removeLabelAssignment(label: VaultLabel) {
+        publishLabelEdit(
+            editLabel = { edit ->
+                if (edit.identity == label.identity.value) {
+                    edit.copy(assigned = false)
+                } else {
+                    edit
+                }
+            },
+        )
+    }
+
+    fun toggleLabelSensitivity(label: VaultLabel) {
+        publishLabelEdit(
+            editLabel = { edit ->
+                if (edit.identity == label.identity.value) {
+                    edit.copy(isSensitive = !label.isSensitive)
+                } else {
+                    edit
+                }
+            },
+        )
+    }
+
+    private fun publishLabelEdit(
+        editLabel: (VaultLabelEdit) -> VaultLabelEdit,
+        extraLabels: () -> List<VaultLabelEdit> = { emptyList() },
+    ) {
+        val currentState = mutableState.value
+        val manga = currentState.manga ?: return
+        publishMetadata(
+            VaultMetadataEdit(
+                title = manga.metadata.title,
+                author = manga.metadata.author.orEmpty(),
+                artist = manga.metadata.artist.orEmpty(),
+                description = manga.metadata.description.orEmpty(),
+                status = manga.metadata.status,
+                labels = currentState.labelEdits().map(editLabel) + extraLabels(),
+            ),
+        )
+    }
+
     private suspend fun reloadMangaMetadata() {
         val manga = repository.getMangaById(mangaId) ?: return
         val mangaLabels = repository.getLabelsForManga(manga.id)
@@ -378,6 +446,18 @@ class VaultMangaScreenModel(
         val metadataPublishSuccessCount: Int = 0,
         val coverUri: String? = null,
     )
+}
+
+private fun VaultMangaScreenModel.State.labelEdits(): List<VaultMangaScreenModel.VaultLabelEdit> {
+    val assigned = mangaLabels.map { it.identity.value }.toSet()
+    return vaultLabels.map {
+        VaultMangaScreenModel.VaultLabelEdit(
+            identity = it.identity.value,
+            name = it.name,
+            isSensitive = it.isSensitive,
+            assigned = it.identity.value in assigned,
+        )
+    }
 }
 
 private fun VaultMangaDeletionResult.toFailureDetail(): String {
