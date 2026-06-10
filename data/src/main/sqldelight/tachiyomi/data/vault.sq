@@ -142,6 +142,11 @@ CREATE TABLE vault_transfer_jobs(
     size_bytes INTEGER,
     checksum_sha256 TEXT,
     failure_reason TEXT,
+    added_count INTEGER NOT NULL DEFAULT 0,
+    replaced_count INTEGER NOT NULL DEFAULT 0,
+    failed_count INTEGER NOT NULL DEFAULT 0,
+    cancelled_count INTEGER NOT NULL DEFAULT 0,
+    detail_json TEXT,
     attempts INTEGER NOT NULL,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
@@ -158,6 +163,9 @@ CREATE INDEX vault_transfer_jobs_chapter_id_index ON vault_transfer_jobs(chapter
 CREATE TABLE vault_import_target_hints(
     local_manga_id INTEGER NOT NULL PRIMARY KEY,
     local_manga_identity TEXT,
+    content_vault_identity TEXT,
+    source_identity TEXT,
+    vault_manga_identity TEXT,
     vault_manga_id INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
     FOREIGN KEY(vault_manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE
@@ -474,10 +482,19 @@ WHERE vault_mangas.vault_id = :vaultId
 AND vault_chapter_cache_state.state = :state;
 
 upsertImportTargetHint:
-INSERT INTO vault_import_target_hints(local_manga_id, local_manga_identity, vault_manga_id, updated_at)
-VALUES (:localMangaId, :localMangaIdentity, :vaultMangaId, :updatedAt)
+INSERT INTO vault_import_target_hints(
+    local_manga_id, local_manga_identity, content_vault_identity, source_identity, vault_manga_identity,
+    vault_manga_id, updated_at
+)
+VALUES (
+    :localMangaId, :localMangaIdentity, :contentVaultIdentity, :sourceIdentity, :vaultMangaIdentity,
+    :vaultMangaId, :updatedAt
+)
 ON CONFLICT(local_manga_id) DO UPDATE SET
     local_manga_identity = excluded.local_manga_identity,
+    content_vault_identity = excluded.content_vault_identity,
+    source_identity = excluded.source_identity,
+    vault_manga_identity = excluded.vault_manga_identity,
     vault_manga_id = excluded.vault_manga_id,
     updated_at = excluded.updated_at;
 
@@ -543,11 +560,13 @@ WHERE _id = :id;
 upsertTransferJob:
 INSERT INTO vault_transfer_jobs(
     _id, vault_id, chapter_id, type, state, remote_path, local_path, staged_path, size_bytes, checksum_sha256,
-    failure_reason, attempts, created_at, updated_at, started_at, completed_at
+    failure_reason, added_count, replaced_count, failed_count, cancelled_count, detail_json, attempts,
+    created_at, updated_at, started_at, completed_at
 )
 VALUES (
     nullif(:id, -1), :vaultId, :chapterId, :type, :state, :remotePath, :localPath, :stagedPath, :sizeBytes,
-    :checksumSha256, :failureReason, :attempts, :createdAt, :updatedAt, :startedAt, :completedAt
+    :checksumSha256, :failureReason, :addedCount, :replacedCount, :failedCount, :cancelledCount, :detailJson,
+    :attempts, :createdAt, :updatedAt, :startedAt, :completedAt
 )
 ON CONFLICT(_id) DO UPDATE SET
     vault_id = excluded.vault_id,
@@ -560,6 +579,11 @@ ON CONFLICT(_id) DO UPDATE SET
     size_bytes = excluded.size_bytes,
     checksum_sha256 = excluded.checksum_sha256,
     failure_reason = excluded.failure_reason,
+    added_count = excluded.added_count,
+    replaced_count = excluded.replaced_count,
+    failed_count = excluded.failed_count,
+    cancelled_count = excluded.cancelled_count,
+    detail_json = excluded.detail_json,
     attempts = excluded.attempts,
     updated_at = excluded.updated_at,
     started_at = excluded.started_at,

@@ -42,10 +42,22 @@ class LocalVaultImportNotifier(
     }
 
     fun showProgress(progress: LocalVaultImportProgress) {
+        if (progress.indeterminate) {
+            val text = progress.phaseText()
+
+            context.notify(
+                Notifications.ID_VAULT_IMPORT_PROGRESS,
+                progressNotificationBuilder
+                    .setContentTitle(context.stringResource(MR.strings.vault_importing))
+                    .setContentText(text)
+                    .setProgress(0, 0, true)
+                    .build(),
+            )
+            return
+        }
+
         val percent = percentFormatter.format(progress.current.toFloat() / progress.total.coerceAtLeast(1))
-        val text = progress.chapterTitle
-            ?.let { context.stringResource(MR.strings.vault_import_progress_detail, it) }
-            ?: context.stringResource(MR.strings.vault_import_phase_text)
+        val text = progress.phaseText()
 
         context.notify(
             Notifications.ID_VAULT_IMPORT_PROGRESS,
@@ -55,6 +67,36 @@ class LocalVaultImportNotifier(
                 .setProgress(progress.total, progress.current, false)
                 .build(),
         )
+    }
+
+    private fun LocalVaultImportProgress.phaseText(): String {
+        val title = chapterTitle
+        return when (phase) {
+            VaultImportProgressPhase.PREPARING -> title?.let {
+                context.stringResource(MR.strings.vault_import_phase_preparing, it)
+            }
+            VaultImportProgressPhase.COPYING_DOWNLOADED -> title?.let {
+                context.stringResource(MR.strings.vault_import_phase_copying_downloaded, it)
+            }
+            VaultImportProgressPhase.DOWNLOADING -> title?.let {
+                context.stringResource(MR.strings.vault_import_phase_downloading, it)
+            }
+            VaultImportProgressPhase.COMPRESSING -> title?.let {
+                context.stringResource(MR.strings.vault_import_phase_compressing, it)
+            }
+            VaultImportProgressPhase.UPLOADING -> title?.let {
+                context.stringResource(MR.strings.vault_import_phase_uploading, it)
+            }
+            VaultImportProgressPhase.PUBLISHING -> title?.let {
+                context.stringResource(MR.strings.vault_import_phase_publishing, it)
+            }
+            VaultImportProgressPhase.REFRESHING -> title?.let {
+                context.stringResource(MR.strings.vault_import_phase_refreshing, it)
+            }
+            null -> null
+        } ?: title
+            ?.let { context.stringResource(MR.strings.vault_import_progress_detail, it) }
+            ?: context.stringResource(MR.strings.vault_import_phase_text)
     }
 
     fun showComplete(importedChapterCount: Int) {
@@ -68,6 +110,30 @@ class LocalVaultImportNotifier(
                     context.stringResource(
                         MR.strings.vault_import_success,
                         importedChapterCount,
+                    ),
+                )
+                .setProgress(0, 0, false)
+                .build(),
+        )
+    }
+
+    fun showCaptureComplete(
+        addedChapterCount: Int,
+        replacedChapterCount: Int,
+        failedChapterCount: Int,
+    ) {
+        context.notify(
+            Notifications.ID_VAULT_IMPORT_PROGRESS,
+            progressNotificationBuilder
+                .setOngoing(false)
+                .setAutoCancel(true)
+                .setContentTitle(context.stringResource(MR.strings.vault_import_complete))
+                .setContentText(
+                    context.stringResource(
+                        MR.strings.vault_capture_success,
+                        addedChapterCount,
+                        replacedChapterCount,
+                        failedChapterCount,
                     ),
                 )
                 .setProgress(0, 0, false)

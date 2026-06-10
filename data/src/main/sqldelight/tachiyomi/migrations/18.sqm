@@ -1,0 +1,9 @@
+ALTER TABLE vault_import_target_hints ADD COLUMN content_vault_identity TEXT;
+ALTER TABLE vault_import_target_hints ADD COLUMN source_identity TEXT;
+ALTER TABLE vault_import_target_hints ADD COLUMN vault_manga_identity TEXT;
+
+ALTER TABLE vault_transfer_jobs ADD COLUMN added_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE vault_transfer_jobs ADD COLUMN replaced_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE vault_transfer_jobs ADD COLUMN failed_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE vault_transfer_jobs ADD COLUMN cancelled_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE vault_transfer_jobs ADD COLUMN detail_json TEXT;

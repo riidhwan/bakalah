@@ -4,7 +4,7 @@
 
 Bakalah needs a Content Vault for user-owned manga content stored on WebDAV-accessible storage, with Hetzner Storage Box as the first supported provider. The Content Vault is not a blind folder sync, not an app backup, not the existing Local Source directory, and not the Library. It is a separate Vault Feature with its own Vault Destination, Vault Catalogue, Vault Index, Local Content Cache, and device-local Vault Reading State.
 
-The minimum v1 should let a user connect one WebDAV-backed Content Vault, import existing Local Manga content into it without modifying the original files, browse the vault catalogue, edit basic vault metadata, cache chapters on demand, read cached chapters through the existing reader, and evict cached chapters under a user-controlled cache policy.
+The minimum v1 should let a user connect one WebDAV-backed Content Vault, import existing Local Manga content into it without modifying the original files, capture selected chapters from source-backed Library manga, browse the vault catalogue, edit basic vault metadata, cache chapters on demand, read cached chapters through the existing reader, and evict cached chapters under a user-controlled cache policy.
 
 ## Problem
 
@@ -25,6 +25,7 @@ The user wants a durable personal manga collection that outlives device storage 
 - Support chapter-level caching with cache-first reading.
 - Prevent accidental data loss by keeping Vault upload/caching behavior explicit and cache eviction local-only.
 - Store readable Vault chapter content as CBZ files only, converting selected Local Source directory chapters in place to CBZ before Local-to-Vault Import.
+- Capture source-backed Library manga chapters into canonical validated CBZ files without turning capture staging into normal Downloads or Local Content Cache.
 - Verify content integrity for vault uploads and cache downloads.
 - Keep Vault Reading State device-local permanently.
 
@@ -33,7 +34,7 @@ The user wants a durable personal manga collection that outlives device storage 
 - No blind synchronization of the Local Source directory.
 - No Library membership for Vault Manga.
 - No external tracker integration for Vault Manga.
-- No online-source Vault Capture in v1.
+- No arbitrary Browse/source Vault Capture in v1; source-backed capture is limited to manga already saved in the Library.
 - No arbitrary remote-folder scanning in v1.
 - No periodic background sync or auto-capture.
 - No remote Vault Deletion in the minimum v1 slice.
@@ -63,6 +64,7 @@ The Vault Destination should support:
 - Open cached chapters in the existing reader.
 - Trigger cache-first reading for vault-only chapters.
 - Import existing Local Manga content into the vault.
+- Add selected chapters from source-backed Library manga into the vault.
 - Edit basic Vault Metadata and Vault Labels.
 - Mark Vault Labels as sensitive so matching Vault Manga are hidden from default browsing unless sensitive content is explicitly included.
 - Manually cache and evict selected chapters.
@@ -101,8 +103,10 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - The Vault Root must be app-owned and not a mixed-use folder.
 - The Vault Catalogue should use a hybrid manifest layout:
   - root manifest for vault identity, layout version, revision, writer ownership, summaries, and pointers
-  - per-manga manifests for detailed metadata, chapters, integrity data, provenance, labels, and cover references
+  - per-manga manifests for detailed metadata, chapters, integrity data, manga-level provenance, optional chapter-level provenance, labels, and cover references
 - Local raw Vault Manifest Snapshots should be kept for diagnostics and rebuilding the Vault Index.
+- Library-to-Vault Capture requires the next Vault Layout Version because newly captured or replaced chapters record chapter-level provenance in the remote Vault Catalogue.
+- Existing manifests without chapter-level provenance should be treated as having no chapter provenance until touched by a future publish; migration should not rewrite every existing manga manifest just to add empty provenance.
 
 ### Local-to-Vault Import
 
@@ -165,6 +169,53 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - While a Local-to-Vault Import job for the same Local Manga is running, the under-title target row may remain visible but target changes should be disabled.
 - Add to Vault should respect the current global single Local-to-Vault Import job behavior and show a busy/in-progress state when another import job is already running.
 
+### Library-to-Vault Capture
+
+- Library-to-Vault Capture is limited to source-backed manga already saved in the Library. It is not available for arbitrary Browse/source manga.
+- Local Manga continues to use Local-to-Vault Import. Stubbed, disabled, or unavailable sources cannot capture chapters, but the under-title Import Target Hint row may remain visible for linking or unlinking.
+- Source-backed Library Manga detail should show the same under-title Import Target Hint row as Local Manga detail: linked target title, "Link vault target", "Vault target unavailable", or "Set up content vault".
+- The under-title target row is manga-scoped state and should be visible even when no chapters are selected. Target changes should preserve current chapter selection and immediately refresh Import Duplicate Candidate indicators for the selected target.
+- Add to Vault should be available from the same selected-chapter bottom action menu, including the single selected chapter case, and should keep the user-facing label "Add to Vault".
+- Add to Vault requires at least one selected chapter. If the Content Vault is not configured, it routes to vault setup while preserving selection but must not auto-start capture after setup completes.
+- Target setup should allow choosing any Vault Manga, including sensitive-label targets, or creating a new Vault Manga when setup is opened for a pending Add to Vault action.
+- Exact normalized manga title matches may be suggested during target setup but must not create a visible linked target or duplicate indicators until the user chooses a target.
+- Import Target Hints are shared by Local-to-Vault Import and Library-to-Vault Capture. They should be device-local, scoped to the configured Content Vault identity, keyed by the Manga Detail Screen manga row, and validated against the manga's source identity. Stale hints are shown as unavailable rather than silently rematched or cleared.
+- Manual target linking from the under-title row persists the Import Target Hint immediately and does not publish vault metadata or provenance changes.
+- Pending target choices made while starting Add to Vault should persist only after at least one chapter is successfully added or replaced.
+- Library-to-Vault Capture should validate vault connectivity, configured vault identity, target availability, and source availability before staging any chapter content.
+- If a selected chapter is already downloaded when capture starts, Bakalah should copy/reprocess that user-owned download into capture staging and leave the original download untouched.
+- If a selected chapter is not fully downloaded when capture starts, including queued, downloading, failed, or not downloaded states, capture should use capture-owned staging and must not attach to, cancel, reorder, or delete normal Download Queue work.
+- Capture staging must live outside normal Downloads and outside Local Content Cache. Staging files are disposable, cleaned after each chapter attempt with a final sweep at job end, and stale staging should be cleaned after interrupted jobs.
+- Capture staging should create canonical validated CBZ content for every captured chapter, including chapters sourced from pre-existing downloads.
+- Capture should use deterministic reader/download page order, generate canonical page names inside the CBZ, apply tall-image splitting unconditionally, and ignore normal download storage, naming, queue, and cleanup preferences.
+- Capture should use conservative capture-specific concurrency for v1.
+- Staging failures caused by local storage space should fail the current chapter and continue where possible rather than evicting Local Content Cache automatically.
+- Captured source files must not become Local Content Cache entries. Newly captured Vault Chapters can be cached later through the normal Vault cache-first flow.
+- Capture should use the source runtime path the app can already read/download from, including logged-in or cookie-backed sources, without introducing separate credential handling.
+- Capture should not require an automatic source chapter refresh before starting; it acts on currently known selected chapter rows.
+- Capture should copy manga metadata from the Library manga when creating a new Vault Manga: title, author, artist, description, status, and the currently displayed cover when available. Cover upload failure must not block chapter capture.
+- Library categories, source genres/tags, read state, bookmarks, history, and tracker progress must not be copied into Vault Labels or Vault Reading State.
+- New captured Vault Chapters should copy displayed chapter title, scanlator when available, chapter number, volume number, and source upload date as descriptive metadata.
+- Chapter-level provenance for captured content should be stored in the remote Vault Catalogue, including source id, source display name, source manga URL, source chapter URL, and capture timestamp. Source URLs are private metadata and must not be logged or shown in notifications by default.
+- When capture creates a new Vault Manga, manga-level provenance may describe the source-backed Library manga origin. When capture adds to an existing Vault Manga, it must not overwrite existing manga-level provenance.
+- Library-to-Vault duplicate detection should compare normalized selected Library chapter titles against normalized Vault Chapter titles in the current Import Target. It must not use source URL, checksum, chapter number, source order, or download filename as duplicate authority.
+- Duplicate indicators should appear only for a valid linked or pending Import Target, use the same calm vault-status styling as Local-to-Vault Import, be deselected by default in automatic selection, and remain selectable. Select all includes duplicate-indicated chapters.
+- Selected duplicate candidates require explicit Vault Chapter Replacement confirmation before a capture job starts. If the user cancels confirmation, no staging or publish occurs; for v1, Bakalah should not continue with only non-duplicate selected chapters.
+- Replacement confirmation should list selected duplicate Library chapter titles as displayed, capped when needed, and avoid showing source URL/checksum comparisons.
+- If multiple Vault Chapters match the same normalized title, v1 may choose a deterministic match such as the first current catalogue match rather than adding special ambiguous-replacement UI.
+- Confirmed Library-to-Vault replacements should preserve the replaced Vault Chapter identity, metadata, and catalogue position while updating readable CBZ content, integrity data, revision, and chapter-level provenance. Old remote content cleanup is best-effort and must not roll back a successful replacement.
+- Library-to-Vault Capture should publish partial success. Each selected chapter is fetched, staged, validated, uploaded, and published independently, using fresh remote revision checks per one-chapter publish unit in v1.
+- If every selected chapter fails, no new empty Vault Manga should be created. If at least one chapter succeeds, successful additions/replacements remain published even if other chapters fail.
+- Per-chapter failures such as source fetch failure, no readable pages, CBZ validation failure, local staging-space failure, vault upload failure, or recoverable revision conflict should be recorded and capture should continue. Job-global failures such as vault identity change, target deletion, credentials failure, source unavailable, or cancellation should stop remaining work.
+- Cancellation should stop before the next irreversible publish step, preserve already published chapters, and clean capture staging best-effort. Cancellation during a manifest publish may count the chapter as published if the publish succeeds.
+- Final notification and Vault Transfer Queue details should report separate added, replaced, failed, and cancelled/unprocessed counts where applicable. Failed details should include chapter titles and sanitized failure categories, not raw exception text or source URLs.
+- Failed capture jobs are terminal in v1. There is no automatic retry or one-click retry; the user can manually reselect chapters and start a fresh Add to Vault action.
+- After a capture job is accepted, Manga Detail Screen chapter selection should clear. Failed chapters should not automatically restore the previous selection.
+- Add to Vault applies to all selected chapters even if filters or sorting later hide some selected rows. Read, bookmark, and normal download state do not affect eligibility.
+- Library-to-Vault Capture should use one global vault-add job limit shared with Local-to-Vault Import. While a job is running for the same Manga Detail Screen manga, target changes are disabled; other Manga Detail Screens may still inspect or prepare target hints but cannot start another vault-add job.
+- New non-replacement Library-to-Vault captured chapters should be ordered by latest-first natural normalized chapter title across the full target manga. Source order is source-local metadata and must not order a Vault Manga shared by multiple source-backed manga. Deterministic tie-breaks may be used for rare equal normalized titles.
+- Each successful Library-to-Vault Capture publish should normalize the full target manga's non-replacement catalogue order by that title-ordering rule. Confirmed replacements preserve the replaced chapter's catalogue position.
+
 ### Metadata, Labels, and Covers
 
 - Vault Metadata is authoritative after import.
@@ -179,6 +230,7 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Vault Metadata edits must update manifests and the local Vault Index, not rewrite chapter content files.
 - Vault Covers must be separate vault-owned catalogue assets.
 - Local-to-Vault Import should import the Local Manga `cover.*` image as the initial Vault Cover when the target Vault Manga has no existing cover.
+- Library-to-Vault Capture should use the currently displayed Manga Detail Screen cover as the initial Vault Cover when creating a new target or when the target has no cover, without replacing an existing target cover.
 - Users set or replace a Vault Cover from an already-loaded Vault Reader page through the same long-press page action used by Library reading, rather than by selecting an arbitrary local image.
 - Covers/thumbnails should be locally cached separately from chapter cache.
 
@@ -230,8 +282,11 @@ Vault deletion must not delete original Local Manga files under `local/`, existi
 - Cache downloads must verify integrity before marking a chapter cached.
 - Open-time cache verification must mark missing local cache files as Vault-only and existing files with size/checksum mismatch as Integrity fault.
 - Import publish must verify integrity before updating the catalogue.
+- Library-to-Vault Capture publish should be represented as `CAPTURE_PUBLISH` work in the Vault Transfer Queue and use a single visible job for the user's bulk action.
+- Transfer states should distinguish partial success, such as `PARTIALLY_SUCCEEDED`, when some Library-to-Vault Capture chapters publish and others fail.
+- Cancelled capture jobs should use `CANCELLED` plus result counts rather than a separate partially-cancelled state.
 - Cancellation must clean up unfinished staged artifacts where possible and must not roll back completed verified operations.
-- Failed jobs must remain visible and retryable.
+- Failed jobs must remain visible. Library-to-Vault Capture failed jobs are terminal in v1 and are rerun only by starting a new Add to Vault action.
 
 ### WebDAV Storage
 
@@ -266,8 +321,10 @@ Internal staging paths, revisions, and checksums should be hidden from normal UI
 - A user can connect to an existing valid Content Vault and refresh its catalogue.
 - A non-vault mixed-use folder is rejected during setup.
 - A user can import selected chapters from an existing Local Manga into the Content Vault, with selected directory chapters first converted into validated CBZ archives in Local Manga storage.
+- A user can add selected chapters from a source-backed Library manga into the Content Vault through the same Add to Vault selected-chapter action.
 - Repeating an import can target an existing Vault Manga through Import Target Hint or exact normalized title matching.
 - Import Duplicate Candidate chapters are flagged, deselected by default, still selectable, and replace existing Vault Chapters only after explicit confirmation.
+- Library-to-Vault Capture uses capture-owned staging for chapters that are not already downloaded, leaves normal Downloads untouched, publishes successful chapters even when other selected chapters fail, and reports added/replaced/failed counts.
 - The Vault Destination shows remote-only and cached chapters from the local Vault Index.
 - A user can edit basic Vault Metadata and Vault Labels.
 - A user can cache a vault-only chapter and read it after integrity verification.
@@ -281,8 +338,9 @@ Release-readiness verification is tracked in `docs/content-vault-v1-readiness.md
 
 ## Future Work
 
-- Online-source Vault Capture.
 - CBZ packaging for page-based captures without recompressing page bytes.
+- Arbitrary Browse/source Vault Capture outside saved Library manga.
+- Converging Local-to-Vault Import into the Vault Transfer Queue and partial-success behavior.
 - Human-readable Vault Export View.
 - Diagnostics and repair tools for Vault Integrity Faults.
 - Multiple Content Vaults.

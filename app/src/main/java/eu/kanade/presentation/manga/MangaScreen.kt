@@ -333,7 +333,7 @@ private fun MangaScreenSmallImpl(
                 onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
                 onDownloadChapter = onDownloadChapter,
                 onMultiDeleteClicked = onMultiDeleteClicked,
-                onAddToVaultClicked = onAddToVaultClicked.takeIf { state.manga.isLocal() },
+                onAddToVaultClicked = onAddToVaultClicked.takeIf { state.localVaultImport != null },
                 fillFraction = 1f,
             )
         },
@@ -581,7 +581,7 @@ fun MangaScreenLargeImpl(
                     onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
                     onDownloadChapter = onDownloadChapter,
                     onMultiDeleteClicked = onMultiDeleteClicked,
-                    onAddToVaultClicked = onAddToVaultClicked.takeIf { state.manga.isLocal() },
+                    onAddToVaultClicked = onAddToVaultClicked.takeIf { state.localVaultImport != null },
                     fillFraction = 0.5f,
                 )
             }
