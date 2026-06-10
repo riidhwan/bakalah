@@ -12,6 +12,10 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.23.2] - 2026-06-10
+### Fixed
+- Fix Vault chapter cache jobs getting stuck in Caching after interrupted transfers.
+
 ## [v0.23.1] - 2026-06-09
 ### Fixed
 - Fix Local-to-Vault Import assigning unstable Vault Chapter order by using latest-first physical chapter filenames.
