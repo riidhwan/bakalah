@@ -84,6 +84,7 @@ class VaultTransferService(
             VaultTransferType.IMPORT_PUBLISH,
             VaultTransferType.METADATA_PUBLISH,
             -> executeUpload(job)
+            VaultTransferType.CAPTURE_PUBLISH -> VaultTransferResult.NotRetryable(job.state)
             VaultTransferType.CACHE_CHAPTER -> executeDownload(job)
             VaultTransferType.CATALOGUE_REFRESH -> finishSucceeded(start(job), stagedPath = null)
         }
@@ -91,6 +92,9 @@ class VaultTransferService(
 
     suspend fun retry(jobId: Long): VaultTransferResult {
         val job = repository.getTransferJob(jobId) ?: return VaultTransferResult.NotFound
+        if (job.type == VaultTransferType.CAPTURE_PUBLISH) {
+            return VaultTransferResult.NotRetryable(job.state)
+        }
         if (job.state != VaultTransferState.FAILED && job.state != VaultTransferState.INTEGRITY_FAULT) {
             return VaultTransferResult.NotRetryable(job.state)
         }
@@ -336,6 +340,7 @@ class VaultTransferService(
     private fun queuedCacheState(type: VaultTransferType): VaultCacheState {
         return when (type) {
             VaultTransferType.IMPORT_PUBLISH,
+            VaultTransferType.CAPTURE_PUBLISH,
             VaultTransferType.METADATA_PUBLISH,
             -> VaultCacheState.PUBLISHING
             VaultTransferType.CACHE_CHAPTER -> VaultCacheState.QUEUED
@@ -346,6 +351,7 @@ class VaultTransferService(
     private fun runningCacheState(type: VaultTransferType): VaultCacheState {
         return when (type) {
             VaultTransferType.IMPORT_PUBLISH,
+            VaultTransferType.CAPTURE_PUBLISH,
             VaultTransferType.METADATA_PUBLISH,
             -> VaultCacheState.PUBLISHING
             VaultTransferType.CACHE_CHAPTER -> VaultCacheState.CACHING

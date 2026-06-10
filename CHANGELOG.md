@@ -11,6 +11,12 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Added
+- Add Library-to-Vault Capture for source-backed library manga, including selected-chapter capture into existing or new Vault manga, duplicate handling, downloaded chapter reuse, cover publishing, and consistent manifest publishing.
+
+### Improved
+- Show detailed Library-to-Vault Capture notification phases for downloading, copying downloaded chapters, compressing, uploading, publishing, and refreshing.
+
 ### Fixed
 - Prioritize exact label matches when searching labels to add to Vault manga.
 - Fix Local Destination back button closing search after searching manga.

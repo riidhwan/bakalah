@@ -35,6 +35,24 @@ Use Hetzner Storage Box or another WebDAV provider with equivalent support for `
 - Trigger an upload failure and confirm the import remains retryable without partially published catalogue content.
 - After a successful import, use Open in Vault and confirm navigation lands on the imported Vault Manga.
 
+## Library-to-Vault Capture Smoke
+
+- Start from a source-backed manga saved in the Library and confirm the Manga Detail Screen shows the under-title Import Target Hint row.
+- Confirm source-backed manga that are not saved in the Library do not expose Add to Vault, and stubbed or unavailable sources fail early without staging chapters.
+- Link an existing Vault Manga from the under-title row and confirm the hint persists; change the source identity through migration or equivalent test data and confirm the hint is shown as unavailable rather than silently reused.
+- Select one downloaded chapter and one not-downloaded chapter, start Add to Vault, and confirm capture leaves the existing user download untouched while using capture-owned staging for the missing chapter.
+- Confirm normal queued or running Download Queue entries for selected chapters are not attached to, cancelled, reordered, marked downloaded, or deleted by capture.
+- Confirm capture-created staging is cleaned after each chapter attempt and does not appear as a normal Download or Cached Chapter.
+- Capture into a new Vault Manga and confirm the current Manga Detail Screen cover is used when available, Library categories and tracker/read/bookmark state are not copied, and the resulting Vault Chapters are remote-only until separately cached.
+- Confirm captured CBZ content is validated, tall-image splitting is applied regardless of the normal download preference, and page order matches reader/download order.
+- Confirm Library-to-Vault duplicate indicators are based on normalized chapter titles for the selected Import Target, use calm vault-status styling, and require explicit replacement confirmation.
+- Confirm replacement preserves the existing Vault Chapter identity, metadata, and catalogue position while updating content, integrity, and chapter-level provenance.
+- Capture a large selection with one induced per-chapter source or upload failure and confirm successful chapters remain published, failed chapters are reported by title/category, and the final notification/transfer job shows added, replaced, and failed counts.
+- Cancel an in-progress capture and confirm already published chapters remain, unprocessed chapters are not published, staging is cleaned best-effort, and the transfer job records cancellation with counts.
+- Confirm failed capture jobs do not auto-retry and have no one-click retry; manually reselecting chapters starts a fresh Add to Vault action with fresh duplicate detection.
+- Confirm new non-replacement captured chapters are ordered by latest-first natural normalized chapter title, not by source order or capture completion order.
+- Confirm source manga/chapter URLs are stored only as private provenance/diagnostic data and do not appear in notifications, logcat, screenshots, or user-facing failure text.
+
 ## Vault Destination And Reading Smoke
 
 - Refresh the Vault Catalogue and confirm manga are listed from the local Vault Index, including offline after the last successful refresh.

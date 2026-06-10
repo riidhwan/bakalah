@@ -116,6 +116,10 @@ _Avoid_: Downloads tab, download manager page
 A manga whose chapters and metadata are owned by the user as local files rather than supplied by a remote source.
 _Avoid_: Downloaded manga, offline manga
 
+**Source-Backed Library Manga**:
+A manga saved in the Library whose chapters are supplied by an app source rather than owned as Local Manga files.
+_Avoid_: Library Destination manga, downloaded manga, source manga
+
 **Content Vault**:
 The authoritative user-owned collection of manga content that can outlive any one device's local storage.
 _Avoid_: Backup, cloud mirror, remote local source
@@ -248,6 +252,10 @@ _Avoid_: Download folder, normalized original, source file
 The recorded evidence that vault-owned chapter content is complete and unchanged, such as file size and checksum.
 _Avoid_: Download status, file metadata, cache state
 
+**Chapter-Level Provenance**:
+The vault-owned record of where one Vault Chapter's current readable content came from.
+_Avoid_: Manga provenance, duplicate key, source truth
+
 **Staged Transfer**:
 A vault upload or download that remains hidden from normal catalogue and reading flows until content integrity is verified.
 _Avoid_: Partial sync, in-progress content, temporary chapter
@@ -272,20 +280,28 @@ _Avoid_: Chapter name order, source order, random order
 Vault Import that copies existing Local Manga content into the Content Vault without general cleanup or migration of the original Local Manga, except that selected directory chapters are converted into validated CBZ files in Local Manga storage before upload.
 _Avoid_: Local cleanup, migration, local sync
 
+**Library-to-Vault Capture**:
+Vault Capture that adds selected chapters from a source-backed manga saved in the Library to the Content Vault.
+_Avoid_: Local-to-Vault Import, downloaded manga import, library sync
+
+**Capture Staging Download**:
+A disposable chapter download created by Library-to-Vault Capture, separate from the normal Download Queue, so Bakalah can obtain readable source content for publishing to the Content Vault.
+_Avoid_: User download, cached chapter, Local Content Cache
+
 **Import Target**:
-The Vault Manga that a Local-to-Vault Import will add selected chapters to, or the decision to create a new Vault Manga.
+The Vault Manga that a Local-to-Vault Import or Library-to-Vault Capture will add selected chapters to, or the decision to create a new Vault Manga.
 _Avoid_: Import destination, matched manga, sync target
 
 **Import Target Hint**:
-A device-local remembered association between a Local Manga and the Vault Manga it was previously imported into.
+A device-local remembered association between a Manga Detail Screen manga and the Vault Manga it was previously added to.
 _Avoid_: Vault identity, metadata match, source truth
 
 **Import Duplicate Candidate**:
-A Local-to-Vault Import chapter whose user-owned chapter file name appears to match a chapter already present in the chosen Import Target.
+A selected chapter whose workflow-specific duplicate key appears to match a chapter already present in the chosen Import Target.
 _Avoid_: Exact duplicate, checksum duplicate
 
 **Vault Chapter Replacement**:
-Replacing an existing Vault Chapter's vault-owned readable content through an explicit user-approved Local-to-Vault Import of an Import Duplicate Candidate.
+Replacing an existing Vault Chapter's vault-owned readable content through an explicit user-approved Add to Vault action for an Import Duplicate Candidate.
 _Avoid_: Silent overwrite, duplicate import
 
 **Vault Capture**:

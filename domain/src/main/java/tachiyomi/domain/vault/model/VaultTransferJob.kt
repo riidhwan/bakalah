@@ -12,6 +12,11 @@ data class VaultTransferJob(
     val sizeBytes: Long?,
     val checksumSha256: String?,
     val failureReason: String?,
+    val addedCount: Long = 0,
+    val replacedCount: Long = 0,
+    val failedCount: Long = 0,
+    val cancelledCount: Long = 0,
+    val detailJson: String? = null,
     val attempts: Long,
     val createdAt: Long,
     val updatedAt: Long,
@@ -20,6 +25,7 @@ data class VaultTransferJob(
 ) {
     val isTerminal: Boolean
         get() = state == VaultTransferState.SUCCEEDED ||
+            state == VaultTransferState.PARTIALLY_SUCCEEDED ||
             state == VaultTransferState.FAILED ||
             state == VaultTransferState.CANCELLED ||
             state == VaultTransferState.INTEGRITY_FAULT
@@ -27,6 +33,7 @@ data class VaultTransferJob(
 
 enum class VaultTransferType {
     IMPORT_PUBLISH,
+    CAPTURE_PUBLISH,
     CATALOGUE_REFRESH,
     METADATA_PUBLISH,
     CACHE_CHAPTER,
@@ -36,6 +43,7 @@ enum class VaultTransferState {
     QUEUED,
     RUNNING,
     SUCCEEDED,
+    PARTIALLY_SUCCEEDED,
     FAILED,
     CANCELLED,
     INTEGRITY_FAULT,

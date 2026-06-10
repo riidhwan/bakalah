@@ -47,6 +47,7 @@ Domain code does not perform Android storage, WebDAV, or SQLDelight work directl
 - `ContentVaultSetupService`: validates WebDAV configuration, rejects mixed-use roots, initializes empty roots, connects existing roots, and persists the configured vault identity.
 - `VaultCatalogueRefreshService`: downloads root and per-manga manifests, validates identity/layout compatibility, builds a domain refresh payload, and updates the local index.
 - `LocalVaultImportService`: scans Local Source manga, plans duplicates and target selection, converts selected directory chapters to CBZ, uploads chapter and cover content, publishes manifests, refreshes the index, and writes import target hints.
+- `LibraryVaultCaptureService` and `LibraryVaultCaptureJob`: capture selected chapters from source-backed Library manga through capture-owned staging, publish canonical CBZ content one chapter at a time, record `CAPTURE_PUBLISH` job state, and report partial results.
 - `VaultTransferService`: performs staged uploads/downloads, integrity verification, transfer job state updates, and cache state updates.
 - `VaultReaderOpenService`: verifies cached chapters or performs cache-first download before reader launch.
 - `VaultCachePolicyService`: creates cache paths, marks opened cached chapters, evicts chapters, and enforces the local cache size limit.
@@ -62,13 +63,15 @@ The remote Vault Root is app-owned. A valid root contains `content-vault.json`, 
 Current layout constants live in `VaultManifest.kt`:
 
 - `CONTENT_VAULT_APP_ID = "bakalah-content-vault"`
-- `CURRENT_VAULT_LAYOUT_VERSION = 3`
+- `CURRENT_VAULT_LAYOUT_VERSION = 4`
 - `ROOT_VAULT_MANIFEST_NAME = "content-vault.json"`
+
+Library-to-Vault Capture requires the next layout version because newly captured or replaced chapters need chapter-level provenance in remote manga manifests. Existing version 3 manifests can be read by treating missing chapter provenance as absent; touched manifests are upgraded when written.
 
 The layout is hybrid:
 
 - Root manifest: app marker, content vault identity, display name, layout version, root revision, writer id, summary counts, timestamps, and per-manga manifest pointers.
-- Manga manifest: manga identity, metadata, collection state, labels, cover reference, chapter records, provenance, revision, and timestamps.
+- Manga manifest: manga identity, metadata, collection state, labels, cover reference, chapter records, manga-level provenance, optional chapter-level provenance, revision, and timestamps.
 - Content files: chapter CBZ files and cover assets referenced by manifest paths under `content/...`.
 
 Current import paths follow this shape:
@@ -106,9 +109,11 @@ The local index is stored in dedicated SQLDelight tables:
 - `vault_covers`: current cover metadata and remote cover path.
 - `vault_reading_state`: device-local read/bookmark/page state.
 - `vault_chapter_cache_state`: device-local cache state, cache path, verified integrity, open timestamps, and failure reason.
-- `vault_transfer_jobs`: visible upload/download/cache/publish job state.
-- `vault_import_target_hints`: device-local mapping from a Local Manga to the Vault Manga it was previously imported into.
+- `vault_transfer_jobs`: visible upload/download/cache/publish job state, including source-backed capture result summaries.
+- `vault_import_target_hints`: device-local mapping from a Manga Detail Screen manga to the Vault Manga it was previously added to, scoped to the configured Content Vault identity and guarded by manga source identity.
 - `vault_manifest_snapshots`: raw fetched manifest bodies retained for diagnostics and index rebuilding.
+
+Chapter-level provenance is remote catalogue metadata. It does not require dedicated SQL columns until a user-facing query or display needs it; manifest snapshots retain raw provenance for diagnostics.
 
 Normal Vault browsing reads the local index through `VaultRepository`. It does not query WebDAV live.
 
@@ -156,6 +161,42 @@ Add to Vault uses all selected Local Manga chapters even if current filters or s
 Add to Vault is not hidden based on network heuristics; remote publish failures surface through the existing visible job or transfer failure path.
 While a Local-to-Vault Import job for the same Local Manga is running, the under-title target row remains viewable but target changes are disabled. Add to Vault follows the current global single-import-job behavior and shows a busy/in-progress state when another Local-to-Vault Import job is already running.
 
+## Library-to-Vault Capture
+
+Library-to-Vault Capture starts from the Manga Detail Screen for a source-backed manga saved in the Library. It uses the same under-title Import Target Hint row and selected-chapter Add to Vault action as Local-to-Vault Import, but it is a separate workflow because source-backed chapters may not exist as user-owned files.
+
+`MangaScreenModel` dispatches the shared Add to Vault UI action by manga/source type:
+
+- Local Manga uses Local-to-Vault Import.
+- Source-backed manga saved in the Library with an available source uses Library-to-Vault Capture.
+- Source-backed manga not saved in the Library does not expose Add to Vault.
+- Stubbed, disabled, or unavailable sources may still show the target row, but capture fails early or is unavailable.
+
+The generalized Import Target Hint is keyed by the local manga row and validated against the configured Content Vault identity and manga source identity. For source-backed Library manga, the source identity guard is the source id plus manga URL; for Local Manga, it is the local file identity. Title changes do not invalidate a hint. Source identity mismatch, missing Vault Manga identity, or configured vault identity mismatch produces a stale target state rather than silent rematching.
+
+Target setup is shared with Local-to-Vault Import: direct target-row linking persists an existing target immediately, pending Add to Vault target choices persist only after successful publish, exact normalized title matches are suggestions only, sensitive Vault Manga can be selected, and Create New appears only for pending selected-chapter actions.
+
+`LibraryVaultCaptureJob` owns Android foreground execution, cancellation, and notification progress. `LibraryVaultCaptureService` owns capture planning and publication. The Vault Transfer Queue stores one `CAPTURE_PUBLISH` job for the bulk user action with added, replaced, failed, and cancelled/unprocessed counts plus sanitized failed chapter details. WorkManager remains the Android runtime boundary; `vault_transfer_jobs` is the domain-visible job/result trail.
+
+Normal Downloads are not capture staging. At capture start:
+
+- Already downloaded chapters are copied or read into capture staging and the original user download is never modified or deleted.
+- Not downloaded, queued, downloading, or failed chapters are fetched through capture-owned staging. Capture does not attach to, cancel, reorder, mark, or clean up normal Download Queue entries.
+
+Capture staging lives under an app-managed vault staging area, separate from normal Downloads and Local Content Cache. Staging uses conservative capture-specific concurrency, creates canonical validated CBZ files, applies tall-image splitting unconditionally, generates deterministic page names in reader/download order, and cleans files after each chapter attempt with a final sweep for interrupted jobs. Staging files do not become Cached Chapters; Vault cache state is established only through the normal cache-first flow.
+
+Library-to-Vault duplicate planning compares normalized selected Library chapter titles against normalized Vault Chapter titles for the current Import Target. It does not use source URL, checksum, chapter number, source order, or download filename. If multiple Vault Chapters match the same normalized title, v1 can choose the first current catalogue match deterministically rather than exposing ambiguous replacement UI.
+
+Confirmed Library-to-Vault replacements preserve the existing Vault Chapter identity, metadata, and catalogue position while updating content pointer, integrity, revision, and chapter-level provenance. Old remote content cleanup is best-effort after successful publish and does not roll back the replacement.
+
+New captured chapters copy displayed chapter title, scanlator, chapter number, volume number, and source upload date when available. Chapter-level provenance records source id, source display name, source manga URL, source chapter URL, and capture timestamp in the remote manga manifest. Source URLs are app-private provenance: they may be stored in manifests and app-private job details, but they are not logged, displayed in notifications, or used as duplicate authority.
+
+Library-to-Vault Capture publishes one chapter at a time in v1. Before starting staging it validates vault connectivity, configured identity, target availability, and source availability. Each one-chapter publish re-reads current remote manifests, validates identity/revision, merges against the latest target manifest, writes a new content path, updates manifests, refreshes the local index, and records progress. Per-chapter failures are recorded and the job continues; global failures such as vault identity change, target deletion, credentials failure, source unavailability, or user cancellation stop remaining work.
+
+Partial success is expected. If at least one chapter is added or replaced, the job can finish as `PARTIALLY_SUCCEEDED` when other chapters fail. If every chapter fails, no empty Vault Manga is created. Failed capture jobs are terminal in v1; the user manually starts a fresh Add to Vault action instead of retrying a stored job intent.
+
+New non-replacement Library-to-Vault captured chapters are ordered by latest-first natural normalized chapter title across the full target manga. Source order remains descriptive/source-local metadata and does not order a Vault Manga shared by multiple source-backed manga. Each successful capture publish normalizes the full target manga's non-replacement order by that rule; replacements keep the replaced chapter's catalogue position.
+
 ## Publishing Mutations
 
 Metadata, cover, and deletion operations follow the same publish shape:
@@ -178,6 +219,7 @@ Metadata, cover, and deletion operations follow the same publish shape:
 Transfer types are:
 
 - `IMPORT_PUBLISH`
+- `CAPTURE_PUBLISH`
 - `METADATA_PUBLISH`
 - `CACHE_CHAPTER`
 - `CATALOGUE_REFRESH`
@@ -187,11 +229,12 @@ Transfer states are:
 - `QUEUED`
 - `RUNNING`
 - `SUCCEEDED`
+- `PARTIALLY_SUCCEEDED`
 - `FAILED`
 - `CANCELLED`
 - `INTEGRITY_FAULT`
 
-Uploads and downloads use staged paths. The service validates size and SHA-256 checksum before promoting staged content. Cache downloads update `vault_chapter_cache_state` to `CACHED` only after successful integrity verification. Failed or integrity-faulted work remains represented as job/cache state so the UI can expose retry.
+Uploads and downloads use staged paths. The service validates size and SHA-256 checksum before promoting staged content. Cache downloads update `vault_chapter_cache_state` to `CACHED` only after successful integrity verification. Failed or integrity-faulted work remains represented as job/cache state. Cache failures can expose retry; Library-to-Vault Capture failures are terminal in v1 and are rerun only through a fresh Add to Vault action.
 
 ## Cache-First Reading
 
@@ -230,14 +273,14 @@ By default, the Vault Destination excludes Vault Manga that have any Sensitive V
 
 `VaultMangaScreenModel` observes chapters and cache states for one manga. It coordinates cache, retry, eviction, metadata publish, cover publish, and deletion actions through app services. Compose screens render these derived states and send explicit user actions back to the screen models.
 
-Local Manga detail owns the Local-to-Vault Import entry point through a small UI-layer import coordinator composed into `MangaScreenModel`. The coordinator is inactive for non-local manga, observes the relevant Import Target Hint and local Vault Index state, derives linked-target validity and Import Duplicate Candidate indicators, handles target setup/change state, gates Vault Chapter Replacement confirmation, and dispatches `LocalVaultImportJob` for selected chapters. Add to Vault requires at least one selected chapter and is not available directly from the under-title target row. Select all includes duplicate-indicated chapters. The previous standalone Local-to-Vault Import screen is removed rather than kept as an unreachable route.
+Manga Detail Screen owns the Add to Vault entry point through a small UI-layer coordinator composed into `MangaScreenModel`. The coordinator is active for Local Manga and source-backed Library manga, observes the relevant Import Target Hint and local Vault Index state, derives linked-target validity and Import Duplicate Candidate indicators, handles target setup/change state, gates Vault Chapter Replacement confirmation, and dispatches either `LocalVaultImportJob` or `LibraryVaultCaptureJob` for selected chapters. Add to Vault requires at least one selected chapter and is not available directly from the under-title target row. Select all includes duplicate-indicated chapters. The previous standalone Local-to-Vault Import screen is removed rather than kept as an unreachable route.
 
 ## Dependency Injection
 
 Vault dependencies are registered through Injekt:
 
 - `PreferenceModule` registers `ContentVaultPreferences`.
-- `AppModule` registers the setup, refresh, deletion, cover publish, metadata publish, and import services.
+- `AppModule` registers the setup, refresh, deletion, cover publish, metadata publish, import, and capture services.
 
 Some transfer and reader-open services are constructed at use sites because they need runtime storage roots or WebDAV configuration objects.
 
@@ -248,8 +291,11 @@ The current architecture keeps these boundaries explicit:
 - WebDAV is a storage transport, not the domain model.
 - Remote manifests are catalogue authority; local SQLDelight rows are an index/cache of that authority.
 - Local Source is an import source, not the Vault storage model.
+- Source-backed Library manga are capture sources, not Vault identity or catalogue authority.
 - Library manga/chapter tables are not used for Vault Manga identity or catalogue state.
+- Normal Downloads are user-owned state and are not capture staging.
 - Local Content Cache is device-local and disposable.
+- Capture staging is temporary transfer input and is not Local Content Cache.
 - Vault Reading State is device-local and not published to the remote vault.
 - Vault Labels are separate from Library categories.
 - Vault Covers are separate from Library custom covers.

@@ -324,6 +324,9 @@ class LocalVaultImportService(
                     ImportTargetHint(
                         localMangaId = localManga.id,
                         localMangaIdentity = scan.manga.localMangaIdentity,
+                        contentVaultIdentity = vault.identity,
+                        sourceIdentity = scan.manga.localMangaIdentity,
+                        vaultMangaIdentity = VaultIdentity(mangaIdentity),
                         vaultMangaId = vaultMangaId,
                         updatedAt = now,
                     )

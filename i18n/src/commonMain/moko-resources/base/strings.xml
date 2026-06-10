@@ -275,6 +275,13 @@
     <string name="vault_import_upload_as_is_plan">%d chapters will be uploaded as-is</string>
     <string name="vault_importing">Importing…</string>
     <string name="vault_import_phase_text">Converting selected directory chapters and uploading to Vault</string>
+    <string name="vault_import_phase_preparing">Preparing %s</string>
+    <string name="vault_import_phase_copying_downloaded">Copying downloaded pages for %s</string>
+    <string name="vault_import_phase_downloading">Downloading pages for %s</string>
+    <string name="vault_import_phase_compressing">Compressing %s</string>
+    <string name="vault_import_phase_uploading">Uploading %s</string>
+    <string name="vault_import_phase_publishing">Publishing Vault manifest for %s</string>
+    <string name="vault_import_phase_refreshing">Refreshing Vault index for %s</string>
     <string name="vault_import_progress_title">Importing to Vault · %s</string>
     <string name="vault_import_progress_detail">Processing %s</string>
     <string name="vault_import_ongoing">Import is running in the background</string>
@@ -282,6 +289,7 @@
     <string name="vault_import_action_open_in_vault">Open in Vault</string>
     <string name="vault_import_action_open_vault">Open Vault</string>
     <string name="vault_import_success">%d imported</string>
+    <string name="vault_capture_success">%1$d added · %2$d replaced · %3$d failed</string>
     <string name="vault_import_error_incomplete_configuration">No Content Vault is configured</string>
     <string name="vault_import_error_missing_local_manga">Local Manga folder is missing or inaccessible</string>
     <string name="vault_import_error_nothing_selected">Select at least one chapter to import</string>

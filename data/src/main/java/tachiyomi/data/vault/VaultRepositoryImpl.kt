@@ -353,6 +353,9 @@ class VaultRepositoryImpl(
         database.vaultQueries.upsertImportTargetHint(
             localMangaId = hint.localMangaId,
             localMangaIdentity = hint.localMangaIdentity,
+            contentVaultIdentity = hint.contentVaultIdentity?.value,
+            sourceIdentity = hint.sourceIdentity,
+            vaultMangaIdentity = hint.vaultMangaIdentity?.value,
             vaultMangaId = hint.vaultMangaId,
             updatedAt = hint.updatedAt,
         )
@@ -633,6 +636,11 @@ class VaultRepositoryImpl(
                 sizeBytes = job.sizeBytes,
                 checksumSha256 = job.checksumSha256,
                 failureReason = job.failureReason,
+                addedCount = job.addedCount,
+                replacedCount = job.replacedCount,
+                failedCount = job.failedCount,
+                cancelledCount = job.cancelledCount,
+                detailJson = job.detailJson,
                 attempts = job.attempts,
                 createdAt = job.createdAt,
                 updatedAt = job.updatedAt,
