@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.data.vault
 
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
@@ -100,6 +101,33 @@ class VaultTransferServiceTest {
     }
 
     @Test
+    fun `cancelled download clears in progress cache state`() = runTest {
+        val repository = FakeVaultRepository()
+        val remote = FakeTransferStorage(mutableMapOf("content/chapter.cbz" to CONTENT))
+        val local = FakeLocalStaging(writeError = CancellationException("cache cancelled"))
+        val service = VaultTransferService(repository, remote, local) { 10 }
+        val integrity = CONTENT.vaultTransferIntegrity()
+        val jobId = service.enqueue(
+            vaultId = 1,
+            type = VaultTransferType.CACHE_CHAPTER,
+            chapterId = 7,
+            remotePath = "content/chapter.cbz",
+            localPath = "cache/chapter.cbz",
+            sizeBytes = integrity.sizeBytes,
+            checksumSha256 = integrity.checksumSha256,
+        )
+
+        try {
+            service.execute(jobId)
+        } catch (_: CancellationException) {
+        }
+
+        repository.cacheStates[7]?.state shouldBe VaultCacheState.VAULT_ONLY
+        repository.cacheStates[7]?.localPath shouldBe null
+        repository.transferJobs[jobId]?.state shouldBe VaultTransferState.CANCELLED
+    }
+
+    @Test
     fun `cancel cleans staged artifact without rolling back completed jobs`() = runTest {
         val repository = FakeVaultRepository()
         val remote = FakeTransferStorage(mutableMapOf("remote.stage" to CONTENT))
@@ -140,9 +168,11 @@ class VaultTransferServiceTest {
     private class FakeLocalStaging(
         val files: MutableMap<String, ByteArray> = mutableMapOf(),
         var failPromote: Boolean = false,
+        val writeError: Throwable? = null,
     ) : VaultTransferLocalStaging {
         override suspend fun read(path: String): ByteArray? = files[path]
         override suspend fun write(path: String, bytes: ByteArray) {
+            writeError?.let { throw it }
             files[path] = bytes
         }
         override suspend fun promote(stagedPath: String, finalPath: String) {
