@@ -1,6 +1,6 @@
 # Model Sensitive Vault Content Through Labels
 
-Bakalah will model default-hidden Vault Manga through Sensitive Vault Labels: a Vault Label can be marked sensitive in the remote Vault Catalogue, and any Vault Manga with at least one Sensitive Vault Label is excluded from the default Vault Surface unless the user explicitly includes sensitive content or directly filters to that sensitive label. The include-sensitive viewing choice is device-local, while label sensitivity is vault-owned metadata so the meaning of a label travels with the Content Vault instead of depending on magic label names or per-device hidden lists.
+Bakalah will model default-hidden Vault Manga through Sensitive Vault Labels: a Vault Label can be marked sensitive in the remote Vault Catalogue, and any Vault Manga with at least one Sensitive Vault Label is excluded from the default Vault Destination unless the user explicitly includes sensitive content or directly filters to that sensitive label. The include-sensitive viewing choice is device-local, while label sensitivity is vault-owned metadata so the meaning of a label travels with the Content Vault instead of depending on magic label names or per-device hidden lists.
 
 **Considered Options**
 

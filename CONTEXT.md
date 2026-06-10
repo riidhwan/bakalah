@@ -64,9 +64,53 @@ _Avoid_: Library update, background update
 A user-facing view or widget that lists recently fetched chapters across the library.
 _Avoid_: Chapter list, history
 
-**Local Tab**:
+**Top-Level App Destination**:
+A primary user-facing area reachable from the app's main navigation bar or rail. Use Destination for top-level navigation areas, not pushed detail or full-screen experiences.
+_Avoid_: Screen, tab, page
+
+**Library Destination**:
+The top-level navigation destination for browsing and managing manga saved to the user's library.
+_Avoid_: Library tab, library screen
+
+**Local Destination**:
 The top-level navigation destination for browsing manga stored in the user's local source directory.
 _Avoid_: Local source tab, downloads
+
+**History Destination**:
+The top-level navigation destination for revisiting manga and chapters from the user's reading history.
+_Avoid_: Recent manga tab, recently read screen
+
+**Browse Destination**:
+The top-level navigation destination for finding source manga, managing extensions, and starting migration workflows.
+_Avoid_: Browse tab, sources screen
+
+**Browse Subsection**:
+One of the internal areas within the Browse Destination, such as Sources, Extensions, or Migration.
+_Avoid_: Top-level destination, browse screen
+
+**More Destination**:
+The top-level navigation destination for secondary app actions, preferences, statistics, downloads, and app information.
+_Avoid_: More tab, settings screen
+
+**Manga Detail Screen**:
+A pushed screen for viewing and acting on one Library, Local, or source manga. Use Screen for pushed detail or full-screen experiences, not top-level navigation areas.
+_Avoid_: Manga page, title screen
+
+**Vault Manga Detail Screen**:
+A pushed screen for viewing and managing one Vault Manga.
+_Avoid_: Vault title screen, vault details
+
+**Reader**:
+The full-screen reading experience for chapter pages.
+_Avoid_: Reading screen, page viewer
+
+**Settings Screen**:
+A pushed screen for app preferences and configuration.
+_Avoid_: More Destination, preferences page
+
+**Download Queue Screen**:
+A pushed screen for viewing and controlling queued chapter downloads.
+_Avoid_: Downloads tab, download manager page
 
 **Local Manga**:
 A manga whose chapters and metadata are owned by the user as local files rather than supplied by a remote source.
@@ -97,12 +141,12 @@ The association that makes one Vault Label apply to one Vault Manga.
 _Avoid_: Label deletion, manga label, tag deletion
 
 **Sensitive Vault Label**:
-A Vault Label with sensitivity metadata that marks assigned Vault Manga as excluded from the default Vault Surface unless the user explicitly includes sensitive content.
+A Vault Label with sensitivity metadata that marks assigned Vault Manga as excluded from the default Vault Destination unless the user explicitly includes sensitive content.
 _Avoid_: 18+ label, hidden category, private genre
 
-**Vault Surface**:
+**Vault Destination**:
 The top-level app destination for browsing and managing the Vault Collection.
-_Avoid_: Local tab, library tab, sync settings
+_Avoid_: Vault Surface, Local Destination, Library Destination, sync settings
 
 **Vault Reading State**:
 The device-local page progress, read markers, bookmarks, and last-read timestamps for Vault Collection content.
@@ -314,7 +358,7 @@ _Avoid_: Details JSON, chapter metadata file
 
 **Browse Area**:
 The feature area for remote sources, extension management, global search, and migration.
-_Avoid_: Local tab
+_Avoid_: Local Destination
 
 **Intentional Source Browsing**:
 A user-driven reading-discovery workflow where the user visits and browses chosen extension-backed sources when they want new content, instead of relying on bulk or background library chapter polling.
@@ -326,4 +370,4 @@ _Avoid_: Library update, recent updates
 
 **Legacy Updates Shortcut**:
 An Android launcher or intent entry point that previously opened the Updates tab.
-_Avoid_: Local tab shortcut
+_Avoid_: Local Destination shortcut
