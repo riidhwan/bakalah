@@ -72,7 +72,7 @@ class VaultMangaScreenModel(
                 return@launchIO
             }
             reloadCoverCache()
-            resumeQueuedCacheJobs(manga)
+            recoverInterruptedCacheJobs(manga)
 
             combine(
                 repository.getChaptersAsFlow(mangaId),
@@ -183,25 +183,43 @@ class VaultMangaScreenModel(
         }
     }
 
-    private suspend fun resumeQueuedCacheJobs(manga: VaultManga) {
+    private suspend fun recoverInterruptedCacheJobs(manga: VaultManga) {
         runCatching {
             val config = preferences.getWebDavConfig()
             if (!config.isComplete) return
-            val chapterIds = repository.getChapters(manga.id).map { it.id }.toSet()
+            val chapters = repository.getChapters(manga.id)
+            val chapterIds = chapters.map { it.id }.toSet()
             val localStaging = localStaging() ?: return
             val service = transferService(config, localStaging)
             val cachePolicy = cachePolicyService(localStaging)
-            repository.getTransferJobsForVault(manga.vaultId)
+            val activeCacheJobs = repository.getTransferJobsForVault(manga.vaultId)
                 .filter {
                     it.type == VaultTransferType.CACHE_CHAPTER &&
-                        it.state == VaultTransferState.QUEUED &&
+                        (it.state == VaultTransferState.QUEUED || it.state == VaultTransferState.RUNNING) &&
                         it.chapterId in chapterIds
                 }
-                .forEach {
-                    if (service.execute(it.id) == VaultTransferResult.Succeeded) {
-                        cachePolicy.enforceLimit(manga.vaultId)
-                    }
+            activeCacheJobs.forEach {
+                if (service.execute(it.id) == VaultTransferResult.Succeeded) {
+                    cachePolicy.enforceLimit(manga.vaultId)
                 }
+            }
+            val activeCacheJobChapterIds = activeCacheJobs.mapNotNull { it.chapterId }.toSet()
+            chapters.forEach { chapter ->
+                val state = repository.getCacheState(chapter.id) ?: return@forEach
+                if (state.state in INTERRUPTED_CACHE_STATES && chapter.id !in activeCacheJobChapterIds) {
+                    repository.upsertCacheState(
+                        state.copy(
+                            state = VaultCacheState.VAULT_ONLY,
+                            localPath = null,
+                            sizeBytes = null,
+                            checksumSha256 = null,
+                            lastVerifiedAt = null,
+                            updatedAt = System.currentTimeMillis(),
+                            failureReason = null,
+                        ),
+                    )
+                }
+            }
         }.onFailure {
             logcat(LogPriority.ERROR, it)
         }
@@ -398,6 +416,10 @@ class VaultMangaScreenModel(
     }
 
     private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
+
+    private companion object {
+        val INTERRUPTED_CACHE_STATES = setOf(VaultCacheState.QUEUED, VaultCacheState.CACHING)
+    }
 
     data class VaultChapterItem(
         val chapter: VaultChapter,

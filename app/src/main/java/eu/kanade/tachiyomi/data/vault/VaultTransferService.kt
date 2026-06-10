@@ -3,7 +3,9 @@ package eu.kanade.tachiyomi.data.vault
 import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
@@ -109,20 +111,7 @@ class VaultTransferService(
         val job = repository.getTransferJob(jobId) ?: return VaultTransferResult.NotFound
         if (job.state == VaultTransferState.SUCCEEDED) return VaultTransferResult.AlreadyFinished(job.state)
 
-        job.stagedPath?.let {
-            remoteStorage.delete(it)
-            localStaging.delete(it)
-        }
-        val timestamp = now()
-        repository.upsertTransferJob(
-            job.copy(
-                state = VaultTransferState.CANCELLED,
-                failureReason = null,
-                stagedPath = null,
-                updatedAt = timestamp,
-                completedAt = timestamp,
-            ),
-        )
+        finishCancelled(job, stagedPath = job.stagedPath, reason = null)
         return VaultTransferResult.Cancelled
     }
 
@@ -142,8 +131,17 @@ class VaultTransferService(
             remoteStorage.promote(stagedPath, remotePath)
             finishSucceeded(running, stagedPath = stagedPath, integrity = stagedIntegrity)
         }.getOrElse { error ->
-            remoteStorage.delete(stagedPath)
-            fail(running.copy(stagedPath = stagedPath), error.message ?: "transfer failed")
+            val reason = error.message ?: "transfer failed"
+            if (error is CancellationException) {
+                withContext(NonCancellable) {
+                    finishCancelled(running, stagedPath = stagedPath, reason = reason)
+                }
+                throw error
+            }
+            withContext(NonCancellable) {
+                remoteStorage.delete(stagedPath)
+                fail(running.copy(stagedPath = stagedPath), reason)
+            }
         }
     }
 
@@ -178,28 +176,37 @@ class VaultTransferService(
             }
             finishSucceeded(running, stagedPath = stagedPath, integrity = stagedIntegrity)
         }.getOrElse { error ->
-            localStaging.delete(stagedPath)
             val reason = error.message ?: "transfer failed"
-            running.chapterId?.let { chapterId ->
-                repository.upsertCacheState(
-                    VaultChapterCacheState(
-                        chapterId = chapterId,
-                        state = if (reason.contains("integrity", ignoreCase = true)) {
-                            VaultCacheState.INTEGRITY_FAULT
-                        } else {
-                            VaultCacheState.FAILED
-                        },
-                        localPath = null,
-                        sizeBytes = null,
-                        checksumSha256 = null,
-                        lastVerifiedAt = null,
-                        lastOpenedAt = null,
-                        updatedAt = now(),
-                        failureReason = reason,
-                    ),
-                )
+            if (error is CancellationException) {
+                withContext(NonCancellable) {
+                    finishCancelled(running, stagedPath = stagedPath, reason = reason)
+                }
+                throw error
             }
-            fail(running.copy(stagedPath = stagedPath), reason)
+            withContext(NonCancellable) {
+                localStaging.delete(stagedPath)
+                val state = if (reason.contains("integrity", ignoreCase = true)) {
+                    VaultCacheState.INTEGRITY_FAULT
+                } else {
+                    VaultCacheState.FAILED
+                }
+                running.chapterId?.let { chapterId ->
+                    repository.upsertCacheState(
+                        VaultChapterCacheState(
+                            chapterId = chapterId,
+                            state = state,
+                            localPath = null,
+                            sizeBytes = null,
+                            checksumSha256 = null,
+                            lastVerifiedAt = null,
+                            lastOpenedAt = null,
+                            updatedAt = now(),
+                            failureReason = reason,
+                        ),
+                    )
+                }
+                fail(running.copy(stagedPath = stagedPath), reason)
+            }
         }
     }
 
@@ -254,6 +261,44 @@ class VaultTransferService(
             ),
         )
         return VaultTransferResult.Succeeded
+    }
+
+    private suspend fun finishCancelled(
+        job: VaultTransferJob,
+        stagedPath: String?,
+        reason: String?,
+    ) {
+        stagedPath?.let {
+            remoteStorage.delete(it)
+            localStaging.delete(it)
+        }
+        val timestamp = now()
+        if (job.type == VaultTransferType.CACHE_CHAPTER) {
+            job.chapterId?.let { chapterId ->
+                repository.upsertCacheState(
+                    VaultChapterCacheState(
+                        chapterId = chapterId,
+                        state = VaultCacheState.VAULT_ONLY,
+                        localPath = null,
+                        sizeBytes = null,
+                        checksumSha256 = null,
+                        lastVerifiedAt = null,
+                        lastOpenedAt = null,
+                        updatedAt = timestamp,
+                        failureReason = reason,
+                    ),
+                )
+            }
+        }
+        repository.upsertTransferJob(
+            job.copy(
+                state = VaultTransferState.CANCELLED,
+                stagedPath = null,
+                failureReason = reason,
+                updatedAt = timestamp,
+                completedAt = timestamp,
+            ),
+        )
     }
 
     private suspend fun fail(job: VaultTransferJob, reason: String): VaultTransferResult {
