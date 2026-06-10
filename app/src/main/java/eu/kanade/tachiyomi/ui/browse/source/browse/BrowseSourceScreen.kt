@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.ui.browse.source.browse
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -94,10 +95,23 @@ data class BrowseSourceScreen(
         val navigator = LocalNavigator.currentOrThrow
         val navigateUp: () -> Unit = {
             when {
-                !state.isUserQuery && state.toolbarQuery != null -> screenModel.setToolbarQuery(null)
+                state.shouldCloseSearchOnNavigateUp(
+                    showNavigateUp = showNavigateUp,
+                    canNavigateUp = navigator.canPop,
+                ) -> {
+                    if (state.isUserQuery) {
+                        screenModel.setListing(Listing.valueOf(listingQuery))
+                    } else {
+                        screenModel.setToolbarQuery(null)
+                    }
+                }
                 else -> navigator.pop()
             }
         }
+        BackHandler(
+            enabled = state.toolbarQuery != null && (!showNavigateUp || !navigator.canPop),
+            onBack = navigateUp,
+        )
 
         if (screenModel.source is StubSource) {
             MissingSourceScreen(
@@ -323,4 +337,11 @@ data class BrowseSourceScreen(
         class Text(txt: String) : SearchType(txt)
         class Genre(txt: String) : SearchType(txt)
     }
+}
+
+internal fun BrowseSourceScreenModel.State.shouldCloseSearchOnNavigateUp(
+    showNavigateUp: Boolean,
+    canNavigateUp: Boolean,
+): Boolean {
+    return toolbarQuery != null && (!isUserQuery || !showNavigateUp || !canNavigateUp)
 }
