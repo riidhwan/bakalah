@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+
+## [v0.24.0] - 2026-06-10
 ### Added
 - Add Library-to-Vault Capture for source-backed library manga, including selected-chapter capture into existing or new Vault manga, duplicate handling, downloaded chapter reuse, cover publishing, and consistent manifest publishing.
 
