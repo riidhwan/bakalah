@@ -10,6 +10,7 @@ import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.util.lang.compareToCaseInsensitiveNaturalOrder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -858,20 +859,7 @@ class LibraryVaultCaptureService(
     private fun orderCapturedChapters(
         chapters: List<VaultManifestChapter>,
         replacementIdentities: Set<String>,
-    ): List<VaultManifestChapter> {
-        val replacementsByIdentity = chapters
-            .filter { it.identity in replacementIdentities }
-            .associateBy { it.identity }
-        val newOrdered = chapters
-            .filterNot { it.identity in replacementIdentities }
-            .sortedByDescending { it.title.duplicateTitleKey() }
-        val merged = newOrdered.toMutableList()
-        chapters.forEachIndexed { index, original ->
-            val replacement = replacementsByIdentity[original.identity] ?: return@forEachIndexed
-            merged.add(index.coerceAtMost(merged.size), replacement)
-        }
-        return merged.mapIndexed { index, chapter -> chapter.copy(sourceOrder = index.toLong()) }
-    }
+    ): List<VaultManifestChapter> = orderLibraryVaultCaptureChapters(chapters, replacementIdentities)
 
     private fun decodeRootManifest(body: String): VaultRootManifest? {
         return when (val result = codec.decodeRoot(body)) {
@@ -1090,4 +1078,26 @@ sealed interface LibraryVaultCaptureResult {
     data object SourceUnavailable : LibraryVaultCaptureResult
     data object NothingSelected : LibraryVaultCaptureResult
     data class TargetChoiceRequired(val plan: LibraryVaultCapturePlan) : LibraryVaultCaptureResult
+}
+
+internal fun orderLibraryVaultCaptureChapters(
+    chapters: List<VaultManifestChapter>,
+    replacementIdentities: Set<String>,
+): List<VaultManifestChapter> {
+    val replacementsByIdentity = chapters
+        .filter { it.identity in replacementIdentities }
+        .associateBy { it.identity }
+    val newOrdered = chapters
+        .filterNot { it.identity in replacementIdentities }
+        .sortedWith { first, second ->
+            second.title
+                .duplicateTitleKey()
+                .compareToCaseInsensitiveNaturalOrder(first.title.duplicateTitleKey())
+        }
+    val merged = newOrdered.toMutableList()
+    chapters.forEachIndexed { index, original ->
+        val replacement = replacementsByIdentity[original.identity] ?: return@forEachIndexed
+        merged.add(index.coerceAtMost(merged.size), replacement)
+    }
+    return merged.mapIndexed { index, chapter -> chapter.copy(sourceOrder = index.toLong()) }
 }

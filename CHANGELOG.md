@@ -12,6 +12,10 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.24.1] - 2026-06-10
+### Fixed
+- Fix Vault Manga Detail chapter ordering for mixed-width episode/chapter titles.
+
 ## [v0.24.0] - 2026-06-10
 ### Added
 - Add Library-to-Vault Capture for source-backed library manga, including selected-chapter capture into existing or new Vault manga, duplicate handling, downloaded chapter reuse, cover publishing, and consistent manifest publishing.

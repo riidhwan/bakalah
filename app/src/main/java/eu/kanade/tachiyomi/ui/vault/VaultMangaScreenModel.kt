@@ -16,6 +16,7 @@ import eu.kanade.tachiyomi.data.vault.VaultTransferResult
 import eu.kanade.tachiyomi.data.vault.VaultTransferService
 import eu.kanade.tachiyomi.data.vault.WebDavVaultTransferStorage
 import eu.kanade.tachiyomi.network.NetworkHelper
+import eu.kanade.tachiyomi.util.lang.compareToCaseInsensitiveNaturalOrder
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
@@ -26,6 +27,7 @@ import logcat.LogPriority
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.storage.service.StorageManager
+import tachiyomi.domain.vault.interactor.duplicateTitleKey
 import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
@@ -94,7 +96,7 @@ class VaultMangaScreenModel(
                     mutableState.update {
                         it.copy(
                             isLoading = false,
-                            chapters = chapters,
+                            chapters = orderVaultMangaDetailChapters(chapters),
                             localCacheUsageBytes = repository.getLocalCacheUsageBytes(manga.vaultId),
                             vaultStorageUsageBytes = chapters.sumOf { item -> item.chapter.content.sizeBytes },
                         )
@@ -479,6 +481,23 @@ private fun VaultMangaScreenModel.State.labelEdits(): List<VaultMangaScreenModel
             isSensitive = it.isSensitive,
             assigned = it.identity.value in assigned,
         )
+    }
+}
+
+internal fun orderVaultMangaDetailChapters(
+    chapters: List<VaultMangaScreenModel.VaultChapterItem>,
+): List<VaultMangaScreenModel.VaultChapterItem> {
+    return chapters.sortedWith { first, second ->
+        if (first.chapter.isRecognizedNumber && second.chapter.isRecognizedNumber) {
+            second.chapter.chapterNumber.compareTo(first.chapter.chapterNumber)
+                .takeIf { it != 0 }
+                ?.let { return@sortedWith it }
+        }
+        second.chapter.title
+            .duplicateTitleKey()
+            .compareToCaseInsensitiveNaturalOrder(first.chapter.title.duplicateTitleKey())
+            .takeIf { it != 0 }
+            ?: first.chapter.sourceOrder.compareTo(second.chapter.sourceOrder)
     }
 }
 
