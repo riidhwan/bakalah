@@ -355,24 +355,21 @@ class ReaderViewModel @JvmOverloads constructor(
         return withIOContext {
             try {
                 val context = Injekt.get<Application>()
-                val openResult = vaultOpenService()?.prepareChapter(mangaId, initialChapterId)
-                    ?: return@withIOContext Result.failure(IllegalStateException("Vault cache unavailable"))
-                val ready = when (openResult) {
-                    is VaultReaderOpenResult.Ready -> openResult
-                    VaultReaderOpenResult.NotFound -> return@withIOContext Result.success(false)
-                    is VaultReaderOpenResult.Failed -> {
-                        return@withIOContext Result.failure(IllegalStateException(openResult.reason))
-                    }
+                val vaultManga = vaultRepository.getMangaById(mangaId)
+                    ?: return@withIOContext Result.success(false)
+                val vaultChapters = vaultRepository.getChapters(mangaId)
+                if (vaultChapters.none { it.id == initialChapterId }) {
+                    return@withIOContext Result.success(false)
                 }
 
                 readerSession = ReaderSession.Vault(
-                    manga = ready.manga,
-                    chapters = vaultRepository.getChapters(mangaId),
+                    manga = vaultManga,
+                    chapters = vaultChapters,
                 )
                 activeVaultReaderSessions.markActive(mangaId)
                 mutableState.update {
                     it.copy(
-                        manga = ready.manga.toReaderManga(),
+                        manga = vaultManga.toReaderManga(),
                         isVaultSession = true,
                     )
                 }
@@ -426,35 +423,7 @@ class ReaderViewModel @JvmOverloads constructor(
         context: Application,
         chapter: ReaderChapter,
     ): ViewerChapters {
-        val openResult = vaultOpenService()?.prepareChapter(chapter.chapter.manga_id!!, chapter.chapter.id!!)
-            ?: error("Vault cache unavailable")
-        val ready = when (openResult) {
-            is VaultReaderOpenResult.Ready -> openResult
-            VaultReaderOpenResult.NotFound -> error("Vault Chapter not found")
-            is VaultReaderOpenResult.Failed -> error(openResult.reason)
-        }
-        val file = resolveVaultCacheFile(ready.localPath) ?: error("Cached Vault Chapter not found")
-
-        if (chapter.state !is ReaderChapter.State.Loaded || chapter.pageLoader == null) {
-            val pageLoader = VaultPageLoader(context, file)
-            chapter.state = ReaderChapter.State.Loading
-            try {
-                chapter.pageLoader = pageLoader
-                val pages = pageLoader.getPages()
-                    .onEach { it.chapter = chapter }
-                if (pages.isEmpty()) {
-                    throw Exception(context.stringResource(MR.strings.page_list_empty_error))
-                }
-                if (!chapter.chapter.read) {
-                    chapter.requestedPage = chapter.chapter.last_page_read
-                }
-                chapter.state = ReaderChapter.State.Loaded(pages)
-            } catch (e: Throwable) {
-                pageLoader.recycle()
-                chapter.state = ReaderChapter.State.Error(e)
-                throw e
-            }
-        }
+        loadVaultChapterPages(context, chapter)
 
         val chapterPos = chapterList.indexOf(chapter)
         val newChapters = ViewerChapters(
@@ -475,8 +444,10 @@ class ReaderViewModel @JvmOverloads constructor(
             }
         }
         vaultCachePolicy()?.markOpened(chapter.chapter.id!!)
+        val vaultSession = readerSession as? ReaderSession.Vault
+            ?: error("Vault session unavailable")
         vaultCachePolicy()?.enforceLimit(
-            vaultId = ready.manga.vaultId,
+            vaultId = vaultSession.manga.vaultId,
             protectedChapterIds = listOfNotNull(
                 newChapters.currChapter.chapter.id,
                 newChapters.prevChapter?.chapter?.id,
@@ -484,6 +455,45 @@ class ReaderViewModel @JvmOverloads constructor(
             ).toSet(),
         )
         return newChapters
+    }
+
+    private suspend fun loadVaultChapterPages(
+        context: Application,
+        chapter: ReaderChapter,
+    ) {
+        if (chapter.state is ReaderChapter.State.Loaded && chapter.pageLoader != null) {
+            return
+        }
+
+        chapter.state = ReaderChapter.State.Loading
+        var pageLoader: VaultPageLoader? = null
+        try {
+            val openResult = vaultOpenService()?.prepareChapter(chapter.chapter.manga_id!!, chapter.chapter.id!!)
+                ?: error("Vault cache unavailable")
+            val ready = when (openResult) {
+                is VaultReaderOpenResult.Ready -> openResult
+                VaultReaderOpenResult.NotFound -> error("Vault Chapter not found")
+                is VaultReaderOpenResult.Failed -> error(openResult.reason)
+            }
+            val file = resolveVaultCacheFile(ready.localPath) ?: error("Cached Vault Chapter not found")
+
+            pageLoader = VaultPageLoader(context, file)
+            chapter.pageLoader = pageLoader
+            val pages = pageLoader.getPages()
+                .onEach { it.chapter = chapter }
+            if (pages.isEmpty()) {
+                throw Exception(context.stringResource(MR.strings.page_list_empty_error))
+            }
+            if (!chapter.chapter.read) {
+                chapter.requestedPage = chapter.chapter.last_page_read
+            }
+            chapter.state = ReaderChapter.State.Loaded(pages)
+        } catch (e: Throwable) {
+            pageLoader?.recycle()
+            chapter.pageLoader = null
+            chapter.state = ReaderChapter.State.Error(e)
+            throw e
+        }
     }
 
     /**
@@ -572,7 +582,7 @@ class ReaderViewModel @JvmOverloads constructor(
         try {
             logcat { "Preloading ${chapter.chapter.url}" }
             if (readerSession is ReaderSession.Vault) {
-                loadVaultChapter(Injekt.get(), chapter)
+                loadVaultChapterPages(Injekt.get(), chapter)
             } else {
                 val loader = loader ?: return
                 loader.loadChapter(chapter)

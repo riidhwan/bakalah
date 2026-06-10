@@ -14,6 +14,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ### Fixed
 - Prioritize exact label matches when searching labels to add to Vault manga.
 - Fix Local Destination back button closing search after searching manga.
+- Show a loading indicator while non-cached Vault chapters are prepared in the reader.
 
 ## [v0.23.2] - 2026-06-10
 ### Fixed
