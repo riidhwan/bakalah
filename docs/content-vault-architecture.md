@@ -51,7 +51,7 @@ Domain code does not perform Android storage, WebDAV, or SQLDelight work directl
 - `VaultReaderOpenService`: verifies cached chapters or performs cache-first download before reader launch.
 - `VaultCachePolicyService`: creates cache paths, marks opened cached chapters, evicts chapters, and enforces the local cache size limit.
 - `VaultMetadataPublishService`, `VaultCoverPublishService`, and `VaultMangaDeletionService`: publish catalogue mutations and refresh the local index afterward.
-  Vault label sensitivity is catalogue-owned metadata, while the user's include-sensitive Vault Surface setting is device-local.
+  Vault label sensitivity is catalogue-owned metadata, while the user's include-sensitive Vault Destination setting is device-local.
 
 `app/src/main/java/eu/kanade/tachiyomi/ui/vault` owns screen models and navigation. `app/src/main/java/eu/kanade/presentation/vault` owns Compose rendering.
 
@@ -226,7 +226,7 @@ The local cache limit is read from `ContentVaultPreferences.localCacheLimitBytes
 - cache states for the selected vault
 
 It derives visible manga items, local cache usage, remote vault storage usage, failed/queued counts, search/filter/sort output, and cover cache requests.
-By default, the Vault Surface excludes Vault Manga that have any Sensitive Vault Label; direct filtering to a sensitive label or enabling the device-local include-sensitive setting includes them.
+By default, the Vault Destination excludes Vault Manga that have any Sensitive Vault Label; direct filtering to a sensitive label or enabling the device-local include-sensitive setting includes them.
 
 `VaultMangaScreenModel` observes chapters and cache states for one manga. It coordinates cache, retry, eviction, metadata publish, cover publish, and deletion actions through app services. Compose screens render these derived states and send explicit user actions back to the screen models.
 

@@ -2,7 +2,7 @@
 
 ## Summary
 
-Bakalah needs a Content Vault for user-owned manga content stored on WebDAV-accessible storage, with Hetzner Storage Box as the first supported provider. The Content Vault is not a blind folder sync, not an app backup, not the existing Local Source directory, and not the Library. It is a separate Vault Feature with its own Vault Surface, Vault Catalogue, Vault Index, Local Content Cache, and device-local Vault Reading State.
+Bakalah needs a Content Vault for user-owned manga content stored on WebDAV-accessible storage, with Hetzner Storage Box as the first supported provider. The Content Vault is not a blind folder sync, not an app backup, not the existing Local Source directory, and not the Library. It is a separate Vault Feature with its own Vault Destination, Vault Catalogue, Vault Index, Local Content Cache, and device-local Vault Reading State.
 
 The minimum v1 should let a user connect one WebDAV-backed Content Vault, import existing Local Manga content into it without modifying the original files, browse the vault catalogue, edit basic vault metadata, cache chapters on demand, read cached chapters through the existing reader, and evict cached chapters under a user-controlled cache policy.
 
@@ -52,11 +52,11 @@ The user wants a durable personal manga collection that outlives device storage 
 
 ## Product Shape
 
-### Vault Surface
+### Vault Destination
 
-Bakalah should expose a distinct Vault Surface for browsing and managing the Vault Collection. It must not be hidden inside Library or the Local tab.
+Bakalah should expose a distinct Vault Destination for browsing and managing the Vault Collection. It must not be hidden inside Library or the Local Destination.
 
-The Vault Surface should support:
+The Vault Destination should support:
 
 - Browse/search/filter from the local Vault Index.
 - Show remote-only and cached chapter states.
@@ -107,7 +107,7 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 ### Local-to-Vault Import
 
 - V1 import is limited to existing Local Manga files already recognized by Bakalah Local Source.
-- The v1 UI entry point starts from Local Manga detail; a Vault Surface picker or launcher for choosing Local Manga is deferred.
+- The v1 UI entry point starts from Local Manga detail; a Vault Destination picker or launcher for choosing Local Manga is deferred.
 - Local Manga detail should show the current Import Target Hint, or an unlinked target setup affordance, under the manga title using the same icon-and-text metadata-row style as author/artist rows, and allow changing that target from the same manga-scoped area.
 - The under-title target row should show the target Vault Manga title when linked, "Link vault target" when unlinked, "Vault target unavailable" when stale, and "Set up content vault" when the Content Vault is unconfigured.
 - Target setup should allow intentionally unlinking a Local Manga by clearing only the device-local Import Target Hint. Relinking from a stale state should replace the stale hint without a separate clear step.
@@ -171,9 +171,9 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - V1 metadata editing should support basic manga-level fields such as title, author/artist, description, status, and labels.
 - Vault Labels are vault-owned organization markers, separate from Library categories and genres.
 - Vault Label identity must remain stable across renames so assigned Vault Manga and sensitivity survive display-name changes.
-- Sensitive Vault Labels are vault-owned label metadata; a Vault Manga with any Sensitive Vault Label must be excluded from default Vault Surface results unless the user explicitly includes sensitive content or directly filters to that sensitive label.
+- Sensitive Vault Labels are vault-owned label metadata; a Vault Manga with any Sensitive Vault Label must be excluded from default Vault Destination results unless the user explicitly includes sensitive content or directly filters to that sensitive label.
 - Vault Manga detail should show assigned Vault Labels as tag-like chips in the manga header, with sensitive labels visually distinguished by a different non-error color. Selecting an assigned label should open a bottom sheet or dialog with actions for label-scoped sensitivity toggling and manga-scoped removal of the Vault Label Assignment, ordered with the sensitivity action before removal. These label chip actions should publish immediately without an additional confirmation or save step.
-- Vault Manga detail should always provide a compact add-label affordance near the assigned label chips, even when no labels are assigned. Selecting it should open a bottom sheet or dialog. Each add-label flow should add one label: either assign one existing unassigned Vault Label immediately or create one new non-sensitive Vault Label assigned to the current Vault Manga through a text field and Add action. The add-label picker should include sensitive labels even when the Vault Surface is not including sensitive content, and should visually mark sensitive labels.
+- Vault Manga detail should always provide a compact add-label affordance near the assigned label chips, even when no labels are assigned. Selecting it should open a bottom sheet or dialog. Each add-label flow should add one label: either assign one existing unassigned Vault Label immediately or create one new non-sensitive Vault Label assigned to the current Vault Manga through a text field and Add action. The add-label picker should include sensitive labels even when the Vault Destination is not including sensitive content, and should visually mark sensitive labels.
 - The user's include-sensitive browsing choice is device-local and must not change remote Vault Catalogue metadata.
 - Adding Vault Label sensitivity bumps the Vault Layout Version; migration from older layouts treats all existing labels as non-sensitive until changed by the user.
 - Vault Metadata edits must update manifests and the local Vault Index, not rewrite chapter content files.
@@ -188,8 +188,8 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Local Content Cache must live in an app-managed Vault Cache Directory, separate from Local Source and Downloads.
 - The Vault Cache Directory should be under Bakalah's user-selected base storage directory.
 - The Vault Catalogue must record readable chapter content as CBZ.
-- Opening a Vault-only chapter from the Vault Surface must cache and verify it before launching the reader.
-- Initial cache-before-launch uses the normal visible Vault Transfer Queue/cache state, with Vault Surface navigation to the reader chained after successful verification.
+- Opening a Vault-only chapter from the Vault Destination must cache and verify it before launching the reader.
+- Initial cache-before-launch uses the normal visible Vault Transfer Queue/cache state, with Vault Destination navigation to the reader chained after successful verification.
 - Opening a Vault-only chapter with an existing queued or running cache job must attach to that job instead of enqueueing a duplicate cache job.
 - Moving to an uncached adjacent chapter inside a Vault Reader Session may perform Cache-First Reading in the reader before displaying pages.
 - Adjacent cache failures must keep the failed Vault Chapter visible in the reader sequence with retry rather than removing or silently skipping it.
@@ -220,7 +220,7 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 
 Vault manga deletion permanently removes manga-level Vault entries from the remote Vault Catalogue. It first removes the manga pointer from the root manifest as the authoritative deletion, then deletes the manga manifest, chapter CBZ files, and cover assets from WebDAV storage as cleanup.
 
-Vault deletion must not delete original Local Manga files under `local/`, existing Downloads, or arbitrary user-managed storage. Missing remote files during cleanup count as already clean; other cleanup failures should be reported after returning to the Vault Surface without rolling back the root manifest deletion. Individual chapter deletion remains a separate future workflow.
+Vault deletion must not delete original Local Manga files under `local/`, existing Downloads, or arbitrary user-managed storage. Missing remote files during cleanup count as already clean; other cleanup failures should be reported after returning to the Vault Destination without rolling back the root manifest deletion. Individual chapter deletion remains a separate future workflow.
 
 ### Transfers and Integrity
 
@@ -268,7 +268,7 @@ Internal staging paths, revisions, and checksums should be hidden from normal UI
 - A user can import selected chapters from an existing Local Manga into the Content Vault, with selected directory chapters first converted into validated CBZ archives in Local Manga storage.
 - Repeating an import can target an existing Vault Manga through Import Target Hint or exact normalized title matching.
 - Import Duplicate Candidate chapters are flagged, deselected by default, still selectable, and replace existing Vault Chapters only after explicit confirmation.
-- The Vault Surface shows remote-only and cached chapters from the local Vault Index.
+- The Vault Destination shows remote-only and cached chapters from the local Vault Index.
 - A user can edit basic Vault Metadata and Vault Labels.
 - A user can cache a vault-only chapter and read it after integrity verification.
 - A user can evict cached chapter content without deleting vault content or original Local Manga files.

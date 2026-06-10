@@ -27,7 +27,7 @@ Use Hetzner Storage Box or another WebDAV provider with equivalent support for `
 - Start from a Local Manga detail screen and open Local-to-Vault Import.
 - Confirm all recognized CBZ chapters are selected by default.
 - Confirm selected directory chapters show a conversion warning, convert to validated CBZ files before upload, and leave the original directory intact if conversion fails.
-- Import into a new Vault Manga and confirm the Vault Surface shows the manga, chapter count, remote-only state, imported metadata, and initial cover when one was available.
+- Import into a new Vault Manga and confirm the Vault Destination shows the manga, chapter count, remote-only state, imported metadata, and initial cover when one was available.
 - Repeat import for the same Local Manga and confirm the Import Target Hint selects the existing Vault Manga.
 - Remove the hint or use another local entry with the same normalized title and confirm a single exact match selects the existing Vault Manga.
 - Create two exact normalized title matches and confirm the import UI requires an explicit target choice.
@@ -35,7 +35,7 @@ Use Hetzner Storage Box or another WebDAV provider with equivalent support for `
 - Trigger an upload failure and confirm the import remains retryable without partially published catalogue content.
 - After a successful import, use Open in Vault and confirm navigation lands on the imported Vault Manga.
 
-## Vault Surface And Reading Smoke
+## Vault Destination And Reading Smoke
 
 - Refresh the Vault Catalogue and confirm manga are listed from the local Vault Index, including offline after the last successful refresh.
 - Confirm search, filter, and sort controls update the visible Vault Collection without using Library membership.
@@ -50,5 +50,5 @@ Use Hetzner Storage Box or another WebDAV provider with equivalent support for `
 ## Release Notes
 
 - Document the WebDAV provider used for manual verification and any provider-specific path or quota caveats.
-- Record screenshots for Vault setup, import preview with duplicate warning, Vault Surface states, cache job progress, reader launch, and cache eviction.
+- Record screenshots for Vault setup, import preview with duplicate warning, Vault Destination states, cache job progress, reader launch, and cache eviction.
 - Keep credentials, tokens, host-specific private paths, and full remote manifest bodies out of screenshots and issue or PR comments.
