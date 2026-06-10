@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Fixed
+- Prioritize exact label matches when searching labels to add to Vault manga.
 
 ## [v0.23.2] - 2026-06-10
 ### Fixed
