@@ -485,16 +485,11 @@ private fun VaultAddLabelDialog(
     var newLabel by remember { mutableStateOf("") }
     val assigned = state.mangaLabels.map { it.identity.value }.toSet()
     val newLabelName = newLabel.trim()
-    val labelQuery = normalizeLabelName(newLabelName)
-    val unassignedLabels = if (labelQuery.isBlank()) {
-        emptyList()
-    } else {
-        state.vaultLabels
-            .filterNot { it.identity.value in assigned }
-            .filter { normalizeLabelName(it.name).contains(labelQuery) }
-            .sortedBy { it.sortKey }
-            .take(MAX_LABEL_AUTOCOMPLETE_RESULT_COUNT)
-    }
+    val unassignedLabels = searchUnassignedVaultLabels(
+        labels = state.vaultLabels,
+        assignedLabelIdentities = assigned,
+        query = newLabelName,
+    )
     val duplicateLabelName = newLabelName.isNotBlank() &&
         state.vaultLabels.any { normalizeLabelName(it.name) == normalizeLabelName(newLabelName) }
     val canCreateLabel = newLabelName.isNotBlank() && !duplicateLabelName
@@ -676,6 +671,24 @@ private fun VaultMetadataEditDialog(
             }
         },
     )
+}
+
+internal fun searchUnassignedVaultLabels(
+    labels: List<VaultLabel>,
+    assignedLabelIdentities: Set<String>,
+    query: String,
+): List<VaultLabel> {
+    val labelQuery = normalizeLabelName(query)
+    if (labelQuery.isBlank()) return emptyList()
+
+    return labels
+        .filterNot { it.identity.value in assignedLabelIdentities }
+        .filter { normalizeLabelName(it.name).contains(labelQuery) }
+        .sortedWith(
+            compareBy<VaultLabel> { normalizeLabelName(it.name) != labelQuery }
+                .thenBy { it.sortKey },
+        )
+        .take(MAX_LABEL_AUTOCOMPLETE_RESULT_COUNT)
 }
 
 private fun normalizeLabelName(name: String): String = name.trim().lowercase()
