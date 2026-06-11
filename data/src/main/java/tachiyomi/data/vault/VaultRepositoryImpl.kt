@@ -19,6 +19,7 @@ import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
 import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
+import tachiyomi.domain.vault.model.VaultImportRequest
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultManifestSnapshot
@@ -376,6 +377,61 @@ class VaultRepositoryImpl(
 
     override suspend fun deleteImportTargetHint(localMangaId: Long) {
         database.vaultQueries.deleteImportTargetHint(localMangaId)
+    }
+
+    override suspend fun insertImportRequest(request: VaultImportRequest): Long {
+        return database.transactionWithResult {
+            database.vaultQueries.insertImportRequest(
+                id = request.id,
+                mangaId = request.mangaId,
+                workflow = request.workflow.name,
+                targetMangaId = request.targetMangaId,
+                createNewTitle = request.createNewTitle,
+                createdAt = request.createdAt,
+                updatedAt = request.updatedAt,
+            )
+            val requestId = if (request.id != -1L) {
+                request.id
+            } else {
+                database.vaultQueries
+                    .lastInsertedImportRequestId()
+                    .awaitAsOne()
+            }
+            request.chapters.forEach { chapter ->
+                database.vaultQueries.insertImportRequestChapter(
+                    requestId = requestId,
+                    chapterId = chapter.chapterId,
+                    selectionId = chapter.selectionId,
+                    sortOrder = chapter.sortOrder,
+                    allowReplacement = chapter.allowReplacement,
+                )
+            }
+            requestId
+        }
+    }
+
+    override suspend fun getImportRequest(id: Long): VaultImportRequest? {
+        val request = database.vaultQueries
+            .getImportRequest(id)
+            .awaitAsOneOrNull()
+            ?: return null
+        val chapters = database.vaultQueries
+            .getImportRequestChapters(id, VaultMapper::mapImportRequestChapter)
+            .awaitAsList()
+        return VaultMapper.mapImportRequest(
+            id = request._id,
+            mangaId = request.manga_id,
+            workflow = request.workflow,
+            targetMangaId = request.target_manga_id,
+            createNewTitle = request.create_new_title,
+            createdAt = request.created_at,
+            updatedAt = request.updated_at,
+            chapters = chapters,
+        )
+    }
+
+    override suspend fun deleteImportRequest(id: Long) {
+        database.vaultQueries.deleteImportRequest(id)
     }
 
     override suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long {

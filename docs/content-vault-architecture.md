@@ -161,6 +161,8 @@ Add to Vault uses all selected Local Manga chapters even if current filters or s
 Add to Vault is not hidden based on network heuristics; remote publish failures surface through the existing visible job or transfer failure path.
 While a Local-to-Vault Import job for the same Local Manga is running, the under-title target row remains viewable but target changes are disabled. Add to Vault follows the current global single-import-job behavior and shows a busy/in-progress state when another Local-to-Vault Import job is already running.
 
+Accepted Add to Vault actions are persisted as Vault Import Requests before WorkManager is enqueued. A request stores the source manga, workflow, Import Target, and selected chapters as durable child rows with each chapter's database id when available, workflow selection id, original order, and whether that selected chapter may become a Vault Chapter Replacement. WorkManager input carries only the request id; the worker reloads the request and current manga/chapter rows before calling the import or capture service. Missing selected chapters are handled by the workflow result path: Library-to-Vault Capture records them as per-chapter failures, while Local-to-Vault Import fails cleanly if no selected chapters still resolve. Terminal requests are deleted or pruned after their result has been represented in the workflow result trail.
+
 ## Library-to-Vault Capture
 
 Library-to-Vault Capture starts from the Manga Detail Screen for a source-backed manga saved in the Library. It uses the same under-title Import Target Hint row and selected-chapter Add to Vault action as Local-to-Vault Import, but it is a separate workflow because source-backed chapters may not exist as user-owned files.
@@ -176,7 +178,7 @@ The generalized Import Target Hint is keyed by the local manga row and validated
 
 Target setup is shared with Local-to-Vault Import: direct target-row linking persists an existing target immediately, pending Add to Vault target choices persist only after successful publish, exact normalized title matches are suggestions only, sensitive Vault Manga can be selected, and Create New appears only for pending selected-chapter actions.
 
-`LibraryVaultCaptureJob` owns Android foreground execution, cancellation, and notification progress. `LibraryVaultCaptureService` owns capture planning and publication. The Vault Transfer Queue stores one `CAPTURE_PUBLISH` job for the bulk user action with added, replaced, failed, and cancelled/unprocessed counts plus sanitized failed chapter details. WorkManager remains the Android runtime boundary; `vault_transfer_jobs` is the domain-visible job/result trail.
+`LibraryVaultCaptureJob` owns Android foreground execution, cancellation, and notification progress after loading the accepted Vault Import Request. `LibraryVaultCaptureService` owns capture planning and publication. The Vault Transfer Queue stores one `CAPTURE_PUBLISH` job for the bulk user action with added, replaced, failed, and cancelled/unprocessed counts plus sanitized failed chapter details. WorkManager remains the Android runtime boundary; `vault_transfer_jobs` is the domain-visible job/result trail.
 
 Normal Downloads are not capture staging. At capture start:
 

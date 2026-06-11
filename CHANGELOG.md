@@ -19,6 +19,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ### Fixed
 - Keep Vault import and Library-to-Vault Capture completion notifications visible after progress finishes.
+- Fix Add to Vault crashing when too many selected chapters exceeded WorkManager's input size limit.
 
 ### Removed
 - Remove the status filter from the Vault top bar.
