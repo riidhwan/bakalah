@@ -12,6 +12,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 ### Changed
+- Change the Vault sensitive-content action from an overflow menu item to a tinted 18+ toggle button beside sorting.
 - Move the Vault label filter from the top bar into compact label chips in the Vault content.
 
 ### Removed
