@@ -289,6 +289,8 @@
     <string name="vault_import_progress_detail">Processing %s</string>
     <string name="vault_import_ongoing">Import is running in the background</string>
     <string name="vault_import_complete">Import complete</string>
+    <string name="vault_import_cancelled">Import cancelled</string>
+    <string name="vault_import_cancelled_detail">The Vault import was stopped.</string>
     <string name="vault_import_action_open_in_vault">Open in Vault</string>
     <string name="vault_import_action_open_vault">Open Vault</string>
     <string name="vault_import_success">%d imported</string>

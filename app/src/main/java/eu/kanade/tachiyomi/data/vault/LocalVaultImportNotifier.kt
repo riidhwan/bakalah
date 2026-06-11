@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.core.app.NotificationCompat
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.data.notification.NotificationReceiver
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.util.system.cancelNotification
 import eu.kanade.tachiyomi.util.system.notificationBuilder
@@ -58,6 +59,7 @@ class LocalVaultImportNotifier(
                     .setContentTitle(context.stringResource(MR.strings.vault_importing))
                     .setContentText(text)
                     .setProgress(0, 0, true)
+                    .withCancelAction()
                     .build(),
             )
             return
@@ -73,6 +75,7 @@ class LocalVaultImportNotifier(
                 .setContentTitle(context.stringResource(MR.strings.vault_import_progress_title, percent))
                 .setContentText(text)
                 .setProgress(progress.total, progress.current, false)
+                .withCancelAction()
                 .build(),
         )
     }
@@ -83,6 +86,7 @@ class LocalVaultImportNotifier(
             .setContentTitle(context.stringResource(MR.strings.vault_importing))
             .setContentText(mangaTitle)
             .setProgress(0, 0, true)
+            .withCancelAction()
     }
 
     private fun LocalVaultImportProgress.phaseText(): String {
@@ -170,6 +174,19 @@ class LocalVaultImportNotifier(
         )
     }
 
+    fun showCancelled() {
+        context.cancelNotification(Notifications.ID_VAULT_IMPORT_PROGRESS)
+        context.notify(
+            Notifications.ID_VAULT_IMPORT_COMPLETE,
+            completeNotificationBuilder
+                .asDismissibleResult()
+                .setContentTitle(context.stringResource(MR.strings.vault_import_cancelled))
+                .setContentText(context.stringResource(MR.strings.vault_import_cancelled_detail))
+                .setProgress(0, 0, false)
+                .build(),
+        )
+    }
+
     fun cancel() {
         context.cancelNotification(Notifications.ID_VAULT_IMPORT_PROGRESS)
         context.cancelNotification(Notifications.ID_VAULT_IMPORT_COMPLETE)
@@ -183,5 +200,14 @@ class LocalVaultImportNotifier(
     private fun NotificationCompat.Builder.asDismissibleResult(): NotificationCompat.Builder {
         return setOngoing(false)
             .setAutoCancel(true)
+    }
+
+    private fun NotificationCompat.Builder.withCancelAction(): NotificationCompat.Builder {
+        return clearActions()
+            .addAction(
+                R.drawable.ic_close_24dp,
+                context.stringResource(MR.strings.action_cancel),
+                NotificationReceiver.cancelVaultImportPendingBroadcast(context),
+            )
     }
 }
