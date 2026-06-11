@@ -15,7 +15,6 @@ import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -61,7 +60,6 @@ fun VaultScreen(
     onClickRefresh: () -> Unit,
     onClickManga: (Long) -> Unit,
     onLoadCover: (Long) -> Unit,
-    onFilterChange: (VaultScreenModel.Filter) -> Unit,
     onLabelFilterChange: (String?) -> Unit,
     onSortChange: (VaultScreenModel.Sort) -> Unit,
     onIncludeSensitiveChange: (Boolean) -> Unit,
@@ -73,7 +71,6 @@ fun VaultScreen(
                 searchQuery = state.searchQuery,
                 onChangeSearchQuery = onSearchQueryChange,
                 actions = {
-                    VaultFilterMenu(filter = state.filter, onFilterChange = onFilterChange)
                     VaultLabelFilterMenu(
                         labels = state.labels,
                         selectedLabelIdentity = state.selectedLabelIdentity,
@@ -260,34 +257,6 @@ private fun VaultSummary(
 }
 
 @Composable
-private fun VaultFilterMenu(
-    filter: VaultScreenModel.Filter,
-    onFilterChange: (VaultScreenModel.Filter) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    IconButton(onClick = { expanded = true }) {
-        Icon(
-            imageVector = Icons.Outlined.FilterList,
-            contentDescription = stringResource(MR.strings.action_filter),
-        )
-    }
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false },
-    ) {
-        VaultScreenModel.Filter.entries.forEach { item ->
-            DropdownMenuItem(
-                text = { Text(item.label()) },
-                onClick = {
-                    expanded = false
-                    onFilterChange(item)
-                },
-            )
-        }
-    }
-}
-
-@Composable
 private fun VaultSortMenu(
     sort: VaultScreenModel.Sort,
     onSortChange: (VaultScreenModel.Sort) -> Unit,
@@ -414,18 +383,6 @@ private fun VaultLabelFilterMenu(
             )
         }
     }
-}
-
-@Composable
-private fun VaultScreenModel.Filter.label(): String {
-    val res = when (this) {
-        VaultScreenModel.Filter.ALL -> MR.strings.vault_filter_all
-        VaultScreenModel.Filter.CACHED -> MR.strings.vault_filter_cached
-        VaultScreenModel.Filter.VAULT_ONLY -> MR.strings.vault_filter_vault_only
-        VaultScreenModel.Filter.QUEUED -> MR.strings.vault_filter_queued
-        VaultScreenModel.Filter.FAILED -> MR.strings.vault_filter_failed
-    }
-    return stringResource(res)
 }
 
 @Composable

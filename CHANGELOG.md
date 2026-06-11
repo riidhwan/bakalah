@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Removed
+- Remove the status filter from the Vault top bar.
 
 ## [v0.24.1] - 2026-06-10
 ### Fixed
