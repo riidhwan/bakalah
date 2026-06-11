@@ -594,7 +594,7 @@ class MangaScreenModel(
         val pendingTarget = pendingTargetOverride
         val effectiveTargetId = when (pendingTarget) {
             null -> persistedTarget?.id
-            LocalVaultImportTargetSelection.CreateNew -> null
+            is LocalVaultImportTargetSelection.CreateNew -> null
             is LocalVaultImportTargetSelection.Existing -> pendingTarget.mangaId
         }
 
@@ -606,15 +606,10 @@ class MangaScreenModel(
             hint != null -> LocalVaultImportTargetState.Stale
             else -> LocalVaultImportTargetState.Unlinked
         }
-        val exactTitleCandidates = vaultManga.filter {
-            it.metadata.normalizedTitle == VaultMetadata.normalizeTitle(localManga.title)
-        }
-
         return LocalVaultImportState(
             targetState = targetState,
             workflow = workflow,
             availableTargets = vaultManga,
-            exactTitleCandidateIds = exactTitleCandidates.map { it.id }.toSet(),
             pendingTarget = pendingTarget,
             targetMangaIdForDuplicates = effectiveTargetId,
             isImportRunning = LocalVaultImportJob.isRunning(context) || LibraryVaultCaptureJob.isRunning(context),
@@ -688,11 +683,21 @@ class MangaScreenModel(
     fun showLocalVaultTargetSetup(pendingAddToVault: Boolean) {
         val localVaultImport = successState?.localVaultImport ?: return
         updateSuccessState {
+            val selectedTarget = localVaultImport.pendingTarget ?: localVaultImport.linkedTargetSelection()
             it.copy(
                 dialog = Dialog.LocalVaultTargetSetup(
+                    initialTitle = when (selectedTarget) {
+                        is LocalVaultImportTargetSelection.CreateNew -> selectedTarget.title
+                        is LocalVaultImportTargetSelection.Existing ->
+                            localVaultImport.availableTargets
+                                .firstOrNull { target -> target.id == selectedTarget.mangaId }
+                                ?.metadata
+                                ?.title
+                                ?: it.manga.title
+                        null -> it.manga.title
+                    },
                     targets = localVaultImport.availableTargets,
-                    exactTitleCandidateIds = localVaultImport.exactTitleCandidateIds,
-                    selectedTarget = localVaultImport.pendingTarget ?: localVaultImport.linkedTargetSelection(),
+                    selectedTarget = selectedTarget,
                     allowCreateNew = pendingAddToVault,
                     allowUnlink = !pendingAddToVault,
                     pendingAddToVault = pendingAddToVault,
@@ -778,7 +783,7 @@ class MangaScreenModel(
                 }
                 dismissDialog()
             }
-            target == LocalVaultImportTargetSelection.CreateNew -> dismissDialog()
+            target is LocalVaultImportTargetSelection.CreateNew -> dismissDialog()
         }
     }
 
@@ -825,7 +830,8 @@ class MangaScreenModel(
         val target = localVaultImport.pendingTarget ?: localVaultImport.linkedTargetSelection()
         val selectedChapterUrls = selectedChapters.map { it.url }.toSet()
         val targetMangaId = (target as? LocalVaultImportTargetSelection.Existing)?.mangaId
-        val createNew = target == LocalVaultImportTargetSelection.CreateNew
+        val createNewTitle = (target as? LocalVaultImportTargetSelection.CreateNew)?.title
+        val createNew = createNewTitle != null
         val confirmedDuplicateTitleKeys = if (replaceConfirmed) {
             duplicateTitles.map { VaultMetadata.normalizeTitle(it) }.toSet()
         } else {
@@ -838,6 +844,7 @@ class MangaScreenModel(
                 selectedChapterIds = selectedChapterUrls,
                 targetMangaId = targetMangaId,
                 createNew = createNew,
+                createNewTitle = createNewTitle,
             )
             LocalVaultWorkflow.LibraryCapture -> LibraryVaultCaptureJob.startNow(
                 context = context.applicationContext,
@@ -846,6 +853,7 @@ class MangaScreenModel(
                 confirmedDuplicateTitleKeys = confirmedDuplicateTitleKeys,
                 targetMangaId = targetMangaId,
                 createNew = createNew,
+                createNewTitle = createNewTitle,
             )
         }
         screenModelScope.launch {
@@ -1516,8 +1524,8 @@ class MangaScreenModel(
         data class DuplicateManga(val manga: Manga, val duplicates: List<MangaWithChapterCount>) : Dialog
         data class Migrate(val target: Manga, val current: Manga) : Dialog
         data class LocalVaultTargetSetup(
+            val initialTitle: String,
             val targets: List<VaultManga>,
-            val exactTitleCandidateIds: Set<Long>,
             val selectedTarget: LocalVaultImportTargetSelection?,
             val allowCreateNew: Boolean,
             val allowUnlink: Boolean,
@@ -1672,7 +1680,6 @@ data class LocalVaultImportState(
     val targetState: LocalVaultImportTargetState,
     val workflow: LocalVaultWorkflow = LocalVaultWorkflow.LocalImport,
     val availableTargets: List<VaultManga> = emptyList(),
-    val exactTitleCandidateIds: Set<Long> = emptySet(),
     val pendingTarget: LocalVaultImportTargetSelection? = null,
     val targetMangaIdForDuplicates: Long? = null,
     val duplicateChapterSelectionIds: Set<String> = emptySet(),
@@ -1703,6 +1710,6 @@ sealed interface LocalVaultImportTargetState {
 
 @Immutable
 sealed interface LocalVaultImportTargetSelection {
-    data object CreateNew : LocalVaultImportTargetSelection
+    data class CreateNew(val title: String) : LocalVaultImportTargetSelection
     data class Existing(val mangaId: Long) : LocalVaultImportTargetSelection
 }

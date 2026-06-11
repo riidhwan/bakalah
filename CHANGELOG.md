@@ -13,6 +13,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ## [Unreleased]
 ### Changed
 - Change the Vault sensitive-content action from an overflow menu item to a tinted 18+ toggle button beside sorting.
+- Change Vault Import Target selection to a title input with exact-match resolution and capped suggestions.
 - Move the Vault label filter from the top bar into compact label chips in the Vault content.
 - Simplify the Vault summary to show remote storage usage inline with the vault name and manga count.
 

@@ -292,6 +292,10 @@ _Avoid_: User download, cached chapter, Local Content Cache
 The Vault Manga that a Local-to-Vault Import or Library-to-Vault Capture will add selected chapters to, or the decision to create a new Vault Manga.
 _Avoid_: Import destination, matched manga, sync target
 
+**Import Target Title**:
+The user-provided title used to resolve an Import Target by exact normalized Vault Manga title, or to name a new Vault Manga when no unique existing target matches.
+_Avoid_: Search query, target filter, link text
+
 **Import Target Hint**:
 A device-local remembered association between a Manga Detail Screen manga and the Vault Manga it was previously added to.
 _Avoid_: Vault identity, metadata match, source truth

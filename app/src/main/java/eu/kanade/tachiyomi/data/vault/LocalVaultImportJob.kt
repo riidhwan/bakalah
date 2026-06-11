@@ -36,6 +36,7 @@ class LocalVaultImportJob(
             ?: return Result.failure()
         val targetMangaId = inputData.getLong(TARGET_MANGA_ID_KEY, -1L).takeIf { it != -1L }
         val createNew = inputData.getBoolean(CREATE_NEW_KEY, false)
+        val createNewTitle = inputData.getString(CREATE_NEW_TITLE_KEY)
         val manga = getManga.await(mangaId) ?: return Result.failure()
 
         setForegroundSafely()
@@ -49,6 +50,7 @@ class LocalVaultImportJob(
                         selectedChapterIds = selectedChapterIds,
                         targetMangaId = targetMangaId,
                         createNew = createNew,
+                        createNewTitle = createNewTitle,
                         progress = notifier::showProgress,
                     )
                 ) {
@@ -94,6 +96,7 @@ class LocalVaultImportJob(
             selectedChapterIds: Set<String>,
             targetMangaId: Long?,
             createNew: Boolean,
+            createNewTitle: String?,
         ): Boolean {
             if (isRunning(context) || LibraryVaultCaptureJob.isRunning(context)) return false
 
@@ -106,6 +109,7 @@ class LocalVaultImportJob(
                         SELECTED_CHAPTER_IDS_KEY to selectedChapterIds.toTypedArray(),
                         TARGET_MANGA_ID_KEY to (targetMangaId ?: -1L),
                         CREATE_NEW_KEY to createNew,
+                        CREATE_NEW_TITLE_KEY to createNewTitle,
                     ),
                 )
                 .build()
@@ -141,3 +145,4 @@ private const val MANGA_ID_KEY = "manga_id"
 private const val SELECTED_CHAPTER_IDS_KEY = "selected_chapter_ids"
 private const val TARGET_MANGA_ID_KEY = "target_manga_id"
 private const val CREATE_NEW_KEY = "create_new"
+private const val CREATE_NEW_TITLE_KEY = "create_new_title"

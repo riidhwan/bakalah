@@ -246,6 +246,9 @@
     <string name="vault_import_subtitle_from_local">From Local Manga · %s</string>
     <string name="vault_import_target">Import Target</string>
     <string name="vault_import_choose_target">Choose Import Target</string>
+    <string name="vault_import_target_title">Import Target title</string>
+    <string name="vault_import_target_title_required">Import Target title is required</string>
+    <string name="vault_import_target_ambiguous">Choose one matching Vault Manga</string>
     <string name="vault_import_link_target">Link vault</string>
     <string name="vault_import_target_unavailable">Vault target unavailable</string>
     <string name="vault_import_setup_content_vault">Set up content vault</string>

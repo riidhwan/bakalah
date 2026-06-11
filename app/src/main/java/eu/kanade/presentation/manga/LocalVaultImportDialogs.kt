@@ -11,27 +11,31 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import eu.kanade.tachiyomi.ui.manga.LocalVaultImportTargetSelection
 import tachiyomi.domain.vault.model.VaultManga
+import tachiyomi.domain.vault.model.VaultMetadata
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocalVaultTargetSetupDialog(
+    initialTitle: String,
     targets: List<VaultManga>,
-    exactTitleCandidateIds: Set<Long>,
     selectedTarget: LocalVaultImportTargetSelection?,
     allowCreateNew: Boolean,
     allowUnlink: Boolean,
@@ -39,49 +43,131 @@ fun LocalVaultTargetSetupDialog(
     onTargetSelected: (LocalVaultImportTargetSelection?, Boolean) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismissRequest) {
-        val exactTitleLabel = stringResource(MR.strings.vault_import_target_exact_title)
-        Column(
-            modifier = Modifier.padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = stringResource(MR.strings.vault_import_choose_target),
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.titleLarge,
-            )
-            if (allowCreateNew) {
-                TargetSheetItem(
-                    label = stringResource(MR.strings.vault_import_target_create_new),
-                    selected = selectedTarget == LocalVaultImportTargetSelection.CreateNew,
-                    onClick = {
-                        onTargetSelected(LocalVaultImportTargetSelection.CreateNew, pendingAddToVault)
-                    },
-                )
-            }
-            targets.forEach { target ->
-                val label = if (target.id in exactTitleCandidateIds) {
-                    "${target.metadata.title} · $exactTitleLabel"
-                } else {
-                    target.metadata.title
-                }
-                TargetSheetItem(
-                    label = label,
-                    selected = selectedTarget == LocalVaultImportTargetSelection.Existing(target.id),
-                    onClick = {
-                        onTargetSelected(LocalVaultImportTargetSelection.Existing(target.id), pendingAddToVault)
-                    },
-                )
-            }
-            if (allowUnlink) {
-                TargetSheetItem(
-                    label = stringResource(MR.strings.vault_import_unlink_target),
-                    selected = selectedTarget == null,
-                    onClick = { onTargetSelected(null, pendingAddToVault) },
-                )
-            }
-        }
+    var title by remember(initialTitle) { mutableStateOf(initialTitle) }
+    var selectedTargetId by remember(initialTitle, selectedTarget) {
+        mutableStateOf((selectedTarget as? LocalVaultImportTargetSelection.Existing)?.mangaId)
     }
+    val targetTitle = title.trim()
+    val normalizedTitle = VaultMetadata.normalizeTitle(targetTitle)
+    val exactMatches = if (normalizedTitle.isBlank()) {
+        emptyList()
+    } else {
+        targets.filter { it.metadata.normalizedTitle == normalizedTitle }
+    }
+    val selectedExactTarget = selectedTargetId
+        ?.let { id -> targets.firstOrNull { it.id == id } }
+        ?.takeIf { it.metadata.normalizedTitle == normalizedTitle }
+    val resolvedTarget = when {
+        selectedExactTarget != null -> LocalVaultImportTargetSelection.Existing(selectedExactTarget.id)
+        exactMatches.size == 1 -> LocalVaultImportTargetSelection.Existing(exactMatches.single().id)
+        exactMatches.size > 1 -> null
+        allowCreateNew && targetTitle.isNotBlank() -> LocalVaultImportTargetSelection.CreateNew(targetTitle)
+        else -> null
+    }
+    val targetRequired = targetTitle.isBlank()
+    val ambiguousTarget = targetTitle.isNotBlank() && exactMatches.size > 1 && selectedExactTarget == null
+    val suggestedTargets = if (ambiguousTarget) {
+        exactMatches
+    } else {
+        searchVaultImportTargets(
+            targets = targets,
+            query = targetTitle,
+            selectedTargetId = selectedTargetId,
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(stringResource(MR.strings.vault_import_choose_target)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                        selectedTargetId = null
+                    },
+                    label = { Text(stringResource(MR.strings.vault_import_target_title)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = targetRequired || ambiguousTarget,
+                    supportingText = {
+                        when {
+                            targetRequired -> Text(stringResource(MR.strings.vault_import_target_title_required))
+                            ambiguousTarget -> Text(stringResource(MR.strings.vault_import_target_ambiguous))
+                        }
+                    },
+                )
+                if (suggestedTargets.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    ) {
+                        Column {
+                            suggestedTargets.forEach { target ->
+                                TargetSheetItem(
+                                    label = target.metadata.title,
+                                    selected = selectedTargetId == target.id ||
+                                        resolvedTarget == LocalVaultImportTargetSelection.Existing(target.id),
+                                    onClick = {
+                                        title = target.metadata.title
+                                        selectedTargetId = target.id
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = resolvedTarget != null,
+                onClick = {
+                    resolvedTarget?.let { onTargetSelected(it, pendingAddToVault) }
+                },
+            ) {
+                Text(stringResource(MR.strings.action_ok))
+            }
+        },
+        dismissButton = {
+            Row {
+                if (allowUnlink) {
+                    TextButton(onClick = { onTargetSelected(null, pendingAddToVault) }) {
+                        Text(stringResource(MR.strings.vault_import_unlink_target))
+                    }
+                }
+                TextButton(onClick = onDismissRequest) {
+                    Text(stringResource(MR.strings.action_cancel))
+                }
+            }
+        },
+    )
+}
+
+fun searchVaultImportTargets(
+    targets: List<VaultManga>,
+    query: String,
+    selectedTargetId: Long? = null,
+    limit: Int = MAX_TARGET_SUGGESTIONS,
+): List<VaultManga> {
+    val normalizedQuery = VaultMetadata.normalizeTitle(query.trim())
+    if (normalizedQuery.isBlank()) return emptyList()
+
+    return targets
+        .asSequence()
+        .filter { target ->
+            target.id == selectedTargetId ||
+                target.metadata.normalizedTitle.contains(normalizedQuery)
+        }
+        .sortedWith(
+            compareBy<VaultManga> { it.id != selectedTargetId }
+                .thenBy { it.metadata.normalizedTitle != normalizedQuery }
+                .thenBy { it.metadata.normalizedTitle },
+        )
+        .take(limit)
+        .toList()
 }
 
 @Composable
@@ -153,3 +239,4 @@ fun VaultChapterReplacementDialog(
 }
 
 private const val MAX_REPLACEMENT_TITLES = 5
+private const val MAX_TARGET_SUGGESTIONS = 8
