@@ -17,11 +17,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined._18UpRating
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -55,6 +57,7 @@ import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.LoadingScreen
+import tachiyomi.presentation.core.theme.active
 import tachiyomi.presentation.core.util.plus
 import java.text.DecimalFormat
 
@@ -77,21 +80,29 @@ fun VaultScreen(
                 searchQuery = state.searchQuery,
                 onChangeSearchQuery = onSearchQueryChange,
                 actions = {
-                    VaultSortMenu(sort = state.sort, onSortChange = onSortChange)
+                    val includeSensitiveTitle = stringResource(
+                        if (state.includeSensitiveContent) {
+                            MR.strings.vault_action_hide_sensitive
+                        } else {
+                            MR.strings.vault_action_include_sensitive
+                        },
+                    )
+                    val includeSensitiveTint = if (state.includeSensitiveContent) {
+                        MaterialTheme.colorScheme.active
+                    } else {
+                        LocalContentColor.current
+                    }
                     AppBarActions(
                         listOf(
-                            AppBar.OverflowAction(
-                                title = stringResource(
-                                    if (state.includeSensitiveContent) {
-                                        MR.strings.vault_action_hide_sensitive
-                                    } else {
-                                        MR.strings.vault_action_include_sensitive
-                                    },
-                                ),
+                            AppBar.Action(
+                                title = includeSensitiveTitle,
+                                icon = Icons.Outlined._18UpRating,
+                                iconTint = includeSensitiveTint,
                                 onClick = { onIncludeSensitiveChange(!state.includeSensitiveContent) },
                             ),
                         ),
                     )
+                    VaultSortMenu(sort = state.sort, onSortChange = onSortChange)
                 },
                 scrollBehavior = scrollBehavior,
             )
