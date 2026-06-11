@@ -69,7 +69,7 @@ The Vault Destination should support:
 - Mark Vault Labels as sensitive so matching Vault Manga are hidden from default browsing unless sensitive content is explicitly included.
 - Present Vault Label filters as persistent chips below the vault summary and above manga results, with an All chip followed by one chip per Vault Label when at least one label exists. The chip area should use a horizontally scrollable two-line layout so more labels are visible without growing vertically without bound. Sensitive Vault Label filter chips should use a different non-error outline color instead of adding sensitive wording to the chip text.
 - Manually cache and evict selected chapters.
-- Show local cache usage separately from remote vault storage usage.
+- Show remote vault storage usage in the Vault summary while exposing cache state through chapter cache indicators and cache actions.
 
 ### Setup
 
@@ -266,7 +266,7 @@ Changing WebDAV URL or path must validate the Content Vault Identity before reus
 - Cache policy enforcement after reader-triggered caching must protect the active Vault Reader Session's current chapter and immediate loaded neighbors.
 - Manual cache eviction must not remove a Cached Chapter that is part of an active Vault Reader Session's current chapter or immediate loaded neighbors on the device.
 - The user must be able to manually cache and evict selected chapters.
-- Local cache usage and remote vault storage usage must be shown separately.
+- Remote vault storage usage must be shown in the Vault summary; local cache state must remain visible through chapter cache indicators and cache actions.
 - Local cache limit is hard-enforced; remote vault quota is a soft warning.
 
 ### Vault Deletion
@@ -332,7 +332,7 @@ Internal staging paths, revisions, and checksums should be hidden from normal UI
 - A user can evict cached chapter content without deleting vault content or original Local Manga files.
 - Offline browsing of the last known Vault Index works.
 - Offline reading works for Cached Chapters.
-- Local cache usage and remote vault storage usage are displayed separately.
+- Remote vault storage usage is displayed in the Vault summary, and local cache state is visible through chapter cache indicators and cache actions.
 - Unknown newer Vault Layout versions are refused.
 
 Release-readiness verification is tracked in `docs/content-vault-v1-readiness.md`.

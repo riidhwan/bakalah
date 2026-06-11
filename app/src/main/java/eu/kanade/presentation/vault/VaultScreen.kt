@@ -262,24 +262,9 @@ private fun VaultSummary(
                 append(" · ")
                 append(stringResource(MR.strings.vault_manga_count, mangaCount))
                 append(" · ")
-                append(stringResource(MR.strings.vault_local_cache_usage, formatBytes(localCacheUsageBytes)))
+                append(formatBytes(vaultStorageUsageBytes))
             },
             style = MaterialTheme.typography.bodyMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = buildString {
-                append(stringResource(MR.strings.vault_storage_usage, formatBytes(vaultStorageUsageBytes)))
-                append(" · ")
-                append(
-                    vault?.lastCatalogueRefreshAt?.let {
-                        stringResource(MR.strings.vault_last_catalogue_refresh_known)
-                    } ?: stringResource(MR.strings.vault_last_catalogue_refresh_never),
-                )
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

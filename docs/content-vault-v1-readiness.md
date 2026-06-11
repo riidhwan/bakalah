@@ -57,7 +57,7 @@ Use Hetzner Storage Box or another WebDAV provider with equivalent support for `
 
 - Refresh the Vault Catalogue and confirm manga are listed from the local Vault Index, including offline after the last successful refresh.
 - Confirm search, filter, and sort controls update the visible Vault Collection without using Library membership.
-- Confirm the summary shows local cache usage separately from remote Vault Storage Usage.
+- Confirm the summary shows remote Vault Storage usage and chapter rows/actions still expose cached versus vault-only state.
 - Open a remote-only chapter and confirm a cache job appears before reader launch.
 - Confirm a cached chapter opens only after size and checksum verification.
 - Corrupt or remove a cached file and confirm reopening demotes it to Vault-only or marks an integrity fault, then exposes retry instead of launching unsafe content.
