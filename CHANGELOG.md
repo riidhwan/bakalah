@@ -14,6 +14,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ### Changed
 - Change the Vault sensitive-content action from an overflow menu item to a tinted 18+ toggle button beside sorting.
 - Move the Vault label filter from the top bar into compact label chips in the Vault content.
+- Simplify the Vault summary to show remote storage usage inline with the vault name and manga count.
 
 ### Removed
 - Remove the status filter from the Vault top bar.
