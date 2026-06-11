@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+
+## [v0.25.0] - 2026-06-11
 ### Changed
 - Change the Vault sensitive-content action from an overflow menu item to a tinted 18+ toggle button beside sorting.
 - Change Vault Import Target selection to a title input with exact-match resolution and capped suggestions.
