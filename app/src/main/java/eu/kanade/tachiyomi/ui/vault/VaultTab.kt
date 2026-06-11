@@ -48,7 +48,6 @@ data object VaultTab : Tab {
             onClickRefresh = screenModel::refreshVault,
             onClickManga = { navigator.push(VaultMangaScreen(it)) },
             onLoadCover = screenModel::loadCover,
-            onFilterChange = screenModel::setFilter,
             onLabelFilterChange = screenModel::setLabelFilter,
             onSortChange = screenModel::setSort,
             onIncludeSensitiveChange = screenModel::setIncludeSensitiveContent,
