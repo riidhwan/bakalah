@@ -26,16 +26,22 @@ class LocalVaultImportNotifier(
     ) {
         setLargeIcon(BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher))
         setSmallIcon(R.drawable.ic_mihon)
-        setAutoCancel(false)
-        setOngoing(true)
+        setOnlyAlertOnce(true)
+    }
+
+    private val completeNotificationBuilder = context.notificationBuilder(
+        Notifications.CHANNEL_VAULT_PROGRESS,
+    ) {
+        setLargeIcon(BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher))
+        setSmallIcon(R.drawable.ic_mihon)
+        setAutoCancel(true)
+        setOngoing(false)
         setOnlyAlertOnce(true)
     }
 
     fun showPreparing(mangaTitle: String): NotificationCompat.Builder {
-        val builder = progressNotificationBuilder
-            .setContentTitle(context.stringResource(MR.strings.vault_importing))
-            .setContentText(mangaTitle)
-            .setProgress(0, 0, true)
+        context.cancelNotification(Notifications.ID_VAULT_IMPORT_COMPLETE)
+        val builder = preparingBuilder(mangaTitle)
 
         context.notify(Notifications.ID_VAULT_IMPORT_PROGRESS, builder.build())
         return builder
@@ -48,6 +54,7 @@ class LocalVaultImportNotifier(
             context.notify(
                 Notifications.ID_VAULT_IMPORT_PROGRESS,
                 progressNotificationBuilder
+                    .asLockedProgress()
                     .setContentTitle(context.stringResource(MR.strings.vault_importing))
                     .setContentText(text)
                     .setProgress(0, 0, true)
@@ -62,11 +69,20 @@ class LocalVaultImportNotifier(
         context.notify(
             Notifications.ID_VAULT_IMPORT_PROGRESS,
             progressNotificationBuilder
+                .asLockedProgress()
                 .setContentTitle(context.stringResource(MR.strings.vault_import_progress_title, percent))
                 .setContentText(text)
                 .setProgress(progress.total, progress.current, false)
                 .build(),
         )
+    }
+
+    private fun preparingBuilder(mangaTitle: String): NotificationCompat.Builder {
+        return progressNotificationBuilder
+            .asLockedProgress()
+            .setContentTitle(context.stringResource(MR.strings.vault_importing))
+            .setContentText(mangaTitle)
+            .setProgress(0, 0, true)
     }
 
     private fun LocalVaultImportProgress.phaseText(): String {
@@ -100,11 +116,11 @@ class LocalVaultImportNotifier(
     }
 
     fun showComplete(importedChapterCount: Int) {
+        context.cancelNotification(Notifications.ID_VAULT_IMPORT_PROGRESS)
         context.notify(
-            Notifications.ID_VAULT_IMPORT_PROGRESS,
-            progressNotificationBuilder
-                .setOngoing(false)
-                .setAutoCancel(true)
+            Notifications.ID_VAULT_IMPORT_COMPLETE,
+            completeNotificationBuilder
+                .asDismissibleResult()
                 .setContentTitle(context.stringResource(MR.strings.vault_import_complete))
                 .setContentText(
                     context.stringResource(
@@ -122,11 +138,11 @@ class LocalVaultImportNotifier(
         replacedChapterCount: Int,
         failedChapterCount: Int,
     ) {
+        context.cancelNotification(Notifications.ID_VAULT_IMPORT_PROGRESS)
         context.notify(
-            Notifications.ID_VAULT_IMPORT_PROGRESS,
-            progressNotificationBuilder
-                .setOngoing(false)
-                .setAutoCancel(true)
+            Notifications.ID_VAULT_IMPORT_COMPLETE,
+            completeNotificationBuilder
+                .asDismissibleResult()
                 .setContentTitle(context.stringResource(MR.strings.vault_import_complete))
                 .setContentText(
                     context.stringResource(
@@ -142,11 +158,11 @@ class LocalVaultImportNotifier(
     }
 
     fun showError() {
+        context.cancelNotification(Notifications.ID_VAULT_IMPORT_PROGRESS)
         context.notify(
-            Notifications.ID_VAULT_IMPORT_PROGRESS,
-            progressNotificationBuilder
-                .setOngoing(false)
-                .setAutoCancel(true)
+            Notifications.ID_VAULT_IMPORT_COMPLETE,
+            completeNotificationBuilder
+                .asDismissibleResult()
                 .setContentTitle(context.stringResource(MR.strings.vault_import_error_upload_failed))
                 .setContentText(context.stringResource(MR.strings.vault_import_error_background_failed))
                 .setProgress(0, 0, false)
@@ -156,5 +172,16 @@ class LocalVaultImportNotifier(
 
     fun cancel() {
         context.cancelNotification(Notifications.ID_VAULT_IMPORT_PROGRESS)
+        context.cancelNotification(Notifications.ID_VAULT_IMPORT_COMPLETE)
+    }
+
+    private fun NotificationCompat.Builder.asLockedProgress(): NotificationCompat.Builder {
+        return setOngoing(true)
+            .setAutoCancel(false)
+    }
+
+    private fun NotificationCompat.Builder.asDismissibleResult(): NotificationCompat.Builder {
+        return setOngoing(false)
+            .setAutoCancel(true)
     }
 }

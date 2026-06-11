@@ -132,6 +132,10 @@ _Avoid_: Vault path, provider account, vault title
 The Bakalah feature area for browsing, capturing, publishing, caching, and evicting Content Vault content.
 _Avoid_: Local Source sync, backup sync, cloud downloads
 
+**Library-to-Vault Capture**:
+The Vault Feature workflow that publishes selected chapters from a Source-Backed Library Manga into a Content Vault.
+_Avoid_: Library upload, Library sync, backup
+
 **Vault Collection**:
 The user's manga content collection in the Vault Feature, separate from the app Library.
 _Avoid_: Library, cloud library, synced library

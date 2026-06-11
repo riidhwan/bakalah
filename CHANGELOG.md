@@ -17,6 +17,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - Move the Vault label filter from the top bar into compact label chips in the Vault content.
 - Simplify the Vault summary to show remote storage usage inline with the vault name and manga count.
 
+### Fixed
+- Keep Vault import and Library-to-Vault Capture completion notifications visible after progress finishes.
+
 ### Removed
 - Remove the status filter from the Vault top bar.
 

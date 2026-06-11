@@ -35,6 +35,7 @@ object Notifications {
     private const val GROUP_VAULT = "group_vault"
     const val CHANNEL_VAULT_PROGRESS = "vault_progress_channel"
     const val ID_VAULT_IMPORT_PROGRESS = -801
+    const val ID_VAULT_IMPORT_COMPLETE = -802
 
     /**
      * Notification channel and ids used by the downloader.
