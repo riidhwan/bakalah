@@ -270,6 +270,7 @@ The local cache limit is read from `ContentVaultPreferences.localCacheLimitBytes
 
 It derives visible manga items, local cache usage, remote vault storage usage, failed/queued counts, search/filter/sort output, and cover cache requests.
 By default, the Vault Destination excludes Vault Manga that have any Sensitive Vault Label; direct filtering to a sensitive label or enabling the device-local include-sensitive setting includes them.
+Vault Label filtering is exposed through persistent chips in the Vault Destination content below the vault summary, not through a top-bar action. The chip area appears only when the Vault Index has at least one Vault Label, shows all labels from the index after an All chip, uses a horizontally scrollable two-line layout, and keeps the selected label as ephemeral screen state. Sensitive Vault Label chips use a distinct non-error outline color without adding sensitivity text to the chip label. If catalogue refresh or metadata changes remove the selected label from the current index, `VaultScreenModel` clears the selected label filter.
 
 `VaultMangaScreenModel` observes chapters and cache states for one manga. It coordinates cache, retry, eviction, metadata publish, cover publish, and deletion actions through app services. Compose screens render these derived states and send explicit user actions back to the screen models.
 
