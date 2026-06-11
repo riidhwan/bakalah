@@ -5,7 +5,10 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.util.lang.compareToCaseInsensitiveNaturalOrder
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.Credentials
@@ -208,6 +211,7 @@ class LocalVaultImportService(
         val replacedRemoteContentPaths = mutableSetOf<String>()
         val importedChapters = runCatching {
             selectedChapters.map { localChapter ->
+                currentCoroutineContext().ensureActive()
                 updateProgress(localChapter)
                 val preparedChapter = localChapter.convertDirectoryToCbzIfNeeded()
                 val replacement = existingRemoteChaptersByFileKey[
@@ -245,7 +249,8 @@ class LocalVaultImportService(
                         updateProgress(preparedChapter)
                     }
             }
-        }.getOrElse {
+        }.getOrElse { error ->
+            if (error is CancellationException) throw error
             return LocalVaultImportResult.UploadFailed
         }
         val importedCover = remoteMangaManifest?.cover ?: runCatching {
@@ -256,7 +261,8 @@ class LocalVaultImportService(
                 coverFile = scan.coverFile,
                 now = now,
             )
-        }.getOrElse {
+        }.getOrElse { error ->
+            if (error is CancellationException) throw error
             return LocalVaultImportResult.UploadFailed
         }
 

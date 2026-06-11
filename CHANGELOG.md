@@ -12,6 +12,11 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.25.1] - 2026-06-11
+### Fixed
+- Add a notification cancel action for Vault imports and Library-to-Vault Capture so stuck background work can be stopped.
+- Preserve Vault import cancellation as a cancelled result instead of reporting it as a failed import.
+
 ## [v0.25.0] - 2026-06-11
 ### Changed
 - Change the Vault sensitive-content action from an overflow menu item to a tinted 18+ toggle button beside sorting.

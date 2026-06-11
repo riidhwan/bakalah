@@ -13,6 +13,7 @@ import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.setForegroundSafely
 import eu.kanade.tachiyomi.util.system.workManager
+import kotlinx.coroutines.CancellationException
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
@@ -80,6 +81,9 @@ class LibraryVaultCaptureJob(
                     }
                 }
             }
+        } catch (e: CancellationException) {
+            notifier.showCancelled()
+            throw e
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Background Library-to-Vault Capture failed for requestId=$requestId" }
             notifier.showError()
@@ -103,6 +107,10 @@ class LibraryVaultCaptureJob(
 
     companion object {
         fun isRunning(context: Context): Boolean = context.workManager.isRunning(TAG)
+
+        fun stop(context: Context) {
+            context.workManager.cancelUniqueWork(TAG)
+        }
 
         suspend fun startNow(
             context: Context,
