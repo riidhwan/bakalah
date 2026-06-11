@@ -89,9 +89,14 @@ class VaultScreenModel(
                 }
                 .collectLatest { index ->
                     mutableState.update { state ->
+                        val selectedLabelIdentity = state.selectedLabelIdentity
+                            ?.takeIf { selected ->
+                                index.labels.any { it.identity.value == selected }
+                            }
                         state.copy(
                             mangaItems = index.toMangaItems(),
                             labels = index.labels,
+                            selectedLabelIdentity = selectedLabelIdentity,
                             localCacheUsageBytes = index.localCacheUsageBytes,
                             vaultStorageUsageBytes = index.vaultStorageUsageBytes,
                         )

@@ -11,6 +11,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Changed
+- Move the Vault label filter from the top bar into compact label chips in the Vault content.
+
 ### Removed
 - Remove the status filter from the Vault top bar.
 

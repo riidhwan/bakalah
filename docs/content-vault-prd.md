@@ -67,6 +67,7 @@ The Vault Destination should support:
 - Add selected chapters from source-backed Library manga into the vault.
 - Edit basic Vault Metadata and Vault Labels.
 - Mark Vault Labels as sensitive so matching Vault Manga are hidden from default browsing unless sensitive content is explicitly included.
+- Present Vault Label filters as persistent chips below the vault summary and above manga results, with an All chip followed by one chip per Vault Label when at least one label exists. The chip area should use a horizontally scrollable two-line layout so more labels are visible without growing vertically without bound. Sensitive Vault Label filter chips should use a different non-error outline color instead of adding sensitive wording to the chip text.
 - Manually cache and evict selected chapters.
 - Show local cache usage separately from remote vault storage usage.
 

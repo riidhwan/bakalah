@@ -1,29 +1,34 @@
 package eu.kanade.presentation.vault
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.Sort
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +46,7 @@ import eu.kanade.presentation.library.components.CommonMangaItemDefaults
 import eu.kanade.presentation.library.components.MangaCompactGridItem
 import eu.kanade.tachiyomi.ui.vault.VaultScreenModel
 import tachiyomi.domain.vault.model.ContentVault
+import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.Badge
 import tachiyomi.presentation.core.components.FastScrollLazyVerticalGrid
@@ -71,11 +77,6 @@ fun VaultScreen(
                 searchQuery = state.searchQuery,
                 onChangeSearchQuery = onSearchQueryChange,
                 actions = {
-                    VaultLabelFilterMenu(
-                        labels = state.labels,
-                        selectedLabelIdentity = state.selectedLabelIdentity,
-                        onLabelFilterChange = onLabelFilterChange,
-                    )
                     VaultSortMenu(sort = state.sort, onSortChange = onSortChange)
                     AppBarActions(
                         listOf(
@@ -115,6 +116,7 @@ fun VaultScreen(
                     contentPadding = contentPadding,
                     onClickManga = onClickManga,
                     onLoadCover = onLoadCover,
+                    onLabelFilterChange = onLabelFilterChange,
                     emptyMessage = MR.strings.vault_empty_collection,
                 )
                 state.visibleMangaItems.isEmpty() -> VaultList(
@@ -122,6 +124,7 @@ fun VaultScreen(
                     contentPadding = contentPadding,
                     onClickManga = onClickManga,
                     onLoadCover = onLoadCover,
+                    onLabelFilterChange = onLabelFilterChange,
                     emptyMessage = MR.strings.no_results_found,
                 )
                 else -> VaultList(
@@ -129,6 +132,7 @@ fun VaultScreen(
                     contentPadding = contentPadding,
                     onClickManga = onClickManga,
                     onLoadCover = onLoadCover,
+                    onLabelFilterChange = onLabelFilterChange,
                     emptyMessage = null,
                 )
             }
@@ -142,6 +146,7 @@ private fun VaultList(
     contentPadding: PaddingValues,
     onClickManga: (Long) -> Unit,
     onLoadCover: (Long) -> Unit,
+    onLabelFilterChange: (String?) -> Unit,
     emptyMessage: dev.icerock.moko.resources.StringResource?,
 ) {
     FastScrollLazyVerticalGrid(
@@ -163,6 +168,20 @@ private fun VaultList(
                 vaultStorageUsageBytes = state.vaultStorageUsageBytes,
                 modifier = Modifier.animateItem(),
             )
+        }
+        if (state.labels.isNotEmpty()) {
+            item(
+                key = "label-filter",
+                contentType = "label-filter",
+                span = { GridItemSpan(maxLineSpan) },
+            ) {
+                VaultLabelFilterChips(
+                    labels = state.labels,
+                    selectedLabelIdentity = state.selectedLabelIdentity,
+                    onLabelFilterChange = onLabelFilterChange,
+                    modifier = Modifier.animateItem(),
+                )
+            }
         }
         if (emptyMessage != null) {
             item(
@@ -331,57 +350,82 @@ private fun VaultMangaGridItem(
 }
 
 @Composable
-private fun VaultLabelFilterMenu(
-    labels: List<tachiyomi.domain.vault.model.VaultLabel>,
+private fun VaultLabelFilterChips(
+    labels: List<VaultLabel>,
     selectedLabelIdentity: String?,
     onLabelFilterChange: (String?) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val selected = labels.firstOrNull { it.identity.value == selectedLabelIdentity }
-    IconButton(onClick = { expanded = true }) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Outlined.Label,
-            contentDescription = stringResource(MR.strings.vault_filter_label),
-        )
-    }
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false },
+    val chips = listOf(null) + labels.map { it.identity.value }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        DropdownMenuItem(
-            text = { Text(stringResource(MR.strings.vault_filter_all_labels)) },
-            leadingIcon = if (selected == null) {
-                { Icon(Icons.Outlined.Check, contentDescription = null) }
-            } else {
-                null
-            },
-            onClick = {
-                expanded = false
-                onLabelFilterChange(null)
-            },
-        )
-        labels.forEach { label ->
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        text = if (label.isSensitive) {
-                            stringResource(MR.strings.vault_filter_sensitive_label, label.name)
-                        } else {
-                            label.name
-                        },
-                    )
-                },
-                leadingIcon = if (label.identity.value == selectedLabelIdentity) {
-                    { Icon(Icons.Outlined.Check, contentDescription = null) }
-                } else {
-                    null
-                },
-                onClick = {
-                    expanded = false
-                    onLabelFilterChange(label.identity.value)
-                },
-            )
+        listOf(0, 1).forEach { rowIndex ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                chips.drop(rowIndex)
+                    .filterIndexed { index, _ -> index % 2 == 0 }
+                    .forEach { labelIdentity ->
+                        val label = labels.firstOrNull { it.identity.value == labelIdentity }
+                        VaultLabelFilterChip(
+                            label = label,
+                            selected = labelIdentity == selectedLabelIdentity,
+                            onClick = {
+                                if (labelIdentity == null || labelIdentity != selectedLabelIdentity) {
+                                    onLabelFilterChange(labelIdentity)
+                                }
+                            },
+                        )
+                    }
+            }
         }
+    }
+}
+
+@Composable
+private fun VaultLabelFilterChip(
+    label: VaultLabel?,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+        FilterChip(
+            selected = selected,
+            onClick = onClick,
+            label = {
+                Text(
+                    text = label?.name ?: stringResource(MR.strings.vault_filter_all),
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            border = label?.let {
+                FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selected,
+                    borderColor = if (it.isSensitive) {
+                        MaterialTheme.colorScheme.tertiary
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    },
+                    selectedBorderColor = if (it.isSensitive) {
+                        MaterialTheme.colorScheme.tertiary
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    },
+                )
+            } ?: FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = selected,
+            ),
+            contentPadding = PaddingValues(horizontal = 10.dp),
+        )
     }
 }
 
