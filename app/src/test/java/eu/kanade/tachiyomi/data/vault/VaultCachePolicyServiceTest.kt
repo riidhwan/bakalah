@@ -18,6 +18,7 @@ import tachiyomi.domain.vault.model.VaultChapterContent
 import tachiyomi.domain.vault.model.VaultChapterContentFormat
 import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
+import tachiyomi.domain.vault.model.VaultImportRequest
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMangaStatus
@@ -203,6 +204,9 @@ class VaultCachePolicyServiceTest {
         override suspend fun getImportTargetHint(localMangaId: Long): ImportTargetHint? = null
         override fun getImportTargetHintAsFlow(localMangaId: Long): Flow<ImportTargetHint?> = emptyFlow()
         override suspend fun deleteImportTargetHint(localMangaId: Long) = Unit
+        override suspend fun insertImportRequest(request: VaultImportRequest): Long = unsupported()
+        override suspend fun getImportRequest(id: Long): VaultImportRequest? = null
+        override suspend fun deleteImportRequest(id: Long) = Unit
         override suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long = unsupported()
         override suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long = unsupported()
         override suspend fun deleteMangaLocalState(mangaId: Long) = Unit

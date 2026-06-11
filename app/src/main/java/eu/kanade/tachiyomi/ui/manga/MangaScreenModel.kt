@@ -88,6 +88,7 @@ import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ImportTargetHint
 import tachiyomi.domain.vault.model.VaultChapter
+import tachiyomi.domain.vault.model.VaultImportRequestChapter
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMetadata
 import tachiyomi.domain.vault.repository.VaultRepository
@@ -828,35 +829,50 @@ class MangaScreenModel(
         }
 
         val target = localVaultImport.pendingTarget ?: localVaultImport.linkedTargetSelection()
-        val selectedChapterUrls = selectedChapters.map { it.url }.toSet()
-        val targetMangaId = (target as? LocalVaultImportTargetSelection.Existing)?.mangaId
-        val createNewTitle = (target as? LocalVaultImportTargetSelection.CreateNew)?.title
-        val createNew = createNewTitle != null
-        val confirmedDuplicateTitleKeys = if (replaceConfirmed) {
-            duplicateTitles.map { VaultMetadata.normalizeTitle(it) }.toSet()
+        val replacementChapterIds = if (replaceConfirmed) {
+            selectedChapters
+                .filter { it.url in localVaultImport.duplicateChapterSelectionIds }
+                .map { it.url }
+                .toSet()
         } else {
             emptySet()
         }
-        val started = when (localVaultImport.workflow) {
-            LocalVaultWorkflow.LocalImport -> LocalVaultImportJob.startNow(
-                context = context.applicationContext,
-                mangaId = state.manga.id,
-                selectedChapterIds = selectedChapterUrls,
-                targetMangaId = targetMangaId,
-                createNew = createNew,
-                createNewTitle = createNewTitle,
-            )
-            LocalVaultWorkflow.LibraryCapture -> LibraryVaultCaptureJob.startNow(
-                context = context.applicationContext,
-                mangaId = state.manga.id,
-                selectedChapterIds = selectedChapterUrls,
-                confirmedDuplicateTitleKeys = confirmedDuplicateTitleKeys,
-                targetMangaId = targetMangaId,
-                createNew = createNew,
-                createNewTitle = createNewTitle,
+        val requestChapters = selectedChapters.mapIndexed { index, chapter ->
+            VaultImportRequestChapter(
+                chapterId = chapter.id,
+                selectionId = chapter.url,
+                sortOrder = index.toLong(),
+                allowReplacement = chapter.url in replacementChapterIds,
             )
         }
+        val targetMangaId = (target as? LocalVaultImportTargetSelection.Existing)?.mangaId
+        val createNewTitle = (target as? LocalVaultImportTargetSelection.CreateNew)?.title
         screenModelScope.launch {
+            val started = when (localVaultImport.workflow) {
+                LocalVaultWorkflow.LocalImport -> LocalVaultImportJob.startNow(
+                    context = context.applicationContext,
+                    mangaId = state.manga.id,
+                    selectedChapters = requestChapters,
+                    targetMangaId = targetMangaId,
+                    createNewTitle = createNewTitle,
+                )
+                LocalVaultWorkflow.LibraryCapture -> LibraryVaultCaptureJob.startNow(
+                    context = context.applicationContext,
+                    mangaId = state.manga.id,
+                    selectedChapters = requestChapters,
+                    targetMangaId = targetMangaId,
+                    createNewTitle = createNewTitle,
+                )
+            }
+            if (started) {
+                toggleAllSelection(false)
+                updateLocalVaultImportState(
+                    localVaultImport.copy(
+                        pendingTarget = null,
+                        isImportRunning = true,
+                    ),
+                )
+            }
             snackbarHostState.showSnackbar(
                 message = context.stringResource(
                     if (started) {
@@ -864,15 +880,6 @@ class MangaScreenModel(
                     } else {
                         MR.strings.vault_import_error_already_running
                     },
-                ),
-            )
-        }
-        if (started) {
-            toggleAllSelection(false)
-            updateLocalVaultImportState(
-                localVaultImport.copy(
-                    pendingTarget = null,
-                    isImportRunning = true,
                 ),
             )
         }

@@ -1,0 +1,23 @@
+CREATE TABLE vault_import_requests(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    manga_id INTEGER NOT NULL,
+    workflow TEXT NOT NULL,
+    target_manga_id INTEGER,
+    create_new_title TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX vault_import_requests_manga_id_index ON vault_import_requests(manga_id);
+
+CREATE TABLE vault_import_request_chapters(
+    request_id INTEGER NOT NULL,
+    chapter_id INTEGER,
+    selection_id TEXT NOT NULL,
+    sort_order INTEGER NOT NULL,
+    allow_replacement INTEGER AS Boolean NOT NULL,
+    PRIMARY KEY(request_id, selection_id),
+    FOREIGN KEY(request_id) REFERENCES vault_import_requests(_id) ON DELETE CASCADE
+);
+
+CREATE INDEX vault_import_request_chapters_request_id_index ON vault_import_request_chapters(request_id, sort_order);

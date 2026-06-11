@@ -10,6 +10,9 @@ import tachiyomi.domain.vault.model.VaultChapterContent
 import tachiyomi.domain.vault.model.VaultChapterContentFormat
 import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
+import tachiyomi.domain.vault.model.VaultImportRequest
+import tachiyomi.domain.vault.model.VaultImportRequestChapter
+import tachiyomi.domain.vault.model.VaultImportRequestWorkflow
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMangaStatus
@@ -233,6 +236,41 @@ object VaultMapper {
         revision = VaultRevision(revisionId, revisionNumber),
         body = body,
         fetchedAt = fetchedAt,
+    )
+
+    fun mapImportRequest(
+        id: Long,
+        mangaId: Long,
+        workflow: String,
+        targetMangaId: Long?,
+        createNewTitle: String?,
+        createdAt: Long,
+        updatedAt: Long,
+        chapters: List<VaultImportRequestChapter>,
+    ): VaultImportRequest = VaultImportRequest(
+        id = id,
+        mangaId = mangaId,
+        workflow = VaultImportRequestWorkflow.entries
+            .firstOrNull { it.name == workflow }
+            ?: VaultImportRequestWorkflow.LOCAL_IMPORT,
+        targetMangaId = targetMangaId,
+        createNewTitle = createNewTitle,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        chapters = chapters,
+    )
+
+    fun mapImportRequestChapter(
+        requestId: Long,
+        chapterId: Long?,
+        selectionId: String,
+        sortOrder: Long,
+        allowReplacement: Boolean,
+    ): VaultImportRequestChapter = VaultImportRequestChapter(
+        chapterId = chapterId,
+        selectionId = selectionId,
+        sortOrder = sortOrder,
+        allowReplacement = allowReplacement,
     )
 
     fun mapTransferJob(

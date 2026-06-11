@@ -171,6 +171,30 @@ CREATE TABLE vault_import_target_hints(
     FOREIGN KEY(vault_manga_id) REFERENCES vault_mangas(_id) ON DELETE CASCADE
 );
 
+CREATE TABLE vault_import_requests(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    manga_id INTEGER NOT NULL,
+    workflow TEXT NOT NULL,
+    target_manga_id INTEGER,
+    create_new_title TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX vault_import_requests_manga_id_index ON vault_import_requests(manga_id);
+
+CREATE TABLE vault_import_request_chapters(
+    request_id INTEGER NOT NULL,
+    chapter_id INTEGER,
+    selection_id TEXT NOT NULL,
+    sort_order INTEGER NOT NULL,
+    allow_replacement INTEGER AS Boolean NOT NULL,
+    PRIMARY KEY(request_id, selection_id),
+    FOREIGN KEY(request_id) REFERENCES vault_import_requests(_id) ON DELETE CASCADE
+);
+
+CREATE INDEX vault_import_request_chapters_request_id_index ON vault_import_request_chapters(request_id, sort_order);
+
 CREATE TABLE vault_manifest_snapshots(
     _id INTEGER NOT NULL PRIMARY KEY,
     vault_id INTEGER NOT NULL,
@@ -511,6 +535,40 @@ WHERE local_manga_id = :localMangaId;
 deleteImportTargetHint:
 DELETE FROM vault_import_target_hints
 WHERE local_manga_id = :localMangaId;
+
+insertImportRequest:
+INSERT INTO vault_import_requests(
+    _id, manga_id, workflow, target_manga_id, create_new_title, created_at, updated_at
+)
+VALUES (
+    nullif(:id, -1), :mangaId, :workflow, :targetMangaId, :createNewTitle, :createdAt, :updatedAt
+);
+
+lastInsertedImportRequestId:
+SELECT last_insert_rowid();
+
+insertImportRequestChapter:
+INSERT INTO vault_import_request_chapters(
+    request_id, chapter_id, selection_id, sort_order, allow_replacement
+)
+VALUES (
+    :requestId, :chapterId, :selectionId, :sortOrder, :allowReplacement
+);
+
+getImportRequest:
+SELECT *
+FROM vault_import_requests
+WHERE _id = :id;
+
+getImportRequestChapters:
+SELECT *
+FROM vault_import_request_chapters
+WHERE request_id = :requestId
+ORDER BY sort_order, selection_id;
+
+deleteImportRequest:
+DELETE FROM vault_import_requests
+WHERE _id = :id;
 
 upsertManifestSnapshot:
 INSERT INTO vault_manifest_snapshots(

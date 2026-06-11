@@ -276,6 +276,10 @@ _Avoid_: Sync error, download error, cache miss
 Adding user-owned manga content into the Content Vault from files already available to Bakalah.
 _Avoid_: Upload sync, backup, local import
 
+**Vault Import Request**:
+The durable selected-chapter intent to add content to the Content Vault through Local-to-Vault Import or Library-to-Vault Capture, including which selected chapters may become Vault Chapter Replacements.
+_Avoid_: Worker payload, job input, temporary selection
+
 **Vault Import Filename Order**:
 The catalogue order assigned to newly imported Vault Chapters from the full physical Local Manga chapter file names, using latest-first natural filename comparison to match Local and Library chapter lists.
 _Avoid_: Chapter name order, source order, random order

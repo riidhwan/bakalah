@@ -130,6 +130,7 @@ class LocalVaultImportService(
     suspend fun import(
         localManga: Manga,
         selectedChapterIds: Set<String>? = null,
+        allowedReplacementChapterIds: Set<String> = emptySet(),
         targetMangaId: Long? = null,
         createNew: Boolean = false,
         createNewTitle: String? = null,
@@ -212,6 +213,9 @@ class LocalVaultImportService(
                 val replacement = existingRemoteChaptersByFileKey[
                     localChapter.chapter.sourceFileName.duplicateFileKey(),
                 ]
+                if (replacement != null && localChapter.chapter.selectionId !in allowedReplacementChapterIds) {
+                    error("unconfirmed_duplicate")
+                }
                 val chapterIdentity = replacement?.identity ?: UUID.randomUUID().toString()
                 val contentIdentity = if (replacement == null) chapterIdentity else UUID.randomUUID().toString()
                 val contentPath = uploadChapter(

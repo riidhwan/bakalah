@@ -99,7 +99,7 @@ class LibraryVaultCaptureService(
     suspend fun capture(
         manga: Manga,
         selectedChapterIds: Set<String>,
-        confirmedDuplicateTitleKeys: Set<String> = emptySet(),
+        allowedReplacementChapterIds: Set<String> = emptySet(),
         targetMangaId: Long? = null,
         createNew: Boolean = false,
         createNewTitle: String? = null,
@@ -113,7 +113,8 @@ class LibraryVaultCaptureService(
         val expectedVaultIdentity = preferences.configuredVaultIdentity.get().takeIf { it.isNotBlank() }
         val selectedChapters = getChaptersByMangaId.await(manga.id)
             .filter { it.url in selectedChapterIds }
-        if (selectedChapters.isEmpty()) return LibraryVaultCaptureResult.NothingSelected
+        if (selectedChapters.isEmpty() && selectedChapterIds.isEmpty()) return LibraryVaultCaptureResult.NothingSelected
+        val missingSelectedChapterIds = selectedChapterIds - selectedChapters.map { it.url }.toSet()
 
         val vaultManga = repository.getManga(vault.id)
         val existingChapters = repository.getChaptersForVault(vault.id).groupBy { it.mangaId }
@@ -151,7 +152,9 @@ class LibraryVaultCaptureService(
 
         var added = 0
         var replaced = 0
-        val failures = mutableListOf<ChapterFailure>()
+        val failures = missingSelectedChapterIds
+            .map { ChapterFailure(it, "missing_chapter") }
+            .toMutableList()
         val stagingRoot = captureStagingRoot().apply {
             deleteRecursively()
             mkdirs()
@@ -188,7 +191,7 @@ class LibraryVaultCaptureService(
                             chapter = chapter,
                             target = target,
                             stagingRoot = chapterStagingRoot,
-                            confirmedDuplicateTitleKeys = confirmedDuplicateTitleKeys,
+                            allowReplacement = chapter.url in allowedReplacementChapterIds,
                             progressPhase = ::updatePhase,
                         )
                     } finally {
@@ -267,7 +270,7 @@ class LibraryVaultCaptureService(
         chapter: Chapter,
         target: CaptureTarget,
         stagingRoot: File,
-        confirmedDuplicateTitleKeys: Set<String>,
+        allowReplacement: Boolean,
         progressPhase: (VaultImportProgressPhase) -> Unit,
     ): PublishedChapter {
         val rootPath = config.rootPath.childPath(ROOT_VAULT_MANIFEST_NAME)
@@ -303,7 +306,7 @@ class LibraryVaultCaptureService(
         val chapterDuplicateTitleKey = chapter.name.duplicateTitleKey()
         val replacement = existingRemoteChapters
             .firstOrNull { it.title.duplicateTitleKey() == chapterDuplicateTitleKey }
-        if (replacement != null && chapterDuplicateTitleKey !in confirmedDuplicateTitleKeys) {
+        if (replacement != null && !allowReplacement) {
             error("unconfirmed_duplicate")
         }
         val chapterIdentity = replacement?.identity ?: UUID.randomUUID().toString()
