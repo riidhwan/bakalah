@@ -235,8 +235,8 @@ class MangaScreen(
             }
             is MangaScreenModel.Dialog.LocalVaultTargetSetup -> {
                 LocalVaultTargetSetupDialog(
+                    initialTitle = dialog.initialTitle,
                     targets = dialog.targets,
-                    exactTitleCandidateIds = dialog.exactTitleCandidateIds,
                     selectedTarget = dialog.selectedTarget,
                     allowCreateNew = dialog.allowCreateNew,
                     allowUnlink = dialog.allowUnlink,

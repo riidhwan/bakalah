@@ -39,6 +39,7 @@ class LibraryVaultCaptureJob(
             .orEmpty()
         val targetMangaId = inputData.getLong(TARGET_MANGA_ID_KEY, -1L).takeIf { it != -1L }
         val createNew = inputData.getBoolean(CREATE_NEW_KEY, false)
+        val createNewTitle = inputData.getString(CREATE_NEW_TITLE_KEY)
         val manga = getManga.await(mangaId) ?: return Result.failure()
 
         setForegroundSafely()
@@ -53,6 +54,7 @@ class LibraryVaultCaptureJob(
                         confirmedDuplicateTitleKeys = confirmedDuplicateTitleKeys,
                         targetMangaId = targetMangaId,
                         createNew = createNew,
+                        createNewTitle = createNewTitle,
                         progress = notifier::showProgress,
                     )
                 ) {
@@ -103,6 +105,7 @@ class LibraryVaultCaptureJob(
             confirmedDuplicateTitleKeys: Set<String>,
             targetMangaId: Long?,
             createNew: Boolean,
+            createNewTitle: String?,
         ): Boolean {
             if (LocalVaultImportJob.isRunning(context) || isRunning(context)) return false
 
@@ -116,6 +119,7 @@ class LibraryVaultCaptureJob(
                         CONFIRMED_DUPLICATE_TITLE_KEYS to confirmedDuplicateTitleKeys.toTypedArray(),
                         TARGET_MANGA_ID_KEY to (targetMangaId ?: -1L),
                         CREATE_NEW_KEY to createNew,
+                        CREATE_NEW_TITLE_KEY to createNewTitle,
                     ),
                 )
                 .build()
@@ -134,3 +138,4 @@ private const val SELECTED_CHAPTER_IDS_KEY = "selected_chapter_ids"
 private const val CONFIRMED_DUPLICATE_TITLE_KEYS = "confirmed_duplicate_title_keys"
 private const val TARGET_MANGA_ID_KEY = "target_manga_id"
 private const val CREATE_NEW_KEY = "create_new"
+private const val CREATE_NEW_TITLE_KEY = "create_new_title"

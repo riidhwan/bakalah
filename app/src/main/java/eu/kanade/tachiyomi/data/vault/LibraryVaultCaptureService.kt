@@ -102,6 +102,7 @@ class LibraryVaultCaptureService(
         confirmedDuplicateTitleKeys: Set<String> = emptySet(),
         targetMangaId: Long? = null,
         createNew: Boolean = false,
+        createNewTitle: String? = null,
         progress: (LocalVaultImportProgress) -> Unit = {},
     ): LibraryVaultCaptureResult {
         if (!manga.favorite) return LibraryVaultCaptureResult.NotLibraryManga
@@ -117,6 +118,7 @@ class LibraryVaultCaptureService(
         val vaultManga = repository.getManga(vault.id)
         val existingChapters = repository.getChaptersForVault(vault.id).groupBy { it.mangaId }
         val captureManga = manga.toCaptureManga(source)
+            .withCreateNewTitle(createNew = createNew, title = createNewTitle)
         val plan = planner.build(
             libraryManga = captureManga,
             libraryChapters = selectedChapters.map { it.toCaptureChapter() },
@@ -820,6 +822,17 @@ class LibraryVaultCaptureService(
                 description = description,
                 status = status.toInt().toVaultStatus(),
             ),
+        )
+    }
+
+    private fun LibraryVaultCaptureManga.withCreateNewTitle(
+        createNew: Boolean,
+        title: String?,
+    ): LibraryVaultCaptureManga {
+        val targetTitle = title?.trim()?.takeIf { createNew && it.isNotBlank() } ?: return this
+        return copy(
+            title = targetTitle,
+            metadata = metadata.copy(title = targetTitle),
         )
     }
 

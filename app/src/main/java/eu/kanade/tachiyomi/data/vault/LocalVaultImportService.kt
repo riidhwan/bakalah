@@ -132,6 +132,7 @@ class LocalVaultImportService(
         selectedChapterIds: Set<String>? = null,
         targetMangaId: Long? = null,
         createNew: Boolean = false,
+        createNewTitle: String? = null,
         progress: (LocalVaultImportProgress) -> Unit = {},
     ): LocalVaultImportResult {
         val config = preferences.getWebDavConfig()
@@ -140,7 +141,9 @@ class LocalVaultImportService(
         val scan = scanLocalManga(
             manga = localManga,
             selectedChapterIds = selectedChapterIds,
-        ) ?: return LocalVaultImportResult.LocalMangaNotFound
+        )
+            ?.withCreateNewTitle(createNew = createNew, title = createNewTitle)
+            ?: return LocalVaultImportResult.LocalMangaNotFound
         val vaultManga = repository.getManga(vault.id)
         val existingChapters = existingChaptersByMangaId(vault.id)
         val plan = planner.build(
@@ -930,6 +933,19 @@ class LocalVaultImportService(
         val chapters: List<ScannedLocalChapter>,
         val coverFile: UniFile?,
     )
+
+    private fun LocalMangaScan.withCreateNewTitle(
+        createNew: Boolean,
+        title: String?,
+    ): LocalMangaScan {
+        val targetTitle = title?.trim()?.takeIf { createNew && it.isNotBlank() } ?: return this
+        return copy(
+            manga = manga.copy(
+                title = targetTitle,
+                metadata = manga.metadata.copy(title = targetTitle),
+            ),
+        )
+    }
 
     private data class ScannedLocalChapter(
         val file: UniFile,
