@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.data.vault
 
+import android.app.Application
 import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
@@ -55,6 +56,9 @@ import tachiyomi.domain.vault.model.VaultManifestReadResult
 import tachiyomi.domain.vault.model.VaultMetadata
 import tachiyomi.domain.vault.model.VaultRevision
 import tachiyomi.domain.vault.model.VaultRootManifest
+import tachiyomi.domain.vault.model.VaultTransferJob
+import tachiyomi.domain.vault.model.VaultTransferState
+import tachiyomi.domain.vault.model.VaultTransferType
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
@@ -63,10 +67,12 @@ import tachiyomi.source.local.image.LocalCoverManager
 import tachiyomi.source.local.io.Format
 import tachiyomi.source.local.io.LocalSourceFileSystem
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.util.Locale
 import java.util.UUID
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
@@ -74,6 +80,7 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 class LocalVaultImportService(
+    private val app: Application,
     networkHelper: NetworkHelper,
     json: Json,
     private val repository: VaultRepository,
@@ -167,193 +174,390 @@ class LocalVaultImportService(
         val selectedChapters = scan.chapters.filter { it.chapter.selectionId in selectedIds }
         if (selectedChapters.isEmpty()) return LocalVaultImportResult.NothingSelected(plan)
         val progressTotal = selectedChapters.size.coerceAtLeast(1)
-        var progressCurrent = 0
-        fun updateProgress(chapter: ScannedLocalChapter) {
-            progress(
-                LocalVaultImportProgress(
-                    current = progressCurrent.coerceAtMost(progressTotal),
-                    total = progressTotal,
-                    chapterTitle = chapter.chapter.title,
-                ),
-            )
-        }
 
         val webDav = WebDavClient(config)
-        val rootPath = config.rootPath.childPath(ROOT_VAULT_MANIFEST_NAME)
-        val rootManifest =
-            readRootManifest(webDav, rootPath) ?: return LocalVaultImportResult.ManifestUnavailable(rootPath)
-        if (expectedVaultIdentity != null && rootManifest.identity != expectedVaultIdentity) {
-            return LocalVaultImportResult.IdentityChanged(ContentVaultIdentity(rootManifest.identity))
+        val now = System.currentTimeMillis()
+        var job = VaultTransferJob(
+            id = -1,
+            vaultId = vault.id,
+            chapterId = null,
+            type = VaultTransferType.IMPORT_PUBLISH,
+            state = VaultTransferState.RUNNING,
+            remotePath = null,
+            localPath = null,
+            stagedPath = null,
+            sizeBytes = null,
+            checksumSha256 = null,
+            failureReason = null,
+            attempts = 1,
+            createdAt = now,
+            updatedAt = now,
+            startedAt = now,
+            completedAt = null,
+        ).let { it.copy(id = repository.upsertTransferJob(it)) }
+
+        var activeTarget = target.toActiveImportTarget()
+        var added = 0
+        var replaced = 0
+        val failures = (selectedIds - selectedChapters.map { it.chapter.selectionId }.toSet())
+            .map { ChapterFailure(it, "missing_chapter") }
+            .toMutableList()
+        val stagingRoot = importStagingRoot().apply {
+            deleteRecursively()
+            mkdirs()
         }
 
-        val now = System.currentTimeMillis()
+        try {
+            selectedChapters.forEachIndexed { index, localChapter ->
+                currentCoroutineContext().ensureActive()
+                fun updatePhase(phase: VaultImportProgressPhase? = null, indeterminate: Boolean = false) {
+                    progress(
+                        LocalVaultImportProgress(
+                            current = index,
+                            total = progressTotal,
+                            chapterTitle = localChapter.chapter.title,
+                            indeterminate = indeterminate,
+                            phase = phase,
+                        ),
+                    )
+                }
+                updatePhase(VaultImportProgressPhase.PREPARING, indeterminate = true)
+                val chapterStagingRoot = File(stagingRoot, UUID.randomUUID().toString()).apply { mkdirs() }
+                val published = runCatching {
+                    try {
+                        publishChapter(
+                            webDav = webDav,
+                            config = config,
+                            vaultIdentity = vault.identity,
+                            expectedVaultIdentity = expectedVaultIdentity,
+                            localManga = localManga,
+                            importManga = scan.manga,
+                            localChapter = localChapter,
+                            target = activeTarget,
+                            allowReplacement = localChapter.chapter.selectionId in allowedReplacementChapterIds,
+                            stagingRoot = chapterStagingRoot,
+                            progressPhase = { phase -> updatePhase(phase, indeterminate = true) },
+                        )
+                    } finally {
+                        chapterStagingRoot.deleteRecursively()
+                    }
+                }.getOrElse { error ->
+                    if (error is CancellationException) throw error
+                    if (error is LocalImportGlobalFailure) throw error
+                    failures += ChapterFailure(localChapter.chapter.title, error.localImportFailureCategory())
+                    return@forEachIndexed
+                }
+                activeTarget = published.target
+                if (published.replaced) {
+                    replaced += 1
+                } else {
+                    added += 1
+                }
+                progress(
+                    LocalVaultImportProgress(
+                        current = index + 1,
+                        total = progressTotal,
+                        chapterTitle = localChapter.chapter.title,
+                    ),
+                )
+            }
+        } catch (e: CancellationException) {
+            val cancelled = selectedChapters.size - added - replaced - failures.size
+            repository.upsertTransferJob(
+                job.copy(
+                    state = VaultTransferState.CANCELLED,
+                    addedCount = added.toLong(),
+                    replacedCount = replaced.toLong(),
+                    failedCount = failures.size.toLong(),
+                    cancelledCount = cancelled.toLong(),
+                    detailJson = failures.toDetailJson(),
+                    updatedAt = System.currentTimeMillis(),
+                    completedAt = System.currentTimeMillis(),
+                ),
+            )
+            throw e
+        } catch (e: LocalImportGlobalFailure) {
+            val cancelled = selectedChapters.size - added - replaced - failures.size - 1
+            failures += ChapterFailure(e.chapterTitle ?: scan.manga.title, e.category)
+            val completedAt = System.currentTimeMillis()
+            repository.upsertTransferJob(
+                job.copy(
+                    state = if (added + replaced > 0) {
+                        VaultTransferState.PARTIALLY_SUCCEEDED
+                    } else {
+                        VaultTransferState.FAILED
+                    },
+                    failureReason = e.category,
+                    addedCount = added.toLong(),
+                    replacedCount = replaced.toLong(),
+                    failedCount = failures.size.toLong(),
+                    cancelledCount = cancelled.coerceAtLeast(0).toLong(),
+                    detailJson = failures.toDetailJson(),
+                    updatedAt = completedAt,
+                    completedAt = completedAt,
+                ),
+            )
+            return if (added + replaced > 0) {
+                LocalVaultImportResult.Imported(
+                    mangaIdentity = activeTarget.mangaIdentity?.let(::VaultIdentity) ?: VaultIdentity(""),
+                    addedChapterCount = added,
+                    replacedChapterCount = replaced,
+                    failedChapterCount = failures.size,
+                )
+            } else {
+                LocalVaultImportResult.UploadFailed
+            }
+        } finally {
+            stagingRoot.deleteRecursively()
+        }
+
+        val completedAt = System.currentTimeMillis()
+        val state = when {
+            added + replaced == 0 -> VaultTransferState.FAILED
+            failures.isNotEmpty() -> VaultTransferState.PARTIALLY_SUCCEEDED
+            else -> VaultTransferState.SUCCEEDED
+        }
+        repository.upsertTransferJob(
+            job.copy(
+                state = state,
+                addedCount = added.toLong(),
+                replacedCount = replaced.toLong(),
+                failedCount = failures.size.toLong(),
+                detailJson = failures.toDetailJson(),
+                updatedAt = completedAt,
+                completedAt = completedAt,
+            ),
+        )
+
+        if (added + replaced == 0) return LocalVaultImportResult.UploadFailed
+
+        return activeTarget.mangaIdentity?.let { mangaIdentity ->
+            LocalVaultImportResult.Imported(
+                mangaIdentity = VaultIdentity(mangaIdentity),
+                addedChapterCount = added,
+                replacedChapterCount = replaced,
+                failedChapterCount = failures.size,
+            )
+        } ?: LocalVaultImportResult.UploadFailed
+    }
+
+    private suspend fun publishChapter(
+        webDav: WebDavClient,
+        config: WebDavVaultConfig,
+        vaultIdentity: ContentVaultIdentity,
+        expectedVaultIdentity: String?,
+        localManga: Manga,
+        importManga: LocalVaultImportManga,
+        localChapter: ScannedLocalChapter,
+        target: ActiveImportTarget,
+        allowReplacement: Boolean,
+        stagingRoot: File,
+        progressPhase: (VaultImportProgressPhase) -> Unit,
+    ): PublishedLocalChapter {
+        val rootPath = config.rootPath.childPath(ROOT_VAULT_MANIFEST_NAME)
+        val rootManifest = readRootManifest(webDav, rootPath)
+            ?: throw LocalImportGlobalFailure("manifest", localChapter.chapter.title)
+        if (expectedVaultIdentity != null && rootManifest.identity != expectedVaultIdentity) {
+            throw LocalImportGlobalFailure("identity", localChapter.chapter.title)
+        }
+
         val mangaManifestPath = when (target) {
-            is ImportTarget.Existing ->
+            is ActiveImportTarget.Existing ->
                 rootManifest.manga
                     .firstOrNull { it.identity == target.manga.identity.value }
                     ?.path
-                    ?: "manga/${target.manga.identity.value}.json"
-            ImportTarget.CreateNew -> "manga/${UUID.randomUUID()}.json"
+                    ?: throw LocalImportGlobalFailure("target", localChapter.chapter.title)
+            is ActiveImportTarget.CreateNew -> target.manifestPath
+            is ActiveImportTarget.Created -> target.manifestPath
         }
         val remoteMangaManifest = when (target) {
-            is ImportTarget.Existing -> webDav.get(config.rootPath.childPath(mangaManifestPath))
+            is ActiveImportTarget.Existing -> webDav.get(config.rootPath.childPath(mangaManifestPath))
                 ?.let { decodeMangaManifest(it) }
-            ImportTarget.CreateNew -> null
+                ?: throw LocalImportGlobalFailure("target", localChapter.chapter.title)
+            is ActiveImportTarget.CreateNew -> webDav.get(config.rootPath.childPath(mangaManifestPath))
+                ?.let { decodeMangaManifest(it) }
+            is ActiveImportTarget.Created -> webDav.get(config.rootPath.childPath(mangaManifestPath))
+                ?.let { decodeMangaManifest(it) }
+                ?: throw LocalImportGlobalFailure("target", localChapter.chapter.title)
         }
-        val mangaIdentity = target.mangaIdentity(remoteMangaManifest)
+        val mangaIdentity = when (target) {
+            is ActiveImportTarget.Existing -> target.manga.identity.value
+            is ActiveImportTarget.CreateNew -> target.mangaIdentity
+            is ActiveImportTarget.Created -> target.mangaIdentity
+        }
+        val now = System.currentTimeMillis()
         val existingRemoteChapters = remoteMangaManifest?.chapters.orEmpty()
-
-        webDav.createDirectory(config.rootPath.childPath("manga"))
-        webDav.createDirectory(config.rootPath.childPath("content"))
         val existingRemoteChaptersByFileKey = existingRemoteChapters
             .associateBy { it.content.path.substringAfterLast('/').duplicateFileKey() }
-        val replacedChapterIdentities = mutableSetOf<String>()
-        val replacedRemoteContentPaths = mutableSetOf<String>()
-        val importedChapters = runCatching {
-            selectedChapters.map { localChapter ->
-                currentCoroutineContext().ensureActive()
-                updateProgress(localChapter)
-                val preparedChapter = localChapter.convertDirectoryToCbzIfNeeded()
-                val replacement = existingRemoteChaptersByFileKey[
-                    localChapter.chapter.sourceFileName.duplicateFileKey(),
-                ]
-                if (replacement != null && localChapter.chapter.selectionId !in allowedReplacementChapterIds) {
-                    error("unconfirmed_duplicate")
-                }
-                val chapterIdentity = replacement?.identity ?: UUID.randomUUID().toString()
-                val contentIdentity = if (replacement == null) chapterIdentity else UUID.randomUUID().toString()
-                val contentPath = uploadChapter(
-                    webDav = webDav,
-                    config = config,
-                    mangaIdentity = mangaIdentity,
-                    contentIdentity = contentIdentity,
-                    localChapter = preparedChapter,
-                )
-                if (replacement != null) {
-                    replacedChapterIdentities += replacement.identity
-                    replacedRemoteContentPaths += replacement.content.path
-                    preparedChapter.toReplacementManifestChapter(
-                        existing = replacement,
-                        contentPath = contentPath,
-                        now = now,
-                    )
-                } else {
-                    preparedChapter.toManifestChapter(
-                        identity = chapterIdentity,
-                        contentPath = contentPath,
-                        now = now,
-                    )
-                }
-                    .also {
-                        progressCurrent += 1
-                        updateProgress(preparedChapter)
-                    }
-            }
-        }.getOrElse { error ->
-            if (error is CancellationException) throw error
-            return LocalVaultImportResult.UploadFailed
+        val replacement = existingRemoteChaptersByFileKey[
+            localChapter.chapter.sourceFileName.duplicateFileKey(),
+        ]
+        if (replacement != null && !allowReplacement) {
+            error("unconfirmed_duplicate")
         }
-        val importedCover = remoteMangaManifest?.cover ?: runCatching {
-            uploadCover(
+
+        progressPhase(VaultImportProgressPhase.COMPRESSING)
+        val preparedChapter = localChapter.prepareForUpload(stagingRoot)
+        val chapterIdentity = replacement?.identity ?: UUID.randomUUID().toString()
+        val contentIdentity = if (replacement == null) chapterIdentity else UUID.randomUUID().toString()
+        var contentPath: String? = null
+        var newCoverPath: String? = null
+        try {
+            progressPhase(VaultImportProgressPhase.UPLOADING)
+            contentPath = uploadChapter(
                 webDav = webDav,
                 config = config,
                 mangaIdentity = mangaIdentity,
-                coverFile = scan.coverFile,
-                now = now,
+                contentIdentity = contentIdentity,
+                localChapter = preparedChapter,
             )
-        }.getOrElse { error ->
-            if (error is CancellationException) throw error
-            return LocalVaultImportResult.UploadFailed
-        }
+            val manifestChapter = if (replacement != null) {
+                preparedChapter.toReplacementManifestChapter(
+                    existing = replacement,
+                    contentPath = contentPath,
+                    now = now,
+                )
+            } else {
+                preparedChapter.toManifestChapter(
+                    identity = chapterIdentity,
+                    contentPath = contentPath,
+                    now = now,
+                )
+            }
+            val replacedChapterIdentities = setOfNotNull(replacement?.identity)
+            val metadata = when (target) {
+                is ActiveImportTarget.Existing -> target.manga.metadata
+                is ActiveImportTarget.CreateNew,
+                is ActiveImportTarget.Created,
+                -> importManga.metadata
+            }
+            val importedCover = remoteMangaManifest?.cover ?: runCatching {
+                progressPhase(VaultImportProgressPhase.UPLOADING)
+                uploadCover(
+                    webDav = webDav,
+                    config = config,
+                    mangaIdentity = mangaIdentity,
+                    coverFile = coverManager.find(localManga.url),
+                    now = now,
+                )?.also { newCoverPath = it.path }
+            }.getOrElse { error ->
+                if (error is CancellationException) throw error
+                null
+            }
+            val mangaRevision = remoteMangaManifest?.revisionNumber?.plus(1) ?: 1
+            val mangaRevisionId = UUID.randomUUID().toString()
+            val mangaManifest = VaultMangaManifest(
+                layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
+                vaultIdentity = rootManifest.identity,
+                mangaIdentity = mangaIdentity,
+                revisionId = mangaRevisionId,
+                revisionNumber = mangaRevision,
+                metadata = metadata.toManifestMetadata(),
+                labels = remoteMangaManifest?.labels.orEmpty(),
+                cover = importedCover,
+                chapters = orderVaultImportChapters(
+                    chapters = existingRemoteChapters.filterNot {
+                        it.identity in replacedChapterIdentities
+                    } + manifestChapter,
+                    replacementIdentities = replacedChapterIdentities,
+                ),
+                provenance = remoteMangaManifest?.provenance ?: VaultManifestProvenance(
+                    importedFrom = "local",
+                    sourceName = localSource()?.name,
+                    sourceUri = importManga.localMangaIdentity,
+                    importedAt = now,
+                ),
+                createdAt = remoteMangaManifest?.createdAt ?: now,
+                updatedAt = now,
+            )
 
-        val metadata = target.metadata(scan.manga)
-        val mangaRevision = remoteMangaManifest?.revisionNumber?.plus(1) ?: 1
-        val mangaRevisionId = UUID.randomUUID().toString()
-        val mangaManifest = VaultMangaManifest(
-            layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
-            vaultIdentity = rootManifest.identity,
-            mangaIdentity = mangaIdentity,
-            revisionId = mangaRevisionId,
-            revisionNumber = mangaRevision,
-            metadata = metadata.toManifestMetadata(),
-            labels = remoteMangaManifest?.labels.orEmpty(),
-            cover = importedCover,
-            chapters = orderVaultImportChapters(
-                chapters = existingRemoteChapters.filterNot {
-                    it.identity in replacedChapterIdentities
-                } + importedChapters,
-                replacementIdentities = replacedChapterIdentities,
-            ),
-            provenance = VaultManifestProvenance(
-                importedFrom = "local",
-                sourceName = localSource()?.name,
-                sourceUri = scan.manga.localMangaIdentity,
-                importedAt = now,
-            ),
-            createdAt = remoteMangaManifest?.createdAt ?: now,
-            updatedAt = now,
-        )
+            webDav.createDirectory(config.rootPath.childPath("manga"))
+            progressPhase(VaultImportProgressPhase.PUBLISHING)
+            if (!webDav.put(config.rootPath.childPath(mangaManifestPath), codec.encodeManga(mangaManifest))) {
+                error("publish")
+            }
 
-        if (!webDav.put(config.rootPath.childPath(mangaManifestPath), codec.encodeManga(mangaManifest))) {
-            return LocalVaultImportResult.UploadFailed
-        }
-
-        val updatedPointers = rootManifest.manga
-            .filterNot { it.identity == mangaIdentity }
-            .plus(
-                VaultMangaManifestPointer(
-                    identity = mangaIdentity,
-                    path = mangaManifestPath,
-                    title = metadata.title,
-                    revisionId = mangaRevisionId,
-                    revisionNumber = mangaRevision,
+            val updatedPointers = rootManifest.manga
+                .filterNot { it.identity == mangaIdentity }
+                .plus(
+                    VaultMangaManifestPointer(
+                        identity = mangaIdentity,
+                        path = mangaManifestPath,
+                        title = metadata.title,
+                        revisionId = mangaRevisionId,
+                        revisionNumber = mangaRevision,
+                        updatedAt = now,
+                    ),
+                )
+                .sortedBy { VaultMetadata.normalizeTitle(it.title) }
+            val updatedRoot = rootManifest.copy(
+                layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
+                revisionId = UUID.randomUUID().toString(),
+                revisionNumber = rootManifest.revisionNumber + 1,
+                updatedAt = now,
+                summary = VaultCatalogueSummary(
+                    mangaCount = updatedPointers.size.toLong(),
+                    chapterCount = rootManifest.summary.chapterCount -
+                        (remoteMangaManifest?.chapters?.size ?: 0) +
+                        mangaManifest.chapters.size,
+                    labelCount = rootManifest.summary.labelCount,
                     updatedAt = now,
                 ),
+                manga = updatedPointers,
             )
-            .sortedBy { VaultMetadata.normalizeTitle(it.title) }
-        val rootRevision = rootManifest.revisionNumber + 1
-        val oldTargetChapterCount = remoteMangaManifest?.chapters?.size ?: 0
-        val updatedRoot = rootManifest.copy(
-            layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
-            revisionId = UUID.randomUUID().toString(),
-            revisionNumber = rootRevision,
-            updatedAt = now,
-            summary = VaultCatalogueSummary(
-                mangaCount = updatedPointers.size.toLong(),
-                chapterCount = rootManifest.summary.chapterCount - oldTargetChapterCount + mangaManifest.chapters.size,
-                labelCount = rootManifest.summary.labelCount,
-                updatedAt = now,
-            ),
-            manga = updatedPointers,
-        )
-        if (!webDav.put(rootPath, codec.encodeRoot(updatedRoot))) return LocalVaultImportResult.UploadFailed
+            if (!webDav.put(rootPath, codec.encodeRoot(updatedRoot))) {
+                rollbackPublishedMangaManifest(
+                    webDav = webDav,
+                    config = config,
+                    mangaManifestPath = mangaManifestPath,
+                    previousManifest = remoteMangaManifest,
+                    newContentPath = contentPath,
+                    newCoverPath = newCoverPath,
+                )
+                throw LocalImportGlobalFailure("publish", localChapter.chapter.title)
+            }
 
-        cleanupReplacedRemoteContent(webDav, config, replacedRemoteContentPaths)
-        invalidateReplacementCacheState(target, replacedChapterIdentities)
-        repository.upsertImportTargetHint(
-            refreshLocalIndex(vault.identity, mangaIdentity)
+            replacement?.content?.path?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
+            if (replacement != null) {
+                invalidateReplacementCacheState(mangaIdentity, replacement.identity)
+            }
+            progressPhase(VaultImportProgressPhase.REFRESHING)
+            refreshLocalIndex(vaultIdentity, mangaIdentity)
                 .takeIf { it != -1L }
                 ?.let { vaultMangaId ->
-                    ImportTargetHint(
-                        localMangaId = localManga.id,
-                        localMangaIdentity = scan.manga.localMangaIdentity,
-                        contentVaultIdentity = vault.identity,
-                        sourceIdentity = scan.manga.localMangaIdentity,
-                        vaultMangaIdentity = VaultIdentity(mangaIdentity),
-                        vaultMangaId = vaultMangaId,
-                        updatedAt = now,
+                    repository.upsertImportTargetHint(
+                        ImportTargetHint(
+                            localMangaId = localManga.id,
+                            localMangaIdentity = importManga.localMangaIdentity,
+                            contentVaultIdentity = vaultIdentity,
+                            sourceIdentity = importManga.localMangaIdentity,
+                            vaultMangaIdentity = VaultIdentity(mangaIdentity),
+                            vaultMangaId = vaultMangaId,
+                            updatedAt = now,
+                        ),
                     )
                 }
-                ?: return LocalVaultImportResult.Imported(
-                    mangaIdentity = VaultIdentity(mangaIdentity),
-                    importedChapterCount = importedChapters.size,
-                ),
-        )
 
-        return LocalVaultImportResult.Imported(
-            mangaIdentity = VaultIdentity(mangaIdentity),
-            importedChapterCount = importedChapters.size,
-        )
+            val nextTarget = when (target) {
+                is ActiveImportTarget.Existing -> target
+                is ActiveImportTarget.CreateNew,
+                is ActiveImportTarget.Created,
+                -> ActiveImportTarget.Created(
+                    mangaIdentity = mangaIdentity,
+                    manifestPath = mangaManifestPath,
+                )
+            }
+            return PublishedLocalChapter(
+                target = nextTarget,
+                replaced = replacement != null,
+            )
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+            if (error is LocalImportGlobalFailure) throw error
+            contentPath?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
+            newCoverPath?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
+            throw error
+        }
     }
 
     private suspend fun configuredVault() =
@@ -426,8 +630,7 @@ class LocalVaultImportService(
         val chapters = getChaptersByMangaId.await(manga.id)
             .filter { it.url in selectedChapterIds }
             .mapNotNull { chapter ->
-                val fileName = chapter.url.substringAfter('/', missingDelimiterValue = chapter.url)
-                val file = chapterFiles[fileName] ?: return@mapNotNull null
+                val file = chapter.resolveLocalChapterFile(chapterFiles) ?: return@mapNotNull null
                 if (!file.isDirectory && !file.isCbz()) return@mapNotNull null
                 val digest = file.previewDigest()
                 ScannedLocalChapter(
@@ -449,53 +652,71 @@ class LocalVaultImportService(
 
     private fun localSource(): LocalSource? = sourceManager.get(LocalSource.ID) as? LocalSource
 
-    private fun ScannedLocalChapter.convertDirectoryToCbzIfNeeded(): ScannedLocalChapter {
-        return if (file.isDirectory) convertDirectoryToCbz() else this
+    private fun Chapter.resolveLocalChapterFile(chapterFiles: Map<String, UniFile>): UniFile? {
+        return localChapterFileNameCandidates(url)
+            .firstNotNullOfOrNull(chapterFiles::get)
     }
 
-    private fun ScannedLocalChapter.convertDirectoryToCbz(): ScannedLocalChapter {
-        val parent = file.parentFile ?: error("Local chapter directory has no parent")
-        val finalName = collisionSafeCbzName(
-            baseName = directoryChapterCbzBaseName(file.name),
-            existingNames = parent.listFiles().orEmpty().mapNotNull { it.name }.toSet(),
-        )
-        val tempName = ".$finalName.tmp-${UUID.randomUUID()}.cbz"
-        val tempFile = parent.createFile(tempName) ?: error("Could not create temporary CBZ")
-        try {
-            val entries = file.listReadablePageEntries()
-            require(entries.isNotEmpty()) { "Directory chapter has no readable image pages" }
-            tempFile.openOutputStream().use { output ->
-                writeStoredCbz(
-                    output = output,
-                    entries = entries.map { entry ->
-                        CbzEntry(
-                            name = entry.relativePath,
-                            openInputStream = { entry.file.openInputStream() },
-                        )
-                    },
+    private fun ScannedLocalChapter.prepareForUpload(stagingRoot: File): ScannedLocalChapter {
+        return if (file.isDirectory) stageDirectoryAsCbz(stagingRoot) else this
+    }
+
+    private fun ScannedLocalChapter.stageDirectoryAsCbz(stagingRoot: File): ScannedLocalChapter {
+        val pageRoot = File(stagingRoot, "pages").apply { mkdirs() }
+        val pageRootFile = UniFile.fromFile(pageRoot) ?: error("staging")
+        val archive = UniFile.fromFile(File(stagingRoot, "${UUID.randomUUID()}.cbz")) ?: error("staging")
+        val pages = file.listReadablePageFilesRecursively()
+        require(pages.isNotEmpty()) { "empty_pages" }
+
+        val digitCount = pages.size.toString().length.coerceAtLeast(3)
+        pages.forEachIndexed { index, page ->
+            val filename = "%0${digitCount}d".format(Locale.ENGLISH, index + 1)
+            val extension = ImageUtil.findImageType { page.openInputStream() }?.extension
+                ?: page.extension?.lowercase()
+                ?: "jpg"
+            val target = pageRootFile.createFile("$filename.$extension") ?: error("staging")
+            page.openInputStream().use { input ->
+                target.openOutputStream().use { output -> input.copyTo(output) }
+            }
+            splitStagedImage(pageRootFile, filename)
+        }
+
+        val entries = pageRootFile.listFiles().orEmpty()
+            .filter { !it.isDirectory && ImageUtil.isImage(it.name) { it.openInputStream() } }
+            .sortedBy { it.name.orEmpty() }
+            .mapIndexed { index, page ->
+                CbzEntry(
+                    name = numberedCbzEntryName(index = index + 1, extension = page.extension),
+                    openInputStream = { page.openInputStream() },
                 )
             }
-            validateCbz(tempFile, entries.map { it.relativePath })
-            if (!tempFile.renameTo(finalName)) {
-                error("Could not promote temporary CBZ")
-            }
-            val archive = parent.findFile(finalName) ?: error("Promoted CBZ is missing")
-            val digest = archive.digest()
-            file.deleteRecursively()
-            return copy(
-                file = archive,
-                chapter = chapter.copy(
-                    sourceFileName = archive.name.orEmpty(),
-                    contentFormat = VaultChapterContentFormat.CBZ,
-                    sizeBytes = digest.sizeBytes,
-                    checksumSha256 = digest.sha256,
-                    requiresLocalCbzConversion = false,
-                ),
-            )
-        } catch (e: Throwable) {
-            tempFile.delete()
-            throw e
+        require(entries.isNotEmpty()) { "empty_pages" }
+        archive.openOutputStream().use { output ->
+            writeStoredCbz(output, entries)
         }
+        validateCbz(archive, entries.map { it.name })
+        val digest = archive.digest()
+        val archiveName = collisionSafeCbzName(
+            baseName = directoryChapterCbzBaseName(file.name),
+            existingNames = emptySet(),
+        )
+        return copy(
+            file = archive,
+            chapter = chapter.copy(
+                sourceFileName = archiveName,
+                contentFormat = VaultChapterContentFormat.CBZ,
+                sizeBytes = digest.sizeBytes,
+                checksumSha256 = digest.sha256,
+                requiresLocalCbzConversion = false,
+            ),
+        )
+    }
+
+    private fun splitStagedImage(chapterUniFile: UniFile, filename: String) {
+        val imageFile = chapterUniFile.listFiles().orEmpty()
+            .firstOrNull { it.name.orEmpty().startsWith(filename) }
+            ?: error("staging")
+        ImageUtil.splitTallImage(chapterUniFile, imageFile, filename)
     }
 
     private fun Manga.toSourceManga(): SManga {
@@ -573,6 +794,7 @@ class LocalVaultImportService(
     ): String {
         val basePath = "content/$mangaIdentity/$contentIdentity"
         val remoteBasePath = config.rootPath.childPath(basePath)
+        webDav.createDirectory(config.rootPath.childPath("content"))
         webDav.createDirectory(config.rootPath.childPath("content/$mangaIdentity"))
         return if (localChapter.file.isDirectory) {
             webDav.createDirectory(remoteBasePath)
@@ -657,25 +879,44 @@ class LocalVaultImportService(
             ?: -1
     }
 
-    private suspend fun cleanupReplacedRemoteContent(
-        webDav: WebDavClient,
-        config: WebDavVaultConfig,
-        paths: Set<String>,
-    ) {
-        paths.forEach { path ->
-            runCatching { webDav.delete(config.rootPath.childPath(path)) }
-        }
-    }
-
     private suspend fun invalidateReplacementCacheState(
-        target: ImportTarget,
-        replacedChapterIdentities: Set<String>,
+        mangaIdentity: String,
+        replacedChapterIdentity: String,
     ) {
-        if (target !is ImportTarget.Existing || replacedChapterIdentities.isEmpty()) return
-        val replacedChapterIds = repository.getChapters(target.manga.id)
-            .filter { it.identity.value in replacedChapterIdentities }
+        val vaultId = preferences.configuredVaultIdentity.get()
+            .takeIf { it.isNotBlank() }
+            ?.let { repository.getVaultByIdentity(ContentVaultIdentity(it)) }
+            ?.id
+            ?: return
+        val mangaId = repository.getManga(vaultId)
+            .firstOrNull { it.identity.value == mangaIdentity }
+            ?.id
+            ?: return
+        val replacedChapterIds = repository.getChapters(mangaId)
+            .filter { it.identity.value == replacedChapterIdentity }
             .map { it.id }
         repository.deleteCacheStates(replacedChapterIds)
+    }
+
+    private suspend fun rollbackPublishedMangaManifest(
+        webDav: WebDavClient,
+        config: WebDavVaultConfig,
+        mangaManifestPath: String,
+        previousManifest: VaultMangaManifest?,
+        newContentPath: String,
+        newCoverPath: String?,
+    ) {
+        runCatching {
+            if (previousManifest != null) {
+                webDav.put(config.rootPath.childPath(mangaManifestPath), codec.encodeManga(previousManifest))
+            } else {
+                webDav.delete(config.rootPath.childPath(mangaManifestPath))
+            }
+        }
+        runCatching { webDav.delete(config.rootPath.childPath(newContentPath)) }
+        newCoverPath?.let { path ->
+            runCatching { webDav.delete(config.rootPath.childPath(path)) }
+        }
     }
 
     private inner class WebDavClient(
@@ -750,10 +991,31 @@ class LocalVaultImportService(
         data object CreateNew : ImportTarget
     }
 
-    private fun ImportTarget.mangaIdentity(remoteManifest: VaultMangaManifest?): String {
+    private sealed interface ActiveImportTarget {
+        val mangaIdentity: String?
+
+        data class Existing(
+            val manga: VaultManga,
+            val reason: LocalVaultImportTarget.Reason,
+        ) : ActiveImportTarget {
+            override val mangaIdentity: String = manga.identity.value
+        }
+
+        data class CreateNew(
+            override val mangaIdentity: String = UUID.randomUUID().toString(),
+            val manifestPath: String = "manga/${UUID.randomUUID()}.json",
+        ) : ActiveImportTarget
+
+        data class Created(
+            override val mangaIdentity: String,
+            val manifestPath: String,
+        ) : ActiveImportTarget
+    }
+
+    private fun ImportTarget.toActiveImportTarget(): ActiveImportTarget {
         return when (this) {
-            is ImportTarget.Existing -> manga.identity.value
-            ImportTarget.CreateNew -> remoteManifest?.mangaIdentity ?: UUID.randomUUID().toString()
+            is ImportTarget.Existing -> ActiveImportTarget.Existing(manga, reason)
+            ImportTarget.CreateNew -> ActiveImportTarget.CreateNew()
         }
     }
 
@@ -763,6 +1025,8 @@ class LocalVaultImportService(
             ImportTarget.CreateNew -> localManga.metadata
         }
     }
+
+    private fun importStagingRoot(): File = File(app.cacheDir, "content-vault-import")
 
     private fun ScannedLocalChapter.toManifestChapter(
         identity: String,
@@ -889,13 +1153,9 @@ class LocalVaultImportService(
             }
     }
 
-    private fun UniFile.listReadablePageEntries(): List<LocalPageEntry> {
-        return listFiles().orEmpty()
+    private fun UniFile.listReadablePageFilesRecursively(): List<UniFile> {
+        return listFilesRecursively()
             .filter { !it.isDirectory && ImageUtil.isImage(it.name) { it.openInputStream() } }
-            .sortedWith { first, second ->
-                first.name.orEmpty().compareToCaseInsensitiveNaturalOrder(second.name.orEmpty())
-            }
-            .map { LocalPageEntry(file = it, relativePath = cbzEntryName(it.name.orEmpty())) }
     }
 
     private fun UniFile.isCbz(): Boolean {
@@ -962,15 +1222,64 @@ class LocalVaultImportService(
         val chapter: LocalVaultImportChapter,
     )
 
-    private data class LocalPageEntry(
-        val file: UniFile,
-        val relativePath: String,
+    private data class PublishedLocalChapter(
+        val target: ActiveImportTarget,
+        val replaced: Boolean,
     )
+
+    private data class ChapterFailure(
+        val title: String,
+        val category: String,
+    )
+
+    private class LocalImportGlobalFailure(
+        val category: String,
+        val chapterTitle: String?,
+    ) : RuntimeException(category)
 
     private data class FileDigest(
         val sizeBytes: Long,
         val sha256: String,
     )
+
+    private fun Throwable.localImportFailureCategory(): String {
+        return message?.takeIf {
+            it in setOf(
+                "empty_pages",
+                "staging",
+                "upload",
+                "publish",
+                "manifest",
+                "target",
+                "identity",
+                "unconfirmed_duplicate",
+            )
+        } ?: "import_failed"
+    }
+
+    private fun List<ChapterFailure>.toDetailJson(): String? {
+        if (isEmpty()) return null
+        return joinToString(prefix = "[", postfix = "]") {
+            """{"title":${it.title.jsonString()},"category":${it.category.jsonString()}}"""
+        }
+    }
+
+    private fun String.jsonString(): String {
+        return buildString {
+            append('"')
+            this@jsonString.forEach { char ->
+                when (char) {
+                    '\\' -> append("\\\\")
+                    '"' -> append("\\\"")
+                    '\n' -> append("\\n")
+                    '\r' -> append("\\r")
+                    '\t' -> append("\\t")
+                    else -> append(char)
+                }
+            }
+            append('"')
+        }
+    }
 
     companion object {
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
@@ -1015,6 +1324,23 @@ internal fun cbzEntryName(name: String): String {
         .split('/')
         .filter { it.isNotBlank() }
         .joinToString("/")
+}
+
+internal fun localChapterFileNameCandidates(chapterUrl: String): List<String> {
+    val fileName = chapterUrl.substringAfter('/', missingDelimiterValue = chapterUrl)
+    return if (fileName.endsWith(".cbz", ignoreCase = true)) {
+        listOf(fileName)
+    } else {
+        listOf(fileName, "$fileName.cbz")
+    }
+}
+
+internal fun numberedCbzEntryName(index: Int, extension: String?): String {
+    return "%03d.%s".format(
+        Locale.ENGLISH,
+        index,
+        extension?.lowercase()?.takeIf { it.isNotBlank() } ?: "jpg",
+    )
 }
 
 internal fun writeStoredCbz(
@@ -1089,7 +1415,9 @@ sealed interface LocalVaultImportResult {
     data object UploadFailed : LocalVaultImportResult
     data class Imported(
         val mangaIdentity: VaultIdentity,
-        val importedChapterCount: Int,
+        val addedChapterCount: Int,
+        val replacedChapterCount: Int,
+        val failedChapterCount: Int,
     ) : LocalVaultImportResult
 }
 

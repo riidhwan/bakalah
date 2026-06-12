@@ -142,7 +142,9 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { VaultMangaDeletionService(get(), get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultCoverPublishService(get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultMetadataPublishService(get(), get(), get(), get(), get()) }
-        addSingletonFactory { LocalVaultImportService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+        addSingletonFactory {
+            LocalVaultImportService(app, get(), get(), get(), get(), get(), get(), get(), get(), get())
+        }
         addSingletonFactory {
             LibraryVaultCaptureService(app, get(), get(), get(), get(), get(), get(), get(), get(), get())
         }

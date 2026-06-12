@@ -46,6 +46,20 @@ class LocalVaultImportServiceTest {
     }
 
     @Test
+    fun `numbered cbz entry names use flat three digit sequence`() {
+        numberedCbzEntryName(index = 1, extension = "JPG") shouldBe "001.jpg"
+        numberedCbzEntryName(index = 12, extension = "webp") shouldBe "012.webp"
+        numberedCbzEntryName(index = 1234, extension = null) shouldBe "1234.jpg"
+    }
+
+    @Test
+    fun `local chapter file candidates include cbz fallback for stale extensionless urls`() {
+        localChapterFileNameCandidates("Manga/1") shouldBe listOf("1", "1.cbz")
+        localChapterFileNameCandidates("Manga/2.1") shouldBe listOf("2.1", "2.1.cbz")
+        localChapterFileNameCandidates("Manga/Chapter 1.cbz") shouldBe listOf("Chapter 1.cbz")
+    }
+
+    @Test
     fun `collision safe cbz name appends suffix before extension`() {
         val name = collisionSafeCbzName(
             baseName = "Ch 1?",
