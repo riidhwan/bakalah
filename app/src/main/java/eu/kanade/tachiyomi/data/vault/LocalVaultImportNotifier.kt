@@ -49,6 +49,7 @@ class LocalVaultImportNotifier(
     }
 
     fun showProgress(progress: LocalVaultImportProgress) {
+        val title = progress.progressTitle()
         if (progress.indeterminate) {
             val text = progress.phaseText()
 
@@ -56,7 +57,7 @@ class LocalVaultImportNotifier(
                 Notifications.ID_VAULT_IMPORT_PROGRESS,
                 progressNotificationBuilder
                     .asLockedProgress()
-                    .setContentTitle(context.stringResource(MR.strings.vault_importing))
+                    .setContentTitle(title)
                     .setContentText(text)
                     .setProgress(0, 0, true)
                     .withCancelAction()
@@ -65,19 +66,25 @@ class LocalVaultImportNotifier(
             return
         }
 
-        val percent = percentFormatter.format(progress.current.toFloat() / progress.total.coerceAtLeast(1))
         val text = progress.phaseText()
 
         context.notify(
             Notifications.ID_VAULT_IMPORT_PROGRESS,
             progressNotificationBuilder
                 .asLockedProgress()
-                .setContentTitle(context.stringResource(MR.strings.vault_import_progress_title, percent))
+                .setContentTitle(title)
                 .setContentText(text)
                 .setProgress(progress.total, progress.current, false)
                 .withCancelAction()
                 .build(),
         )
+    }
+
+    private fun LocalVaultImportProgress.progressTitle(): String {
+        if (total <= 0) return context.stringResource(MR.strings.vault_importing)
+
+        val percent = percentFormatter.format(current.toFloat() / total.coerceAtLeast(1))
+        return context.stringResource(MR.strings.vault_import_progress_title, percent)
     }
 
     private fun preparingBuilder(mangaTitle: String): NotificationCompat.Builder {

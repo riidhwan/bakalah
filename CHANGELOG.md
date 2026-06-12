@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Improved
+- Show total progress percentage in Library-to-Vault Capture notification titles.
 
 ## [v0.25.1] - 2026-06-11
 ### Fixed
