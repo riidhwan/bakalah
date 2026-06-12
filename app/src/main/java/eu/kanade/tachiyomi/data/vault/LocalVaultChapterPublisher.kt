@@ -145,9 +145,7 @@ internal class LocalVaultChapterPublisher(
                 }
             }.onSuccess { uploadedCover ->
                 if (uploadedCover != null) {
-                    if (promoteOptionalUpload(webDav, config, uploadedCover.upload)) {
-                        promotedCoverPath = uploadedCover.upload.finalPath
-                    }
+                    promotedCoverPath = publishTransaction.promoteOptionalUpload(webDav, config, uploadedCover.upload)
                 }
             }.getOrElse { error ->
                 if (error is CancellationException) throw error
@@ -246,23 +244,6 @@ internal class LocalVaultChapterPublisher(
             .filter { it.identity.value == replacedChapterIdentity }
             .map { it.id }
         repository.deleteCacheStates(replacedChapterIds)
-    }
-
-    private suspend fun promoteOptionalUpload(
-        webDav: VaultWebDav,
-        config: WebDavVaultConfig,
-        upload: VaultPromotableUpload,
-    ): Boolean {
-        return runCatching {
-            webDav.promote(
-                config.rootPath.childPath(upload.stagedPath),
-                config.rootPath.childPath(upload.finalPath),
-            )
-        }.getOrDefault(false).also { promoted ->
-            if (promoted) return@also
-            runCatching { webDav.delete(config.rootPath.childPath(upload.stagedPath)) }
-            runCatching { webDav.delete(config.rootPath.childPath(upload.finalPath)) }
-        }
     }
 
     private fun ScannedLocalVaultChapter.toManifestChapter(

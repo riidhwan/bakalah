@@ -133,6 +133,27 @@ internal class VaultManifestPublishTransaction(json: Json) {
         }
     }
 
+    suspend fun promoteOptionalUpload(
+        storage: VaultManifestPublishStorage,
+        config: WebDavVaultConfig,
+        upload: VaultPromotableUpload,
+    ): String? {
+        val promoted = runCatching {
+            storage.promote(
+                config.rootPath.childPath(upload.stagedPath),
+                config.rootPath.childPath(upload.finalPath),
+            )
+        }.getOrDefault(false)
+        if (promoted) return upload.finalPath
+
+        cleanupUploadedContent(
+            storage = storage,
+            config = config,
+            newUploads = listOf(upload),
+        )
+        return null
+    }
+
     private suspend fun promoteUploadedContent(
         storage: VaultManifestPublishStorage,
         config: WebDavVaultConfig,
