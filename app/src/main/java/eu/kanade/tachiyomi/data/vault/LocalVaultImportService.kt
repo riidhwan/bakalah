@@ -36,6 +36,7 @@ class LocalVaultImportService internal constructor(
 ) {
     private val client = networkHelper.nonCloudflareClient
     private val planner = BuildLocalVaultImportPlan()
+    private val indexRefresher = AddToVaultIndexRefresher(repository, refreshService)
 
     suspend fun preview(
         localManga: Manga,
@@ -194,8 +195,7 @@ class LocalVaultImportService internal constructor(
                     return@forEachIndexed
                 }
                 updatePhase(VaultImportProgressPhase.REFRESHING, indeterminate = true)
-                refreshLocalIndex(vault.identity, published.mangaIdentity.value)
-                    .takeIf { it != -1L }
+                indexRefresher.refreshPublishedMangaId(vault.identity, published.mangaIdentity.value)
                     ?.let { vaultMangaId ->
                         repository.upsertImportTargetHint(
                             ImportTargetHint(
@@ -310,15 +310,6 @@ class LocalVaultImportService internal constructor(
             is LocalVaultImportTarget.Existing -> ImportTarget.Existing(target.manga, target.reason)
             is LocalVaultImportTarget.Choose -> null
         }
-    }
-
-    private suspend fun refreshLocalIndex(vaultIdentity: ContentVaultIdentity, mangaIdentity: String): Long {
-        refreshService.refreshConfiguredVault()
-        return repository.getVaultByIdentity(vaultIdentity)
-            ?.let { repository.getManga(it.id) }
-            ?.firstOrNull { it.identity.value == mangaIdentity }
-            ?.id
-            ?: -1
     }
 
     private sealed interface ImportTarget {

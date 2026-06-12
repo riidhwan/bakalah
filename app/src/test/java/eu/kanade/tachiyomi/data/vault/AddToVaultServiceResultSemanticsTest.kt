@@ -136,6 +136,42 @@ class AddToVaultServiceResultSemanticsTest {
     }
 
     @Test
+    fun `local successful publish refreshes index before persisting target hint`() = runTest {
+        val repository = FakeVaultRepository(vault = contentVault())
+        val scanner = FakeLocalScanner(
+            scan = LocalVaultMangaScan(
+                manga = localImportManga(),
+                chapters = listOf(scannedLocalChapter("present")),
+                coverFile = null,
+            ),
+        )
+        val service = localService(
+            repository = repository,
+            scanner = scanner,
+            refreshService = FakeRefresher {
+                repository.events += "refresh"
+                repository.manga = listOf(vaultManga(id = 42, identity = "manga-1"))
+            },
+            publisher = FakeLocalPublisher(
+                LocalVaultChapterPublishResult(
+                    target = LocalVaultActiveTarget.Created("manga-1", "manga/one.json"),
+                    mangaIdentity = VaultIdentity("manga-1"),
+                    replaced = false,
+                ),
+            ),
+        )
+
+        service.import(
+            localManga = manga(),
+            selectedChapterIds = setOf("present"),
+            createNew = true,
+        )
+
+        repository.importTargetHints.single().vaultMangaId shouldBe 42
+        repository.events shouldBe listOf("refresh", "hint:42")
+    }
+
+    @Test
     fun `capture explicit missing selection returns upload failed and records transfer failure`() = runTest {
         val repository = FakeVaultRepository(vault = contentVault())
         val service = captureService(
@@ -186,9 +222,39 @@ class AddToVaultServiceResultSemanticsTest {
         repository.transferJobs.single().failureReason shouldBe null
     }
 
+    @Test
+    fun `capture successful publish refreshes index before persisting target hint`() = runTest {
+        val repository = FakeVaultRepository(vault = contentVault())
+        val service = captureService(
+            repository = repository,
+            chapterRepository = FakeChapterRepository(listOf(chapter("present"))),
+            refreshService = FakeRefresher {
+                repository.events += "refresh"
+                repository.manga = listOf(vaultManga(id = 84, identity = "manga-1"))
+            },
+            publisher = FakeLibraryPublisher(
+                LibraryVaultChapterPublishResult(
+                    target = LibraryVaultActiveTarget.Created("manga-1", "manga/one.json"),
+                    mangaIdentity = VaultIdentity("manga-1"),
+                    replaced = false,
+                ),
+            ),
+        )
+
+        service.capture(
+            manga = manga().copy(favorite = true, source = 100),
+            selectedChapterIds = setOf("present"),
+            createNew = true,
+        )
+
+        repository.importTargetHints.single().vaultMangaId shouldBe 84
+        repository.events shouldBe listOf("refresh", "hint:84")
+    }
+
     private fun localService(
         repository: FakeVaultRepository,
         scanner: LocalVaultMangaScannerBoundary,
+        refreshService: VaultCatalogueRefresher = FakeRefresher(),
         publisher: LocalVaultChapterPublisherBoundary = FakeLocalPublisher(),
     ): LocalVaultImportService {
         val app = mockk<Application> {
@@ -202,7 +268,7 @@ class AddToVaultServiceResultSemanticsTest {
             networkHelper = networkHelper,
             repository = repository,
             preferences = preferences(),
-            refreshService = FakeRefresher(),
+            refreshService = refreshService,
             scanner = scanner,
             chapterPublisher = publisher,
         )
@@ -211,6 +277,7 @@ class AddToVaultServiceResultSemanticsTest {
     private fun captureService(
         repository: FakeVaultRepository,
         chapterRepository: ChapterRepository,
+        refreshService: VaultCatalogueRefresher = FakeRefresher(),
         publisher: LibraryVaultChapterPublisherBoundary = FakeLibraryPublisher(),
     ): LibraryVaultCaptureService {
         val context = mockk<Context> {
@@ -222,7 +289,7 @@ class AddToVaultServiceResultSemanticsTest {
             repository = repository,
             preferences = preferences(),
             sourceManager = FakeSourceManager(source()),
-            refreshService = FakeRefresher(),
+            refreshService = refreshService,
             getChaptersByMangaId = GetChaptersByMangaId(chapterRepository),
             chapterPublisher = publisher,
         )
@@ -290,6 +357,14 @@ class AddToVaultServiceResultSemanticsTest {
             ),
         )
     }
+
+    private fun vaultManga(id: Long, identity: String) = VaultManga.create(
+        vaultId = 1,
+        identity = VaultIdentity(identity),
+        metadata = VaultMetadata("Manga", null, null, null, VaultMangaStatus.UNKNOWN),
+        revision = VaultRevision("manga", 1),
+        now = 1,
+    ).copy(id = id)
 
     private fun source(): HttpSource = mockk {
         every { id } returns 100
@@ -363,8 +438,11 @@ class AddToVaultServiceResultSemanticsTest {
         }
     }
 
-    private class FakeRefresher : VaultCatalogueRefresher {
+    private class FakeRefresher(
+        private val onRefresh: () -> Unit = {},
+    ) : VaultCatalogueRefresher {
         override suspend fun refreshConfiguredVault(): VaultCatalogueRefreshResult {
+            onRefresh()
             return VaultCatalogueRefreshResult.Refreshed(
                 identity = ContentVaultIdentity("vault-1"),
                 mangaCount = 1,
@@ -410,6 +488,9 @@ class AddToVaultServiceResultSemanticsTest {
     private class FakeVaultRepository(
         var vault: ContentVault?,
     ) : VaultRepository {
+        var manga = emptyList<VaultManga>()
+        val events = mutableListOf<String>()
+        val importTargetHints = mutableListOf<ImportTargetHint>()
         val transferJobs = mutableListOf<VaultTransferJob>()
 
         override fun getVaultsAsFlow(): Flow<List<ContentVault>> = emptyFlow()
@@ -417,7 +498,7 @@ class AddToVaultServiceResultSemanticsTest {
             vault?.takeIf { it.identity == identity }
         override suspend fun upsertVault(vault: ContentVault): Long = unsupported()
         override fun getMangaAsFlow(vaultId: Long): Flow<List<VaultManga>> = emptyFlow()
-        override suspend fun getManga(vaultId: Long): List<VaultManga> = emptyList()
+        override suspend fun getManga(vaultId: Long): List<VaultManga> = manga.filter { it.vaultId == vaultId }
         override suspend fun getMangaById(id: Long): VaultManga? = null
         override suspend fun getMangaByIdentity(vaultId: Long, identity: VaultIdentity): VaultManga? = null
         override suspend fun upsertManga(manga: VaultManga): Long = unsupported()
@@ -444,7 +525,10 @@ class AddToVaultServiceResultSemanticsTest {
         override suspend fun getCacheStatesForVault(vaultId: Long): List<VaultChapterCacheState> = emptyList()
         override suspend fun getReadCacheStatesForVault(vaultId: Long): List<VaultChapterCacheState> = emptyList()
         override suspend fun getLocalCacheUsageBytes(vaultId: Long): Long = 0
-        override suspend fun upsertImportTargetHint(hint: ImportTargetHint) = Unit
+        override suspend fun upsertImportTargetHint(hint: ImportTargetHint) {
+            importTargetHints += hint
+            events += "hint:${hint.vaultMangaId}"
+        }
         override suspend fun getImportTargetHint(localMangaId: Long): ImportTargetHint? = null
         override fun getImportTargetHintAsFlow(localMangaId: Long): Flow<ImportTargetHint?> = emptyFlow()
         override suspend fun deleteImportTargetHint(localMangaId: Long) = Unit
