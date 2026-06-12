@@ -19,6 +19,7 @@ import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.vault.ActiveVaultReaderSessions
 import eu.kanade.tachiyomi.data.vault.ContentVaultSetupService
 import eu.kanade.tachiyomi.data.vault.LibraryVaultCaptureService
+import eu.kanade.tachiyomi.data.vault.LocalVaultChapterPublisher
 import eu.kanade.tachiyomi.data.vault.LocalVaultImportService
 import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshService
 import eu.kanade.tachiyomi.data.vault.VaultCoverPublishService
@@ -146,8 +147,9 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { VaultMetadataPublishService(get(), get(), get(), get(), get()) }
         addSingletonFactory { LocalVaultMangaScanner(get(), get(), get(), get()) }
         addSingletonFactory { LocalVaultChapterStager() }
+        addSingletonFactory { LocalVaultChapterPublisher(get(), get(), get(), get()) }
         addSingletonFactory {
-            LocalVaultImportService(app, get(), get(), get(), get(), get(), get(), get())
+            LocalVaultImportService(app, get(), get(), get(), get(), get(), get())
         }
         addSingletonFactory {
             LibraryVaultCaptureService(app, get(), get(), get(), get(), get(), get(), get(), get(), get())
