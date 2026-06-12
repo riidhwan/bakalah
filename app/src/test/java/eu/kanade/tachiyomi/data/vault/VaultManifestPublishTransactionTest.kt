@@ -302,6 +302,31 @@ class VaultManifestPublishTransactionTest {
         storage.deletes shouldContain "vault/content/manga-1/chapter-1/chapter.cbz"
     }
 
+    @Test
+    fun `optional upload promotion returns final path when promoted`() = runTest {
+        val storage = FakeStorage()
+        val upload = newUpload("content/manga-1/cover/cover.jpg")
+        storage.files["vault/${upload.stagedPath}"] = "cover"
+
+        val promotedPath = transaction.promoteOptionalUpload(storage, config, upload)
+
+        promotedPath shouldBe upload.finalPath
+        storage.files["vault/${upload.finalPath}"] shouldBe "cover"
+    }
+
+    @Test
+    fun `optional upload promotion failure deletes staged and final content without throwing`() = runTest {
+        val storage = FakeStorage(failPromote = true)
+        val upload = newUpload("content/manga-1/cover/cover.jpg")
+        storage.files["vault/${upload.stagedPath}"] = "cover"
+
+        val promotedPath = transaction.promoteOptionalUpload(storage, config, upload)
+
+        promotedPath shouldBe null
+        storage.deletes shouldContain "vault/${upload.stagedPath}"
+        storage.deletes shouldContain "vault/${upload.finalPath}"
+    }
+
     private fun rootPath() = "vault/$ROOT_VAULT_MANIFEST_NAME"
 
     private fun rootManifest(
