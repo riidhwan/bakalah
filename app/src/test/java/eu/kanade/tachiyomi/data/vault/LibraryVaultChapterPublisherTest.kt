@@ -104,12 +104,52 @@ class LibraryVaultChapterPublisherTest {
         result.replaced shouldBe false
         result.target shouldBe LibraryVaultActiveTarget.Created("new-manga", "manga/new.json")
         webDav.files.keys shouldContain "vault/manga/new.json"
-        webDav.files.keys.any { it.startsWith("vault/content/new-manga/") } shouldBe true
+        webDav.promotes.single().first.startsWith("vault/.staging/add-to-vault/") shouldBe true
+        webDav.promotes.single().second.startsWith("vault/content/new-manga/") shouldBe true
         val root = webDav.root()
         root.summary.mangaCount shouldBe 1
         root.summary.chapterCount shouldBe 1
         root.manga.single().identity shouldBe "new-manga"
         webDav.manga("manga/new.json").chapters.single().title shouldBe "Chapter 1"
+    }
+
+    @Test
+    fun `initial cover promote failure remains non-fatal`() = runTest {
+        val webDav = FakeWebDav(failingPromoteFinalPathPart = "/cover/")
+        webDav.files[rootPath()] = codec.encodeRoot(rootManifest())
+        val publisher = publisher(
+            stager = FakeStager(
+                file = stagedFile(),
+                cover = LibraryVaultCaptureCover(
+                    bytes = byteArrayOf(1, 2, 3, 4),
+                    extension = "jpg",
+                    mediaType = "image/jpeg",
+                ),
+            ),
+        )
+
+        publisher.publish(
+            webDav = webDav,
+            config = config,
+            vaultIdentity = vaultIdentity,
+            expectedVaultIdentity = vaultIdentity.value,
+            source = source(),
+            manga = manga(),
+            captureManga = captureManga(),
+            chapter = chapter("Chapter 1"),
+            target = LibraryVaultActiveTarget.CreateNew(mangaIdentity = "new-manga", manifestPath = "manga/new.json"),
+            stagingRoot = stagingRoot(),
+            allowReplacement = false,
+            progressPhase = {},
+        )
+
+        val manga = webDav.manga("manga/new.json")
+        manga.cover shouldBe null
+        manga.chapters.single().title shouldBe "Chapter 1"
+        webDav.promotes.count { it.second.contains("/cover/") } shouldBe 1
+        webDav.promotes.count { it.second.contains("content/new-manga/") && !it.second.contains("/cover/") } shouldBe 1
+        webDav.deletes.any { it.contains(".staging/add-to-vault") && it.contains("jpg") } shouldBe true
+        webDav.deletes.any { it.contains("content/new-manga/cover/") } shouldBe true
     }
 
     @Test
@@ -155,7 +195,7 @@ class LibraryVaultChapterPublisherTest {
         val updatedChapter = webDav.manga("manga/one.json").chapters.single()
         updatedChapter.identity shouldBe "chapter-1"
         updatedChapter.content.path shouldBe
-            webDav.putFiles.single { it.contains("content/manga-1/") }.removePrefix("vault/")
+            webDav.promotes.single { it.second.contains("content/manga-1/") }.second.removePrefix("vault/")
         webDav.deletes shouldContain "vault/content/old.cbz"
     }
 
@@ -471,6 +511,7 @@ class LibraryVaultChapterPublisherTest {
 
     private inner class FakeStager(
         private val file: UniFile,
+        private val cover: LibraryVaultCaptureCover? = null,
     ) : LibraryVaultChapterStager {
         override suspend fun stageForCapture(
             source: HttpSource,
@@ -483,7 +524,7 @@ class LibraryVaultChapterPublisherTest {
             return LibraryVaultStagedChapter(file, digest.sizeBytes, digest.sha256)
         }
 
-        override suspend fun findCaptureCover(manga: Manga, source: HttpSource): LibraryVaultCaptureCover? = null
+        override suspend fun findCaptureCover(manga: Manga, source: HttpSource): LibraryVaultCaptureCover? = cover
     }
 
     private class FailingStager(
@@ -505,11 +546,16 @@ class LibraryVaultChapterPublisherTest {
     private inner class FakeWebDav(
         val files: MutableMap<String, String> = mutableMapOf(),
         val failingPuts: MutableSet<String> = mutableSetOf(),
+        val failingPromoteFinalPathPart: String? = null,
     ) : LibraryVaultCaptureWebDav {
         val putFiles = mutableListOf<String>()
+        val promotes = mutableListOf<Pair<String, String>>()
         val deletes = mutableListOf<String>()
+        private val fileBytes = mutableMapOf<String, ByteArray>()
 
         override suspend fun get(path: String): String? = files[path]
+
+        override suspend fun getBytes(path: String): ByteArray? = fileBytes[path]
 
         override suspend fun put(path: String, body: String): Boolean {
             if (path in failingPuts) return false
@@ -519,13 +565,15 @@ class LibraryVaultChapterPublisherTest {
 
         override suspend fun putFile(path: String, file: UniFile): Boolean {
             putFiles += path
-            files[path] = "file"
+            file.openInputStream().use { input ->
+                fileBytes[path] = input.readBytes()
+            }
             return true
         }
 
         override suspend fun putBytes(path: String, bytes: ByteArray, mediaType: String?): Boolean {
             putFiles += path
-            files[path] = "bytes"
+            fileBytes[path] = bytes
             return true
         }
 
@@ -534,6 +582,15 @@ class LibraryVaultChapterPublisherTest {
         override suspend fun delete(path: String): Boolean {
             deletes += path
             files.remove(path)
+            return true
+        }
+
+        override suspend fun promote(stagedPath: String, finalPath: String): Boolean {
+            promotes += stagedPath to finalPath
+            if (failingPromoteFinalPathPart != null && finalPath.contains(failingPromoteFinalPathPart)) {
+                return false
+            }
+            fileBytes[finalPath] = fileBytes.remove(stagedPath) ?: return false
             return true
         }
 

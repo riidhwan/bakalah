@@ -14,9 +14,12 @@ import java.security.MessageDigest
 import java.util.UUID
 
 internal interface VaultContentUploadStorage {
+    suspend fun getBytes(path: String): ByteArray?
     suspend fun putFile(path: String, file: UniFile): Boolean
     suspend fun putBytes(path: String, bytes: ByteArray, mediaType: String?): Boolean
     suspend fun createDirectory(path: String): Boolean
+    suspend fun delete(path: String): Boolean
+    suspend fun promote(stagedPath: String, finalPath: String): Boolean
 }
 
 internal class VaultContentUploader {
@@ -27,17 +30,31 @@ internal class VaultContentUploader {
         contentIdentity: String,
         chapterFile: UniFile,
         remoteFileName: String = defaultRemoteFileName(chapterFile),
-    ): String {
+    ): VaultPromotableUpload {
         val basePath = "content/$mangaIdentity/$contentIdentity"
+        val stagedPath = stagedPath(contentIdentity, remoteFileName)
         storage.createDirectory(config.rootPath.childPath("content"))
         storage.createDirectory(config.rootPath.childPath("content/$mangaIdentity"))
         storage.createDirectory(config.rootPath.childPath(basePath))
+        createStagingDirectories(storage, config, contentIdentity)
 
-        val path = "$basePath/$remoteFileName"
-        if (!storage.putFile(config.rootPath.childPath(path), chapterFile)) {
+        val finalPath = "$basePath/$remoteFileName"
+        if (!storage.putFile(config.rootPath.childPath(stagedPath), chapterFile)) {
             throw VaultContentUploadFailure("chapter_upload")
         }
-        return path
+        runCatching {
+            verifyRemoteIntegrity(
+                storage = storage,
+                config = config,
+                stagedPath = stagedPath,
+                expected = chapterFile.digest(),
+                failureCategory = "chapter_upload",
+            )
+        }.getOrElse { error ->
+            runCatching { storage.delete(config.rootPath.childPath(stagedPath)) }
+            throw error
+        }
+        return VaultPromotableUpload(stagedPath = stagedPath, finalPath = finalPath)
     }
 
     suspend fun uploadCover(
@@ -46,23 +63,42 @@ internal class VaultContentUploader {
         mangaIdentity: String,
         cover: VaultUploadCover,
         now: Long,
-    ): VaultManifestCover {
+    ): VaultUploadedCover {
         val coverIdentity = UUID.randomUUID().toString()
-        val path = "content/$mangaIdentity/cover/$coverIdentity.${cover.extension.normalizedCoverExtension()}"
+        val fileName = "$coverIdentity.${cover.extension.normalizedCoverExtension()}"
+        val path = "content/$mangaIdentity/cover/$fileName"
+        val stagedPath = stagedPath(coverIdentity, fileName)
         val digest = cover.digest()
 
         storage.createDirectory(config.rootPath.childPath("content"))
         storage.createDirectory(config.rootPath.childPath("content/$mangaIdentity"))
         storage.createDirectory(config.rootPath.childPath("content/$mangaIdentity/cover"))
+        createStagingDirectories(storage, config, coverIdentity)
         val uploaded = when (cover) {
-            is VaultUploadCover.File -> storage.putFile(config.rootPath.childPath(path), cover.file)
-            is VaultUploadCover.Bytes -> storage.putBytes(config.rootPath.childPath(path), cover.bytes, cover.mediaType)
+            is VaultUploadCover.File -> storage.putFile(config.rootPath.childPath(stagedPath), cover.file)
+            is VaultUploadCover.Bytes -> storage.putBytes(
+                config.rootPath.childPath(stagedPath),
+                cover.bytes,
+                cover.mediaType,
+            )
         }
         if (!uploaded) {
             throw VaultContentUploadFailure("cover_upload")
         }
+        runCatching {
+            verifyRemoteIntegrity(
+                storage = storage,
+                config = config,
+                stagedPath = stagedPath,
+                expected = digest,
+                failureCategory = "cover_upload",
+            )
+        }.getOrElse { error ->
+            runCatching { storage.delete(config.rootPath.childPath(stagedPath)) }
+            throw error
+        }
 
-        return VaultManifestCover(
+        val manifestCover = VaultManifestCover(
             identity = coverIdentity,
             path = path,
             mediaType = cover.mediaType,
@@ -73,6 +109,10 @@ internal class VaultContentUploader {
             revisionId = UUID.randomUUID().toString(),
             revisionNumber = 1,
             updatedAt = now,
+        )
+        return VaultUploadedCover(
+            cover = manifestCover,
+            upload = VaultPromotableUpload(stagedPath = stagedPath, finalPath = path),
         )
     }
 
@@ -94,6 +134,35 @@ internal class VaultContentUploader {
         return FileDigest(size.toLong(), digest.digest().toHex())
     }
 
+    private suspend fun createStagingDirectories(
+        storage: VaultContentUploadStorage,
+        config: WebDavVaultConfig,
+        contentIdentity: String,
+    ) {
+        storage.createDirectory(config.rootPath.childPath(".staging"))
+        storage.createDirectory(config.rootPath.childPath(".staging/add-to-vault"))
+        storage.createDirectory(config.rootPath.childPath(".staging/add-to-vault/$contentIdentity"))
+    }
+
+    private fun stagedPath(contentIdentity: String, fileName: String): String {
+        return ".staging/add-to-vault/$contentIdentity/${UUID.randomUUID()}-$fileName"
+    }
+
+    private suspend fun verifyRemoteIntegrity(
+        storage: VaultContentUploadStorage,
+        config: WebDavVaultConfig,
+        stagedPath: String,
+        expected: FileDigest,
+        failureCategory: String,
+    ) {
+        val remoteBytes = storage.getBytes(config.rootPath.childPath(stagedPath))
+            ?: throw VaultContentUploadFailure(failureCategory)
+        val actual = remoteBytes.digest()
+        if (actual != expected) {
+            throw VaultContentUploadFailure(failureCategory)
+        }
+    }
+
     private fun String?.normalizedCoverExtension(): String {
         return this
             ?.lowercase()
@@ -101,6 +170,16 @@ internal class VaultContentUploader {
             ?: "img"
     }
 }
+
+internal data class VaultPromotableUpload(
+    val stagedPath: String,
+    val finalPath: String,
+)
+
+internal data class VaultUploadedCover(
+    val cover: VaultManifestCover,
+    val upload: VaultPromotableUpload,
+)
 
 internal sealed interface VaultUploadCover {
     val extension: String?

@@ -264,6 +264,10 @@ _Avoid_: Manga provenance, duplicate key, source truth
 A vault upload or download that remains hidden from normal catalogue and reading flows until content integrity is verified.
 _Avoid_: Partial sync, in-progress content, temporary chapter
 
+**Remote Staged Upload Path**:
+A temporary path inside the Vault Root where Bakalah writes vault content before it is promoted into catalogue-referenced content paths.
+_Avoid_: Local staging, cache, final content path
+
 **Vault Transfer Queue**:
 The visible queue of vault operations that move or verify catalogue and chapter content.
 _Avoid_: Download queue, sync queue, background update

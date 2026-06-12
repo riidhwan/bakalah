@@ -430,11 +430,13 @@ class AddToVaultServiceResultSemanticsTest {
     private class FakeCaptureWebDavFactory : LibraryVaultCaptureWebDavFactoryBoundary {
         override fun create(config: WebDavVaultConfig): LibraryVaultCaptureWebDav = object : LibraryVaultCaptureWebDav {
             override suspend fun get(path: String): String? = null
+            override suspend fun getBytes(path: String): ByteArray? = null
             override suspend fun put(path: String, body: String): Boolean = true
             override suspend fun putFile(path: String, file: UniFile): Boolean = true
             override suspend fun putBytes(path: String, bytes: ByteArray, mediaType: String?): Boolean = true
             override suspend fun createDirectory(path: String): Boolean = true
             override suspend fun delete(path: String): Boolean = true
+            override suspend fun promote(stagedPath: String, finalPath: String): Boolean = true
         }
     }
 
