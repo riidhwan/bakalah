@@ -103,7 +103,7 @@ internal class LibraryVaultCaptureService(
         var added = 0
         var replaced = 0
         val failures = missingSelectedChapterIds
-            .map { ChapterFailure(it, "missing_chapter") }
+            .map { AddToVaultChapterFailure(it, "missing_chapter") }
             .toMutableList()
         val stagingRoot = captureStagingRoot().apply {
             deleteRecursively()
@@ -151,7 +151,7 @@ internal class LibraryVaultCaptureService(
                 }.getOrElse { error ->
                     if (error is CancellationException) throw error
                     if (error is LibraryCaptureGlobalFailure) throw error
-                    failures += ChapterFailure(chapter.name, error.captureFailureCategory())
+                    failures += AddToVaultChapterFailure(chapter.name, error.captureFailureCategory())
                     return@forEachIndexed
                 }
                 updatePhase(VaultImportProgressPhase.REFRESHING)
@@ -185,38 +185,28 @@ internal class LibraryVaultCaptureService(
                 )
             }
         } catch (e: CancellationException) {
-            val cancelled = selectedChapters.size - added - replaced - failures.size
             repository.upsertTransferJob(
-                job.copy(
-                    state = VaultTransferState.CANCELLED,
-                    addedCount = added.toLong(),
-                    replacedCount = replaced.toLong(),
-                    failedCount = failures.size.toLong(),
-                    cancelledCount = cancelled.toLong(),
-                    detailJson = failures.toDetailJson(),
-                    updatedAt = System.currentTimeMillis(),
+                AddToVaultTransferFinalizer.cancel(
+                    job = job,
+                    selectedCount = selectedChapters.size,
+                    added = added,
+                    replaced = replaced,
+                    failures = failures,
                     completedAt = System.currentTimeMillis(),
                 ),
             )
             throw e
         } catch (e: LibraryCaptureGlobalFailure) {
-            val cancelled = selectedChapters.size - added - replaced - failures.size - 1
-            failures += ChapterFailure(e.chapterTitle ?: manga.title, e.category)
             val completedAt = System.currentTimeMillis()
+            val globalFailure = AddToVaultChapterFailure(e.chapterTitle ?: manga.title, e.category)
             repository.upsertTransferJob(
-                job.copy(
-                    state = if (added + replaced > 0) {
-                        VaultTransferState.PARTIALLY_SUCCEEDED
-                    } else {
-                        VaultTransferState.FAILED
-                    },
-                    failureReason = e.category,
-                    addedCount = added.toLong(),
-                    replacedCount = replaced.toLong(),
-                    failedCount = failures.size.toLong(),
-                    cancelledCount = cancelled.coerceAtLeast(0).toLong(),
-                    detailJson = failures.toDetailJson(),
-                    updatedAt = completedAt,
+                AddToVaultTransferFinalizer.stopAfterGlobalFailure(
+                    job = job,
+                    selectedCount = selectedChapters.size,
+                    added = added,
+                    replaced = replaced,
+                    failures = failures,
+                    globalFailure = globalFailure,
                     completedAt = completedAt,
                 ),
             )
@@ -224,7 +214,7 @@ internal class LibraryVaultCaptureService(
                 LibraryVaultCaptureResult.Captured(
                     addedChapterCount = added,
                     replacedChapterCount = replaced,
-                    failedChapterCount = failures.size,
+                    failedChapterCount = failures.size + 1,
                 )
             } else {
                 LibraryVaultCaptureResult.UploadFailed
@@ -234,24 +224,12 @@ internal class LibraryVaultCaptureService(
         }
 
         val completedAt = System.currentTimeMillis()
-        val state = when {
-            added + replaced == 0 -> VaultTransferState.FAILED
-            failures.isNotEmpty() -> VaultTransferState.PARTIALLY_SUCCEEDED
-            else -> VaultTransferState.SUCCEEDED
-        }
         repository.upsertTransferJob(
-            job.copy(
-                state = state,
-                failureReason = if (state == VaultTransferState.FAILED) {
-                    failures.firstOrNull()?.category
-                } else {
-                    null
-                },
-                addedCount = added.toLong(),
-                replacedCount = replaced.toLong(),
-                failedCount = failures.size.toLong(),
-                detailJson = failures.toDetailJson(),
-                updatedAt = completedAt,
+            AddToVaultTransferFinalizer.complete(
+                job = job,
+                added = added,
+                replaced = replaced,
+                failures = failures,
                 completedAt = completedAt,
             ),
         )
@@ -359,11 +337,6 @@ internal class LibraryVaultCaptureService(
 
     private fun captureStagingRoot(): File = File(context.cacheDir, "content-vault-capture")
 
-    private data class ChapterFailure(
-        val title: String,
-        val category: String,
-    )
-
     private fun Throwable.captureFailureCategory(): String {
         return message?.takeIf {
             it in setOf(
@@ -378,30 +351,6 @@ internal class LibraryVaultCaptureService(
                 "unconfirmed_duplicate",
             )
         } ?: "capture_failed"
-    }
-
-    private fun List<ChapterFailure>.toDetailJson(): String? {
-        if (isEmpty()) return null
-        return joinToString(prefix = "[", postfix = "]") {
-            """{"title":${it.title.jsonString()},"category":${it.category.jsonString()}}"""
-        }
-    }
-
-    private fun String.jsonString(): String {
-        return buildString {
-            append('"')
-            this@jsonString.forEach { char ->
-                when (char) {
-                    '\\' -> append("\\\\")
-                    '"' -> append("\\\"")
-                    '\n' -> append("\\n")
-                    '\r' -> append("\\r")
-                    '\t' -> append("\\t")
-                    else -> append(char)
-                }
-            }
-            append('"')
-        }
     }
 }
 
