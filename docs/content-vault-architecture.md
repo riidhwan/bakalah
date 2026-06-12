@@ -42,18 +42,18 @@ Domain code does not perform Android storage, WebDAV, or SQLDelight work directl
 
 ### App
 
-`app/src/main/java/eu/kanade/tachiyomi/data/vault` owns Android/runtime services:
+`app/src/main/java/eu/kanade/tachiyomi/data/vault` owns Android/runtime services, organized by responsibility:
 
-- `ContentVaultSetupService`: validates WebDAV configuration, rejects mixed-use roots, initializes empty roots, connects existing roots, and persists the configured vault identity.
-- `VaultCatalogueRefreshService`: downloads root and per-manga manifests, validates identity/layout compatibility, builds a domain refresh payload, and updates the local index.
-- `LocalVaultImportJob`, `LocalVaultImportService`, `LocalVaultChapterPublisher`, `LocalVaultChapterStager`, and `VaultWebDavClient`: scan Local Source manga, plan duplicates and target selection, stage selected directory chapters as CBZ without mutating Local Source files, publish one Local-to-Vault chapter at a time through low-level WebDAV transport, refresh the index, write import target hints, and record visible `IMPORT_PUBLISH` results.
-- `LibraryVaultCaptureJob`, `LibraryVaultCaptureService`, `LibraryVaultChapterPublisher`, `LibraryVaultChapterStager`, and `LibraryVaultCaptureWebDav`: capture selected chapters from source-backed Library manga through capture-owned staging, publish canonical CBZ content one chapter at a time, record `CAPTURE_PUBLISH` job state, and report partial results.
-- `AddToVaultJobRunner`: shares durable Vault Import Request and WorkManager plumbing between Local-to-Vault Import and Library-to-Vault Capture without sharing workflow result types or publishing policy.
-- `AddToVaultTransferFinalizer` and `AddToVaultIndexRefresher`: share workflow-neutral transfer job finalization and per-success index refresh mechanics for Add to Vault workflows.
-- `VaultTransferService`: performs staged uploads/downloads, integrity verification, transfer job state updates, and cache state updates.
-- `VaultReaderOpenService`: verifies cached chapters or performs cache-first download before reader launch.
-- `VaultCachePolicyService`: creates cache paths, marks opened cached chapters, evicts chapters, and enforces the local cache size limit.
-- `VaultMetadataPublishService`, `VaultCoverPublishService`, and `VaultMangaDeletionService`: publish catalogue mutations and refresh the local index afterward.
+- `setup`: `ContentVaultSetupService` validates WebDAV configuration, rejects mixed-use roots, initializes empty roots, connects existing roots, and persists the configured vault identity.
+- `refresh`: `VaultCatalogueRefreshService` downloads root and per-manga manifests, validates identity/layout compatibility, builds a domain refresh payload, and updates the local index. `AddToVaultIndexRefresher` shares per-success index refresh mechanics for Add to Vault workflows.
+- `localimport`: `LocalVaultImportJob`, `LocalVaultImportService`, `LocalVaultChapterPublisher`, Local Source scanning, directory chapter staging, CBZ validation, import path helpers, ordering policy, and local import failure-detail helpers.
+- `capture`: `LibraryVaultCaptureJob`, `LibraryVaultCaptureService`, `LibraryVaultChapterPublisher`, and `LibraryVaultChapterStager` capture selected chapters from source-backed Library manga through capture-owned staging, publish canonical CBZ content one chapter at a time, record `CAPTURE_PUBLISH` job state, and report partial results.
+- `add`: `AddToVaultJobRunner` shares durable Vault Import Request and WorkManager plumbing between Local-to-Vault Import and Library-to-Vault Capture without sharing workflow result types or publishing policy.
+- `transfer`: `VaultTransferService` performs staged uploads/downloads, integrity verification, transfer job state updates, and cache state updates. `AddToVaultTransferFinalizer` shares workflow-neutral transfer job finalization.
+- `webdav`: `VaultWebDavClient` and `LibraryVaultCaptureWebDav` own low-level WebDAV transport adapters.
+- `publishing`: `VaultContentUploader`, `VaultManifestPublishTransaction`, `VaultMetadataPublishService`, `VaultCoverPublishService`, and `VaultMangaDeletionService` publish catalogue/content mutations and refresh the local index afterward.
+- `cache`: `VaultCachePolicyService` creates cache paths, marks opened cached chapters, evicts chapters, and enforces the local cache size limit.
+- `reader`: `VaultReaderOpenService` verifies cached chapters or performs cache-first download before reader launch, and `ActiveVaultReaderSessions` tracks reader-adjacent deletion guards.
   Vault label sensitivity is catalogue-owned metadata, while the user's include-sensitive Vault Destination setting is device-local.
 
 `app/src/main/java/eu/kanade/tachiyomi/ui/vault` owns screen models and navigation. `app/src/main/java/eu/kanade/presentation/vault` owns Compose rendering.

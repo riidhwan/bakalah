@@ -55,9 +55,9 @@ import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.export.LibraryExporter
 import eu.kanade.tachiyomi.data.export.LibraryExporter.ExportOptions
-import eu.kanade.tachiyomi.data.vault.ContentVaultConnectionTestResult
-import eu.kanade.tachiyomi.data.vault.ContentVaultSetupResult
-import eu.kanade.tachiyomi.data.vault.ContentVaultSetupService
+import eu.kanade.tachiyomi.data.vault.setup.ContentVaultConnectionTestResult
+import eu.kanade.tachiyomi.data.vault.setup.ContentVaultSetupResult
+import eu.kanade.tachiyomi.data.vault.setup.ContentVaultSetupService
 import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.Dispatchers

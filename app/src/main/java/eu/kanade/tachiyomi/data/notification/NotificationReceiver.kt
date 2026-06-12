@@ -9,8 +9,8 @@ import androidx.core.net.toUri
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.updater.AppUpdateDownloadJob
-import eu.kanade.tachiyomi.data.vault.LibraryVaultCaptureJob
-import eu.kanade.tachiyomi.data.vault.LocalVaultImportJob
+import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultCaptureJob
+import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultImportJob
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.util.system.cancelNotification
 import eu.kanade.tachiyomi.util.system.getParcelableExtraCompat
