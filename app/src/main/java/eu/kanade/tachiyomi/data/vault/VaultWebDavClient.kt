@@ -13,12 +13,12 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 
-internal interface VaultWebDav {
-    suspend fun get(path: String): String?
-    suspend fun put(path: String, body: String): Boolean
+internal interface VaultWebDav : VaultManifestPublishStorage {
+    override suspend fun get(path: String): String?
+    override suspend fun put(path: String, body: String): Boolean
     suspend fun putFile(path: String, file: UniFile): Boolean
-    suspend fun createDirectory(path: String): Boolean
-    suspend fun delete(path: String): Boolean
+    override suspend fun createDirectory(path: String): Boolean
+    override suspend fun delete(path: String): Boolean
     suspend fun createParentDirectories(path: String)
 }
 

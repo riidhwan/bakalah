@@ -18,20 +18,15 @@ import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.LocalVaultImportManga
 import tachiyomi.domain.vault.model.LocalVaultImportTarget
-import tachiyomi.domain.vault.model.ROOT_VAULT_MANIFEST_NAME
-import tachiyomi.domain.vault.model.VaultCatalogueSummary
 import tachiyomi.domain.vault.model.VaultContentIntegrity
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMangaManifest
-import tachiyomi.domain.vault.model.VaultMangaManifestPointer
 import tachiyomi.domain.vault.model.VaultManifestChapter
 import tachiyomi.domain.vault.model.VaultManifestChapterContent
-import tachiyomi.domain.vault.model.VaultManifestCodec
 import tachiyomi.domain.vault.model.VaultManifestCover
 import tachiyomi.domain.vault.model.VaultManifestMetadata
 import tachiyomi.domain.vault.model.VaultManifestProvenance
-import tachiyomi.domain.vault.model.VaultManifestReadResult
 import tachiyomi.domain.vault.model.VaultMetadata
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
@@ -62,7 +57,7 @@ internal class LocalVaultChapterPublisher(
     private val preferences: ContentVaultPreferences,
     private val chapterStager: LocalVaultChapterStager,
 ) : LocalVaultChapterPublisherBoundary {
-    private val codec = VaultManifestCodec(json)
+    private val publishTransaction = VaultManifestPublishTransaction(json)
 
     override suspend fun publish(
         webDav: VaultWebDav,
@@ -78,37 +73,18 @@ internal class LocalVaultChapterPublisher(
         localSourceName: String?,
         progressPhase: (VaultImportProgressPhase) -> Unit,
     ): LocalVaultChapterPublishResult {
-        val rootPath = config.rootPath.childPath(ROOT_VAULT_MANIFEST_NAME)
-        val rootManifest = readRootManifest(webDav, rootPath)
-            ?: throw LocalImportGlobalFailure("manifest", localChapter.chapter.title)
-        if (expectedVaultIdentity != null && rootManifest.identity != expectedVaultIdentity) {
-            throw LocalImportGlobalFailure("identity", localChapter.chapter.title)
+        val publishContext = publishTransaction.prepare(
+            storage = webDav,
+            config = config,
+            target = target.toManifestPublishTarget(),
+            expectedVaultIdentity = expectedVaultIdentity,
+        ) { category ->
+            LocalImportGlobalFailure(category, localChapter.chapter.title)
         }
-
-        val mangaManifestPath = when (target) {
-            is LocalVaultActiveTarget.Existing ->
-                rootManifest.manga
-                    .firstOrNull { it.identity == target.manga.identity.value }
-                    ?.path
-                    ?: throw LocalImportGlobalFailure("target", localChapter.chapter.title)
-            is LocalVaultActiveTarget.CreateNew -> target.manifestPath
-            is LocalVaultActiveTarget.Created -> target.manifestPath
-        }
-        val remoteMangaManifest = when (target) {
-            is LocalVaultActiveTarget.Existing -> webDav.get(config.rootPath.childPath(mangaManifestPath))
-                ?.let { decodeMangaManifest(it) }
-                ?: throw LocalImportGlobalFailure("target", localChapter.chapter.title)
-            is LocalVaultActiveTarget.CreateNew -> webDav.get(config.rootPath.childPath(mangaManifestPath))
-                ?.let { decodeMangaManifest(it) }
-            is LocalVaultActiveTarget.Created -> webDav.get(config.rootPath.childPath(mangaManifestPath))
-                ?.let { decodeMangaManifest(it) }
-                ?: throw LocalImportGlobalFailure("target", localChapter.chapter.title)
-        }
-        val mangaIdentity = when (target) {
-            is LocalVaultActiveTarget.Existing -> target.manga.identity.value
-            is LocalVaultActiveTarget.CreateNew -> target.mangaIdentity
-            is LocalVaultActiveTarget.Created -> target.mangaIdentity
-        }
+        val rootManifest = publishContext.rootManifest
+        val mangaManifestPath = publishContext.mangaManifestPath
+        val remoteMangaManifest = publishContext.remoteMangaManifest
+        val mangaIdentity = publishContext.mangaIdentity
         val now = System.currentTimeMillis()
         val existingRemoteChapters = remoteMangaManifest?.chapters.orEmpty()
         val existingRemoteChaptersByFileKey = existingRemoteChapters
@@ -195,50 +171,20 @@ internal class LocalVaultChapterPublisher(
                 updatedAt = now,
             )
 
-            webDav.createDirectory(config.rootPath.childPath("manga"))
             progressPhase(VaultImportProgressPhase.PUBLISHING)
-            if (!webDav.put(config.rootPath.childPath(mangaManifestPath), codec.encodeManga(mangaManifest))) {
-                error("publish")
-            }
-
-            val updatedPointers = rootManifest.manga
-                .filterNot { it.identity == mangaIdentity }
-                .plus(
-                    VaultMangaManifestPointer(
-                        identity = mangaIdentity,
-                        path = mangaManifestPath,
-                        title = metadata.title,
-                        revisionId = mangaRevisionId,
-                        revisionNumber = mangaRevision,
-                        updatedAt = now,
-                    ),
-                )
-                .sortedBy { VaultMetadata.normalizeTitle(it.title) }
-            val updatedRoot = rootManifest.copy(
-                layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
-                revisionId = UUID.randomUUID().toString(),
-                revisionNumber = rootManifest.revisionNumber + 1,
-                updatedAt = now,
-                summary = VaultCatalogueSummary(
-                    mangaCount = updatedPointers.size.toLong(),
-                    chapterCount = rootManifest.summary.chapterCount -
-                        (remoteMangaManifest?.chapters?.size ?: 0) +
-                        mangaManifest.chapters.size,
-                    labelCount = rootManifest.summary.labelCount,
-                    updatedAt = now,
-                ),
-                manga = updatedPointers,
-            )
-            if (!webDav.put(rootPath, codec.encodeRoot(updatedRoot))) {
-                rollbackPublishedMangaManifest(
-                    webDav = webDav,
-                    config = config,
-                    mangaManifestPath = mangaManifestPath,
-                    previousManifest = remoteMangaManifest,
-                    newContentPath = contentPath,
-                    newCoverPath = newCoverPath,
-                )
-                throw LocalImportGlobalFailure("publish", localChapter.chapter.title)
+            publishTransaction.commit(
+                storage = webDav,
+                config = config,
+                context = publishContext,
+                metadata = metadata,
+                mangaManifest = mangaManifest,
+                mangaRevisionId = mangaRevisionId,
+                mangaRevisionNumber = mangaRevision,
+                now = now,
+                newContentPath = contentPath,
+                newCoverPath = newCoverPath,
+            ) { category ->
+                LocalImportGlobalFailure(category, localChapter.chapter.title)
             }
 
             replacement?.content?.path?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
@@ -337,21 +283,6 @@ internal class LocalVaultChapterPublisher(
         )
     }
 
-    private suspend fun readRootManifest(webDav: VaultWebDav, path: String) =
-        webDav.get(path)?.let { body ->
-            when (val result = codec.decodeRoot(body)) {
-                is VaultManifestReadResult.Success -> result.manifest
-                else -> null
-            }
-        }
-
-    private fun decodeMangaManifest(body: String): VaultMangaManifest? {
-        return when (val result = codec.decodeManga(body)) {
-            is VaultManifestReadResult.Success -> result.manifest
-            else -> null
-        }
-    }
-
     private suspend fun invalidateReplacementCacheState(
         mangaIdentity: String,
         replacedChapterIdentity: String,
@@ -369,27 +300,6 @@ internal class LocalVaultChapterPublisher(
             .filter { it.identity.value == replacedChapterIdentity }
             .map { it.id }
         repository.deleteCacheStates(replacedChapterIds)
-    }
-
-    private suspend fun rollbackPublishedMangaManifest(
-        webDav: VaultWebDav,
-        config: WebDavVaultConfig,
-        mangaManifestPath: String,
-        previousManifest: VaultMangaManifest?,
-        newContentPath: String,
-        newCoverPath: String?,
-    ) {
-        runCatching {
-            if (previousManifest != null) {
-                webDav.put(config.rootPath.childPath(mangaManifestPath), codec.encodeManga(previousManifest))
-            } else {
-                webDav.delete(config.rootPath.childPath(mangaManifestPath))
-            }
-        }
-        runCatching { webDav.delete(config.rootPath.childPath(newContentPath)) }
-        newCoverPath?.let { path ->
-            runCatching { webDav.delete(config.rootPath.childPath(path)) }
-        }
     }
 
     private fun ScannedLocalVaultChapter.toManifestChapter(
@@ -443,6 +353,12 @@ internal class LocalVaultChapterPublisher(
         description = description,
         status = status,
     )
+
+    private fun LocalVaultActiveTarget.toManifestPublishTarget() = when (this) {
+        is LocalVaultActiveTarget.Existing -> VaultManifestPublishTarget.Existing(manga.identity.value)
+        is LocalVaultActiveTarget.CreateNew -> VaultManifestPublishTarget.CreateNew(mangaIdentity, manifestPath)
+        is LocalVaultActiveTarget.Created -> VaultManifestPublishTarget.Created(mangaIdentity, manifestPath)
+    }
 }
 
 internal sealed interface LocalVaultActiveTarget {
