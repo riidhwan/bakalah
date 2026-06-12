@@ -2,7 +2,6 @@ package eu.kanade.tachiyomi.data.vault
 
 import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.data.vault.importing.childPath
-import eu.kanade.tachiyomi.data.vault.importing.toHex
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
@@ -21,7 +20,6 @@ import tachiyomi.domain.vault.model.VaultMangaManifest
 import tachiyomi.domain.vault.model.VaultManifestChapter
 import tachiyomi.domain.vault.model.VaultManifestChapterContent
 import tachiyomi.domain.vault.model.VaultManifestChapterProvenance
-import tachiyomi.domain.vault.model.VaultManifestCover
 import tachiyomi.domain.vault.model.VaultManifestMetadata
 import tachiyomi.domain.vault.model.VaultManifestProvenance
 import tachiyomi.domain.vault.model.VaultMetadata
@@ -29,7 +27,6 @@ import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
 import java.io.File
-import java.security.MessageDigest
 import java.util.UUID
 
 internal interface LibraryVaultChapterPublisherBoundary {
@@ -56,6 +53,7 @@ internal class LibraryVaultChapterPublisher(
     private val stager: LibraryVaultChapterStager,
 ) : LibraryVaultChapterPublisherBoundary {
     private val publishTransaction = VaultManifestPublishTransaction(json)
+    private val contentUploader = VaultContentUploader()
 
     override suspend fun publish(
         webDav: LibraryVaultCaptureWebDav,
@@ -98,12 +96,13 @@ internal class LibraryVaultChapterPublisher(
         var newCoverPath: String? = null
         try {
             progressPhase(VaultImportProgressPhase.UPLOADING)
-            contentPath = uploadChapter(
-                webDav = webDav,
+            contentPath = contentUploader.uploadChapterFile(
+                storage = webDav,
                 config = config,
                 mangaIdentity = mangaIdentity,
                 contentIdentity = contentIdentity,
                 chapterFile = stagedChapter.file,
+                remoteFileName = "$contentIdentity.cbz",
             )
             val manifestChapter = if (replacement != null) {
                 replacement.copy(
@@ -149,13 +148,23 @@ internal class LibraryVaultChapterPublisher(
             }
             val importedCover = remoteMangaManifest?.cover ?: runCatching {
                 progressPhase(VaultImportProgressPhase.UPLOADING)
-                uploadCover(
-                    webDav = webDav,
-                    config = config,
-                    mangaIdentity = mangaIdentity,
-                    cover = stager.findCaptureCover(manga, source),
-                    now = now,
-                )?.also { newCoverPath = it.path }
+                stager.findCaptureCover(manga, source)?.let { cover ->
+                    contentUploader.uploadCover(
+                        storage = webDav,
+                        config = config,
+                        mangaIdentity = mangaIdentity,
+                        cover = VaultUploadCover.Bytes(
+                            bytes = cover.bytes,
+                            extension = cover.extension,
+                            mediaType = cover.mediaType,
+                        ),
+                        now = now,
+                    )
+                }
+            }.onSuccess { cover ->
+                if (cover != null) {
+                    newCoverPath = cover.path
+                }
             }.getOrElse { error ->
                 if (error is CancellationException) throw error
                 null
@@ -233,61 +242,11 @@ internal class LibraryVaultChapterPublisher(
             if (error is LibraryCaptureGlobalFailure) throw error
             contentPath?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
             newCoverPath?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
+            if (error is VaultContentUploadFailure) {
+                error(error.category)
+            }
             throw error
         }
-    }
-
-    private suspend fun uploadChapter(
-        webDav: LibraryVaultCaptureWebDav,
-        config: WebDavVaultConfig,
-        mangaIdentity: String,
-        contentIdentity: String,
-        chapterFile: UniFile,
-    ): String {
-        val basePath = "content/$mangaIdentity/$contentIdentity"
-        val remoteBasePath = config.rootPath.childPath(basePath)
-        webDav.createDirectory(config.rootPath.childPath("content"))
-        webDav.createDirectory(config.rootPath.childPath("content/$mangaIdentity"))
-        webDav.createDirectory(remoteBasePath)
-        val path = "$basePath/$contentIdentity.cbz"
-        if (!webDav.putFile(config.rootPath.childPath(path), chapterFile)) {
-            error("upload")
-        }
-        return path
-    }
-
-    private suspend fun uploadCover(
-        webDav: LibraryVaultCaptureWebDav,
-        config: WebDavVaultConfig,
-        mangaIdentity: String,
-        cover: LibraryVaultCaptureCover?,
-        now: Long,
-    ): VaultManifestCover? {
-        cover ?: return null
-        val coverIdentity = UUID.randomUUID().toString()
-        val extension = cover.extension
-        val path = "content/$mangaIdentity/cover/$coverIdentity.$extension"
-        val digest = cover.bytes.digest()
-
-        webDav.createDirectory(config.rootPath.childPath("content"))
-        webDav.createDirectory(config.rootPath.childPath("content/$mangaIdentity"))
-        webDav.createDirectory(config.rootPath.childPath("content/$mangaIdentity/cover"))
-        if (!webDav.putBytes(config.rootPath.childPath(path), cover.bytes, cover.mediaType)) {
-            error("cover_upload")
-        }
-
-        return VaultManifestCover(
-            identity = coverIdentity,
-            path = path,
-            mediaType = cover.mediaType,
-            integrity = VaultContentIntegrity(
-                sizeBytes = digest.sizeBytes,
-                checksumSha256 = digest.sha256,
-            ),
-            revisionId = UUID.randomUUID().toString(),
-            revisionNumber = 1,
-            updatedAt = now,
-        )
     }
 
     private suspend fun invalidateReplacementCacheState(
@@ -314,22 +273,11 @@ internal class LibraryVaultChapterPublisher(
         status = status,
     )
 
-    private fun ByteArray.digest(): FileDigest {
-        val digest = MessageDigest.getInstance("SHA-256")
-        digest.update(this)
-        return FileDigest(size.toLong(), digest.digest().toHex())
-    }
-
     private fun LibraryVaultActiveTarget.toManifestPublishTarget() = when (this) {
         is LibraryVaultActiveTarget.Existing -> VaultManifestPublishTarget.Existing(manga.identity.value)
         is LibraryVaultActiveTarget.CreateNew -> VaultManifestPublishTarget.CreateNew(mangaIdentity, manifestPath)
         is LibraryVaultActiveTarget.Created -> VaultManifestPublishTarget.Created(mangaIdentity, manifestPath)
     }
-
-    private data class FileDigest(
-        val sizeBytes: Long,
-        val sha256: String,
-    )
 }
 
 internal sealed interface LibraryVaultActiveTarget {

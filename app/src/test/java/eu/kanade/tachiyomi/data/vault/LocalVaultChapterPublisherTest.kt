@@ -508,6 +508,12 @@ class LocalVaultChapterPublisherTest {
             return true
         }
 
+        override suspend fun putBytes(path: String, bytes: ByteArray, mediaType: String?): Boolean {
+            putFiles += path
+            files[path] = "bytes"
+            return true
+        }
+
         override suspend fun createDirectory(path: String): Boolean = true
 
         override suspend fun delete(path: String): Boolean {
@@ -515,8 +521,6 @@ class LocalVaultChapterPublisherTest {
             files.remove(path)
             return true
         }
-
-        override suspend fun createParentDirectories(path: String) = Unit
 
         fun root(): VaultRootManifest {
             val result = codec.decodeRoot(files.getValue(rootPath()))

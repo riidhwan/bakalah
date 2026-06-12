@@ -8,18 +8,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 
-internal interface VaultWebDav : VaultManifestPublishStorage {
+internal interface VaultWebDav : VaultManifestPublishStorage, VaultContentUploadStorage {
     override suspend fun get(path: String): String?
     override suspend fun put(path: String, body: String): Boolean
-    suspend fun putFile(path: String, file: UniFile): Boolean
+    override suspend fun putFile(path: String, file: UniFile): Boolean
+    override suspend fun putBytes(path: String, bytes: ByteArray, mediaType: String?): Boolean
     override suspend fun createDirectory(path: String): Boolean
     override suspend fun delete(path: String): Boolean
-    suspend fun createParentDirectories(path: String)
 }
 
 internal class VaultWebDavClient(
@@ -55,6 +56,17 @@ internal class VaultWebDavClient(
         client.newCall(request).await().use { it.isSuccessful }
     }
 
+    override suspend fun putBytes(path: String, bytes: ByteArray, mediaType: String?): Boolean = withContext(
+        Dispatchers.IO,
+    ) {
+        val request = Request.Builder()
+            .url(config.serverUrl.resolveWebDavPath(path))
+            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
+            .put(bytes.toRequestBody(mediaType?.toMediaTypeOrNull()))
+            .build()
+        client.newCall(request).await().use { it.isSuccessful }
+    }
+
     override suspend fun createDirectory(path: String): Boolean = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(config.serverUrl.resolveWebDavPath(path, collection = true))
@@ -75,14 +87,6 @@ internal class VaultWebDavClient(
         client.newCall(request).await().use { response ->
             response.isSuccessful || response.code == HTTP_NOT_FOUND
         }
-    }
-
-    override suspend fun createParentDirectories(path: String) {
-        path.substringBeforeLast('/', missingDelimiterValue = "")
-            .split('/')
-            .runningFold("") { parent, child -> if (parent.isBlank()) child else "$parent/$child" }
-            .drop(1)
-            .forEach { createDirectory(it) }
     }
 
     private companion object {
