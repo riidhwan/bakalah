@@ -92,11 +92,11 @@ internal class LibraryVaultChapterPublisher(
         }
         val chapterIdentity = replacement?.identity ?: UUID.randomUUID().toString()
         val contentIdentity = if (replacement == null) chapterIdentity else UUID.randomUUID().toString()
-        var contentPath: String? = null
-        var newCoverPath: String? = null
+        var contentUpload: VaultPromotableUpload? = null
+        var promotedCoverPath: String? = null
         try {
             progressPhase(VaultImportProgressPhase.UPLOADING)
-            contentPath = contentUploader.uploadChapterFile(
+            val uploadedChapter = contentUploader.uploadChapterFile(
                 storage = webDav,
                 config = config,
                 mangaIdentity = mangaIdentity,
@@ -104,10 +104,11 @@ internal class LibraryVaultChapterPublisher(
                 chapterFile = stagedChapter.file,
                 remoteFileName = "$contentIdentity.cbz",
             )
+            contentUpload = uploadedChapter
             val manifestChapter = if (replacement != null) {
                 replacement.copy(
                     content = VaultManifestChapterContent(
-                        path = contentPath,
+                        path = uploadedChapter.finalPath,
                         format = VaultChapterContentFormat.CBZ,
                         integrity = VaultContentIntegrity(stagedChapter.sizeBytes, stagedChapter.checksumSha256),
                     ),
@@ -124,7 +125,7 @@ internal class LibraryVaultChapterPublisher(
                     scanlator = chapter.scanlator,
                     sourceOrder = 0,
                     content = VaultManifestChapterContent(
-                        path = contentPath,
+                        path = uploadedChapter.finalPath,
                         format = VaultChapterContentFormat.CBZ,
                         integrity = VaultContentIntegrity(stagedChapter.sizeBytes, stagedChapter.checksumSha256),
                     ),
@@ -161,14 +162,16 @@ internal class LibraryVaultChapterPublisher(
                         now = now,
                     )
                 }
-            }.onSuccess { cover ->
-                if (cover != null) {
-                    newCoverPath = cover.path
+            }.onSuccess { uploadedCover ->
+                if (uploadedCover != null) {
+                    if (promoteOptionalUpload(webDav, config, uploadedCover.upload)) {
+                        promotedCoverPath = uploadedCover.upload.finalPath
+                    }
                 }
             }.getOrElse { error ->
                 if (error is CancellationException) throw error
                 null
-            }
+            }?.takeIf { promotedCoverPath == it.cover.path }?.cover
             val mangaRevision = remoteMangaManifest?.revisionNumber?.plus(1) ?: 1
             val mangaRevisionId = UUID.randomUUID().toString()
             val provenance = VaultManifestChapterProvenance(
@@ -213,8 +216,8 @@ internal class LibraryVaultChapterPublisher(
                 mangaRevisionId = mangaRevisionId,
                 mangaRevisionNumber = mangaRevision,
                 now = now,
-                newContentPath = contentPath,
-                newCoverPath = newCoverPath,
+                newUploads = listOfNotNull(contentUpload),
+                promotedPaths = listOfNotNull(promotedCoverPath),
             ) { category ->
                 LibraryCaptureGlobalFailure(category, chapter.name)
             }
@@ -240,8 +243,11 @@ internal class LibraryVaultChapterPublisher(
         } catch (error: Throwable) {
             if (error is CancellationException) throw error
             if (error is LibraryCaptureGlobalFailure) throw error
-            contentPath?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
-            newCoverPath?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
+            listOfNotNull(contentUpload).forEach { upload ->
+                runCatching { webDav.delete(config.rootPath.childPath(upload.stagedPath)) }
+                runCatching { webDav.delete(config.rootPath.childPath(upload.finalPath)) }
+            }
+            promotedCoverPath?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
             if (error is VaultContentUploadFailure) {
                 error(error.category)
             }
@@ -263,6 +269,23 @@ internal class LibraryVaultChapterPublisher(
             .filter { it.identity.value == replacedChapterIdentity }
             .map { it.id }
         repository.deleteCacheStates(replacedChapterIds)
+    }
+
+    private suspend fun promoteOptionalUpload(
+        webDav: LibraryVaultCaptureWebDav,
+        config: WebDavVaultConfig,
+        upload: VaultPromotableUpload,
+    ): Boolean {
+        return runCatching {
+            webDav.promote(
+                config.rootPath.childPath(upload.stagedPath),
+                config.rootPath.childPath(upload.finalPath),
+            )
+        }.getOrDefault(false).also { promoted ->
+            if (promoted) return@also
+            runCatching { webDav.delete(config.rootPath.childPath(upload.stagedPath)) }
+            runCatching { webDav.delete(config.rootPath.childPath(upload.finalPath)) }
+        }
     }
 
     private fun VaultMetadata.toManifestMetadata() = VaultManifestMetadata(

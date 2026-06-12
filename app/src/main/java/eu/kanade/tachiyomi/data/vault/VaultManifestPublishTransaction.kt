@@ -19,6 +19,7 @@ internal interface VaultManifestPublishStorage {
     suspend fun put(path: String, body: String): Boolean
     suspend fun delete(path: String): Boolean
     suspend fun createDirectory(path: String): Boolean
+    suspend fun promote(stagedPath: String, finalPath: String): Boolean
 }
 
 internal class VaultManifestPublishTransaction(json: Json) {
@@ -79,13 +80,19 @@ internal class VaultManifestPublishTransaction(json: Json) {
         mangaRevisionId: String,
         mangaRevisionNumber: Long,
         now: Long,
-        newContentPath: String,
-        newCoverPath: String?,
+        newUploads: List<VaultPromotableUpload>,
+        promotedPaths: List<String> = emptyList(),
         globalFailure: (String) -> Throwable,
     ) {
         storage.createDirectory(config.rootPath.childPath("manga"))
+        try {
+            promoteUploadedContent(storage, config, newUploads, globalFailure)
+        } catch (error: Throwable) {
+            cleanupUploadedContent(storage, config, newUploads, promotedPaths)
+            throw error
+        }
         if (!storage.put(config.rootPath.childPath(context.mangaManifestPath), codec.encodeManga(mangaManifest))) {
-            cleanupUploadedContent(storage, config, newContentPath, newCoverPath)
+            cleanupUploadedContent(storage, config, newUploads, promotedPaths)
             error("publish")
         }
         val updatedRoot = context.rootManifest.withUpdatedMangaPointer(
@@ -104,8 +111,8 @@ internal class VaultManifestPublishTransaction(json: Json) {
                 config = config,
                 mangaManifestPath = context.mangaManifestPath,
                 previousManifest = context.remoteMangaManifest,
-                newContentPath = newContentPath,
-                newCoverPath = newCoverPath,
+                newUploads = newUploads,
+                promotedPaths = promotedPaths,
             )
             throw globalFailure("publish")
         }
@@ -114,12 +121,32 @@ internal class VaultManifestPublishTransaction(json: Json) {
     suspend fun cleanupUploadedContent(
         storage: VaultManifestPublishStorage,
         config: WebDavVaultConfig,
-        newContentPath: String,
-        newCoverPath: String?,
+        newUploads: List<VaultPromotableUpload>,
+        promotedPaths: List<String> = emptyList(),
     ) {
-        runCatching { storage.delete(config.rootPath.childPath(newContentPath)) }
-        newCoverPath?.let { path ->
+        newUploads.forEach { upload ->
+            runCatching { storage.delete(config.rootPath.childPath(upload.stagedPath)) }
+            runCatching { storage.delete(config.rootPath.childPath(upload.finalPath)) }
+        }
+        promotedPaths.forEach { path ->
             runCatching { storage.delete(config.rootPath.childPath(path)) }
+        }
+    }
+
+    private suspend fun promoteUploadedContent(
+        storage: VaultManifestPublishStorage,
+        config: WebDavVaultConfig,
+        newUploads: List<VaultPromotableUpload>,
+        globalFailure: (String) -> Throwable,
+    ) {
+        newUploads.forEach { upload ->
+            if (!storage.promote(
+                    config.rootPath.childPath(upload.stagedPath),
+                    config.rootPath.childPath(upload.finalPath),
+                )
+            ) {
+                throw globalFailure("promote")
+            }
         }
     }
 
@@ -128,8 +155,8 @@ internal class VaultManifestPublishTransaction(json: Json) {
         config: WebDavVaultConfig,
         mangaManifestPath: String,
         previousManifest: VaultMangaManifest?,
-        newContentPath: String,
-        newCoverPath: String?,
+        newUploads: List<VaultPromotableUpload>,
+        promotedPaths: List<String>,
     ) {
         runCatching {
             if (previousManifest != null) {
@@ -138,7 +165,7 @@ internal class VaultManifestPublishTransaction(json: Json) {
                 storage.delete(config.rootPath.childPath(mangaManifestPath))
             }
         }
-        cleanupUploadedContent(storage, config, newContentPath, newCoverPath)
+        cleanupUploadedContent(storage, config, newUploads, promotedPaths)
     }
 
     private suspend fun readRootManifest(storage: VaultManifestPublishStorage, path: String) =

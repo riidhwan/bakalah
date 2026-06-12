@@ -14,14 +14,17 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.domain.vault.model.WebDavVaultConfig
+import java.net.HttpURLConnection
 
 internal interface LibraryVaultCaptureWebDav : VaultManifestPublishStorage, VaultContentUploadStorage {
     override suspend fun get(path: String): String?
+    override suspend fun getBytes(path: String): ByteArray?
     override suspend fun put(path: String, body: String): Boolean
     override suspend fun putFile(path: String, file: UniFile): Boolean
     override suspend fun putBytes(path: String, bytes: ByteArray, mediaType: String?): Boolean
     override suspend fun createDirectory(path: String): Boolean
     override suspend fun delete(path: String): Boolean
+    override suspend fun promote(stagedPath: String, finalPath: String): Boolean
 }
 
 internal interface LibraryVaultCaptureWebDavFactoryBoundary {
@@ -50,6 +53,17 @@ private class HttpLibraryVaultCaptureWebDav(
             .build()
         client.newCall(request).await().use { response ->
             response.takeIf { it.isSuccessful }?.body?.string()
+        }
+    }
+
+    override suspend fun getBytes(path: String): ByteArray? = withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+            .url(config.serverUrl.resolveWebDavPath(path))
+            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
+            .get()
+            .build()
+        client.newCall(request).await().use { response ->
+            response.takeIf { it.isSuccessful }?.body?.bytes()
         }
     }
 
@@ -101,6 +115,21 @@ private class HttpLibraryVaultCaptureWebDav(
             .build()
         client.newCall(request).await().use { response ->
             response.isSuccessful || response.code == HTTP_NOT_FOUND
+        }
+    }
+
+    override suspend fun promote(stagedPath: String, finalPath: String): Boolean = withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+            .url(config.serverUrl.resolveWebDavPath(stagedPath))
+            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
+            .header("Destination", config.serverUrl.resolveWebDavPath(finalPath).toString())
+            .header("Overwrite", "T")
+            .method("MOVE", EMPTY_BODY)
+            .build()
+        client.newCall(request).await().use { response ->
+            response.isSuccessful ||
+                response.code == HttpURLConnection.HTTP_CREATED ||
+                response.code == HttpURLConnection.HTTP_NO_CONTENT
         }
     }
 

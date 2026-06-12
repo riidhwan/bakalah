@@ -134,8 +134,7 @@ class VaultManifestPublishTransactionTest {
             mangaRevisionId = "manga-rev-1",
             mangaRevisionNumber = 1,
             now = 200L,
-            newContentPath = "content/manga-1/chapter-1/chapter.cbz",
-            newCoverPath = null,
+            newUploads = listOf(newUpload("content/manga-1/chapter-1/chapter.cbz")),
             globalFailure = ::TestGlobalFailure,
         )
 
@@ -187,8 +186,10 @@ class VaultManifestPublishTransactionTest {
                 mangaRevisionId = "new-rev",
                 mangaRevisionNumber = 2,
                 now = 200L,
-                newContentPath = "content/manga-1/new-chapter/new.cbz",
-                newCoverPath = "content/manga-1/cover/new.jpg",
+                newUploads = listOf(
+                    newUpload("content/manga-1/new-chapter/new.cbz"),
+                    newUpload("content/manga-1/cover/new.jpg"),
+                ),
                 globalFailure = ::TestGlobalFailure,
             )
         }
@@ -221,8 +222,7 @@ class VaultManifestPublishTransactionTest {
                 mangaRevisionId = "manga-rev-1",
                 mangaRevisionNumber = 1,
                 now = 200L,
-                newContentPath = "content/manga-1/chapter-1/chapter.cbz",
-                newCoverPath = null,
+                newUploads = listOf(newUpload("content/manga-1/chapter-1/chapter.cbz")),
                 globalFailure = ::TestGlobalFailure,
             )
         }
@@ -254,17 +254,52 @@ class VaultManifestPublishTransactionTest {
                 mangaRevisionId = "manga-rev-1",
                 mangaRevisionNumber = 1,
                 now = 200L,
-                newContentPath = "content/manga-1/chapter-1/chapter.cbz",
-                newCoverPath = "content/manga-1/cover/new.jpg",
+                newUploads = listOf(
+                    newUpload("content/manga-1/chapter-1/chapter.cbz"),
+                    newUpload("content/manga-1/cover/new.jpg"),
+                ),
                 globalFailure = ::TestGlobalFailure,
             )
         }
 
         error.message shouldBe "publish"
-        storage.deletes shouldContainExactly listOf(
-            "vault/content/manga-1/chapter-1/chapter.cbz",
-            "vault/content/manga-1/cover/new.jpg",
+        storage.deletes shouldContain "vault/.staging/add-to-vault/chapter-1/chapter.cbz"
+        storage.deletes shouldContain "vault/content/manga-1/chapter-1/chapter.cbz"
+        storage.deletes shouldContain "vault/.staging/add-to-vault/cover/new.jpg"
+        storage.deletes shouldContain "vault/content/manga-1/cover/new.jpg"
+    }
+
+    @Test
+    fun `promotion failure fails before manifest mutation and deletes staged and final content`() = runTest {
+        val storage = FakeStorage(failPromote = true)
+        storage.files[rootPath()] = codec.encodeRoot(rootManifest())
+        val context = transaction.prepare(
+            storage = storage,
+            config = config,
+            target = VaultManifestPublishTarget.CreateNew("manga-1", "manga/new.json"),
+            expectedVaultIdentity = "vault-1",
+            globalFailure = ::TestGlobalFailure,
         )
+
+        val error = shouldThrow<TestGlobalFailure> {
+            transaction.commit(
+                storage = storage,
+                config = config,
+                context = context,
+                metadata = metadata("Manga One"),
+                mangaManifest = mangaManifest(chapters = listOf(chapter("chapter-1"))),
+                mangaRevisionId = "manga-rev-1",
+                mangaRevisionNumber = 1,
+                now = 200L,
+                newUploads = listOf(newUpload("content/manga-1/chapter-1/chapter.cbz")),
+                globalFailure = ::TestGlobalFailure,
+            )
+        }
+
+        error.category shouldBe "promote"
+        storage.files.keys shouldContainExactly listOf(rootPath())
+        storage.deletes shouldContain "vault/.staging/add-to-vault/chapter-1/chapter.cbz"
+        storage.deletes shouldContain "vault/content/manga-1/chapter-1/chapter.cbz"
     }
 
     private fun rootPath() = "vault/$ROOT_VAULT_MANIFEST_NAME"
@@ -349,9 +384,19 @@ class VaultManifestPublishTransactionTest {
         status = VaultMangaStatus.UNKNOWN,
     )
 
+    private fun newUpload(finalPath: String): VaultPromotableUpload {
+        val contentIdentity = finalPath.substringAfter("content/manga-1/").substringBefore('/')
+        val fileName = finalPath.substringAfterLast('/')
+        return VaultPromotableUpload(
+            stagedPath = ".staging/add-to-vault/$contentIdentity/$fileName",
+            finalPath = finalPath,
+        )
+    }
+
     private inner class FakeStorage(
         private val failRootPut: Boolean = false,
         private val failMangaPut: Boolean = false,
+        private val failPromote: Boolean = false,
     ) : VaultManifestPublishStorage {
         val files = linkedMapOf<String, String>()
         val deletes = mutableListOf<String>()
@@ -372,6 +417,12 @@ class VaultManifestPublishTransactionTest {
         }
 
         override suspend fun createDirectory(path: String): Boolean = true
+
+        override suspend fun promote(stagedPath: String, finalPath: String): Boolean {
+            if (failPromote) return false
+            files[finalPath] = files.remove(stagedPath).orEmpty()
+            return true
+        }
 
         fun root(): VaultRootManifest = codec.decodeRoot(files.getValue(rootPath())).let { result ->
             (result as tachiyomi.domain.vault.model.VaultManifestReadResult.Success).manifest
