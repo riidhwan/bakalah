@@ -5,15 +5,11 @@ import eu.kanade.tachiyomi.data.vault.importing.LocalVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.importing.ScannedLocalVaultChapter
 import eu.kanade.tachiyomi.data.vault.importing.childPath
 import eu.kanade.tachiyomi.data.vault.importing.coverMediaType
-import eu.kanade.tachiyomi.data.vault.importing.digest
 import eu.kanade.tachiyomi.data.vault.importing.duplicateFileKey
-import eu.kanade.tachiyomi.data.vault.importing.listFilesRecursively
 import eu.kanade.tachiyomi.data.vault.importing.orderVaultImportChapters
-import eu.kanade.tachiyomi.data.vault.importing.relativePathFrom
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 import tachiyomi.core.common.storage.extension
-import tachiyomi.core.common.storage.nameWithoutExtension
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.LocalVaultImportManga
@@ -24,7 +20,6 @@ import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMangaManifest
 import tachiyomi.domain.vault.model.VaultManifestChapter
 import tachiyomi.domain.vault.model.VaultManifestChapterContent
-import tachiyomi.domain.vault.model.VaultManifestCover
 import tachiyomi.domain.vault.model.VaultManifestMetadata
 import tachiyomi.domain.vault.model.VaultManifestProvenance
 import tachiyomi.domain.vault.model.VaultMetadata
@@ -58,6 +53,7 @@ internal class LocalVaultChapterPublisher(
     private val chapterStager: LocalVaultChapterStager,
 ) : LocalVaultChapterPublisherBoundary {
     private val publishTransaction = VaultManifestPublishTransaction(json)
+    private val contentUploader = VaultContentUploader()
 
     override suspend fun publish(
         webDav: VaultWebDav,
@@ -104,12 +100,12 @@ internal class LocalVaultChapterPublisher(
         var newCoverPath: String? = null
         try {
             progressPhase(VaultImportProgressPhase.UPLOADING)
-            contentPath = uploadChapter(
-                webDav = webDav,
+            contentPath = contentUploader.uploadChapterFile(
+                storage = webDav,
                 config = config,
                 mangaIdentity = mangaIdentity,
                 contentIdentity = contentIdentity,
-                localChapter = preparedChapter,
+                chapterFile = preparedChapter.file,
             )
             val manifestChapter = if (replacement != null) {
                 preparedChapter.toReplacementManifestChapter(
@@ -133,13 +129,23 @@ internal class LocalVaultChapterPublisher(
             }
             val importedCover = remoteMangaManifest?.cover ?: runCatching {
                 progressPhase(VaultImportProgressPhase.UPLOADING)
-                uploadCover(
-                    webDav = webDav,
-                    config = config,
-                    mangaIdentity = mangaIdentity,
-                    coverFile = coverFile,
-                    now = now,
-                )?.also { newCoverPath = it.path }
+                coverFile?.let { file ->
+                    contentUploader.uploadCover(
+                        storage = webDav,
+                        config = config,
+                        mangaIdentity = mangaIdentity,
+                        cover = VaultUploadCover.File(
+                            file = file,
+                            extension = file.extension,
+                            mediaType = file.coverMediaType(),
+                        ),
+                        now = now,
+                    )
+                }
+            }.onSuccess { cover ->
+                if (cover != null) {
+                    newCoverPath = cover.path
+                }
             }.getOrElse { error ->
                 if (error is CancellationException) throw error
                 null
@@ -210,77 +216,11 @@ internal class LocalVaultChapterPublisher(
             if (error is LocalImportGlobalFailure) throw error
             contentPath?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
             newCoverPath?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
+            if (error is VaultContentUploadFailure) {
+                error(error.category)
+            }
             throw error
         }
-    }
-
-    private suspend fun uploadChapter(
-        webDav: VaultWebDav,
-        config: WebDavVaultConfig,
-        mangaIdentity: String,
-        contentIdentity: String,
-        localChapter: ScannedLocalVaultChapter,
-    ): String {
-        val basePath = "content/$mangaIdentity/$contentIdentity"
-        val remoteBasePath = config.rootPath.childPath(basePath)
-        webDav.createDirectory(config.rootPath.childPath("content"))
-        webDav.createDirectory(config.rootPath.childPath("content/$mangaIdentity"))
-        return if (localChapter.file.isDirectory) {
-            webDav.createDirectory(remoteBasePath)
-            localChapter.file.listFilesRecursively().forEach { file ->
-                val relativePath = file.relativePathFrom(localChapter.file)
-                val path = config.rootPath.childPath("$basePath/$relativePath")
-                webDav.createParentDirectories(path)
-                if (!webDav.putFile(path, file)) {
-                    error("Failed to upload $path")
-                }
-            }
-            basePath
-        } else {
-            webDav.createDirectory(remoteBasePath)
-            val extension = localChapter.file.extension?.let { ".$it" }.orEmpty()
-            val path = "$basePath/${localChapter.file.nameWithoutExtension}$extension"
-            if (!webDav.putFile(config.rootPath.childPath(path), localChapter.file)) {
-                error("Failed to upload $path")
-            }
-            path
-        }
-    }
-
-    private suspend fun uploadCover(
-        webDav: VaultWebDav,
-        config: WebDavVaultConfig,
-        mangaIdentity: String,
-        coverFile: UniFile?,
-        now: Long,
-    ): VaultManifestCover? {
-        coverFile ?: return null
-        val coverIdentity = UUID.randomUUID().toString()
-        val extension = coverFile.extension
-            ?.lowercase()
-            ?.takeIf { it.isNotBlank() && it.length <= 8 && it.all(Char::isLetterOrDigit) }
-            ?: "img"
-        val path = "content/$mangaIdentity/cover/$coverIdentity.$extension"
-        val digest = coverFile.digest()
-
-        webDav.createDirectory(config.rootPath.childPath("content/$mangaIdentity"))
-        webDav.createDirectory(config.rootPath.childPath("content/$mangaIdentity/cover"))
-        if (!webDav.putFile(config.rootPath.childPath(path), coverFile)) {
-            error("Failed to upload $path")
-        }
-
-        return VaultManifestCover(
-            identity = coverIdentity,
-            path = path,
-            mediaType = coverFile.coverMediaType(),
-            integrity = VaultContentIntegrity(
-                sizeBytes = digest.sizeBytes,
-                checksumSha256 = digest.sha256,
-            ),
-            revisionId = UUID.randomUUID().toString(),
-            revisionNumber = 1,
-            updatedAt = now,
-        )
     }
 
     private suspend fun invalidateReplacementCacheState(

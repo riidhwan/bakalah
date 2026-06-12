@@ -344,6 +344,8 @@ internal class LibraryVaultCaptureService(
                 "empty_pages",
                 "staging",
                 "upload",
+                "chapter_upload",
+                "cover_upload",
                 "publish",
                 "manifest",
                 "target",
