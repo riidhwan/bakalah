@@ -2,9 +2,9 @@ package eu.kanade.tachiyomi.ui.vault
 
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshResult
-import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshService
-import eu.kanade.tachiyomi.data.vault.VaultCoverPublishService
+import eu.kanade.tachiyomi.data.vault.publishing.VaultCoverPublishService
+import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshResult
+import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshService
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
