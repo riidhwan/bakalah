@@ -24,12 +24,16 @@ internal interface LibraryVaultCaptureWebDav {
     suspend fun delete(path: String): Boolean
 }
 
+internal interface LibraryVaultCaptureWebDavFactoryBoundary {
+    fun create(config: WebDavVaultConfig): LibraryVaultCaptureWebDav
+}
+
 internal class LibraryVaultCaptureWebDavFactory(
     networkHelper: NetworkHelper,
-) {
+) : LibraryVaultCaptureWebDavFactoryBoundary {
     private val client = networkHelper.nonCloudflareClient
 
-    fun create(config: WebDavVaultConfig): LibraryVaultCaptureWebDav {
+    override fun create(config: WebDavVaultConfig): LibraryVaultCaptureWebDav {
         return HttpLibraryVaultCaptureWebDav(config, client)
     }
 }

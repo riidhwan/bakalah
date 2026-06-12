@@ -39,16 +39,33 @@ import tachiyomi.domain.vault.service.ContentVaultPreferences
 import java.io.File
 import java.util.UUID
 
+internal interface LocalVaultChapterPublisherBoundary {
+    suspend fun publish(
+        webDav: VaultWebDav,
+        config: WebDavVaultConfig,
+        vaultIdentity: ContentVaultIdentity,
+        expectedVaultIdentity: String?,
+        importManga: LocalVaultImportManga,
+        localChapter: ScannedLocalVaultChapter,
+        coverFile: UniFile?,
+        target: LocalVaultActiveTarget,
+        allowReplacement: Boolean,
+        stagingRoot: File,
+        localSourceName: String?,
+        progressPhase: (VaultImportProgressPhase) -> Unit,
+    ): LocalVaultChapterPublishResult
+}
+
 internal class LocalVaultChapterPublisher(
     json: Json,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
     private val chapterStager: LocalVaultChapterStager,
-) {
+) : LocalVaultChapterPublisherBoundary {
     private val codec = VaultManifestCodec(json)
 
-    suspend fun publish(
-        webDav: VaultWebDavClient,
+    override suspend fun publish(
+        webDav: VaultWebDav,
         config: WebDavVaultConfig,
         vaultIdentity: ContentVaultIdentity,
         expectedVaultIdentity: String?,
@@ -252,7 +269,7 @@ internal class LocalVaultChapterPublisher(
     }
 
     private suspend fun uploadChapter(
-        webDav: VaultWebDavClient,
+        webDav: VaultWebDav,
         config: WebDavVaultConfig,
         mangaIdentity: String,
         contentIdentity: String,
@@ -285,7 +302,7 @@ internal class LocalVaultChapterPublisher(
     }
 
     private suspend fun uploadCover(
-        webDav: VaultWebDavClient,
+        webDav: VaultWebDav,
         config: WebDavVaultConfig,
         mangaIdentity: String,
         coverFile: UniFile?,
@@ -320,7 +337,7 @@ internal class LocalVaultChapterPublisher(
         )
     }
 
-    private suspend fun readRootManifest(webDav: VaultWebDavClient, path: String) =
+    private suspend fun readRootManifest(webDav: VaultWebDav, path: String) =
         webDav.get(path)?.let { body ->
             when (val result = codec.decodeRoot(body)) {
                 is VaultManifestReadResult.Success -> result.manifest
@@ -355,7 +372,7 @@ internal class LocalVaultChapterPublisher(
     }
 
     private suspend fun rollbackPublishedMangaManifest(
-        webDav: VaultWebDavClient,
+        webDav: VaultWebDav,
         config: WebDavVaultConfig,
         mangaManifestPath: String,
         previousManifest: VaultMangaManifest?,

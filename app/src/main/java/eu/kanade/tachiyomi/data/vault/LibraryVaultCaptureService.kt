@@ -36,13 +36,13 @@ import java.util.UUID
 
 internal class LibraryVaultCaptureService(
     private val context: Context,
-    private val webDavFactory: LibraryVaultCaptureWebDavFactory,
+    private val webDavFactory: LibraryVaultCaptureWebDavFactoryBoundary,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
     private val sourceManager: SourceManager,
-    private val refreshService: VaultCatalogueRefreshService,
+    private val refreshService: VaultCatalogueRefresher,
     private val getChaptersByMangaId: GetChaptersByMangaId,
-    private val chapterPublisher: LibraryVaultChapterPublisher,
+    private val chapterPublisher: LibraryVaultChapterPublisherBoundary,
 ) {
     private val planner = BuildLibraryVaultCapturePlan()
 
@@ -220,11 +220,15 @@ internal class LibraryVaultCaptureService(
                     completedAt = completedAt,
                 ),
             )
-            return LibraryVaultCaptureResult.Captured(
-                addedChapterCount = added,
-                replacedChapterCount = replaced,
-                failedChapterCount = failures.size,
-            )
+            return if (added + replaced > 0) {
+                LibraryVaultCaptureResult.Captured(
+                    addedChapterCount = added,
+                    replacedChapterCount = replaced,
+                    failedChapterCount = failures.size,
+                )
+            } else {
+                LibraryVaultCaptureResult.UploadFailed
+            }
         } finally {
             stagingRoot.deleteRecursively()
         }
@@ -238,6 +242,11 @@ internal class LibraryVaultCaptureService(
         repository.upsertTransferJob(
             job.copy(
                 state = state,
+                failureReason = if (state == VaultTransferState.FAILED) {
+                    failures.firstOrNull()?.category
+                } else {
+                    null
+                },
                 addedCount = added.toLong(),
                 replacedCount = replaced.toLong(),
                 failedCount = failures.size.toLong(),
@@ -247,11 +256,15 @@ internal class LibraryVaultCaptureService(
             ),
         )
 
-        return LibraryVaultCaptureResult.Captured(
-            addedChapterCount = added,
-            replacedChapterCount = replaced,
-            failedChapterCount = failures.size,
-        )
+        return if (added + replaced > 0) {
+            LibraryVaultCaptureResult.Captured(
+                addedChapterCount = added,
+                replacedChapterCount = replaced,
+                failedChapterCount = failures.size,
+            )
+        } else {
+            LibraryVaultCaptureResult.UploadFailed
+        }
     }
 
     private suspend fun configuredVault() =
@@ -403,6 +416,7 @@ sealed interface LibraryVaultCaptureResult {
     data object NotLibraryManga : LibraryVaultCaptureResult
     data object SourceUnavailable : LibraryVaultCaptureResult
     data object NothingSelected : LibraryVaultCaptureResult
+    data object UploadFailed : LibraryVaultCaptureResult
     data class TargetChoiceRequired(val plan: LibraryVaultCapturePlan) : LibraryVaultCaptureResult
 }
 

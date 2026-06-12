@@ -19,17 +19,21 @@ import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
 
+interface VaultCatalogueRefresher {
+    suspend fun refreshConfiguredVault(): VaultCatalogueRefreshResult
+}
+
 class VaultCatalogueRefreshService(
     networkHelper: NetworkHelper,
     json: Json,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
-) {
+) : VaultCatalogueRefresher {
     private val client = networkHelper.nonCloudflareClient
     private val codec = VaultManifestCodec(json)
     private val refreshBuilder = BuildVaultCatalogueRefresh(codec)
 
-    suspend fun refreshConfiguredVault(): VaultCatalogueRefreshResult {
+    override suspend fun refreshConfiguredVault(): VaultCatalogueRefreshResult {
         val config = preferences.getWebDavConfig()
         if (!config.isComplete) return VaultCatalogueRefreshResult.IncompleteConfiguration
 

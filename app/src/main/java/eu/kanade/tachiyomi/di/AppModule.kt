@@ -21,16 +21,21 @@ import eu.kanade.tachiyomi.data.vault.ContentVaultSetupService
 import eu.kanade.tachiyomi.data.vault.DefaultLibraryVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.LibraryVaultCaptureService
 import eu.kanade.tachiyomi.data.vault.LibraryVaultCaptureWebDavFactory
+import eu.kanade.tachiyomi.data.vault.LibraryVaultCaptureWebDavFactoryBoundary
 import eu.kanade.tachiyomi.data.vault.LibraryVaultChapterPublisher
+import eu.kanade.tachiyomi.data.vault.LibraryVaultChapterPublisherBoundary
 import eu.kanade.tachiyomi.data.vault.LibraryVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.LocalVaultChapterPublisher
+import eu.kanade.tachiyomi.data.vault.LocalVaultChapterPublisherBoundary
 import eu.kanade.tachiyomi.data.vault.LocalVaultImportService
 import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshService
+import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefresher
 import eu.kanade.tachiyomi.data.vault.VaultCoverPublishService
 import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionService
 import eu.kanade.tachiyomi.data.vault.VaultMetadataPublishService
 import eu.kanade.tachiyomi.data.vault.importing.LocalVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.importing.LocalVaultMangaScanner
+import eu.kanade.tachiyomi.data.vault.importing.LocalVaultMangaScannerBoundary
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -145,16 +150,21 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { NetworkHelper(app, get()) }
         addSingletonFactory { ContentVaultSetupService(get(), get(), get(), get()) }
         addSingletonFactory { VaultCatalogueRefreshService(get(), get(), get(), get()) }
+        addSingletonFactory<VaultCatalogueRefresher> { get<VaultCatalogueRefreshService>() }
         addSingletonFactory { ActiveVaultReaderSessions() }
         addSingletonFactory { VaultMangaDeletionService(get(), get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultCoverPublishService(get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultMetadataPublishService(get(), get(), get(), get(), get()) }
-        addSingletonFactory { LocalVaultMangaScanner(get(), get(), get(), get()) }
+        addSingletonFactory<LocalVaultMangaScannerBoundary> { LocalVaultMangaScanner(get(), get(), get(), get()) }
         addSingletonFactory { LocalVaultChapterStager() }
-        addSingletonFactory { LocalVaultChapterPublisher(get(), get(), get(), get()) }
-        addSingletonFactory { LibraryVaultCaptureWebDavFactory(get()) }
+        addSingletonFactory<LocalVaultChapterPublisherBoundary> {
+            LocalVaultChapterPublisher(get(), get(), get(), get())
+        }
+        addSingletonFactory<LibraryVaultCaptureWebDavFactoryBoundary> { LibraryVaultCaptureWebDavFactory(get()) }
         addSingletonFactory<LibraryVaultChapterStager> { DefaultLibraryVaultChapterStager(app, get(), get()) }
-        addSingletonFactory { LibraryVaultChapterPublisher(get(), get(), get(), get()) }
+        addSingletonFactory<LibraryVaultChapterPublisherBoundary> {
+            LibraryVaultChapterPublisher(get(), get(), get(), get())
+        }
         addSingletonFactory {
             LocalVaultImportService(app, get(), get(), get(), get(), get(), get())
         }
