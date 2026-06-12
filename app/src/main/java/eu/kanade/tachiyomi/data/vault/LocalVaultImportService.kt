@@ -2,7 +2,7 @@ package eu.kanade.tachiyomi.data.vault
 
 import android.app.Application
 import eu.kanade.tachiyomi.data.vault.importing.LocalVaultImportChapterFailure
-import eu.kanade.tachiyomi.data.vault.importing.LocalVaultMangaScanner
+import eu.kanade.tachiyomi.data.vault.importing.LocalVaultMangaScannerBoundary
 import eu.kanade.tachiyomi.data.vault.importing.deleteRecursively
 import eu.kanade.tachiyomi.data.vault.importing.localImportFailureCategory
 import eu.kanade.tachiyomi.data.vault.importing.toDetailJson
@@ -32,9 +32,9 @@ class LocalVaultImportService internal constructor(
     networkHelper: NetworkHelper,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
-    private val refreshService: VaultCatalogueRefreshService,
-    private val scanner: LocalVaultMangaScanner,
-    private val chapterPublisher: LocalVaultChapterPublisher,
+    private val refreshService: VaultCatalogueRefresher,
+    private val scanner: LocalVaultMangaScannerBoundary,
+    private val chapterPublisher: LocalVaultChapterPublisherBoundary,
 ) {
     private val client = networkHelper.nonCloudflareClient
     private val planner = BuildLocalVaultImportPlan()
@@ -116,7 +116,9 @@ class LocalVaultImportService internal constructor(
             .map { it.chapter.selectionId }
             .toSet()
         val selectedChapters = scan.chapters.filter { it.chapter.selectionId in selectedIds }
-        if (selectedChapters.isEmpty()) return LocalVaultImportResult.NothingSelected(plan)
+        if (selectedIds.isEmpty() || (selectedChapters.isEmpty() && selectedChapterIds == null)) {
+            return LocalVaultImportResult.NothingSelected(plan)
+        }
         val progressTotal = selectedChapters.size.coerceAtLeast(1)
 
         val webDav = VaultWebDavClient(config, client)
@@ -282,6 +284,11 @@ class LocalVaultImportService internal constructor(
         repository.upsertTransferJob(
             job.copy(
                 state = state,
+                failureReason = if (state == VaultTransferState.FAILED) {
+                    failures.firstOrNull()?.category
+                } else {
+                    null
+                },
                 addedCount = added.toLong(),
                 replacedCount = replaced.toLong(),
                 failedCount = failures.size.toLong(),

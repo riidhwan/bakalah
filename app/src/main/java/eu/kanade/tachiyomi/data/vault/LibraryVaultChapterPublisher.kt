@@ -37,15 +37,32 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.UUID
 
+internal interface LibraryVaultChapterPublisherBoundary {
+    suspend fun publish(
+        webDav: LibraryVaultCaptureWebDav,
+        config: WebDavVaultConfig,
+        vaultIdentity: ContentVaultIdentity,
+        expectedVaultIdentity: String?,
+        source: HttpSource,
+        manga: Manga,
+        captureManga: LibraryVaultCaptureManga,
+        chapter: Chapter,
+        target: LibraryVaultActiveTarget,
+        stagingRoot: File,
+        allowReplacement: Boolean,
+        progressPhase: (VaultImportProgressPhase) -> Unit,
+    ): LibraryVaultChapterPublishResult
+}
+
 internal class LibraryVaultChapterPublisher(
     json: Json,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
     private val stager: LibraryVaultChapterStager,
-) {
+) : LibraryVaultChapterPublisherBoundary {
     private val codec = VaultManifestCodec(json)
 
-    suspend fun publish(
+    override suspend fun publish(
         webDav: LibraryVaultCaptureWebDav,
         config: WebDavVaultConfig,
         vaultIdentity: ContentVaultIdentity,

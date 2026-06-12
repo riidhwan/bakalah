@@ -17,17 +17,26 @@ import tachiyomi.source.local.LocalSource
 import tachiyomi.source.local.image.LocalCoverManager
 import tachiyomi.source.local.io.LocalSourceFileSystem
 
+internal interface LocalVaultMangaScannerBoundary {
+    fun localSourceName(): String?
+
+    suspend fun scan(
+        manga: Manga,
+        selectedChapterIds: Set<String>? = null,
+    ): LocalVaultMangaScan?
+}
+
 internal class LocalVaultMangaScanner(
     private val sourceManager: SourceManager,
     private val fileSystem: LocalSourceFileSystem,
     private val coverManager: LocalCoverManager,
     private val getChaptersByMangaId: GetChaptersByMangaId,
-) {
-    fun localSourceName(): String? = localSource()?.name
+) : LocalVaultMangaScannerBoundary {
+    override fun localSourceName(): String? = localSource()?.name
 
-    suspend fun scan(
+    override suspend fun scan(
         manga: Manga,
-        selectedChapterIds: Set<String>? = null,
+        selectedChapterIds: Set<String>?,
     ): LocalVaultMangaScan? = withContext(Dispatchers.IO) {
         if (selectedChapterIds != null) {
             return@withContext scanSelectedLocalManga(manga, selectedChapterIds)

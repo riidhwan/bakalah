@@ -13,11 +13,20 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 
+internal interface VaultWebDav {
+    suspend fun get(path: String): String?
+    suspend fun put(path: String, body: String): Boolean
+    suspend fun putFile(path: String, file: UniFile): Boolean
+    suspend fun createDirectory(path: String): Boolean
+    suspend fun delete(path: String): Boolean
+    suspend fun createParentDirectories(path: String)
+}
+
 internal class VaultWebDavClient(
     private val config: WebDavVaultConfig,
     private val client: OkHttpClient,
-) {
-    suspend fun get(path: String): String? = withContext(Dispatchers.IO) {
+) : VaultWebDav {
+    override suspend fun get(path: String): String? = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(config.serverUrl.resolveWebDavPath(path))
             .header("Authorization", Credentials.basic(config.username.trim(), config.password))
@@ -28,7 +37,7 @@ internal class VaultWebDavClient(
         }
     }
 
-    suspend fun put(path: String, body: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun put(path: String, body: String): Boolean = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(config.serverUrl.resolveWebDavPath(path))
             .header("Authorization", Credentials.basic(config.username.trim(), config.password))
@@ -37,7 +46,7 @@ internal class VaultWebDavClient(
         client.newCall(request).await().use { it.isSuccessful }
     }
 
-    suspend fun putFile(path: String, file: UniFile): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun putFile(path: String, file: UniFile): Boolean = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(config.serverUrl.resolveWebDavPath(path))
             .header("Authorization", Credentials.basic(config.username.trim(), config.password))
@@ -46,7 +55,7 @@ internal class VaultWebDavClient(
         client.newCall(request).await().use { it.isSuccessful }
     }
 
-    suspend fun createDirectory(path: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun createDirectory(path: String): Boolean = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(config.serverUrl.resolveWebDavPath(path, collection = true))
             .header("Authorization", Credentials.basic(config.username.trim(), config.password))
@@ -57,7 +66,7 @@ internal class VaultWebDavClient(
         }
     }
 
-    suspend fun delete(path: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun delete(path: String): Boolean = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(config.serverUrl.resolveWebDavPath(path))
             .header("Authorization", Credentials.basic(config.username.trim(), config.password))
@@ -68,7 +77,7 @@ internal class VaultWebDavClient(
         }
     }
 
-    suspend fun createParentDirectories(path: String) {
+    override suspend fun createParentDirectories(path: String) {
         path.substringBeforeLast('/', missingDelimiterValue = "")
             .split('/')
             .runningFold("") { parent, child -> if (parent.isBlank()) child else "$parent/$child" }
