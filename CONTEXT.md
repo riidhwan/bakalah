@@ -285,7 +285,7 @@ The catalogue order assigned to newly imported Vault Chapters from the full phys
 _Avoid_: Chapter name order, source order, random order
 
 **Local-to-Vault Import**:
-Vault Import that copies existing Local Manga content into the Content Vault without general cleanup or migration of the original Local Manga, except that selected directory chapters are converted into validated CBZ files in Local Manga storage before upload.
+Vault Import that copies existing Local Manga content into the Content Vault without general cleanup or migration of the original Local Manga, converting selected directory chapters into validated CBZ files in app-managed import staging before upload.
 _Avoid_: Local cleanup, migration, local sync
 
 **Library-to-Vault Capture**:
