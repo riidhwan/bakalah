@@ -34,7 +34,7 @@ class BuildLocalVaultImportPlanTest {
             existingChaptersByMangaId = emptyMap(),
             hint = ImportTargetHint(
                 localMangaId = 10,
-                localMangaIdentity = "local/one-piece",
+                localMangaIdentity = "local/One Piece",
                 vaultMangaId = hinted.id,
                 updatedAt = 1,
             ),
@@ -43,6 +43,31 @@ class BuildLocalVaultImportPlanTest {
         plan.target shouldBe LocalVaultImportTarget.Existing(
             manga = hinted,
             reason = LocalVaultImportTarget.Reason.IMPORT_TARGET_HINT,
+        )
+    }
+
+    @Test
+    fun `source identity mismatch makes import target hint stale and falls back to title matching`() {
+        val hinted = vaultManga(id = 2, title = "Different")
+        val titleMatch = vaultManga(id = 3, title = "One Piece")
+
+        val plan = builder.build(
+            localManga = localManga("One Piece"),
+            localChapters = emptyList(),
+            vaultManga = listOf(hinted, titleMatch),
+            existingChaptersByMangaId = emptyMap(),
+            hint = ImportTargetHint(
+                localMangaId = 10,
+                localMangaIdentity = "local/old",
+                sourceIdentity = "local/old",
+                vaultMangaId = hinted.id,
+                updatedAt = 1,
+            ),
+        )
+
+        plan.target shouldBe LocalVaultImportTarget.Existing(
+            manga = titleMatch,
+            reason = LocalVaultImportTarget.Reason.EXACT_TITLE_MATCH,
         )
     }
 

@@ -64,10 +64,16 @@ class LocalVaultImportJob(
                     )
                 ) {
                     is LocalVaultImportResult.Imported -> {
-                        notifier.showComplete(
-                            importedChapterCount = result.importedChapterCount,
+                        notifier.showCaptureComplete(
+                            addedChapterCount = result.addedChapterCount,
+                            replacedChapterCount = result.replacedChapterCount,
+                            failedChapterCount = result.failedChapterCount,
                         )
-                        Result.success()
+                        if (result.addedChapterCount + result.replacedChapterCount > 0) {
+                            Result.success()
+                        } else {
+                            Result.failure()
+                        }
                     }
                     else -> {
                         notifier.showError()

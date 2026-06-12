@@ -65,6 +65,7 @@ class BuildLocalVaultImportPlan {
         hint: ImportTargetHint?,
     ): LocalVaultImportTarget {
         hint
+            ?.takeIf { it.sourceIdentity == null || it.sourceIdentity == localManga.localMangaIdentity }
             ?.let { targetHint -> vaultManga.firstOrNull { it.id == targetHint.vaultMangaId } }
             ?.let { return LocalVaultImportTarget.Existing(it, LocalVaultImportTarget.Reason.IMPORT_TARGET_HINT) }
 
