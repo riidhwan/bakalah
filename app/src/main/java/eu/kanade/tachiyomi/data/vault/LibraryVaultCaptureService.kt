@@ -5,6 +5,9 @@ import com.hippo.unifile.UniFile
 import eu.kanade.domain.chapter.model.toSChapter
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadProvider
+import eu.kanade.tachiyomi.data.vault.importing.CbzEntry
+import eu.kanade.tachiyomi.data.vault.importing.resolveWebDavPath
+import eu.kanade.tachiyomi.data.vault.importing.writeStoredCbz
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.source.model.Page

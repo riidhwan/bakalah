@@ -24,6 +24,7 @@ import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshService
 import eu.kanade.tachiyomi.data.vault.VaultCoverPublishService
 import eu.kanade.tachiyomi.data.vault.VaultMangaDeletionService
 import eu.kanade.tachiyomi.data.vault.VaultMetadataPublishService
+import eu.kanade.tachiyomi.data.vault.importing.LocalVaultMangaScanner
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -142,8 +143,9 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { VaultMangaDeletionService(get(), get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultCoverPublishService(get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultMetadataPublishService(get(), get(), get(), get(), get()) }
+        addSingletonFactory { LocalVaultMangaScanner(get(), get(), get(), get()) }
         addSingletonFactory {
-            LocalVaultImportService(app, get(), get(), get(), get(), get(), get(), get(), get(), get())
+            LocalVaultImportService(app, get(), get(), get(), get(), get(), get())
         }
         addSingletonFactory {
             LibraryVaultCaptureService(app, get(), get(), get(), get(), get(), get(), get(), get(), get())
