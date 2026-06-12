@@ -2,28 +2,22 @@ package eu.kanade.tachiyomi.data.vault
 
 import android.app.Application
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.data.vault.importing.CbzEntry
+import eu.kanade.tachiyomi.data.vault.importing.LocalVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.importing.LocalVaultImportChapterFailure
 import eu.kanade.tachiyomi.data.vault.importing.LocalVaultMangaScanner
 import eu.kanade.tachiyomi.data.vault.importing.ScannedLocalVaultChapter
 import eu.kanade.tachiyomi.data.vault.importing.asRequestBody
 import eu.kanade.tachiyomi.data.vault.importing.childPath
-import eu.kanade.tachiyomi.data.vault.importing.collisionSafeCbzName
 import eu.kanade.tachiyomi.data.vault.importing.coverMediaType
 import eu.kanade.tachiyomi.data.vault.importing.deleteRecursively
 import eu.kanade.tachiyomi.data.vault.importing.digest
-import eu.kanade.tachiyomi.data.vault.importing.directoryChapterCbzBaseName
 import eu.kanade.tachiyomi.data.vault.importing.duplicateFileKey
 import eu.kanade.tachiyomi.data.vault.importing.listFilesRecursively
-import eu.kanade.tachiyomi.data.vault.importing.listReadablePageFilesRecursively
 import eu.kanade.tachiyomi.data.vault.importing.localImportFailureCategory
-import eu.kanade.tachiyomi.data.vault.importing.numberedCbzEntryName
 import eu.kanade.tachiyomi.data.vault.importing.orderVaultImportChapters
 import eu.kanade.tachiyomi.data.vault.importing.relativePathFrom
 import eu.kanade.tachiyomi.data.vault.importing.resolveWebDavPath
 import eu.kanade.tachiyomi.data.vault.importing.toDetailJson
-import eu.kanade.tachiyomi.data.vault.importing.validateCbz
-import eu.kanade.tachiyomi.data.vault.importing.writeStoredCbz
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import kotlinx.coroutines.CancellationException
@@ -38,7 +32,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.core.common.storage.extension
 import tachiyomi.core.common.storage.nameWithoutExtension
-import tachiyomi.core.common.util.system.ImageUtil
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.vault.interactor.BuildLocalVaultImportPlan
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
@@ -73,7 +66,6 @@ import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
 import java.io.File
-import java.util.Locale
 import java.util.UUID
 
 class LocalVaultImportService internal constructor(
@@ -84,6 +76,7 @@ class LocalVaultImportService internal constructor(
     private val preferences: ContentVaultPreferences,
     private val refreshService: VaultCatalogueRefreshService,
     private val scanner: LocalVaultMangaScanner,
+    private val chapterStager: LocalVaultChapterStager,
 ) {
     private val client = networkHelper.nonCloudflareClient
     private val codec = VaultManifestCodec(json)
@@ -394,7 +387,7 @@ class LocalVaultImportService internal constructor(
         }
 
         progressPhase(VaultImportProgressPhase.COMPRESSING)
-        val preparedChapter = localChapter.prepareForUpload(stagingRoot)
+        val preparedChapter = chapterStager.stageForUpload(localChapter, stagingRoot)
         val chapterIdentity = replacement?.identity ?: UUID.randomUUID().toString()
         val contentIdentity = if (replacement == null) chapterIdentity else UUID.randomUUID().toString()
         var contentPath: String? = null
@@ -564,68 +557,6 @@ class LocalVaultImportService internal constructor(
 
     private suspend fun existingChaptersByMangaId(vaultId: Long): Map<Long, List<VaultChapter>> {
         return repository.getChaptersForVault(vaultId).groupBy { it.mangaId }
-    }
-
-    private fun ScannedLocalVaultChapter.prepareForUpload(stagingRoot: File): ScannedLocalVaultChapter {
-        return if (file.isDirectory) stageDirectoryAsCbz(stagingRoot) else this
-    }
-
-    private fun ScannedLocalVaultChapter.stageDirectoryAsCbz(stagingRoot: File): ScannedLocalVaultChapter {
-        val pageRoot = File(stagingRoot, "pages").apply { mkdirs() }
-        val pageRootFile = UniFile.fromFile(pageRoot) ?: error("staging")
-        val archive = UniFile.fromFile(File(stagingRoot, "${UUID.randomUUID()}.cbz")) ?: error("staging")
-        val pages = file.listReadablePageFilesRecursively()
-        require(pages.isNotEmpty()) { "empty_pages" }
-
-        val digitCount = pages.size.toString().length.coerceAtLeast(3)
-        pages.forEachIndexed { index, page ->
-            val filename = "%0${digitCount}d".format(Locale.ENGLISH, index + 1)
-            val extension = ImageUtil.findImageType { page.openInputStream() }?.extension
-                ?: page.extension?.lowercase()
-                ?: "jpg"
-            val target = pageRootFile.createFile("$filename.$extension") ?: error("staging")
-            page.openInputStream().use { input ->
-                target.openOutputStream().use { output -> input.copyTo(output) }
-            }
-            splitStagedImage(pageRootFile, filename)
-        }
-
-        val entries = pageRootFile.listFiles().orEmpty()
-            .filter { !it.isDirectory && ImageUtil.isImage(it.name) { it.openInputStream() } }
-            .sortedBy { it.name.orEmpty() }
-            .mapIndexed { index, page ->
-                CbzEntry(
-                    name = numberedCbzEntryName(index = index + 1, extension = page.extension),
-                    openInputStream = { page.openInputStream() },
-                )
-            }
-        require(entries.isNotEmpty()) { "empty_pages" }
-        archive.openOutputStream().use { output ->
-            writeStoredCbz(output, entries)
-        }
-        validateCbz(archive, entries.map { it.name })
-        val digest = archive.digest()
-        val archiveName = collisionSafeCbzName(
-            baseName = directoryChapterCbzBaseName(file.name),
-            existingNames = emptySet(),
-        )
-        return copy(
-            file = archive,
-            chapter = chapter.copy(
-                sourceFileName = archiveName,
-                contentFormat = VaultChapterContentFormat.CBZ,
-                sizeBytes = digest.sizeBytes,
-                checksumSha256 = digest.sha256,
-                requiresLocalCbzConversion = false,
-            ),
-        )
-    }
-
-    private fun splitStagedImage(chapterUniFile: UniFile, filename: String) {
-        val imageFile = chapterUniFile.listFiles().orEmpty()
-            .firstOrNull { it.name.orEmpty().startsWith(filename) }
-            ?: error("staging")
-        ImageUtil.splitTallImage(chapterUniFile, imageFile, filename)
     }
 
     private fun resolveTarget(
