@@ -1,11 +1,9 @@
 package eu.kanade.tachiyomi.data.vault
 
 import android.app.Application
-import eu.kanade.tachiyomi.data.vault.importing.LocalVaultImportChapterFailure
 import eu.kanade.tachiyomi.data.vault.importing.LocalVaultMangaScannerBoundary
 import eu.kanade.tachiyomi.data.vault.importing.deleteRecursively
 import eu.kanade.tachiyomi.data.vault.importing.localImportFailureCategory
-import eu.kanade.tachiyomi.data.vault.importing.toDetailJson
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
@@ -146,7 +144,7 @@ class LocalVaultImportService internal constructor(
         var added = 0
         var replaced = 0
         val failures = (selectedIds - selectedChapters.map { it.chapter.selectionId }.toSet())
-            .map { LocalVaultImportChapterFailure(it, "missing_chapter") }
+            .map { AddToVaultChapterFailure(it, "missing_chapter") }
             .toMutableList()
         val stagingRoot = importStagingRoot().apply {
             deleteRecursively()
@@ -192,7 +190,7 @@ class LocalVaultImportService internal constructor(
                     if (error is CancellationException) throw error
                     if (error is LocalImportGlobalFailure) throw error
                     failures +=
-                        LocalVaultImportChapterFailure(localChapter.chapter.title, error.localImportFailureCategory())
+                        AddToVaultChapterFailure(localChapter.chapter.title, error.localImportFailureCategory())
                     return@forEachIndexed
                 }
                 updatePhase(VaultImportProgressPhase.REFRESHING, indeterminate = true)
@@ -226,38 +224,28 @@ class LocalVaultImportService internal constructor(
                 )
             }
         } catch (e: CancellationException) {
-            val cancelled = selectedChapters.size - added - replaced - failures.size
             repository.upsertTransferJob(
-                job.copy(
-                    state = VaultTransferState.CANCELLED,
-                    addedCount = added.toLong(),
-                    replacedCount = replaced.toLong(),
-                    failedCount = failures.size.toLong(),
-                    cancelledCount = cancelled.toLong(),
-                    detailJson = failures.toDetailJson(),
-                    updatedAt = System.currentTimeMillis(),
+                AddToVaultTransferFinalizer.cancel(
+                    job = job,
+                    selectedCount = selectedChapters.size,
+                    added = added,
+                    replaced = replaced,
+                    failures = failures,
                     completedAt = System.currentTimeMillis(),
                 ),
             )
             throw e
         } catch (e: LocalImportGlobalFailure) {
-            val cancelled = selectedChapters.size - added - replaced - failures.size - 1
-            failures += LocalVaultImportChapterFailure(e.chapterTitle ?: scan.manga.title, e.category)
             val completedAt = System.currentTimeMillis()
+            val globalFailure = AddToVaultChapterFailure(e.chapterTitle ?: scan.manga.title, e.category)
             repository.upsertTransferJob(
-                job.copy(
-                    state = if (added + replaced > 0) {
-                        VaultTransferState.PARTIALLY_SUCCEEDED
-                    } else {
-                        VaultTransferState.FAILED
-                    },
-                    failureReason = e.category,
-                    addedCount = added.toLong(),
-                    replacedCount = replaced.toLong(),
-                    failedCount = failures.size.toLong(),
-                    cancelledCount = cancelled.coerceAtLeast(0).toLong(),
-                    detailJson = failures.toDetailJson(),
-                    updatedAt = completedAt,
+                AddToVaultTransferFinalizer.stopAfterGlobalFailure(
+                    job = job,
+                    selectedCount = selectedChapters.size,
+                    added = added,
+                    replaced = replaced,
+                    failures = failures,
+                    globalFailure = globalFailure,
                     completedAt = completedAt,
                 ),
             )
@@ -266,7 +254,7 @@ class LocalVaultImportService internal constructor(
                     mangaIdentity = activeTarget.mangaIdentity?.let(::VaultIdentity) ?: VaultIdentity(""),
                     addedChapterCount = added,
                     replacedChapterCount = replaced,
-                    failedChapterCount = failures.size,
+                    failedChapterCount = failures.size + 1,
                 )
             } else {
                 LocalVaultImportResult.UploadFailed
@@ -276,24 +264,12 @@ class LocalVaultImportService internal constructor(
         }
 
         val completedAt = System.currentTimeMillis()
-        val state = when {
-            added + replaced == 0 -> VaultTransferState.FAILED
-            failures.isNotEmpty() -> VaultTransferState.PARTIALLY_SUCCEEDED
-            else -> VaultTransferState.SUCCEEDED
-        }
         repository.upsertTransferJob(
-            job.copy(
-                state = state,
-                failureReason = if (state == VaultTransferState.FAILED) {
-                    failures.firstOrNull()?.category
-                } else {
-                    null
-                },
-                addedCount = added.toLong(),
-                replacedCount = replaced.toLong(),
-                failedCount = failures.size.toLong(),
-                detailJson = failures.toDetailJson(),
-                updatedAt = completedAt,
+            AddToVaultTransferFinalizer.complete(
+                job = job,
+                added = added,
+                replaced = replaced,
+                failures = failures,
                 completedAt = completedAt,
             ),
         )
