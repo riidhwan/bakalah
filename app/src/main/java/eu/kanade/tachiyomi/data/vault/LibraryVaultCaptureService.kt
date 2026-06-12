@@ -45,6 +45,7 @@ internal class LibraryVaultCaptureService(
     private val chapterPublisher: LibraryVaultChapterPublisherBoundary,
 ) {
     private val planner = BuildLibraryVaultCapturePlan()
+    private val indexRefresher = AddToVaultIndexRefresher(repository, refreshService)
 
     suspend fun capture(
         manga: Manga,
@@ -155,8 +156,7 @@ internal class LibraryVaultCaptureService(
                     return@forEachIndexed
                 }
                 updatePhase(VaultImportProgressPhase.REFRESHING)
-                refreshLocalIndex(vault.identity, published.mangaIdentity.value)
-                    .takeIf { it != -1L }
+                indexRefresher.refreshPublishedMangaId(vault.identity, published.mangaIdentity.value)
                     ?.let { vaultMangaId ->
                         repository.upsertImportTargetHint(
                             ImportTargetHint(
@@ -249,15 +249,6 @@ internal class LibraryVaultCaptureService(
         preferences.configuredVaultIdentity.get()
             .takeIf { it.isNotBlank() }
             ?.let { repository.getVaultByIdentity(ContentVaultIdentity(it)) }
-
-    private suspend fun refreshLocalIndex(vaultIdentity: ContentVaultIdentity, mangaIdentity: String): Long {
-        refreshService.refreshConfiguredVault()
-        return repository.getVaultByIdentity(vaultIdentity)
-            ?.let { repository.getManga(it.id) }
-            ?.firstOrNull { it.identity.value == mangaIdentity }
-            ?.id
-            ?: -1
-    }
 
     private fun resolveTarget(
         target: LibraryVaultCaptureTarget,
