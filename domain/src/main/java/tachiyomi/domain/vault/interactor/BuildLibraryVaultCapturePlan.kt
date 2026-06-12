@@ -12,6 +12,7 @@ import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMetadata
 
 class BuildLibraryVaultCapturePlan {
+    private val sharedPlanner = BuildAddToVaultPlan()
 
     fun build(
         libraryManga: LibraryVaultCaptureManga,
@@ -20,17 +21,15 @@ class BuildLibraryVaultCapturePlan {
         existingChaptersByMangaId: Map<Long, List<VaultChapter>>,
         hint: ImportTargetHint?,
     ): LibraryVaultCapturePlan {
-        val target = resolveTarget(libraryManga, vaultManga, hint)
-        val existingChapters = when (target) {
-            is LibraryVaultCaptureTarget.Existing -> existingChaptersByMangaId[target.manga.id].orEmpty()
-            LibraryVaultCaptureTarget.CreateNew,
-            is LibraryVaultCaptureTarget.Choose,
-            -> emptyList()
-        }
-        return LibraryVaultCapturePlan(
-            target = target,
-            chapters = buildChapterPlans(libraryChapters, existingChapters),
-        )
+        return sharedPlanner.build(
+            sourceTitle = libraryManga.title,
+            sourceIdentity = libraryManga.sourceIdentity,
+            chapters = libraryChapters,
+            vaultManga = vaultManga,
+            existingChaptersByMangaId = existingChaptersByMangaId,
+            hint = hint,
+            isDuplicate = { chapter, existingChapters -> chapter.isDuplicateOf(existingChapters) },
+        ).toLibraryVaultCapturePlan()
     }
 
     fun buildForTarget(
@@ -38,54 +37,72 @@ class BuildLibraryVaultCapturePlan {
         libraryChapters: List<LibraryVaultCaptureChapter>,
         existingChapters: List<VaultChapter>,
     ): LibraryVaultCapturePlan {
+        return sharedPlanner.buildForTarget(
+            target = target.toAddToVaultTarget(),
+            chapters = libraryChapters,
+            existingChapters = existingChapters,
+            isDuplicate = { chapter, targetChapters -> chapter.isDuplicateOf(targetChapters) },
+        ).toLibraryVaultCapturePlan()
+    }
+
+    private fun AddToVaultPlan<LibraryVaultCaptureChapter>.toLibraryVaultCapturePlan(): LibraryVaultCapturePlan {
         return LibraryVaultCapturePlan(
-            target = target,
-            chapters = buildChapterPlans(libraryChapters, existingChapters),
+            target = target.toLibraryVaultCaptureTarget(),
+            chapters = chapters.map { chapterPlan ->
+                LibraryVaultCaptureChapterPlan(
+                    chapter = chapterPlan.chapter,
+                    duplicateState = if (chapterPlan.duplicate) {
+                        LibraryVaultCaptureDuplicateState.POSSIBLE
+                    } else {
+                        LibraryVaultCaptureDuplicateState.NONE
+                    },
+                    selectedByDefault = chapterPlan.selectedByDefault,
+                )
+            },
         )
     }
 
-    private fun buildChapterPlans(
-        libraryChapters: List<LibraryVaultCaptureChapter>,
-        existingChapters: List<VaultChapter>,
-    ): List<LibraryVaultCaptureChapterPlan> {
-        val existingTitleKeys = existingChapters
-            .map { it.title.duplicateTitleKey() }
-            .filter { it.isNotBlank() }
-            .toSet()
-        return libraryChapters.map { chapter ->
-            val duplicateState = if (chapter.title.duplicateTitleKey() in existingTitleKeys) {
-                LibraryVaultCaptureDuplicateState.POSSIBLE
-            } else {
-                LibraryVaultCaptureDuplicateState.NONE
-            }
-            LibraryVaultCaptureChapterPlan(
-                chapter = chapter,
-                duplicateState = duplicateState,
-                selectedByDefault = duplicateState == LibraryVaultCaptureDuplicateState.NONE,
+    private fun AddToVaultTarget.toLibraryVaultCaptureTarget(): LibraryVaultCaptureTarget {
+        return when (this) {
+            is AddToVaultTarget.Existing -> LibraryVaultCaptureTarget.Existing(
+                manga = manga,
+                reason = reason.toLibraryVaultCaptureReason(),
             )
+            AddToVaultTarget.CreateNew -> LibraryVaultCaptureTarget.CreateNew
+            is AddToVaultTarget.Choose -> LibraryVaultCaptureTarget.Choose(candidates)
         }
     }
 
-    private fun resolveTarget(
-        libraryManga: LibraryVaultCaptureManga,
-        vaultManga: List<VaultManga>,
-        hint: ImportTargetHint?,
-    ): LibraryVaultCaptureTarget {
-        hint
-            ?.takeIf { it.sourceIdentity == null || it.sourceIdentity == libraryManga.sourceIdentity }
-            ?.let { targetHint -> vaultManga.firstOrNull { it.id == targetHint.vaultMangaId } }
-            ?.let { return LibraryVaultCaptureTarget.Existing(it, LibraryVaultCaptureTarget.Reason.IMPORT_TARGET_HINT) }
-
-        val normalizedTitle = VaultMetadata.normalizeTitle(libraryManga.title)
-        val matches = vaultManga.filter { it.metadata.normalizedTitle == normalizedTitle }
-        return when (matches.size) {
-            0 -> LibraryVaultCaptureTarget.CreateNew
-            1 -> LibraryVaultCaptureTarget.Existing(
-                matches.single(),
-                LibraryVaultCaptureTarget.Reason.EXACT_TITLE_MATCH,
+    private fun LibraryVaultCaptureTarget.toAddToVaultTarget(): AddToVaultTarget {
+        return when (this) {
+            is LibraryVaultCaptureTarget.Existing -> AddToVaultTarget.Existing(
+                manga = manga,
+                reason = reason.toAddToVaultReason(),
             )
-            else -> LibraryVaultCaptureTarget.Choose(matches)
+            LibraryVaultCaptureTarget.CreateNew -> AddToVaultTarget.CreateNew
+            is LibraryVaultCaptureTarget.Choose -> AddToVaultTarget.Choose(candidates)
         }
+    }
+
+    private fun AddToVaultTarget.Reason.toLibraryVaultCaptureReason(): LibraryVaultCaptureTarget.Reason {
+        return when (this) {
+            AddToVaultTarget.Reason.IMPORT_TARGET_HINT -> LibraryVaultCaptureTarget.Reason.IMPORT_TARGET_HINT
+            AddToVaultTarget.Reason.EXACT_TITLE_MATCH -> LibraryVaultCaptureTarget.Reason.EXACT_TITLE_MATCH
+            AddToVaultTarget.Reason.USER_SELECTED -> LibraryVaultCaptureTarget.Reason.USER_SELECTED
+        }
+    }
+
+    private fun LibraryVaultCaptureTarget.Reason.toAddToVaultReason(): AddToVaultTarget.Reason {
+        return when (this) {
+            LibraryVaultCaptureTarget.Reason.IMPORT_TARGET_HINT -> AddToVaultTarget.Reason.IMPORT_TARGET_HINT
+            LibraryVaultCaptureTarget.Reason.EXACT_TITLE_MATCH -> AddToVaultTarget.Reason.EXACT_TITLE_MATCH
+            LibraryVaultCaptureTarget.Reason.USER_SELECTED -> AddToVaultTarget.Reason.USER_SELECTED
+        }
+    }
+
+    private fun LibraryVaultCaptureChapter.isDuplicateOf(existingChapters: List<VaultChapter>): Boolean {
+        val titleKey = title.duplicateTitleKey()
+        return titleKey.isNotBlank() && existingChapters.any { it.title.duplicateTitleKey() == titleKey }
     }
 }
 

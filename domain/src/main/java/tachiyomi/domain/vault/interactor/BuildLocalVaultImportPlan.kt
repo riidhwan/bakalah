@@ -9,9 +9,9 @@ import tachiyomi.domain.vault.model.LocalVaultImportPlan
 import tachiyomi.domain.vault.model.LocalVaultImportTarget
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultManga
-import tachiyomi.domain.vault.model.VaultMetadata
 
 class BuildLocalVaultImportPlan {
+    private val sharedPlanner = BuildAddToVaultPlan()
 
     fun build(
         localManga: LocalVaultImportManga,
@@ -20,18 +20,15 @@ class BuildLocalVaultImportPlan {
         existingChaptersByMangaId: Map<Long, List<VaultChapter>>,
         hint: ImportTargetHint?,
     ): LocalVaultImportPlan {
-        val target = resolveTarget(localManga, vaultManga, hint)
-        val existingChapters = when (target) {
-            is LocalVaultImportTarget.Existing -> existingChaptersByMangaId[target.manga.id].orEmpty()
-            LocalVaultImportTarget.CreateNew,
-            is LocalVaultImportTarget.Choose,
-            -> emptyList()
-        }
-
-        return LocalVaultImportPlan(
-            target = target,
-            chapters = buildChapterPlans(localChapters, existingChapters),
-        )
+        return sharedPlanner.build(
+            sourceTitle = localManga.title,
+            sourceIdentity = localManga.localMangaIdentity,
+            chapters = localChapters,
+            vaultManga = vaultManga,
+            existingChaptersByMangaId = existingChaptersByMangaId,
+            hint = hint,
+            isDuplicate = { chapter, existingChapters -> chapter.isDuplicateOf(existingChapters) },
+        ).toLocalVaultImportPlan()
     }
 
     fun buildForTarget(
@@ -39,56 +36,75 @@ class BuildLocalVaultImportPlan {
         localChapters: List<LocalVaultImportChapter>,
         existingChapters: List<VaultChapter>,
     ): LocalVaultImportPlan {
+        return sharedPlanner.buildForTarget(
+            target = target.toAddToVaultTarget(),
+            chapters = localChapters,
+            existingChapters = existingChapters,
+            isDuplicate = { chapter, targetChapters -> chapter.isDuplicateOf(targetChapters) },
+        ).toLocalVaultImportPlan()
+    }
+
+    private fun AddToVaultPlan<LocalVaultImportChapter>.toLocalVaultImportPlan(): LocalVaultImportPlan {
         return LocalVaultImportPlan(
-            target = target,
-            chapters = buildChapterPlans(localChapters, existingChapters),
+            target = target.toLocalVaultImportTarget(),
+            chapters = chapters.map { chapterPlan ->
+                LocalVaultImportChapterPlan(
+                    chapter = chapterPlan.chapter,
+                    duplicateState = if (chapterPlan.duplicate) {
+                        LocalVaultImportDuplicateState.POSSIBLE
+                    } else {
+                        LocalVaultImportDuplicateState.NONE
+                    },
+                    selectedByDefault = chapterPlan.selectedByDefault,
+                )
+            },
         )
     }
 
-    private fun buildChapterPlans(
-        localChapters: List<LocalVaultImportChapter>,
-        existingChapters: List<VaultChapter>,
-    ): List<LocalVaultImportChapterPlan> {
-        return localChapters.map { chapter ->
-            val duplicateState = chapter.duplicateState(existingChapters)
-            LocalVaultImportChapterPlan(
-                chapter = chapter,
-                duplicateState = duplicateState,
-                selectedByDefault = duplicateState == LocalVaultImportDuplicateState.NONE,
+    private fun AddToVaultTarget.toLocalVaultImportTarget(): LocalVaultImportTarget {
+        return when (this) {
+            is AddToVaultTarget.Existing -> LocalVaultImportTarget.Existing(
+                manga = manga,
+                reason = reason.toLocalVaultImportReason(),
             )
+            AddToVaultTarget.CreateNew -> LocalVaultImportTarget.CreateNew
+            is AddToVaultTarget.Choose -> LocalVaultImportTarget.Choose(candidates)
         }
     }
 
-    private fun resolveTarget(
-        localManga: LocalVaultImportManga,
-        vaultManga: List<VaultManga>,
-        hint: ImportTargetHint?,
-    ): LocalVaultImportTarget {
-        hint
-            ?.takeIf { it.sourceIdentity == null || it.sourceIdentity == localManga.localMangaIdentity }
-            ?.let { targetHint -> vaultManga.firstOrNull { it.id == targetHint.vaultMangaId } }
-            ?.let { return LocalVaultImportTarget.Existing(it, LocalVaultImportTarget.Reason.IMPORT_TARGET_HINT) }
-
-        val normalizedTitle = VaultMetadata.normalizeTitle(localManga.title)
-        val matches = vaultManga.filter { it.metadata.normalizedTitle == normalizedTitle }
-        return when (matches.size) {
-            0 -> LocalVaultImportTarget.CreateNew
-            1 -> LocalVaultImportTarget.Existing(matches.single(), LocalVaultImportTarget.Reason.EXACT_TITLE_MATCH)
-            else -> LocalVaultImportTarget.Choose(matches)
+    private fun LocalVaultImportTarget.toAddToVaultTarget(): AddToVaultTarget {
+        return when (this) {
+            is LocalVaultImportTarget.Existing -> AddToVaultTarget.Existing(
+                manga = manga,
+                reason = reason.toAddToVaultReason(),
+            )
+            LocalVaultImportTarget.CreateNew -> AddToVaultTarget.CreateNew
+            is LocalVaultImportTarget.Choose -> AddToVaultTarget.Choose(candidates)
         }
     }
 
-    private fun LocalVaultImportChapter.duplicateState(
+    private fun AddToVaultTarget.Reason.toLocalVaultImportReason(): LocalVaultImportTarget.Reason {
+        return when (this) {
+            AddToVaultTarget.Reason.IMPORT_TARGET_HINT -> LocalVaultImportTarget.Reason.IMPORT_TARGET_HINT
+            AddToVaultTarget.Reason.EXACT_TITLE_MATCH -> LocalVaultImportTarget.Reason.EXACT_TITLE_MATCH
+            AddToVaultTarget.Reason.USER_SELECTED -> LocalVaultImportTarget.Reason.USER_SELECTED
+        }
+    }
+
+    private fun LocalVaultImportTarget.Reason.toAddToVaultReason(): AddToVaultTarget.Reason {
+        return when (this) {
+            LocalVaultImportTarget.Reason.IMPORT_TARGET_HINT -> AddToVaultTarget.Reason.IMPORT_TARGET_HINT
+            LocalVaultImportTarget.Reason.EXACT_TITLE_MATCH -> AddToVaultTarget.Reason.EXACT_TITLE_MATCH
+            LocalVaultImportTarget.Reason.USER_SELECTED -> AddToVaultTarget.Reason.USER_SELECTED
+        }
+    }
+
+    private fun LocalVaultImportChapter.isDuplicateOf(
         existingChapters: List<VaultChapter>,
-    ): LocalVaultImportDuplicateState {
+    ): Boolean {
         val localFileKey = sourceFileName.duplicateFileKey()
-        val possibleDuplicate = localFileKey.isNotBlank() &&
+        return localFileKey.isNotBlank() &&
             existingChapters.any { it.content.path.substringAfterLast('/').duplicateFileKey() == localFileKey }
-        return if (possibleDuplicate) {
-            LocalVaultImportDuplicateState.POSSIBLE
-        } else {
-            LocalVaultImportDuplicateState.NONE
-        }
     }
 
     private fun String.duplicateFileKey(): String {
