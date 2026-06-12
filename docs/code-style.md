@@ -69,6 +69,27 @@ Antipatterns:
 - Placing reusable business logic inside a composable because that was the nearest call site.
 - Creating cross-module dependencies for one helper function instead of moving the helper to an appropriate shared module.
 
+## Workflow Service Boundaries
+
+App services may orchestrate a long-running workflow, but they should not become catch-all owners for every helper needed by that workflow. Treat file length and long methods as review signals, not as the root problem: the root problem is usually mixed responsibility.
+
+For services that coordinate imports, publishing, transfers, refreshes, backups, restore, downloads, or other multi-step runtime work:
+
+- Keep the public service focused on workflow sequencing, progress, cancellation, and result mapping.
+- Extract stable sub-responsibilities into focused collaborators or pure helper files when they can be named independently, tested independently, or reused by another workflow.
+- Keep source scanning, staging, archive construction, manifest mutation, transport path building, rollback, ordering policy, and result-detail encoding separate when more than one of those responsibilities appears in the same service.
+- Prefer behavior-preserving extraction before redesigning shared workflow semantics.
+- Add tests around extracted pure policies and boundary collaborators before sharing them across workflows.
+
+Antipatterns:
+
+- Large app services where most private functions are unrelated helper domains.
+- Numeric file-size fixes that split code without improving ownership.
+- Shared helpers that hide workflow-specific policy behind broad names like `Manager`, `Handler`, or `Processor`.
+- Adding custom lint for known debt before the documented target shape is represented in code.
+
+When custom enforcement is added, prefer warning thresholds before CI failures. A future quality check may warn on large Kotlin files or functions as prompts to inspect responsibility boundaries, with reasoned suppressions for generated tables, sealed result definitions, DSL/config files, or deliberately centralized Android integration points.
+
 ## Compose and UI Style
 
 Compose code should make state flow clear.
