@@ -18,7 +18,11 @@ import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.vault.ActiveVaultReaderSessions
 import eu.kanade.tachiyomi.data.vault.ContentVaultSetupService
+import eu.kanade.tachiyomi.data.vault.DefaultLibraryVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.LibraryVaultCaptureService
+import eu.kanade.tachiyomi.data.vault.LibraryVaultCaptureWebDavFactory
+import eu.kanade.tachiyomi.data.vault.LibraryVaultChapterPublisher
+import eu.kanade.tachiyomi.data.vault.LibraryVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.LocalVaultChapterPublisher
 import eu.kanade.tachiyomi.data.vault.LocalVaultImportService
 import eu.kanade.tachiyomi.data.vault.VaultCatalogueRefreshService
@@ -148,11 +152,14 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { LocalVaultMangaScanner(get(), get(), get(), get()) }
         addSingletonFactory { LocalVaultChapterStager() }
         addSingletonFactory { LocalVaultChapterPublisher(get(), get(), get(), get()) }
+        addSingletonFactory { LibraryVaultCaptureWebDavFactory(get()) }
+        addSingletonFactory<LibraryVaultChapterStager> { DefaultLibraryVaultChapterStager(app, get(), get()) }
+        addSingletonFactory { LibraryVaultChapterPublisher(get(), get(), get(), get()) }
         addSingletonFactory {
             LocalVaultImportService(app, get(), get(), get(), get(), get(), get())
         }
         addSingletonFactory {
-            LibraryVaultCaptureService(app, get(), get(), get(), get(), get(), get(), get(), get(), get())
+            LibraryVaultCaptureService(app, get(), get(), get(), get(), get(), get(), get())
         }
         addSingletonFactory { JavaScriptEngine(app) }
 
