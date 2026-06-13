@@ -52,13 +52,13 @@ object SettingsDownloadScreen : SearchableSettings {
             ),
             Preference.PreferenceItem.SliderPreference(
                 value = parallelSourceLimit,
-                valueRange = 1..10,
+                valueRange = MIN_PARALLEL_DOWNLOADS..MAX_PARALLEL_SOURCES,
                 title = stringResource(MR.strings.pref_download_concurrent_sources),
                 onValueChanged = { downloadPreferences.parallelSourceLimit.set(it) },
             ),
             Preference.PreferenceItem.SliderPreference(
                 value = parallelPageLimit,
-                valueRange = 1..15,
+                valueRange = MIN_PARALLEL_DOWNLOADS..MAX_PARALLEL_PAGES,
                 title = stringResource(MR.strings.pref_download_concurrent_pages),
                 subtitle = stringResource(MR.strings.pref_download_concurrent_pages_summary),
                 onValueChanged = { downloadPreferences.parallelPageLimit.set(it) },
@@ -94,8 +94,8 @@ object SettingsDownloadScreen : SearchableSettings {
                         0 to stringResource(MR.strings.last_read_chapter),
                         1 to stringResource(MR.strings.second_to_last),
                         2 to stringResource(MR.strings.third_to_last),
-                        3 to stringResource(MR.strings.fourth_to_last),
-                        4 to stringResource(MR.strings.fifth_to_last),
+                        FOURTH_TO_LAST_READ_SLOT to stringResource(MR.strings.fourth_to_last),
+                        FIFTH_TO_LAST_READ_SLOT to stringResource(MR.strings.fifth_to_last),
                     ),
                     title = stringResource(MR.strings.pref_remove_after_read),
                 ),
@@ -191,7 +191,13 @@ object SettingsDownloadScreen : SearchableSettings {
             preferenceItems = listOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = downloadPreferences.autoDownloadWhileReading,
-                    entries = listOf(0, 2, 3, 5, 10)
+                    entries = listOf(
+                        DISABLED_DOWNLOAD_AHEAD,
+                        TWO_CHAPTERS_AHEAD,
+                        THREE_CHAPTERS_AHEAD,
+                        FIVE_CHAPTERS_AHEAD,
+                        TEN_CHAPTERS_AHEAD,
+                    )
                         .associateWith {
                             if (it == 0) {
                                 stringResource(MR.strings.disabled)
@@ -206,3 +212,16 @@ object SettingsDownloadScreen : SearchableSettings {
         )
     }
 }
+
+private const val MIN_PARALLEL_DOWNLOADS = 1
+private const val MAX_PARALLEL_SOURCES = 10
+private const val MAX_PARALLEL_PAGES = 15
+
+private const val FOURTH_TO_LAST_READ_SLOT = 3
+private const val FIFTH_TO_LAST_READ_SLOT = 4
+
+private const val DISABLED_DOWNLOAD_AHEAD = 0
+private const val TWO_CHAPTERS_AHEAD = 2
+private const val THREE_CHAPTERS_AHEAD = 3
+private const val FIVE_CHAPTERS_AHEAD = 5
+private const val TEN_CHAPTERS_AHEAD = 10

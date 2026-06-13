@@ -475,13 +475,6 @@
     <ID>MagicNumber:App.kt$App$3</ID>
     <ID>MagicNumber:App.kt$App$300</ID>
     <ID>MagicNumber:App.kt$App$8</ID>
-    <ID>MagicNumber:AppThemePreferenceWidget.kt$0.3f</ID>
-    <ID>MagicNumber:AppThemePreferenceWidget.kt$0.5f</ID>
-    <ID>MagicNumber:AppThemePreferenceWidget.kt$0.6f</ID>
-    <ID>MagicNumber:AppThemePreferenceWidget.kt$0.7f</ID>
-    <ID>MagicNumber:AppThemePreferenceWidget.kt$0.8f</ID>
-    <ID>MagicNumber:AppThemePreferenceWidget.kt$16f</ID>
-    <ID>MagicNumber:AppThemePreferenceWidget.kt$9f</ID>
     <ID>MagicNumber:AppUpdateDownloadJob.kt$AppUpdateDownloadJob.&lt;no name provided&gt;$100</ID>
     <ID>MagicNumber:AppUpdateDownloadJob.kt$AppUpdateDownloadJob.&lt;no name provided&gt;$200</ID>
     <ID>MagicNumber:AppUpdateNotifier.kt$AppUpdateNotifier$100</ID>
@@ -695,11 +688,6 @@
     <ID>MagicNumber:MALOAuth.kt$MALOAuth$60</ID>
     <ID>MagicNumber:MainActivity.kt$MainActivity$0.8f</ID>
     <ID>MagicNumber:MainActivity.kt$MainActivity$6</ID>
-    <ID>MagicNumber:MangaBottomActionMenu.kt$3</ID>
-    <ID>MagicNumber:MangaBottomActionMenu.kt$4</ID>
-    <ID>MagicNumber:MangaBottomActionMenu.kt$5</ID>
-    <ID>MagicNumber:MangaBottomActionMenu.kt$6</ID>
-    <ID>MagicNumber:MangaBottomActionMenu.kt$7</ID>
     <ID>MagicNumber:MangaCover.kt$0x1F888888</ID>
     <ID>MagicNumber:MangaCover.kt$MangaCover.Book$3f</ID>
     <ID>MagicNumber:MangaInfoHeader.kt$0.2f</ID>
@@ -798,27 +786,6 @@
     <ID>MagicNumber:Scrollbar.kt$50</ID>
     <ID>MagicNumber:SearchScreenModel.kt$SearchScreenModel$5</ID>
     <ID>MagicNumber:SecureActivityDelegate.kt$SecureActivityDelegate.Companion$60_000</ID>
-    <ID>MagicNumber:SettingsDataScreen.kt$SettingsDataScreen$1024L</ID>
-    <ID>MagicNumber:SettingsDataScreen.kt$SettingsDataScreen$10L</ID>
-    <ID>MagicNumber:SettingsDataScreen.kt$SettingsDataScreen$12</ID>
-    <ID>MagicNumber:SettingsDataScreen.kt$SettingsDataScreen$168</ID>
-    <ID>MagicNumber:SettingsDataScreen.kt$SettingsDataScreen$24</ID>
-    <ID>MagicNumber:SettingsDataScreen.kt$SettingsDataScreen$401</ID>
-    <ID>MagicNumber:SettingsDataScreen.kt$SettingsDataScreen$48</ID>
-    <ID>MagicNumber:SettingsDataScreen.kt$SettingsDataScreen$512L</ID>
-    <ID>MagicNumber:SettingsDataScreen.kt$SettingsDataScreen$5L</ID>
-    <ID>MagicNumber:SettingsDataScreen.kt$SettingsDataScreen$6</ID>
-    <ID>MagicNumber:SettingsDownloadScreen.kt$SettingsDownloadScreen$10</ID>
-    <ID>MagicNumber:SettingsDownloadScreen.kt$SettingsDownloadScreen$3</ID>
-    <ID>MagicNumber:SettingsDownloadScreen.kt$SettingsDownloadScreen$4</ID>
-    <ID>MagicNumber:SettingsDownloadScreen.kt$SettingsDownloadScreen$5</ID>
-    <ID>MagicNumber:SettingsMainScreen.kt$SettingsMainScreen$0.02f</ID>
-    <ID>MagicNumber:SettingsMainScreen.kt$SettingsMainScreen$0.05f</ID>
-    <ID>MagicNumber:SettingsMainScreen.kt$SettingsMainScreen$3</ID>
-    <ID>MagicNumber:SettingsReaderScreen.kt$SettingsReaderScreen$100f</ID>
-    <ID>MagicNumber:SettingsReaderScreen.kt$SettingsReaderScreen$250</ID>
-    <ID>MagicNumber:SettingsReaderScreen.kt$SettingsReaderScreen$3</ID>
-    <ID>MagicNumber:SettingsReaderScreen.kt$SettingsReaderScreen$500</ID>
     <ID>MagicNumber:SettingsSearchScreen.kt$10</ID>
     <ID>MagicNumber:SettingsSecurityScreen.kt$10</ID>
     <ID>MagicNumber:SettingsSecurityScreen.kt$5</ID>
@@ -843,15 +810,6 @@
     <ID>MagicNumber:TrackerManager.kt$TrackerManager$6L</ID>
     <ID>MagicNumber:TrackerManager.kt$TrackerManager$7L</ID>
     <ID>MagicNumber:TrackerManager.kt$TrackerManager$9L</ID>
-    <ID>MagicNumber:TrackerSearchPreviewProvider.kt$TrackerSearchPreviewProvider$10</ID>
-    <ID>MagicNumber:TrackerSearchPreviewProvider.kt$TrackerSearchPreviewProvider$100</ID>
-    <ID>MagicNumber:TrackerSearchPreviewProvider.kt$TrackerSearchPreviewProvider$1000L</ID>
-    <ID>MagicNumber:TrackerSearchPreviewProvider.kt$TrackerSearchPreviewProvider$100L</ID>
-    <ID>MagicNumber:TrackerSearchPreviewProvider.kt$TrackerSearchPreviewProvider$3</ID>
-    <ID>MagicNumber:TrackerSearchPreviewProvider.kt$TrackerSearchPreviewProvider$30</ID>
-    <ID>MagicNumber:TrackerSearchPreviewProvider.kt$TrackerSearchPreviewProvider$365</ID>
-    <ID>MagicNumber:TrackerSearchPreviewProvider.kt$TrackerSearchPreviewProvider$40</ID>
-    <ID>MagicNumber:TrackerSearchPreviewProvider.kt$TrackerSearchPreviewProvider$5</ID>
     <ID>MagicNumber:TrackingPreferenceWidget.kt$0xFF4CAF50</ID>
     <ID>MagicNumber:TrustExtensionRepositoryMigration.kt$TrustExtensionRepositoryMigration$7f</ID>
     <ID>MagicNumber:VaultContentUploader.kt$VaultContentUploader$8</ID>
@@ -865,11 +823,6 @@
     <ID>MagicNumber:VaultMangaScreen.kt$3f</ID>
     <ID>MagicNumber:VaultScreen.kt$10</ID>
     <ID>MagicNumber:VaultScreen.kt$1024</ID>
-    <ID>MagicNumber:VerticalFastScroller.kt$0.001f</ID>
-    <ID>MagicNumber:VerticalFastScroller.kt$0.1</ID>
-    <ID>MagicNumber:VerticalFastScroller.kt$0.5</ID>
-    <ID>MagicNumber:VerticalFastScroller.kt$100</ID>
-    <ID>MagicNumber:VerticalFastScroller.kt$2000L</ID>
     <ID>MagicNumber:ViewerConfig.kt$ViewerConfig$500</ID>
     <ID>MagicNumber:ViewerNavigation.kt$ViewerNavigation$0.05f</ID>
     <ID>MagicNumber:ViewerNavigation.kt$ViewerNavigation.NavigationRegion.LEFT$0x11</ID>

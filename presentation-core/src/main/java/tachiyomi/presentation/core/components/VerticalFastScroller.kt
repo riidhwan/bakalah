@@ -130,7 +130,8 @@ fun VerticalFastScroller(
             val scrollableSections = previousSections + remainingSections
 
             val layoutChangeTracker = remember { MutableData(scrollableSections) }
-            val layoutChanged = !anyScrollInProgress && abs(layoutChangeTracker.value - scrollableSections) > 0.1
+            val layoutChanged = !anyScrollInProgress &&
+                abs(layoutChangeTracker.value - scrollableSections) > SECTION_CHANGE_THRESHOLD
             layoutChangeTracker.value = scrollableSections
 
             val estimateConfidence = remember { MutableData(remainingSections) }
@@ -138,13 +139,13 @@ fun VerticalFastScroller(
             val maxRemainingSections = remember(estimateConfidence.value) { scrollableSections }
             estimateConfidence.value = max(estimateConfidence.value, remainingSections)
 
-            if (maxRemainingSections < 0.5) return@subcompose
+            if (maxRemainingSections < MIN_SCROLLABLE_SECTIONS) return@subcompose
 
             // When thumb dragged
             LaunchedEffect(thumbOffsetY) {
                 if (layoutInfo.totalItemsCount == 0 || !isThumbDragged) return@LaunchedEffect
                 val thumbProportion = (thumbOffsetY - thumbTopPadding) / trackHeightPx
-                if (thumbProportion <= 0.001f) {
+                if (thumbProportion <= THUMB_START_PROPORTION_THRESHOLD) {
                     estimateConfidence.value = -1f
                     listState.scrollToItem(index = 0, scrollOffset = 0)
                     scrolled.tryEmit(Unit)
@@ -174,11 +175,11 @@ fun VerticalFastScroller(
             val isThumbVisible = alpha.value > 0f
             LaunchedEffect(scrolled, alpha) {
                 scrolled
-                    .sample(100)
+                    .sample(SCROLL_BAR_SAMPLE_MILLIS)
                     .collectLatest {
                         if (thumbAllowed()) {
                             alpha.snapTo(1f)
-                            delay(ScrollBarVisibilityDurationMillis)
+                            delay(SCROLL_BAR_VISIBILITY_DURATION_MILLIS)
                             alpha.animateTo(0f, animationSpec = ImmediateFadeOutAnimationSpec)
                         } else {
                             alpha.animateTo(0f, animationSpec = ImmediateFadeOutAnimationSpec)
@@ -364,11 +365,11 @@ fun VerticalGridFastScroller(
             val isThumbVisible = alpha.value > 0f
             LaunchedEffect(scrolled, alpha) {
                 scrolled
-                    .sample(100)
+                    .sample(SCROLL_BAR_SAMPLE_MILLIS)
                     .collectLatest {
                         if (thumbAllowed()) {
                             alpha.snapTo(1f)
-                            delay(ScrollBarVisibilityDurationMillis)
+                            delay(SCROLL_BAR_VISIBILITY_DURATION_MILLIS)
                             alpha.animateTo(0f, animationSpec = ImmediateFadeOutAnimationSpec)
                         } else {
                             alpha.animateTo(0f, animationSpec = ImmediateFadeOutAnimationSpec)
@@ -463,7 +464,11 @@ object Scroller {
 private val ThumbLength = 48.dp
 private val ThumbThickness = 12.dp
 private val ThumbShape = RoundedCornerShape(ThumbThickness / 2)
-private val ScrollBarVisibilityDurationMillis = 2000L
+private const val SECTION_CHANGE_THRESHOLD = 0.1f
+private const val MIN_SCROLLABLE_SECTIONS = 0.5f
+private const val THUMB_START_PROPORTION_THRESHOLD = 0.001f
+private const val SCROLL_BAR_SAMPLE_MILLIS = 100L
+private const val SCROLL_BAR_VISIBILITY_DURATION_MILLIS = 2000L
 private val ImmediateFadeOutAnimationSpec = tween<Float>(
     durationMillis = ViewConfiguration.getScrollBarFadeDuration(),
 )
