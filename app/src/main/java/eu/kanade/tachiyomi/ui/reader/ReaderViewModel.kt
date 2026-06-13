@@ -25,6 +25,9 @@ import eu.kanade.tachiyomi.data.saver.Image
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
 import eu.kanade.tachiyomi.data.vault.cache.VaultCachePolicyService
+import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailPublishRequest
+import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailPublishResult
+import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailPublishService
 import eu.kanade.tachiyomi.data.vault.publishing.VaultCoverPublishRequest
 import eu.kanade.tachiyomi.data.vault.publishing.VaultCoverPublishResult
 import eu.kanade.tachiyomi.data.vault.publishing.VaultCoverPublishService
@@ -128,6 +131,7 @@ class ReaderViewModel @JvmOverloads constructor(
     private val storageManager: StorageManager = Injekt.get(),
     private val networkHelper: NetworkHelper = Injekt.get(),
     private val vaultCoverPublishService: VaultCoverPublishService = Injekt.get(),
+    private val vaultChapterThumbnailPublishService: VaultChapterThumbnailPublishService = Injekt.get(),
     private val activeVaultReaderSessions: ActiveVaultReaderSessions = Injekt.get(),
 ) : ViewModel() {
 
@@ -1010,9 +1014,34 @@ class ReaderViewModel @JvmOverloads constructor(
         }
     }
 
-    private fun setVaultChapterThumbnail(page: ReaderPage): SetVaultChapterThumbnailResult {
+    private suspend fun setVaultChapterThumbnail(page: ReaderPage): SetVaultChapterThumbnailResult {
         check(page.status == Page.State.Ready)
-        return SetVaultChapterThumbnailResult.NotWired
+        val vaultSession = readerSession as? ReaderSession.Vault ?: return SetVaultChapterThumbnailResult.Unavailable
+        val chapter = vaultSession.chapters.firstOrNull { it.id == page.chapter.chapter.id }
+            ?: return SetVaultChapterThumbnailResult.Unavailable
+
+        val result = runCatching {
+            vaultChapterThumbnailPublishService.publish(
+                VaultChapterThumbnailPublishRequest(
+                    mangaId = vaultSession.manga.id,
+                    chapterId = chapter.id,
+                    chapterIdentity = chapter.identity,
+                    sourcePageNumber = page.number,
+                    crop = null,
+                ),
+            )
+        }.getOrElse {
+            logcat(LogPriority.ERROR, it)
+            VaultChapterThumbnailPublishResult.PublishFailed
+        }
+
+        return when (result) {
+            VaultChapterThumbnailPublishResult.Published -> SetVaultChapterThumbnailResult.Success
+            VaultChapterThumbnailPublishResult.NotImplemented -> SetVaultChapterThumbnailResult.NotImplemented
+            VaultChapterThumbnailPublishResult.Unavailable -> SetVaultChapterThumbnailResult.Unavailable
+            VaultChapterThumbnailPublishResult.ActiveTransfer -> SetVaultChapterThumbnailResult.ActiveTransfer
+            VaultChapterThumbnailPublishResult.PublishFailed -> SetVaultChapterThumbnailResult.PublishFailed
+        }
     }
 
     fun closeVaultChapterThumbnailCrop() {
@@ -1157,7 +1186,11 @@ class ReaderViewModel @JvmOverloads constructor(
     }
 
     enum class SetVaultChapterThumbnailResult {
-        NotWired,
+        Success,
+        NotImplemented,
+        Unavailable,
+        ActiveTransfer,
+        PublishFailed,
     }
 
     sealed interface SaveImageResult {
