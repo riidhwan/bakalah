@@ -4,6 +4,8 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.tachiyomi.data.vault.cache.VaultCacheEvictionResult
 import eu.kanade.tachiyomi.data.vault.cache.VaultCachePolicyService
+import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayLoader
+import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayResult
 import eu.kanade.tachiyomi.data.vault.publishing.VaultCoverPublishService
 import eu.kanade.tachiyomi.data.vault.publishing.VaultLabelPublishEdit
 import eu.kanade.tachiyomi.data.vault.publishing.VaultMangaDeletionResult
@@ -51,6 +53,7 @@ class VaultMangaScreenModel(
     private val deletionService: VaultMangaDeletionService = Injekt.get(),
     private val coverPublishService: VaultCoverPublishService = Injekt.get(),
     private val metadataPublishService: VaultMetadataPublishService = Injekt.get(),
+    private val chapterThumbnailDisplayLoader: VaultChapterThumbnailDisplayLoader = Injekt.get(),
 ) : StateScreenModel<VaultMangaScreenModel.State>(State()) {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
@@ -85,6 +88,7 @@ class VaultMangaScreenModel(
                     VaultChapterItem(
                         chapter = chapter,
                         cacheState = cacheByChapter[chapter.id],
+                        thumbnail = chapterThumbnailDisplayLoader.load(manga, chapter),
                     )
                 }
             }
@@ -426,10 +430,13 @@ class VaultMangaScreenModel(
     data class VaultChapterItem(
         val chapter: VaultChapter,
         val cacheState: VaultChapterCacheState?,
-        val thumbnailUri: String? = null,
+        val thumbnail: VaultChapterThumbnailDisplayResult,
     ) {
         val state: VaultCacheState
             get() = cacheState?.state ?: VaultCacheState.VAULT_ONLY
+
+        val thumbnailUri: String?
+            get() = (thumbnail as? VaultChapterThumbnailDisplayResult.Ready)?.localUri
     }
 
     data class VaultMetadataEdit(

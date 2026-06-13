@@ -819,8 +819,16 @@ class ReaderActivity : BaseActivity() {
     private fun onSetVaultChapterThumbnailResult(result: ReaderViewModel.SetVaultChapterThumbnailResult) {
         toast(
             when (result) {
-                ReaderViewModel.SetVaultChapterThumbnailResult.NotWired ->
+                ReaderViewModel.SetVaultChapterThumbnailResult.Success ->
+                    MR.strings.vault_chapter_thumbnail_updated
+                ReaderViewModel.SetVaultChapterThumbnailResult.NotImplemented ->
                     MR.strings.vault_chapter_thumbnail_not_wired
+                ReaderViewModel.SetVaultChapterThumbnailResult.Unavailable ->
+                    MR.strings.vault_chapter_thumbnail_unavailable
+                ReaderViewModel.SetVaultChapterThumbnailResult.ActiveTransfer ->
+                    MR.strings.vault_chapter_thumbnail_active_transfer
+                ReaderViewModel.SetVaultChapterThumbnailResult.PublishFailed ->
+                    MR.strings.vault_chapter_thumbnail_publish_failed
             },
         )
     }

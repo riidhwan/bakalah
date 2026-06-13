@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.ui.vault
 
+import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayResult
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import tachiyomi.domain.vault.model.VaultChapter
@@ -58,5 +59,6 @@ class VaultMangaScreenModelTest {
             updatedAt = 1,
         ),
         cacheState = cacheState,
+        thumbnail = VaultChapterThumbnailDisplayResult.NotImplemented,
     )
 }
