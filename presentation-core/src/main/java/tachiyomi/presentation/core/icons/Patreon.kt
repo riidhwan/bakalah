@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-@Suppress("UnusedReceiverParameter")
+@Suppress("UnusedReceiverParameter", "MagicNumber")
 val CustomIcons.Patreon: ImageVector
     get() {
         if (_Patreon != null) {
