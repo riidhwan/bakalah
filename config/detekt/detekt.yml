@@ -9,3 +9,8 @@ naming:
     ignoreAnnotated:
       - Composable
       - Test
+
+style:
+  MagicNumber:
+    excludes:
+      - '**/presentation/theme/colorscheme/*ColorScheme.kt'
