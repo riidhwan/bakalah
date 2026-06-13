@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.vector.ImageVector.Builder
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-@Suppress("UnusedReceiverParameter")
+@Suppress("UnusedReceiverParameter", "MagicNumber")
 val CustomIcons.X: ImageVector
     get() {
         if (_x != null) {
