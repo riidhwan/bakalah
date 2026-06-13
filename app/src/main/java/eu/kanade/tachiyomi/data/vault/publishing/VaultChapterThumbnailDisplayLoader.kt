@@ -14,6 +14,11 @@ import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
 
 interface VaultChapterThumbnailDisplayLoader {
+    suspend fun loadLocal(
+        manga: VaultManga,
+        chapter: VaultChapter,
+    ): VaultChapterThumbnailDisplayResult
+
     suspend fun load(
         manga: VaultManga,
         chapter: VaultChapter,
@@ -29,6 +34,16 @@ internal class DefaultVaultChapterThumbnailDisplayLoader(
         VaultWebDavClient(it, networkHelper.nonCloudflareClient)
     },
 ) : VaultChapterThumbnailDisplayLoader {
+
+    override suspend fun loadLocal(
+        manga: VaultManga,
+        chapter: VaultChapter,
+    ): VaultChapterThumbnailDisplayResult {
+        chapter.thumbnail ?: return VaultChapterThumbnailDisplayResult.Unavailable
+        return localThumbnailUri(manga, chapter)
+            ?.let(VaultChapterThumbnailDisplayResult::Ready)
+            ?: VaultChapterThumbnailDisplayResult.Unavailable
+    }
 
     override suspend fun load(
         manga: VaultManga,

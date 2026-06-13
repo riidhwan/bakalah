@@ -43,17 +43,21 @@ internal class DefaultVaultChapterThumbnailCacheStore(
     }
 
     private fun VaultChapterThumbnailCacheKey.path(): String {
-        val extension = remotePath.substringAfterLast('/', "")
-            .substringAfterLast('.', "jpg")
-            .takeIf { it.isNotBlank() }
-            ?: "jpg"
         return listOf(
             vaultId.toString(),
             mangaIdentity,
             chapterIdentity,
             "thumbnails",
-            "$thumbnailIdentity.$extension",
+            thumbnailFileName(),
         ).joinToString("/") { it.toCachePathSegment() }
+    }
+
+    private fun VaultChapterThumbnailCacheKey.thumbnailFileName(): String {
+        val extension = remotePath.substringAfterLast('/', "")
+            .substringAfterLast('.', "jpg")
+            .takeIf { it.isNotBlank() }
+            ?: "jpg"
+        return "$thumbnailIdentity.$extension".toCachePathSegment()
     }
 
     private fun String.pathSegments(): List<String> {
