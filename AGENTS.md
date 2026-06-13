@@ -23,7 +23,11 @@ Kotlin uses official Kotlin style (`kotlin.code.style=official`), Spotless with 
 
 ## Testing Guidelines
 
-Tests use JUnit Jupiter, Kotest assertions, MockK, and coroutine test utilities. Place tests in the relevant module's `src/test/java`, mirroring production packages. Name tests after the unit under test, such as `FetchIntervalTest`. Run `./gradlew testDebugUnitTest` and `./gradlew detekt` before submitting Kotlin changes.
+Tests use JUnit Jupiter, Kotest assertions, MockK, and coroutine test utilities. Place tests in the relevant module's `src/test/java`, mirroring production packages. Name tests after the unit under test, such as `FetchIntervalTest`.
+
+Treat unit-testability as a design requirement for new and changed code. Prefer constructor-injected collaborators, small pure helpers, deterministic time/randomness seams, and fakeable boundary interfaces for network, storage, database, decoder, and Android runtime work. Avoid hiding meaningful behavior in private methods that can only be exercised through a device or full integration flow.
+
+Add focused tests whenever reasonably possible for new behavior, bug fixes, workflow services, mappers, policies, and edge cases. If tests are not practical in the same change, state the concrete blocker and residual risk in the handoff or final summary. Run `./gradlew testDebugUnitTest` and `./gradlew detekt` before submitting Kotlin changes.
 
 ## Commit & Pull Request Guidelines
 

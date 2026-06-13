@@ -84,6 +84,7 @@ class VaultTransferService(
         return when (job.type) {
             VaultTransferType.IMPORT_PUBLISH,
             VaultTransferType.METADATA_PUBLISH,
+            VaultTransferType.THUMBNAIL_PUBLISH,
             -> executeUpload(job)
             VaultTransferType.CAPTURE_PUBLISH -> VaultTransferResult.NotRetryable(job.state)
             VaultTransferType.CACHE_CHAPTER -> executeDownload(job)
@@ -343,6 +344,7 @@ class VaultTransferService(
             VaultTransferType.IMPORT_PUBLISH,
             VaultTransferType.CAPTURE_PUBLISH,
             VaultTransferType.METADATA_PUBLISH,
+            VaultTransferType.THUMBNAIL_PUBLISH,
             -> VaultCacheState.PUBLISHING
             VaultTransferType.CACHE_CHAPTER -> VaultCacheState.QUEUED
             VaultTransferType.CATALOGUE_REFRESH -> VaultCacheState.QUEUED
@@ -354,6 +356,7 @@ class VaultTransferService(
             VaultTransferType.IMPORT_PUBLISH,
             VaultTransferType.CAPTURE_PUBLISH,
             VaultTransferType.METADATA_PUBLISH,
+            VaultTransferType.THUMBNAIL_PUBLISH,
             -> VaultCacheState.PUBLISHING
             VaultTransferType.CACHE_CHAPTER -> VaultCacheState.CACHING
             VaultTransferType.CATALOGUE_REFRESH -> VaultCacheState.QUEUED

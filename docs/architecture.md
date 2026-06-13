@@ -141,7 +141,11 @@ Keep these flows explicit about ownership:
 
 Unit tests live under each module's `src/test/java`. Current examples include domain tests such as `FetchIntervalTest`, `LibraryFlagsTest`, `MissingChaptersTest`, and core utility tests such as `TallImageSplitCalculatorTest`.
 
-Use JUnit Jupiter, Kotest assertions, MockK, and coroutine test utilities where appropriate. Favor domain and mapper tests for business logic. For database-impacting changes, update SQLDelight migrations and run:
+Use JUnit Jupiter, Kotest assertions, MockK, and coroutine test utilities where appropriate. Favor domain and mapper tests for business logic. New code should be designed so meaningful behavior can be exercised in JVM unit tests whenever practical: inject collaborators for network, storage, persistence, decoders, clocks, and random/UUID generation instead of binding workflow logic directly to platform APIs.
+
+Add focused tests for new behavior and bug fixes whenever possible. App services that coordinate remote publishing, cache updates, transfers, refreshes, imports, or rollback should expose fakeable boundaries and test the important success and failure branches without requiring a device or live service. If a change cannot include tests, document the concrete blocker and residual risk.
+
+For database-impacting changes, update SQLDelight migrations and run:
 
 ```shell
 ./gradlew testDebugUnitTest

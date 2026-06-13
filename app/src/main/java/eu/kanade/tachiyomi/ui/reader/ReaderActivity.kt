@@ -294,6 +294,7 @@ class ReaderActivity : BaseActivity() {
                     BackHandler(onBack = viewModel::closeVaultChapterThumbnailCrop)
                     VaultChapterThumbnailCropOverlay(
                         page = dialog.page,
+                        isPublishing = dialog.isPublishing,
                         onConfirm = viewModel::confirmVaultChapterThumbnailCrop,
                         onCancel = viewModel::closeVaultChapterThumbnailCrop,
                     )
