@@ -36,7 +36,7 @@ fi
 
 version="${BASH_REMATCH[1]}"
 tag="v$version"
-version_name="$(sed -n 's/^[[:space:]]*versionName = "\(.*\)"/\1/p' app/build.gradle.kts | head -n 1)"
+version_name="$(bash .github/scripts/read-app-version-name.sh)"
 
 if [[ "$version" != "$version_name" ]]; then
   echo "Release branch $branch does not match app versionName $version_name"
