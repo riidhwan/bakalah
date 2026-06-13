@@ -1,0 +1,18 @@
+ALTER TABLE vault_chapters ADD COLUMN thumbnail_id INTEGER;
+
+CREATE TABLE vault_chapter_thumbnails(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    chapter_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    path TEXT NOT NULL,
+    media_type TEXT,
+    size_bytes INTEGER,
+    checksum_sha256 TEXT,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE CASCADE,
+    UNIQUE(chapter_id, identity)
+);
+
+CREATE INDEX vault_chapter_thumbnails_chapter_id_index ON vault_chapter_thumbnails(chapter_id);

@@ -13,6 +13,7 @@ import tachiyomi.domain.vault.model.VaultMangaManifestPointer
 import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultManifestChapter
 import tachiyomi.domain.vault.model.VaultManifestChapterContent
+import tachiyomi.domain.vault.model.VaultManifestChapterThumbnail
 import tachiyomi.domain.vault.model.VaultManifestCodec
 import tachiyomi.domain.vault.model.VaultManifestCover
 import tachiyomi.domain.vault.model.VaultManifestLabel
@@ -51,6 +52,10 @@ class BuildVaultCatalogueRefreshTest {
         refresh.manga.single().manga.metadata.status shouldBe VaultMangaStatus.ONGOING
         refresh.manga.single().cover?.checksumSha256 shouldBe "cover-checksum"
         refresh.manga.single().chapters.single().content.sizeBytes shouldBe 123
+        refresh.manga.single().chapters.single().thumbnail?.identity?.value shouldBe "thumbnail-1"
+        refresh.manga.single().chapters.single().thumbnail?.path shouldBe
+            "content/manga-1/chapter-1/thumbnail/thumbnail-1.jpg"
+        refresh.manga.single().chapters.single().thumbnail?.checksumSha256 shouldBe "thumbnail-checksum"
         refresh.snapshots.map { it.manifestPath } shouldBe listOf("vault/content-vault.json", "manga/one-piece.json")
     }
 
@@ -204,6 +209,15 @@ class BuildVaultCatalogueRefreshTest {
                     path = "content/chapter-1.cbz",
                     format = VaultChapterContentFormat.CBZ,
                     integrity = VaultContentIntegrity(sizeBytes = 123, checksumSha256 = "chapter-checksum"),
+                ),
+                thumbnail = VaultManifestChapterThumbnail(
+                    identity = "thumbnail-1",
+                    path = "content/manga-1/chapter-1/thumbnail/thumbnail-1.jpg",
+                    mediaType = "image/jpeg",
+                    integrity = VaultContentIntegrity(sizeBytes = 12, checksumSha256 = "thumbnail-checksum"),
+                    revisionId = "thumbnail-rev",
+                    revisionNumber = 1,
+                    updatedAt = 55,
                 ),
                 revisionId = "chapter-rev",
                 revisionNumber = 1,

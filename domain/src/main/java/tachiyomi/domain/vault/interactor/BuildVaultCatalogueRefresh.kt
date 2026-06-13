@@ -6,6 +6,7 @@ import tachiyomi.domain.vault.model.VaultCatalogueMangaRefresh
 import tachiyomi.domain.vault.model.VaultCatalogueRefresh
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterContent
+import tachiyomi.domain.vault.model.VaultChapterThumbnail
 import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultLabel
@@ -187,6 +188,19 @@ class BuildVaultCatalogueRefresh(
                     dateUpload = chapter.dateUpload,
                     createdAt = chapter.createdAt,
                     updatedAt = chapter.updatedAt,
+                    thumbnail = chapter.thumbnail?.let {
+                        VaultChapterThumbnail(
+                            id = -1,
+                            chapterId = -1,
+                            identity = VaultIdentity(it.identity),
+                            path = it.path,
+                            mediaType = it.mediaType,
+                            sizeBytes = it.integrity?.sizeBytes,
+                            checksumSha256 = it.integrity?.checksumSha256,
+                            revision = VaultRevision(it.revisionId, it.revisionNumber),
+                            updatedAt = it.updatedAt,
+                        )
+                    },
                 )
             },
         )

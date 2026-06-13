@@ -14,6 +14,7 @@ data class VaultChapter(
     val dateUpload: Long,
     val createdAt: Long,
     val updatedAt: Long,
+    val thumbnail: VaultChapterThumbnail? = null,
 ) {
     val isRecognizedNumber: Boolean
         get() = chapterNumber >= 0

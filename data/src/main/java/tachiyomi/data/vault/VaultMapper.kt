@@ -8,6 +8,7 @@ import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
 import tachiyomi.domain.vault.model.VaultChapterContent
 import tachiyomi.domain.vault.model.VaultChapterContentFormat
+import tachiyomi.domain.vault.model.VaultChapterThumbnail
 import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultImportRequest
@@ -99,6 +100,15 @@ object VaultMapper {
         dateUpload: Long,
         createdAt: Long,
         updatedAt: Long,
+        thumbnailRowId: Long?,
+        thumbnailIdentity: String?,
+        thumbnailPath: String?,
+        thumbnailMediaType: String?,
+        thumbnailSizeBytes: Long?,
+        thumbnailChecksumSha256: String?,
+        thumbnailRevisionId: String?,
+        thumbnailRevisionNumber: Long?,
+        thumbnailUpdatedAt: Long?,
     ): VaultChapter = VaultChapter(
         id = id,
         mangaId = mangaId,
@@ -117,6 +127,50 @@ object VaultMapper {
         revision = VaultRevision(revisionId, revisionNumber),
         dateUpload = dateUpload,
         createdAt = createdAt,
+        updatedAt = updatedAt,
+        thumbnail = if (
+            thumbnailIdentity != null &&
+            thumbnailPath != null &&
+            thumbnailRevisionId != null &&
+            thumbnailRevisionNumber != null &&
+            thumbnailUpdatedAt != null
+        ) {
+            VaultChapterThumbnail(
+                id = thumbnailRowId ?: -1,
+                chapterId = id,
+                identity = VaultIdentity(thumbnailIdentity),
+                path = thumbnailPath,
+                mediaType = thumbnailMediaType,
+                sizeBytes = thumbnailSizeBytes,
+                checksumSha256 = thumbnailChecksumSha256,
+                revision = VaultRevision(thumbnailRevisionId, thumbnailRevisionNumber),
+                updatedAt = thumbnailUpdatedAt,
+            )
+        } else {
+            null
+        },
+    )
+
+    fun mapChapterThumbnail(
+        id: Long,
+        chapterId: Long,
+        identity: String,
+        path: String,
+        mediaType: String?,
+        sizeBytes: Long?,
+        checksumSha256: String?,
+        revisionId: String,
+        revisionNumber: Long,
+        updatedAt: Long,
+    ): VaultChapterThumbnail = VaultChapterThumbnail(
+        id = id,
+        chapterId = chapterId,
+        identity = VaultIdentity(identity),
+        path = path,
+        mediaType = mediaType,
+        sizeBytes = sizeBytes,
+        checksumSha256 = checksumSha256,
+        revision = VaultRevision(revisionId, revisionNumber),
         updatedAt = updatedAt,
     )
 
