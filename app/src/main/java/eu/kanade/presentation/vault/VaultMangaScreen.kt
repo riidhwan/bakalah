@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
@@ -849,9 +850,13 @@ private fun VaultChapterListItem(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            VaultChapterThumbnail(
+                thumbnailUri = item.thumbnailUri,
+                modifier = Modifier.size(56.dp),
+            )
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -906,6 +911,39 @@ private fun VaultChapterListItem(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VaultChapterThumbnail(
+    thumbnailUri: String?,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.clip(MaterialTheme.shapes.extraSmall),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    ) {
+        Box {
+            if (thumbnailUri != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(thumbnailUri)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Outlined.Image,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(24.dp),
+                )
             }
         }
     }
