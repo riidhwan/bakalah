@@ -19,6 +19,7 @@ import android.view.View
 import android.view.View.LAYER_TYPE_HARDWARE
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +56,7 @@ import eu.kanade.presentation.reader.ReaderContentOverlay
 import eu.kanade.presentation.reader.ReaderPageActionsDialog
 import eu.kanade.presentation.reader.ReaderPageIndicator
 import eu.kanade.presentation.reader.ReadingModeSelectDialog
+import eu.kanade.presentation.reader.VaultChapterThumbnailCropOverlay
 import eu.kanade.presentation.reader.appbars.ReaderAppBars
 import eu.kanade.presentation.reader.components.ChapterNavigatorType
 import eu.kanade.presentation.reader.settings.ReaderSettingsDialog
@@ -253,6 +255,9 @@ class ReaderActivity : BaseActivity() {
                     is ReaderViewModel.Event.SetCoverResult -> {
                         onSetAsCoverResult(event.result)
                     }
+                    is ReaderViewModel.Event.SetVaultChapterThumbnailResult -> {
+                        onSetVaultChapterThumbnailResult(event.result)
+                    }
                 }
             }
             .launchIn(lifecycleScope)
@@ -283,10 +288,22 @@ class ReaderActivity : BaseActivity() {
             ContentOverlay(state = state)
 
             AppBars(state = state)
+
+            when (val dialog = state.dialog) {
+                is ReaderViewModel.Dialog.VaultChapterThumbnailCrop -> {
+                    BackHandler(onBack = viewModel::closeVaultChapterThumbnailCrop)
+                    VaultChapterThumbnailCropOverlay(
+                        page = dialog.page,
+                        onConfirm = viewModel::confirmVaultChapterThumbnailCrop,
+                        onCancel = viewModel::closeVaultChapterThumbnailCrop,
+                    )
+                }
+                else -> {}
+            }
         }
 
         val onDismissRequest = viewModel::closeDialog
-        when (state.dialog) {
+        when (val dialog = state.dialog) {
             is ReaderViewModel.Dialog.Loading -> {
                 AlertDialog(
                     onDismissRequest = {},
@@ -340,6 +357,7 @@ class ReaderActivity : BaseActivity() {
                     onSave = viewModel::saveImage,
                 )
             }
+            is ReaderViewModel.Dialog.VaultChapterThumbnailCrop -> {}
             null -> {}
         }
     }
@@ -474,7 +492,7 @@ class ReaderActivity : BaseActivity() {
         val verticalNavigatorOnLeft by readerPreferences.verticalNavigatorOnLeft.collectAsState()
 
         ReaderAppBars(
-            visible = state.menuVisible,
+            visible = state.menuVisible && state.dialog !is ReaderViewModel.Dialog.VaultChapterThumbnailCrop,
 
             mangaTitle = state.manga?.title,
             chapterTitle = state.currentChapter?.chapter?.name,
@@ -528,6 +546,8 @@ class ReaderActivity : BaseActivity() {
                 menuToggleToast?.cancel()
                 menuToggleToast = toast(if (enabled) MR.strings.on else MR.strings.off)
             },
+            showVaultChapterThumbnail = state.canSetVaultChapterThumbnail,
+            onClickVaultChapterThumbnail = viewModel::openVaultChapterThumbnailCrop,
             onClickSettings = viewModel::openSettingsDialog,
         )
     }
@@ -792,6 +812,15 @@ class ReaderActivity : BaseActivity() {
                 Success -> MR.strings.cover_updated
                 AddToLibraryFirst -> MR.strings.notification_first_add_to_library
                 Error -> MR.strings.notification_cover_update_failed
+            },
+        )
+    }
+
+    private fun onSetVaultChapterThumbnailResult(result: ReaderViewModel.SetVaultChapterThumbnailResult) {
+        toast(
+            when (result) {
+                ReaderViewModel.SetVaultChapterThumbnailResult.NotWired ->
+                    MR.strings.vault_chapter_thumbnail_not_wired
             },
         )
     }
