@@ -31,6 +31,9 @@ dependencies {
     api(libs.okhttp.dnsOverHttps)
     api(libs.okio)
 
+    debugImplementation(libs.chucker)
+    releaseImplementation(libs.chucker.noop)
+
     implementation(libs.image.decoder)
 
     implementation(libs.unifile)

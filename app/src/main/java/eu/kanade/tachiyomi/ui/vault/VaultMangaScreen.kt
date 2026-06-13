@@ -46,6 +46,9 @@ data class VaultMangaScreen(
             onClickRead = {
                 context.startActivity(ReaderActivity.newVaultIntent(context, mangaId, it.chapter.id))
             },
+            onChapterThumbnailVisible = {
+                screenModel.loadChapterThumbnail(it)
+            },
             onClickDelete = {
                 screenModel.deleteManga()
             },

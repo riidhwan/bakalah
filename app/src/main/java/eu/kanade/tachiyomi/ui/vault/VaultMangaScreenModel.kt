@@ -1,5 +1,4 @@
 package eu.kanade.tachiyomi.ui.vault
-
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.tachiyomi.data.vault.cache.VaultCacheEvictionResult
@@ -43,6 +42,7 @@ import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import java.util.Collections
 
 class VaultMangaScreenModel(
     private val mangaId: Long,
@@ -58,6 +58,7 @@ class VaultMangaScreenModel(
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
+    private val loadingChapterThumbnailIds = Collections.synchronizedSet(mutableSetOf<Long>())
 
     init {
         screenModelScope.launchIO {
@@ -67,7 +68,7 @@ class VaultMangaScreenModel(
             mutableState.update {
                 it.copy(
                     manga = manga,
-                    isLoading = manga == null,
+                    isLoading = manga != null,
                     mangaLabels = mangaLabels,
                     vaultLabels = vaultLabels,
                 )
@@ -88,7 +89,7 @@ class VaultMangaScreenModel(
                     VaultChapterItem(
                         chapter = chapter,
                         cacheState = cacheByChapter[chapter.id],
-                        thumbnail = chapterThumbnailDisplayLoader.load(manga, chapter),
+                        thumbnail = VaultChapterThumbnailDisplayResult.Unavailable,
                     )
                 }
             }
@@ -108,6 +109,38 @@ class VaultMangaScreenModel(
                         )
                     }
                 }
+        }
+    }
+
+    fun loadChapterThumbnail(item: VaultChapterItem) {
+        if (!item.needsThumbnailLoad) return
+        if (!loadingChapterThumbnailIds.add(item.chapter.id)) return
+        screenModelScope.launchIO {
+            try {
+                val manga = mutableState.value.manga ?: return@launchIO
+                val localResult = chapterThumbnailDisplayLoader.loadLocal(manga, item.chapter)
+                val result = if (localResult is VaultChapterThumbnailDisplayResult.Ready) {
+                    localResult
+                } else {
+                    chapterThumbnailDisplayLoader.load(manga, item.chapter)
+                }
+                mutableState.update { state ->
+                    state.copy(
+                        chapters = state.chapters.map { current ->
+                            if (
+                                current.chapter.id == item.chapter.id &&
+                                current.chapter.thumbnail?.identity == item.chapter.thumbnail?.identity
+                            ) {
+                                current.copy(thumbnail = result)
+                            } else {
+                                current
+                            }
+                        },
+                    )
+                }
+            } finally {
+                loadingChapterThumbnailIds.remove(item.chapter.id)
+            }
         }
     }
 
@@ -439,6 +472,9 @@ class VaultMangaScreenModel(
 
         val thumbnailUri: String?
             get() = (thumbnail as? VaultChapterThumbnailDisplayResult.Ready)?.localUri
+
+        val needsThumbnailLoad: Boolean
+            get() = chapter.thumbnail != null && thumbnail == VaultChapterThumbnailDisplayResult.Unavailable
     }
 
     data class VaultMetadataEdit(

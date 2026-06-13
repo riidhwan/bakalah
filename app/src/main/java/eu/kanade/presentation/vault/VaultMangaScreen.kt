@@ -90,6 +90,7 @@ fun VaultMangaScreen(
     onClickEvict: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRetry: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onChapterThumbnailVisible: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickDelete: () -> Unit,
     onClickSaveMetadata: (VaultMangaScreenModel.VaultMetadataEdit) -> Unit,
     onClickAssignLabel: (VaultLabel) -> Unit,
@@ -155,6 +156,7 @@ fun VaultMangaScreen(
                 onClickEvict = onClickEvict,
                 onClickRetry = onClickRetry,
                 onClickRead = onClickRead,
+                onChapterThumbnailVisible = onChapterThumbnailVisible,
                 onClickAssignLabel = onClickAssignLabel,
                 onClickCreateLabel = onClickCreateLabel,
                 onClickRemoveLabel = onClickRemoveLabel,
@@ -206,6 +208,7 @@ private fun VaultChapterList(
     onClickEvict: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRetry: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onChapterThumbnailVisible: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickAssignLabel: (VaultLabel) -> Unit,
     onClickCreateLabel: (String) -> Unit,
     onClickRemoveLabel: (VaultLabel) -> Unit,
@@ -244,6 +247,7 @@ private fun VaultChapterList(
                 onClickEvict = { onClickEvict(item) },
                 onClickRetry = { onClickRetry(item) },
                 onClickRead = { onClickRead(item) },
+                onChapterThumbnailVisible = { onChapterThumbnailVisible(item) },
                 modifier = Modifier.animateItem(),
             )
         }
@@ -838,9 +842,16 @@ private fun VaultChapterListItem(
     onClickEvict: () -> Unit,
     onClickRetry: () -> Unit,
     onClickRead: () -> Unit,
+    onChapterThumbnailVisible: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showMenu by remember { mutableStateOf(false) }
+
+    LaunchedEffect(item.chapter.id, item.needsThumbnailLoad) {
+        if (item.needsThumbnailLoad) {
+            onChapterThumbnailVisible()
+        }
+    }
 
     Column(
         modifier = modifier

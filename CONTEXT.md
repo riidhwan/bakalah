@@ -208,6 +208,10 @@ _Avoid_: Cache size, local storage, download size
 The amount of storage used by one Vault Manga's vault-owned chapter content.
 _Avoid_: Vault Storage Usage, local cache usage, manga cache size
 
+**Vault Chapter Thumbnail**:
+A vault-owned image associated with one Vault Chapter for visual identification in Vault browsing surfaces, separate from the readable chapter content and from the Vault Cover.
+_Avoid_: Chapter page, preview cache, manga cover
+
 **Vault Storage Quota**:
 The user's storage budget or provider-reported limit for a Content Vault.
 _Avoid_: Cache limit, download limit, device storage

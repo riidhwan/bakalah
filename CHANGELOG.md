@@ -12,6 +12,13 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.26.2] - 2026-06-13
+### Added
+- Add debug-only Chucker HTTP inspection for app network requests.
+
+### Improved
+- Lazy-load Vault chapter thumbnails in the manga detail screen and reduce generated thumbnail size to 128 px.
+
 ## [v0.26.1] - 2026-06-13
 ### Fixed
 - Allow Vault chapter thumbnail crops to pinch-zoom out while keeping the fixed square crop frame covered by page pixels.

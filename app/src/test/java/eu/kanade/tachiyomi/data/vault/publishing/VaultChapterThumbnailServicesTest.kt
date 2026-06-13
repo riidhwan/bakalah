@@ -140,6 +140,27 @@ class VaultChapterThumbnailServicesTest {
     }
 
     @Test
+    fun `display loader local lookup does not download missing thumbnail`() = runTest {
+        val bytes = "thumbnail".toByteArray()
+        val remote = FakeWebDav()
+        remote.files["vault/content/manga-1/chapter-1/thumbnail/thumb-1.jpg"] = bytes
+        val cache = FakeThumbnailCacheStore()
+        val loader = DefaultVaultChapterThumbnailDisplayLoader(
+            networkHelper = mockk<NetworkHelper>(),
+            repository = repository().repository,
+            preferences = preferences(),
+            cacheStore = cache,
+            webDavFactory = { remote },
+        )
+
+        val result = loader.loadLocal(manga(), chapter(thumbnail = thumbnail(bytes)))
+
+        result shouldBe VaultChapterThumbnailDisplayResult.Unavailable
+        remote.getBytesPaths shouldBe emptyList()
+        cache.writes shouldBe emptyList()
+    }
+
+    @Test
     fun `display loader downloads verifies caches and returns local uri`() = runTest {
         val bytes = "thumbnail".toByteArray()
         val remote = FakeWebDav()
