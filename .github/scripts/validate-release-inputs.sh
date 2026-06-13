@@ -9,7 +9,7 @@ if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 
 version="${tag#v}"
-version_name="$(sed -n 's/^[[:space:]]*versionName = "\(.*\)"/\1/p' app/build.gradle.kts | head -n 1)"
+version_name="$(bash .github/scripts/read-app-version-name.sh)"
 
 if [[ "$version" != "$version_name" ]]; then
   echo "Release tag $tag does not match app versionName $version_name"
