@@ -239,7 +239,7 @@ class VaultScreenModel(
                         it == VaultCacheState.PUBLISHING
                 },
                 latestChapterUploadAt = chapters.maxOfOrNull { it.dateUpload },
-                vaultStorageBytes = chapters.sumOf { it.content.sizeBytes },
+                vaultStorageBytes = chapters.sumOf { it.content.sizeBytes + (it.thumbnail?.sizeBytes ?: 0L) },
                 localCacheBytes = chapters.sumOf { chapter ->
                     cacheByChapter[chapter.id]
                         ?.takeIf { it.state == VaultCacheState.CACHED }
@@ -263,7 +263,7 @@ class VaultScreenModel(
                 .sumOf { it.sizeBytes ?: 0L }
 
         val vaultStorageUsageBytes: Long
-            get() = chapters.sumOf { it.content.sizeBytes }
+            get() = chapters.sumOf { it.content.sizeBytes + (it.thumbnail?.sizeBytes ?: 0L) }
     }
 
     data class VaultMangaItem(

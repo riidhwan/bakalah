@@ -11,6 +11,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Added
+- Add Vault chapter thumbnails with reader crop publishing and chapter-list display cache.
+
 ### Improved
 - Replace Browse Sources language sections with a compact language chip filter.
 - Show total progress percentage in Library-to-Vault Capture notification titles.

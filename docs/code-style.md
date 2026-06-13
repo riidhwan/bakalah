@@ -91,6 +91,7 @@ For services that coordinate imports, publishing, transfers, refreshes, backups,
 
 - Keep the public service focused on workflow sequencing, progress, cancellation, and result mapping.
 - Extract stable sub-responsibilities into focused collaborators or pure helper files when they can be named independently, tested independently, or reused by another workflow.
+- Design collaborators so workflow branches can be unit-tested with small fakes. Network clients, storage access, database repositories, decoders, clocks, random/UUID generation, and Android runtime APIs should sit behind constructor-injected seams when they affect behavior.
 - Keep source scanning, staging, archive construction, manifest mutation, transport path building, rollback, ordering policy, and result-detail encoding separate when more than one of those responsibilities appears in the same service.
 - Prefer behavior-preserving extraction before redesigning shared workflow semantics.
 - Add tests around extracted pure policies and boundary collaborators before sharing them across workflows.
@@ -193,10 +194,14 @@ Antipatterns:
 
 Add tests where behavior is easy to regress.
 
+- Treat unit-testability as part of the implementation design, not cleanup after the fact. New code should make meaningful behavior reachable from JVM tests whenever practical.
+- Add focused tests for new behavior and bug fixes whenever reasonably possible. Prefer small fakes or real value objects over broad mocks; use MockK for wide contracts only when a fake would obscure the scenario.
 - Domain interactors should have focused unit tests for business rules.
 - Utility functions in `core/common` should be tested when edge cases matter.
 - Mapper tests are useful when database rows, network DTOs, or flags are transformed.
+- App workflow services should test success, failure, rollback, cache, and concurrency/active-job branches through injected collaborators instead of requiring a device or live network.
 - For schema changes, include migrations and verify them.
+- When tests are not practical in the same change, document the specific blocker and residual risk in the PR, handoff, or final agent summary.
 
 Run:
 

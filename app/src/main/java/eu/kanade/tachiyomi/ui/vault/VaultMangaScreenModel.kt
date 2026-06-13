@@ -102,7 +102,9 @@ class VaultMangaScreenModel(
                             isLoading = false,
                             chapters = orderVaultMangaDetailChapters(chapters),
                             localCacheUsageBytes = repository.getLocalCacheUsageBytes(manga.vaultId),
-                            vaultStorageUsageBytes = chapters.sumOf { item -> item.chapter.content.sizeBytes },
+                            vaultStorageUsageBytes = chapters.sumOf { item ->
+                                item.chapter.content.sizeBytes + (item.chapter.thumbnail?.sizeBytes ?: 0L)
+                            },
                         )
                     }
                 }

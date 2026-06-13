@@ -25,15 +25,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
+import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailCrop
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -45,11 +50,14 @@ import kotlin.math.min
 @Composable
 fun VaultChapterThumbnailCropOverlay(
     page: ReaderPage,
-    onConfirm: () -> Unit,
+    isPublishing: Boolean,
+    onConfirm: (VaultChapterThumbnailCrop) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
+    var imageView by remember { mutableStateOf<SubsamplingScaleImageView?>(null) }
     val imageFile by produceState<File?>(initialValue = null, key1 = page) {
         value = withContext(Dispatchers.IO) {
             val stream = page.stream ?: return@withContext null
@@ -95,11 +103,15 @@ fun VaultChapterThumbnailCropOverlay(
                         }
                     },
                     update = { view ->
+                        imageView = view
                         if (!view.hasImage()) {
                             view.setImage(ImageSource.uri(context, Uri.fromFile(imageFile)))
                         }
                     },
-                    onRelease = SubsamplingScaleImageView::recycle,
+                    onRelease = { view ->
+                        if (imageView === view) imageView = null
+                        view.recycle()
+                    },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -147,11 +159,14 @@ fun VaultChapterThumbnailCropOverlay(
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onCancel) {
+            IconButton(
+                onClick = onCancel,
+                enabled = !isPublishing,
+            ) {
                 Icon(
                     imageVector = Icons.Outlined.Close,
                     contentDescription = stringResource(MR.strings.action_cancel),
-                    tint = Color.White,
+                    tint = if (isPublishing) Color.White.copy(alpha = 0.38f) else Color.White,
                 )
             }
             Text(
@@ -161,15 +176,44 @@ fun VaultChapterThumbnailCropOverlay(
             )
             Spacer(modifier = Modifier.weight(1f))
             IconButton(
-                onClick = onConfirm,
-                enabled = imageFile != null,
+                onClick = {
+                    imageView?.let { view ->
+                        val horizontalInsetPx = with(density) { 48.dp.toPx() }
+                        val cropSizePx = min(view.width - horizontalInsetPx, view.height.toFloat()) * 0.78f
+                        view.toVaultChapterThumbnailCrop(cropSizePx)
+                    }?.let(onConfirm)
+                },
+                enabled = imageFile != null && !isPublishing,
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Check,
-                    contentDescription = stringResource(MR.strings.action_done),
-                    tint = if (imageFile != null) Color.White else Color.White.copy(alpha = 0.38f),
-                )
+                if (isPublishing) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(24.dp),
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = stringResource(MR.strings.action_done),
+                        tint = if (imageFile != null) Color.White else Color.White.copy(alpha = 0.38f),
+                    )
+                }
             }
         }
     }
+}
+
+private fun SubsamplingScaleImageView.toVaultChapterThumbnailCrop(cropSizePx: Float): VaultChapterThumbnailCrop? {
+    if (!hasImage() || width <= 0 || height <= 0) return null
+    val left = (width - cropSizePx) / 2f
+    val top = (height - cropSizePx) / 2f
+    val topLeft = viewToSourceCoord(left, top) ?: return null
+    val bottomRight = viewToSourceCoord(left + cropSizePx, top + cropSizePx) ?: return null
+    val size = min(bottomRight.x - topLeft.x, bottomRight.y - topLeft.y).toInt()
+    if (size <= 0) return null
+    return VaultChapterThumbnailCrop(
+        left = topLeft.x.toInt().coerceIn(0, sWidth - 1),
+        top = topLeft.y.toInt().coerceIn(0, sHeight - 1),
+        size = size.coerceAtMost(sWidth).coerceAtMost(sHeight),
+    )
 }

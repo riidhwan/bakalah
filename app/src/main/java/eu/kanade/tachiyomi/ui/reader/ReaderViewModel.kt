@@ -25,6 +25,7 @@ import eu.kanade.tachiyomi.data.saver.Image
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
 import eu.kanade.tachiyomi.data.vault.cache.VaultCachePolicyService
+import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailCrop
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailPublishRequest
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailPublishResult
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailPublishService
@@ -132,6 +133,8 @@ class ReaderViewModel @JvmOverloads constructor(
     private val networkHelper: NetworkHelper = Injekt.get(),
     private val vaultCoverPublishService: VaultCoverPublishService = Injekt.get(),
     private val vaultChapterThumbnailPublishService: VaultChapterThumbnailPublishService = Injekt.get(),
+    private val vaultChapterThumbnailImageNormalizer: VaultChapterThumbnailImageNormalizer =
+        DefaultVaultChapterThumbnailImageNormalizer(),
     private val activeVaultReaderSessions: ActiveVaultReaderSessions = Injekt.get(),
 ) : ViewModel() {
 
@@ -1003,21 +1006,29 @@ class ReaderViewModel @JvmOverloads constructor(
         mutableState.update { it.copy(dialog = Dialog.VaultChapterThumbnailCrop(page)) }
     }
 
-    fun confirmVaultChapterThumbnailCrop() {
-        val page = (state.value.dialog as? Dialog.VaultChapterThumbnailCrop)?.page
-        if (page?.status != Page.State.Ready) return
+    fun confirmVaultChapterThumbnailCrop(crop: VaultChapterThumbnailCrop) {
+        val dialog = state.value.dialog as? Dialog.VaultChapterThumbnailCrop ?: return
+        if (dialog.isPublishing) return
+        val page = dialog.page
+        if (page.status != Page.State.Ready) return
+        mutableState.update { it.copy(dialog = dialog.copy(isPublishing = true)) }
 
         viewModelScope.launchNonCancellable {
-            val result = setVaultChapterThumbnail(page)
+            val result = setVaultChapterThumbnail(page, crop)
             mutableState.update { it.copy(dialog = null) }
             eventChannel.send(Event.SetVaultChapterThumbnailResult(result))
         }
     }
 
-    private suspend fun setVaultChapterThumbnail(page: ReaderPage): SetVaultChapterThumbnailResult {
+    private suspend fun setVaultChapterThumbnail(
+        page: ReaderPage,
+        crop: VaultChapterThumbnailCrop,
+    ): SetVaultChapterThumbnailResult {
         check(page.status == Page.State.Ready)
         val vaultSession = readerSession as? ReaderSession.Vault ?: return SetVaultChapterThumbnailResult.Unavailable
         val chapter = vaultSession.chapters.firstOrNull { it.id == page.chapter.chapter.id }
+            ?: return SetVaultChapterThumbnailResult.Unavailable
+        val jpegBytes = normalizedVaultThumbnailBytes(page, crop)
             ?: return SetVaultChapterThumbnailResult.Unavailable
 
         val result = runCatching {
@@ -1027,7 +1038,7 @@ class ReaderViewModel @JvmOverloads constructor(
                     chapterId = chapter.id,
                     chapterIdentity = chapter.identity,
                     sourcePageNumber = page.number,
-                    crop = null,
+                    jpegBytes = jpegBytes,
                 ),
             )
         }.getOrElse {
@@ -1044,8 +1055,17 @@ class ReaderViewModel @JvmOverloads constructor(
         }
     }
 
+    private suspend fun normalizedVaultThumbnailBytes(
+        page: ReaderPage,
+        crop: VaultChapterThumbnailCrop,
+    ): ByteArray? {
+        val stream = page.stream ?: return null
+        return vaultChapterThumbnailImageNormalizer.normalize(stream, crop)
+    }
+
     fun closeVaultChapterThumbnailCrop() {
-        if (state.value.dialog is Dialog.VaultChapterThumbnailCrop) {
+        val dialog = state.value.dialog as? Dialog.VaultChapterThumbnailCrop ?: return
+        if (!dialog.isPublishing) {
             mutableState.update { it.copy(dialog = null) }
         }
     }
@@ -1279,7 +1299,10 @@ class ReaderViewModel @JvmOverloads constructor(
         data object ReadingModeSelect : Dialog
         data object OrientationModeSelect : Dialog
         data class PageActions(val page: ReaderPage) : Dialog
-        data class VaultChapterThumbnailCrop(val page: ReaderPage) : Dialog
+        data class VaultChapterThumbnailCrop(
+            val page: ReaderPage,
+            val isPublishing: Boolean = false,
+        ) : Dialog
     }
 
     sealed interface Event {

@@ -37,6 +37,7 @@ enum class VaultTransferType {
     CATALOGUE_REFRESH,
     METADATA_PUBLISH,
     CACHE_CHAPTER,
+    THUMBNAIL_PUBLISH,
 }
 
 enum class VaultTransferState {

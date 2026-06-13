@@ -119,7 +119,21 @@ class VaultMangaDeletionService(
             return VaultMangaDeletionResult.PublishFailed
         }
 
-        evictLocalCache(mangaId, manga.vaultId, remoteManga.mangaIdentity, remoteManga.cover?.path)
+        evictLocalCache(
+            mangaId = mangaId,
+            vaultId = manga.vaultId,
+            mangaIdentity = remoteManga.mangaIdentity,
+            coverPath = remoteManga.cover?.path,
+            thumbnails = remoteManga.chapters.mapNotNull { chapter ->
+                chapter.thumbnail?.let { thumbnail ->
+                    LocalThumbnailCleanup(
+                        chapterIdentity = chapter.identity,
+                        thumbnailIdentity = thumbnail.identity,
+                        path = thumbnail.path,
+                    )
+                }
+            },
+        )
 
         val refreshResult = when (val refresh = refreshService.refreshConfiguredVault()) {
             is VaultCatalogueRefreshResult.Refreshed -> null
@@ -150,6 +164,7 @@ class VaultMangaDeletionService(
                 add(pointer.path)
                 addAll(remoteManga.chapters.map { it.content.path })
                 remoteManga.cover?.path?.let(::add)
+                addAll(remoteManga.chapters.mapNotNull { it.thumbnail?.path })
             },
         )
         return if (cleanupFailures.isEmpty()) {
@@ -239,6 +254,7 @@ class VaultMangaDeletionService(
         vaultId: Long,
         mangaIdentity: String,
         coverPath: String?,
+        thumbnails: List<LocalThumbnailCleanup>,
     ) {
         val root = storageManager.getVaultCacheDirectory() ?: return
         val localStaging = UniFileVaultTransferLocalStaging(root)
@@ -254,6 +270,17 @@ class VaultMangaDeletionService(
                     mangaIdentity,
                     "covers",
                     it.substringAfterLast('/', "cover.img"),
+                ).joinToString("/") { segment -> segment.toCachePathSegment() },
+            )
+        }
+        thumbnails.forEach { thumbnail ->
+            localStaging.delete(
+                listOf(
+                    vaultId.toString(),
+                    mangaIdentity,
+                    thumbnail.chapterIdentity,
+                    "thumbnails",
+                    "${thumbnail.thumbnailIdentity}.${thumbnail.path.substringAfterLast('.', "jpg")}",
                 ).joinToString("/") { segment -> segment.toCachePathSegment() },
             )
         }
@@ -286,6 +313,12 @@ class VaultMangaDeletionService(
         val ACTIVE_TRANSFER_STATES = setOf(VaultTransferState.QUEUED, VaultTransferState.RUNNING)
     }
 }
+
+private data class LocalThumbnailCleanup(
+    val chapterIdentity: String,
+    val thumbnailIdentity: String,
+    val path: String,
+)
 
 sealed interface VaultMangaDeletionResult {
     data class Deleted(val vaultId: Long) : VaultMangaDeletionResult

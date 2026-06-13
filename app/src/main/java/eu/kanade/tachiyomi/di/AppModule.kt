@@ -27,8 +27,10 @@ import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultImportService
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultMangaScanner
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultMangaScannerBoundary
-import eu.kanade.tachiyomi.data.vault.publishing.PlaceholderVaultChapterThumbnailDisplayLoader
-import eu.kanade.tachiyomi.data.vault.publishing.PlaceholderVaultChapterThumbnailPublishService
+import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailCacheStore
+import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailDisplayLoader
+import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailPublishService
+import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailCacheStore
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayLoader
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailPublishService
 import eu.kanade.tachiyomi.data.vault.publishing.VaultCoverPublishService
@@ -159,8 +161,13 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { VaultMangaDeletionService(get(), get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultCoverPublishService(get(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultMetadataPublishService(get(), get(), get(), get(), get()) }
-        addSingletonFactory<VaultChapterThumbnailPublishService> { PlaceholderVaultChapterThumbnailPublishService() }
-        addSingletonFactory<VaultChapterThumbnailDisplayLoader> { PlaceholderVaultChapterThumbnailDisplayLoader() }
+        addSingletonFactory<VaultChapterThumbnailCacheStore> { DefaultVaultChapterThumbnailCacheStore(get()) }
+        addSingletonFactory<VaultChapterThumbnailPublishService> {
+            DefaultVaultChapterThumbnailPublishService(get(), get(), get(), get(), get(), get())
+        }
+        addSingletonFactory<VaultChapterThumbnailDisplayLoader> {
+            DefaultVaultChapterThumbnailDisplayLoader(get(), get(), get(), get())
+        }
         addSingletonFactory<LocalVaultMangaScannerBoundary> { LocalVaultMangaScanner(get(), get(), get(), get()) }
         addSingletonFactory { LocalVaultChapterStager() }
         addSingletonFactory<LocalVaultChapterPublisherBoundary> {
