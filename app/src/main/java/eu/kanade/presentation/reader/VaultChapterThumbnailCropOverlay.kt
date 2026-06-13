@@ -1,5 +1,6 @@
 package eu.kanade.presentation.reader
 
+import android.graphics.PointF
 import android.net.Uri
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.compose.foundation.background
@@ -45,6 +46,7 @@ import kotlinx.coroutines.withContext
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 import java.io.File
+import kotlin.math.max
 import kotlin.math.min
 
 @Composable
@@ -87,6 +89,9 @@ fun VaultChapterThumbnailCropOverlay(
             val horizontalScrimWidth = (maxWidth - cropSize) / 2
             val verticalScrimHeight = (maxHeight - cropSize) / 2
             val scrimColor = Color.Black.copy(alpha = 0.55f)
+            val horizontalCropPaddingPx = with(density) { horizontalScrimWidth.toPx() }.toInt()
+            val verticalCropPaddingPx = with(density) { verticalScrimHeight.toPx() }.toInt()
+            val cropSizePx = with(density) { cropSize.toPx() }
 
             if (imageFile == null) {
                 CircularProgressIndicator(color = Color.White)
@@ -96,14 +101,37 @@ fun VaultChapterThumbnailCropOverlay(
                         SubsamplingScaleImageView(viewContext).apply {
                             layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
                             setMinimumDpi(1)
-                            setMinimumScaleType(SubsamplingScaleImageView.SCALE_TYPE_CENTER_CROP)
+                            setMinimumScaleType(SubsamplingScaleImageView.SCALE_TYPE_CUSTOM)
                             setPanLimit(SubsamplingScaleImageView.PAN_LIMIT_OUTSIDE)
                             setDoubleTapZoomStyle(SubsamplingScaleImageView.ZOOM_FOCUS_CENTER)
+                            setCropFramePadding(horizontalCropPaddingPx, verticalCropPaddingPx)
+                            setOnImageEventListener(
+                                object : SubsamplingScaleImageView.DefaultOnImageEventListener() {
+                                    override fun onReady() {
+                                        setupVaultChapterThumbnailCropZoom(cropSizePx)
+                                    }
+                                },
+                            )
+                            setOnStateChangedListener(
+                                object : SubsamplingScaleImageView.DefaultOnStateChangedListener() {
+                                    override fun onScaleChanged(newScale: Float, origin: Int) {
+                                        clampVaultChapterThumbnailCropToFrame(cropSizePx)
+                                    }
+
+                                    override fun onCenterChanged(newCenter: PointF?, origin: Int) {
+                                        clampVaultChapterThumbnailCropToFrame(cropSizePx)
+                                    }
+                                },
+                            )
                             setImage(ImageSource.uri(viewContext, Uri.fromFile(imageFile)))
                         }
                     },
                     update = { view ->
                         imageView = view
+                        view.setCropFramePadding(horizontalCropPaddingPx, verticalCropPaddingPx)
+                        if (view.hasImage()) {
+                            view.setVaultChapterThumbnailCropMinScale(cropSizePx)
+                        }
                         if (!view.hasImage()) {
                             view.setImage(ImageSource.uri(context, Uri.fromFile(imageFile)))
                         }
@@ -203,12 +231,52 @@ fun VaultChapterThumbnailCropOverlay(
     }
 }
 
+private fun SubsamplingScaleImageView.setCropFramePadding(horizontalPx: Int, verticalPx: Int) {
+    setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
+}
+
+private fun SubsamplingScaleImageView.setupVaultChapterThumbnailCropZoom(cropSizePx: Float) {
+    if (width <= 0 || height <= 0 || sWidth <= 0 || sHeight <= 0) return
+    setVaultChapterThumbnailCropMinScale(cropSizePx)
+    val initialScale = max(width.toFloat() / sWidth, height.toFloat() / sHeight)
+    maxScale = initialScale * MAX_VAULT_CHAPTER_THUMBNAIL_ZOOM_SCALE
+    setDoubleTapZoomScale(initialScale * 2)
+    setScaleAndCenter(initialScale, PointF(sWidth / 2f, sHeight / 2f))
+}
+
+private fun SubsamplingScaleImageView.setVaultChapterThumbnailCropMinScale(cropSizePx: Float) {
+    if (!hasImage() || sWidth <= 0 || sHeight <= 0) return
+    minScale = max(cropSizePx / sWidth, cropSizePx / sHeight)
+}
+
+private fun SubsamplingScaleImageView.clampVaultChapterThumbnailCropToFrame(cropSizePx: Float) {
+    if (!hasImage() || width <= 0 || height <= 0 || scale <= 0f) return
+    val center = viewToSourceCoord(width / 2f, height / 2f) ?: return
+    val halfCropSource = cropSizePx / scale / 2f
+    val clampedCenter = PointF(
+        center.x.coerceCropCenter(halfCropSource, sWidth.toFloat()),
+        center.y.coerceCropCenter(halfCropSource, sHeight.toFloat()),
+    )
+    if (clampedCenter != center) {
+        setScaleAndCenter(scale, clampedCenter)
+    }
+}
+
+private fun Float.coerceCropCenter(halfCropSource: Float, sourceSize: Float): Float {
+    val minCenter = halfCropSource.coerceAtMost(sourceSize / 2f)
+    val maxCenter = (sourceSize - halfCropSource).coerceAtLeast(sourceSize / 2f)
+    return coerceIn(minCenter, maxCenter)
+}
+
 private fun SubsamplingScaleImageView.toVaultChapterThumbnailCrop(cropSizePx: Float): VaultChapterThumbnailCrop? {
     if (!hasImage() || width <= 0 || height <= 0) return null
     val left = (width - cropSizePx) / 2f
     val top = (height - cropSizePx) / 2f
     val topLeft = viewToSourceCoord(left, top) ?: return null
     val bottomRight = viewToSourceCoord(left + cropSizePx, top + cropSizePx) ?: return null
+    if (topLeft.x < 0f || topLeft.y < 0f || bottomRight.x > sWidth || bottomRight.y > sHeight) {
+        return null
+    }
     val size = min(bottomRight.x - topLeft.x, bottomRight.y - topLeft.y).toInt()
     if (size <= 0) return null
     return VaultChapterThumbnailCrop(
@@ -217,3 +285,5 @@ private fun SubsamplingScaleImageView.toVaultChapterThumbnailCrop(cropSizePx: Fl
         size = size.coerceAtMost(sWidth).coerceAtMost(sHeight),
     )
 }
+
+private const val MAX_VAULT_CHAPTER_THUMBNAIL_ZOOM_SCALE = 5f
