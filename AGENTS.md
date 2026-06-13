@@ -23,13 +23,13 @@ Kotlin uses official Kotlin style (`kotlin.code.style=official`), Spotless with 
 
 ## Testing Guidelines
 
-Tests use JUnit Jupiter, Kotest assertions, MockK, and coroutine test utilities. Place tests in the relevant module's `src/test/java`, mirroring production packages. Name tests after the unit under test, such as `FetchIntervalTest`. Run `./gradlew testDebugUnitTest` before submitting.
+Tests use JUnit Jupiter, Kotest assertions, MockK, and coroutine test utilities. Place tests in the relevant module's `src/test/java`, mirroring production packages. Name tests after the unit under test, such as `FetchIntervalTest`. Run `./gradlew testDebugUnitTest` and `./gradlew detekt` before submitting Kotlin changes.
 
 ## Commit & Pull Request Guidelines
 
 Recent commits use short, imperative subjects such as `Add vertical chapter navigator` or `Drop kotlinx-collections-immutable usage`. Keep commits focused.
 
-Pull requests should include a summary, linked issue when applicable, testing performed, and a brief self-review. For UI changes, include screenshots and verify relevant themes and tablet mode. CI expects formatting, unit tests, SQLDelight migration checks, and release assembly to pass.
+Pull requests should include a summary, linked issue when applicable, testing performed, and a brief self-review. For UI changes, include screenshots and verify relevant themes and tablet mode. CI expects formatting, Detekt, unit tests, SQLDelight migration checks, and release assembly to pass.
 
 Release versions use `release/MAJOR.MINOR.PATCH` branches merged into `main`; automation creates annotated `vMAJOR.MINOR.PATCH` tags. The branch and tag versions must match the Android `versionName`, `versionCode` must increase for public releases, and GitHub Releases are created as drafts for manual verification before publishing.
 

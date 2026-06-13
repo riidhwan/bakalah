@@ -12,6 +12,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 ### Improved
+- Replace Browse Sources language sections with a compact language chip filter.
 - Show total progress percentage in Library-to-Vault Capture notification titles.
 
 ## [v0.25.1] - 2026-06-11

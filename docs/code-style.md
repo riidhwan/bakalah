@@ -204,6 +204,7 @@ Run:
 ./gradlew testDebugUnitTest
 ./gradlew verifySqlDelightMigration
 ./gradlew spotlessCheck
+./gradlew detekt
 ```
 
 Antipatterns:
@@ -223,4 +224,4 @@ Before submitting a change, check:
 - New dependencies are justified and registered centrally.
 - SQL schema changes include migrations.
 - Tests cover meaningful logic and edge cases.
-- `spotlessCheck` and relevant tests pass.
+- `spotlessCheck`, `detekt`, and relevant tests pass.
