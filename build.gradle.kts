@@ -18,6 +18,7 @@ plugins {
     alias(libs.plugins.sqldelight) apply false
 
     alias(mihonx.plugins.spotless)
+    alias(mihonx.plugins.detekt)
 }
 
 val buildLogic: IncludedBuild = gradle.includedBuild("build-logic")

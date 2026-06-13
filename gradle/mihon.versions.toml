@@ -12,5 +12,6 @@ android-base = { id = "mihon.plugins.android.base" }
 android-library = { id = "mihon.plugins.android.library" }
 android-test = { id = "mihon.plugins.android.test" }
 compose = { id = "mihon.plugins.compose.android" }
+detekt = { id = "mihon.plugins.detekt" }
 kotlin-multiplatform = { id = "mihon.plugins.kotlin.multiplatform" }
 spotless = { id = "mihon.plugins.spotless" }
