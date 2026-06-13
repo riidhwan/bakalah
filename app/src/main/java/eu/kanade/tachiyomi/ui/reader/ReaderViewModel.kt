@@ -994,6 +994,33 @@ class ReaderViewModel @JvmOverloads constructor(
         mutableState.update { it.copy(dialog = Dialog.Settings) }
     }
 
+    fun openVaultChapterThumbnailCrop() {
+        val page = state.value.currentReadyPageForVaultChapterThumbnail ?: return
+        mutableState.update { it.copy(dialog = Dialog.VaultChapterThumbnailCrop(page)) }
+    }
+
+    fun confirmVaultChapterThumbnailCrop() {
+        val page = (state.value.dialog as? Dialog.VaultChapterThumbnailCrop)?.page
+        if (page?.status != Page.State.Ready) return
+
+        viewModelScope.launchNonCancellable {
+            val result = setVaultChapterThumbnail(page)
+            mutableState.update { it.copy(dialog = null) }
+            eventChannel.send(Event.SetVaultChapterThumbnailResult(result))
+        }
+    }
+
+    private fun setVaultChapterThumbnail(page: ReaderPage): SetVaultChapterThumbnailResult {
+        check(page.status == Page.State.Ready)
+        return SetVaultChapterThumbnailResult.NotWired
+    }
+
+    fun closeVaultChapterThumbnailCrop() {
+        if (state.value.dialog is Dialog.VaultChapterThumbnailCrop) {
+            mutableState.update { it.copy(dialog = null) }
+        }
+    }
+
     fun closeDialog() {
         mutableState.update { it.copy(dialog = null) }
     }
@@ -1129,6 +1156,10 @@ class ReaderViewModel @JvmOverloads constructor(
         Error,
     }
 
+    enum class SetVaultChapterThumbnailResult {
+        NotWired,
+    }
+
     sealed interface SaveImageResult {
         class Success(val uri: Uri) : SaveImageResult
         class Error(val error: Throwable) : SaveImageResult
@@ -1197,6 +1228,16 @@ class ReaderViewModel @JvmOverloads constructor(
 
         val totalPages: Int
             get() = currentChapter?.pages?.size ?: -1
+
+        val currentReadyPageForVaultChapterThumbnail: ReaderPage?
+            get() {
+                if (!isVaultSession) return null
+                val page = currentChapter?.pages?.getOrNull(currentPage - 1) ?: return null
+                return page.takeIf { it.status == Page.State.Ready }
+            }
+
+        val canSetVaultChapterThumbnail: Boolean
+            get() = currentReadyPageForVaultChapterThumbnail != null
     }
 
     sealed interface Dialog {
@@ -1205,6 +1246,7 @@ class ReaderViewModel @JvmOverloads constructor(
         data object ReadingModeSelect : Dialog
         data object OrientationModeSelect : Dialog
         data class PageActions(val page: ReaderPage) : Dialog
+        data class VaultChapterThumbnailCrop(val page: ReaderPage) : Dialog
     }
 
     sealed interface Event {
@@ -1212,6 +1254,7 @@ class ReaderViewModel @JvmOverloads constructor(
         data object PageChanged : Event
         data class SetOrientation(val orientation: Int) : Event
         data class SetCoverResult(val result: SetAsCoverResult) : Event
+        data class SetVaultChapterThumbnailResult(val result: ReaderViewModel.SetVaultChapterThumbnailResult) : Event
 
         data class SavedImage(val result: SaveImageResult) : Event
         data class ShareImage(val uri: Uri, val page: ReaderPage) : Event
