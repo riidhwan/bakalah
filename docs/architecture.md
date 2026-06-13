@@ -148,7 +148,7 @@ Use JUnit Jupiter, Kotest assertions, MockK, and coroutine test utilities where 
 ./gradlew verifySqlDelightMigration
 ```
 
-Run `./gradlew spotlessCheck` before opening a pull request.
+Run `./gradlew spotlessCheck` and `./gradlew detekt` before opening a pull request.
 
 ## Adding New Features
 

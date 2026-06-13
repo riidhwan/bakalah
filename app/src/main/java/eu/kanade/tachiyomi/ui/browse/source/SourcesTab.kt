@@ -51,6 +51,7 @@ fun Screen.sourcesTab(): TabContent {
                 },
                 onClickPin = screenModel::togglePin,
                 onLongClickItem = screenModel::showSourceDialog,
+                onLanguageFilterChange = screenModel::setLanguageFilter,
             )
 
             state.dialog?.let { dialog ->

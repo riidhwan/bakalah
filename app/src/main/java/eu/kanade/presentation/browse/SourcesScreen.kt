@@ -1,24 +1,32 @@
 package eu.kanade.presentation.browse
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.browse.components.BaseSourceItem
 import eu.kanade.tachiyomi.ui.browse.source.SourcesScreenModel
@@ -34,7 +42,6 @@ import tachiyomi.presentation.core.components.material.topSmallPaddingValues
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.LoadingScreen
-import tachiyomi.presentation.core.theme.header
 import tachiyomi.presentation.core.util.plus
 import tachiyomi.source.local.isLocal
 
@@ -45,6 +52,7 @@ fun SourcesScreen(
     onClickItem: (Source, Listing) -> Unit,
     onClickPin: (Source) -> Unit,
     onLongClickItem: (Source) -> Unit,
+    onLanguageFilterChange: (String) -> Unit,
 ) {
     when {
         state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
@@ -56,36 +64,29 @@ fun SourcesScreen(
             ScrollbarLazyColumn(
                 contentPadding = contentPadding + topSmallPaddingValues,
             ) {
+                item(
+                    key = "language-filter",
+                    contentType = "language-filter",
+                ) {
+                    SourceLanguageFilterChips(
+                        languages = state.languages,
+                        selectedLanguage = state.selectedLanguage,
+                        onLanguageFilterChange = onLanguageFilterChange,
+                        modifier = Modifier.animateItem(),
+                    )
+                }
                 items(
                     items = state.items,
-                    contentType = {
-                        when (it) {
-                            is SourceUiModel.Header -> "header"
-                            is SourceUiModel.Item -> "item"
-                        }
-                    },
-                    key = {
-                        when (it) {
-                            is SourceUiModel.Header -> it.hashCode()
-                            is SourceUiModel.Item -> "source-${it.source.key()}"
-                        }
-                    },
-                ) { model ->
-                    when (model) {
-                        is SourceUiModel.Header -> {
-                            SourceHeader(
-                                modifier = Modifier.animateItem(),
-                                language = model.language,
-                            )
-                        }
-                        is SourceUiModel.Item -> SourceItem(
-                            modifier = Modifier.animateItem(),
-                            source = model.source,
-                            onClickItem = onClickItem,
-                            onLongClickItem = onLongClickItem,
-                            onClickPin = onClickPin,
-                        )
-                    }
+                    contentType = { "item" },
+                    key = { "source-${it.key()}" },
+                ) { source ->
+                    SourceItem(
+                        modifier = Modifier.animateItem(),
+                        source = source,
+                        onClickItem = onClickItem,
+                        onLongClickItem = onLongClickItem,
+                        onClickPin = onClickPin,
+                    )
                 }
             }
         }
@@ -93,17 +94,58 @@ fun SourcesScreen(
 }
 
 @Composable
-private fun SourceHeader(
-    language: String,
+private fun SourceLanguageFilterChips(
+    languages: List<String>,
+    selectedLanguage: String?,
+    onLanguageFilterChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    Text(
-        text = LocaleHelper.getSourceDisplayName(language, context),
+    Column(
         modifier = modifier
-            .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small),
-        style = MaterialTheme.typography.header,
-    )
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            languages.forEach { language ->
+                SourceLanguageFilterChip(
+                    label = LocaleHelper.getSourceDisplayName(language, context),
+                    selected = language == selectedLanguage,
+                    onClick = {
+                        if (language != selectedLanguage) {
+                            onLanguageFilterChange(language)
+                        }
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SourceLanguageFilterChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+        FilterChip(
+            selected = selected,
+            onClick = onClick,
+            label = {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            contentPadding = PaddingValues(horizontal = 10.dp),
+        )
+    }
 }
 
 @Composable
@@ -196,9 +238,4 @@ fun SourceOptionsDialog(
         onDismissRequest = onDismiss,
         confirmButton = {},
     )
-}
-
-sealed interface SourceUiModel {
-    data class Item(val source: Source) : SourceUiModel
-    data class Header(val language: String) : SourceUiModel
 }

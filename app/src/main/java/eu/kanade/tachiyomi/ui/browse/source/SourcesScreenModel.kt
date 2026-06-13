@@ -6,7 +6,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.domain.source.interactor.GetEnabledSources
 import eu.kanade.domain.source.interactor.ToggleSource
 import eu.kanade.domain.source.interactor.ToggleSourcePin
-import eu.kanade.presentation.browse.SourceUiModel
+import eu.kanade.tachiyomi.util.system.LocaleHelper
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
@@ -19,7 +19,6 @@ import tachiyomi.domain.source.model.Pin
 import tachiyomi.domain.source.model.Source
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import java.util.TreeMap
 
 class SourcesScreenModel(
     private val getEnabledSources: GetEnabledSources = Injekt.get(),
@@ -43,38 +42,27 @@ class SourcesScreenModel(
 
     private fun collectLatestSources(sources: List<Source>) {
         mutableState.update { state ->
-            val map = TreeMap<String, MutableList<Source>> { d1, d2 ->
-                // Sources without a lang defined will be placed at the end
-                when {
-                    d1 == LAST_USED_KEY && d2 != LAST_USED_KEY -> -1
-                    d2 == LAST_USED_KEY && d1 != LAST_USED_KEY -> 1
-                    d1 == PINNED_KEY && d2 != PINNED_KEY -> -1
-                    d2 == PINNED_KEY && d1 != PINNED_KEY -> 1
-                    d1 == "" && d2 != "" -> 1
-                    d2 == "" && d1 != "" -> -1
-                    else -> d1.compareTo(d2)
-                }
-            }
-            val byLang = sources.groupByTo(map) {
-                when {
-                    it.isUsedLast -> LAST_USED_KEY
-                    Pin.Actual in it.pin -> PINNED_KEY
-                    else -> it.lang
-                }
-            }
+            val sourceItems = sources.filterNot { it.isUsedLast }
+            val languages = sourceItems
+                .map { it.lang }
+                .distinct()
+                .sortedWith(sourceLanguageComparator)
+            val selectedLanguage = state.selectedLanguage
+                ?.takeIf { it in languages }
+                ?: defaultSelectedLanguage(languages)
 
             state.copy(
                 isLoading = false,
-                items = byLang
-                    .flatMap {
-                        listOf(
-                            SourceUiModel.Header(it.key),
-                            *it.value.map { source ->
-                                SourceUiModel.Item(source)
-                            }.toTypedArray(),
-                        )
-                    },
+                languages = languages,
+                selectedLanguage = selectedLanguage,
+                sources = sourceItems,
             )
+        }
+    }
+
+    fun setLanguageFilter(language: String) {
+        mutableState.update { state ->
+            state.copy(selectedLanguage = language)
         }
     }
 
@@ -104,13 +92,39 @@ class SourcesScreenModel(
     data class State(
         val dialog: Dialog? = null,
         val isLoading: Boolean = true,
-        val items: List<SourceUiModel> = listOf(),
+        val languages: List<String> = listOf(),
+        val selectedLanguage: String? = null,
+        private val sources: List<Source> = listOf(),
     ) {
-        val isEmpty = items.isEmpty()
+        val isEmpty = languages.isEmpty()
+
+        val items: List<Source>
+            get() = sources
+                .filter { it.lang == selectedLanguage }
+                .sortedWith(sourceComparator)
     }
 
     companion object {
         const val PINNED_KEY = "pinned"
         const val LAST_USED_KEY = "last_used"
+
+        private val sourceLanguageComparator = Comparator<String> { left, right ->
+            // Sources without a lang defined will be placed at the end.
+            when {
+                left == "" && right != "" -> 1
+                right == "" && left != "" -> -1
+                else -> LocaleHelper.comparator(left, right)
+            }
+        }
+
+        private val sourceComparator = compareBy<Source> { Pin.Actual !in it.pin }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+
+        private fun defaultSelectedLanguage(languages: List<String>): String? {
+            return when {
+                "en" in languages -> "en"
+                else -> languages.firstOrNull()
+            }
+        }
     }
 }
