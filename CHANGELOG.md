@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+
+## [v0.26.0] - 2026-06-13
 ### Added
 - Add Vault chapter thumbnails with reader crop publishing and chapter-list display cache.
 

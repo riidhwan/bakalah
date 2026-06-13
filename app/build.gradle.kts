@@ -4,6 +4,10 @@ import mihon.gradle.getLatestCommitCount
 import mihon.gradle.getLatestCommitSha
 import mihon.gradle.tasks.ReplaceShortcutsPlaceholderTask
 
+@Suppress("MagicNumber")
+private val bakalahVersionCode = 37
+private val bakalahVersionName = "0.26.0"
+
 plugins {
     alias(mihonx.plugins.android.application)
     alias(mihonx.plugins.compose)
@@ -26,8 +30,8 @@ android {
     defaultConfig {
         applicationId = "me.ramdhani.bakalah"
 
-        versionCode = 36
-        versionName = "0.25.1"
+        versionCode = bakalahVersionCode
+        versionName = bakalahVersionName
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getLatestCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getLatestCommitSha()}\"")
