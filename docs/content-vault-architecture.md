@@ -23,7 +23,7 @@ The implementation follows the repository layering in `docs/architecture.md`.
 
 `domain/src/main/java/tachiyomi/domain/vault` owns stable vault contracts and business concepts:
 
-- `model`: vault identities, manifests, manga, chapters, covers, labels, cache states, reading state, import plans, revisions, transfer jobs, and WebDAV config.
+- `model`: vault identities, manifests, manga, chapters, manga covers, chapter thumbnails, labels, cache states, reading state, import plans, revisions, transfer jobs, and WebDAV config.
 - `repository/VaultRepository.kt`: the persistence boundary used by interactors, app services, and screen models.
 - `interactor`: pure or mostly pure use cases such as catalogue refresh construction, import planning, revision checks, and simple read/write operations.
 - `service/ContentVaultPreferences.kt`: typed preferences for configured WebDAV storage, configured vault identity, private credentials, and local cache size limit.
@@ -38,7 +38,7 @@ Domain code does not perform Android storage, WebDAV, or SQLDelight work directl
 - `VaultMapper` maps SQLDelight rows into domain models.
 - `vault.sq` defines dedicated vault tables that stay separate from Library manga and chapter tables.
 
-`refreshCatalogue` is the main atomic index replacement workflow. It upserts the content vault record, labels, manga, covers, chapter rows, manga-label links, and manifest snapshots in one transaction.
+`refreshCatalogue` is the main atomic index replacement workflow. It upserts the content vault record, labels, manga, covers, chapter thumbnails, chapter rows, manga-label links, and manifest snapshots in one transaction.
 
 ### App
 
@@ -51,7 +51,7 @@ Domain code does not perform Android storage, WebDAV, or SQLDelight work directl
 - `add`: `AddToVaultJobRunner` shares durable Vault Import Request and WorkManager plumbing between Local-to-Vault Import and Library-to-Vault Capture without sharing workflow result types or publishing policy.
 - `transfer`: `VaultTransferService` performs staged uploads/downloads, integrity verification, transfer job state updates, and cache state updates. `AddToVaultTransferFinalizer` shares workflow-neutral transfer job finalization.
 - `webdav`: `VaultWebDavClient` and `LibraryVaultCaptureWebDav` own low-level WebDAV transport adapters.
-- `publishing`: `VaultContentUploader`, `VaultManifestPublishTransaction`, `VaultMetadataPublishService`, `VaultCoverPublishService`, and `VaultMangaDeletionService` publish catalogue/content mutations and refresh the local index afterward.
+- `publishing`: `VaultContentUploader`, `VaultManifestPublishTransaction`, `VaultMetadataPublishService`, `VaultCoverPublishService`, Vault Chapter Thumbnail publishing, and `VaultMangaDeletionService` publish catalogue/content mutations and refresh the local index afterward.
 - `cache`: `VaultCachePolicyService` creates cache paths, marks opened cached chapters, evicts chapters, and enforces the local cache size limit.
 - `reader`: `VaultReaderOpenService` verifies cached chapters or performs cache-first download before reader launch, and `ActiveVaultReaderSessions` tracks reader-adjacent deletion guards.
   Vault label sensitivity is catalogue-owned metadata, while the user's include-sensitive Vault Destination setting is device-local.
@@ -83,6 +83,7 @@ content-vault.json
 manga/<manifest-id>.json
 content/<manga-identity>/<chapter-identity>/<chapter-file>.cbz
 content/<manga-identity>/cover/<cover-identity>.<extension>
+content/<manga-identity>/<chapter-identity>/thumbnail/<thumbnail-identity>.jpg
 ```
 
 The root and manga manifests are the authoritative catalogue. Remote folder listing is used for setup and targeted reads/writes, not as the browse model.
@@ -106,9 +107,10 @@ The local index is stored in dedicated SQLDelight tables:
 
 - `content_vaults`: configured/refreshed vault metadata and root revision.
 - `vault_mangas`: vault manga metadata, sort key, cover pointer, and manga revision.
-- `vault_chapters`: chapter metadata, ordering, remote content path, content format, size, checksum, and chapter revision.
+- `vault_chapters`: chapter metadata, ordering, remote content path, content format, size, checksum, optional thumbnail pointer, and chapter revision.
 - `vault_labels` and `vault_manga_labels`: vault-owned organization labels.
 - `vault_covers`: current cover metadata and remote cover path.
+- `vault_chapter_thumbnails`: current chapter thumbnail metadata and remote thumbnail path.
 - `vault_reading_state`: device-local read/bookmark/page state.
 - `vault_chapter_cache_state`: device-local cache state, cache path, verified integrity, open timestamps, and failure reason.
 - `vault_transfer_jobs`: visible upload/download/cache/publish job state, including source-backed capture result summaries.
@@ -117,7 +119,7 @@ The local index is stored in dedicated SQLDelight tables:
 
 Chapter-level provenance is remote catalogue metadata. It does not require dedicated SQL columns until a user-facing query or display needs it; manifest snapshots retain raw provenance for diagnostics.
 
-Normal Vault browsing reads the local index through `VaultRepository`. It does not query WebDAV live.
+Normal Vault browsing reads the local index through `VaultRepository`. It does not query WebDAV live. Catalogue refresh indexes Vault Chapter Thumbnail metadata but does not download thumbnail image bytes.
 
 ## Catalogue Refresh
 
@@ -232,7 +234,7 @@ Metadata, cover, and deletion operations follow the same publish shape:
 
 Local-to-Vault Import and Library-to-Vault Capture deliberately keep workflow-specific one-chapter publishing services. Shared publishing helpers should stay limited to mechanics that do not hide duplicate policy, staging source, provenance, ordering, cover selection, replacement behavior, or workflow result semantics.
 
-`VaultMetadataPublishService` updates manga metadata, labels, and label sensitivity without rewriting chapter content. Vault Label identities remain stable across renames so label assignment and sensitivity are not tied to display names. Because labels are embedded in manga manifests in the current layout, renaming a label or changing sensitivity rewrites each manga manifest that already contains that label. `VaultCoverPublishService` uploads a new vault-owned cover asset and updates the manga/root manifests. `VaultMangaDeletionService` removes the manga pointer from the root manifest, refreshes the index, deletes the remote manga manifest, chapter CBZ files, and cover assets as cleanup, and removes app-managed local state for that Vault Manga. It does not delete Local Manga files, Downloads, or arbitrary local files.
+`VaultMetadataPublishService` updates manga metadata, labels, and label sensitivity without rewriting chapter content. Vault Label identities remain stable across renames so label assignment and sensitivity are not tied to display names. Because labels are embedded in manga manifests in the current layout, renaming a label or changing sensitivity rewrites each manga manifest that already contains that label. `VaultCoverPublishService` uploads a new vault-owned cover asset and updates the manga/root manifests. Vault Chapter Thumbnail publishing uploads a new vault-owned thumbnail asset and updates the owning chapter record in the manga manifest without rewriting readable chapter content. `VaultMangaDeletionService` removes the manga pointer from the root manifest, refreshes the index, deletes the remote manga manifest, chapter CBZ files, cover assets, and thumbnail assets as cleanup, and removes app-managed local state for that Vault Manga. It does not delete Local Manga files, Downloads, or arbitrary local files.
 
 ## Transfers and Integrity
 
@@ -243,6 +245,7 @@ Transfer types are:
 - `IMPORT_PUBLISH`
 - `CAPTURE_PUBLISH`
 - `METADATA_PUBLISH`
+- `THUMBNAIL_PUBLISH`
 - `CACHE_CHAPTER`
 - `CATALOGUE_REFRESH`
 
@@ -273,11 +276,17 @@ Vault reading reuses the existing reader after a chapter has been verified as lo
 
 `ReaderViewModel` then uses `VaultPageLoader` to read the verified cached CBZ through the existing reader flow. Vault progress remains in `vault_reading_state`; Library chapter state, history, and tracker behavior are not reused as authority for Vault chapters.
 
+Vault Chapter Thumbnails are optional, user-selected, vault-owned square images for individual Vault Chapters. They are created only from a Vault Reader Session for an existing Vault Chapter backed by verified cached content; Library and Local reader sessions do not expose the action. When the current page is ready, the Reader bottom bar exposes a dedicated image/thumbnail action, distinct from the existing crop-borders action, that opens a full-screen crop overlay for the invoked page on all form factors. The crop UI does not offer page switching. It maps a square selection back to the original loaded page pixels for that `ReaderPage`, independent of reader crop-borders, fit mode, zoom, rotation, and display scaling. If the cached CBZ contains split page entries, the invoked split page is the source; Bakalah does not reconstruct a pre-split source image. The default selection is the center square of the original loaded page, and v1 supports pan/zoom under a fixed square frame with confirm/cancel only, without a separate final-thumbnail preview.
+
+After confirmation, Bakalah processes the crop to a normalized 256 x 256 JPEG without preserving source EXIF or page metadata, then returns to reading while publishing continues. Confirming a thumbnail crop does not add any extra Vault Reading State progress or read-marker side effect beyond whatever normal reading already recorded. Animated source pages use the decoded static frame only. Thumbnail publishing is visible in the Vault Transfer Queue as `THUMBNAIL_PUBLISH`. Publishing is blocked while there is an active non-terminal Vault transfer for the same Vault Manga. The service reads and validates the remote root and manga manifests, rejects configured identity or revision mismatches instead of silently merging, uploads a new thumbnail asset under the chapter's content area, updates the `VaultManifestChapter.thumbnail` pointer and the chapter revision, updates the manga/root revisions, refreshes the local Vault Index, and cleans up any replaced remote thumbnail best-effort after success. Thumbnail metadata stores the derived asset reference only, not the source page number or crop rectangle. Replacing a thumbnail preserves the Vault Chapter identity, title, ordering, content pointer, reading state, and cached chapter content. Failed thumbnail publishes record failure state and reason but do not keep the cropped image bytes as a durable retry payload; retrying requires a fresh Reader crop action. Thumbnail publish jobs are not user-cancellable in v1 beyond normal app or job interruption, and interruption performs best-effort staged cleanup.
+
 ## Cache Policy
 
 `VaultCachePolicyService` owns local cache paths and eviction rules.
 
 Cache paths are derived from the local vault id, manga identity, chapter identity, and remote file name, with path segments sanitized before use. Eviction deletes only app-managed cached chapter files through the local staging abstraction and resets the chapter cache state to `VAULT_ONLY`.
+
+Vault Chapter Thumbnails are not Local Content Cache entries and are not removed by Cache Eviction. They use a small lazy local display cache, like Vault Covers, populated when Vault UI needs to render them. Thumbnail file sizes count toward Vault Manga Storage Usage and Vault Storage Usage because they are vault-owned remote content. Vault Deletion cleans thumbnail assets along with other vault-owned manga assets.
 
 The local cache limit is read from `ContentVaultPreferences.localCacheLimitBytes`, defaulting to 2 GiB. Limit enforcement evicts oldest read cached chapters first and accepts a protected chapter set for reader-sensitive flows.
 
@@ -294,7 +303,11 @@ It derives visible manga items, local cache usage, remote vault storage usage, f
 By default, the Vault Destination excludes Vault Manga that have any Sensitive Vault Label; direct filtering to a sensitive label or enabling the device-local include-sensitive setting includes them.
 Vault Label filtering is exposed through persistent chips in the Vault Destination content below the vault summary, not through a top-bar action. The chip area appears only when the Vault Index has at least one Vault Label, shows all labels from the index after an All chip, uses a horizontally scrollable two-line layout, and keeps the selected label as ephemeral screen state. Sensitive Vault Label chips use a distinct non-error outline color without adding sensitivity text to the chip label. If catalogue refresh or metadata changes remove the selected label from the current index, `VaultScreenModel` clears the selected label filter.
 
-`VaultMangaScreenModel` observes chapters and cache states for one manga. It coordinates cache, retry, eviction, metadata publish, cover publish, and deletion actions through app services. Compose screens render these derived states and send explicit user actions back to the screen models.
+`VaultMangaScreenModel` observes chapters, chapter thumbnails, and cache states for one manga. It coordinates cache, retry, eviction, metadata publish, cover publish, thumbnail display-cache loading, and deletion actions through app services. Compose screens render these derived states and send explicit user actions back to the screen models.
+
+The Vault Manga Detail Screen shows existing Vault Chapter Thumbnails as leading square images in chapter rows, with aligned placeholders for chapters without thumbnails. Thumbnails are visual metadata only in this screen: tapping a chapter row keeps the existing read/cache behavior, and setting or replacing a thumbnail starts from the Reader rather than from the detail row. V1 supports setting and replacing thumbnails, not clearing them without replacement. Sensitive Vault Labels do not add thumbnail-specific hiding or blurring; if the user can view the Vault Manga Detail Screen, its chapter thumbnails render normally.
+
+Implementation can land UI-first for reviewability. Early slices may add production UI contracts with narrow placeholder implementations that compile and return explicit mock or not-implemented thumbnail states, while the real manifest, SQLDelight, publishing, transfer, and display-cache work lands behind those contracts in later slices. Placeholder behavior must remain easy to identify and remove before the feature is considered complete, and UI-first slices should surface an honest not-wired result instead of a real success message when publishing is still mocked.
 
 Manga Detail Screen owns the Add to Vault entry point through a small UI-layer coordinator composed into `MangaScreenModel`. The coordinator is active for Local Manga and source-backed Library manga, observes the relevant Import Target Hint and local Vault Index state, derives linked-target validity and Import Duplicate Candidate indicators, handles target setup/change state, gates Vault Chapter Replacement confirmation, and dispatches either `LocalVaultImportJob` or `LibraryVaultCaptureJob` for selected chapters. Add to Vault requires at least one selected chapter and is not available directly from the under-title target row. Select all includes duplicate-indicated chapters. The previous standalone Local-to-Vault Import screen is removed rather than kept as an unreachable route.
 

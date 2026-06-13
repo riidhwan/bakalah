@@ -236,6 +236,10 @@ _Avoid_: File metadata, local metadata, ComicInfo truth
 The vault-owned image used to represent a manga in the Vault Catalogue.
 _Avoid_: Chapter cover, local thumbnail, cached page
 
+**Vault Chapter Thumbnail**:
+The vault-owned square image used to represent one Vault Chapter in the Vault Catalogue.
+_Avoid_: Vault Cover, chapter cover, local thumbnail, cached page
+
 **Cached Chapter**:
 A chapter from the Content Vault whose readable content file is currently present on the device.
 _Avoid_: Downloaded chapter, synced chapter, offline chapter
