@@ -17,6 +17,7 @@ import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultCatalogueRefresh
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
+import tachiyomi.domain.vault.model.VaultChapterThumbnail
 import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultImportRequest
@@ -141,25 +142,7 @@ class VaultRepositoryImpl(
             } else {
                 database.vaultQueries.deleteChaptersNotInIdentities(mangaId, chapters.map { it.identity.value })
                 chapters.forEach { chapter ->
-                    database.vaultQueries.upsertChapter(
-                        id = chapter.id,
-                        mangaId = mangaId,
-                        identity = chapter.identity.value,
-                        title = chapter.title,
-                        chapterNumber = chapter.chapterNumber,
-                        volumeNumber = chapter.volumeNumber,
-                        scanlator = chapter.scanlator,
-                        sourceOrder = chapter.sourceOrder,
-                        contentPath = chapter.content.path,
-                        contentFormat = chapter.content.format,
-                        sizeBytes = chapter.content.sizeBytes,
-                        checksumSha256 = chapter.content.checksumSha256,
-                        revisionId = chapter.revision.id,
-                        revisionNumber = chapter.revision.number,
-                        dateUpload = chapter.dateUpload,
-                        createdAt = chapter.createdAt,
-                        updatedAt = chapter.updatedAt,
-                    )
+                    upsertChapter(mangaId, chapter)
                 }
             }
         }
@@ -589,25 +572,7 @@ class VaultRepositoryImpl(
                         identities = mangaRefresh.chapters.map { it.identity.value },
                     )
                     mangaRefresh.chapters.forEach { chapter ->
-                        database.vaultQueries.upsertChapter(
-                            id = chapter.id,
-                            mangaId = mangaId,
-                            identity = chapter.identity.value,
-                            title = chapter.title,
-                            chapterNumber = chapter.chapterNumber,
-                            volumeNumber = chapter.volumeNumber,
-                            scanlator = chapter.scanlator,
-                            sourceOrder = chapter.sourceOrder,
-                            contentPath = chapter.content.path,
-                            contentFormat = chapter.content.format,
-                            sizeBytes = chapter.content.sizeBytes,
-                            checksumSha256 = chapter.content.checksumSha256,
-                            revisionId = chapter.revision.id,
-                            revisionNumber = chapter.revision.number,
-                            dateUpload = chapter.dateUpload,
-                            createdAt = chapter.createdAt,
-                            updatedAt = chapter.updatedAt,
-                        )
+                        upsertChapter(mangaId, chapter)
                     }
                 }
 
@@ -711,5 +676,66 @@ class VaultRepositoryImpl(
                     .awaitAsOne()
             }
         }
+    }
+
+    private suspend fun upsertChapter(mangaId: Long, chapter: VaultChapter): Long {
+        database.vaultQueries.upsertChapter(
+            id = chapter.id,
+            mangaId = mangaId,
+            identity = chapter.identity.value,
+            title = chapter.title,
+            chapterNumber = chapter.chapterNumber,
+            volumeNumber = chapter.volumeNumber,
+            scanlator = chapter.scanlator,
+            sourceOrder = chapter.sourceOrder,
+            contentPath = chapter.content.path,
+            contentFormat = chapter.content.format,
+            sizeBytes = chapter.content.sizeBytes,
+            checksumSha256 = chapter.content.checksumSha256,
+            revisionId = chapter.revision.id,
+            revisionNumber = chapter.revision.number,
+            dateUpload = chapter.dateUpload,
+            createdAt = chapter.createdAt,
+            updatedAt = chapter.updatedAt,
+        )
+        val chapterId = database.vaultQueries
+            .getChapterByIdentity(mangaId, chapter.identity.value)
+            .awaitAsOne()
+            ._id
+        syncChapterThumbnail(chapterId, chapter.thumbnail)
+        return chapterId
+    }
+
+    private suspend fun syncChapterThumbnail(chapterId: Long, thumbnail: VaultChapterThumbnail?) {
+        database.vaultQueries.updateChapterThumbnail(chapterId = chapterId, thumbnailId = null)
+        if (thumbnail == null) {
+            database.vaultQueries.deleteChapterThumbnailsForChapter(chapterId)
+            return
+        }
+
+        database.vaultQueries.deleteChapterThumbnailsNotInIdentities(
+            chapterId = chapterId,
+            identities = listOf(thumbnail.identity.value),
+        )
+        database.vaultQueries.upsertChapterThumbnail(
+            id = thumbnail.id,
+            chapterId = chapterId,
+            identity = thumbnail.identity.value,
+            path = thumbnail.path,
+            mediaType = thumbnail.mediaType,
+            sizeBytes = thumbnail.sizeBytes,
+            checksumSha256 = thumbnail.checksumSha256,
+            revisionId = thumbnail.revision.id,
+            revisionNumber = thumbnail.revision.number,
+            updatedAt = thumbnail.updatedAt,
+        )
+        val thumbnailId = database.vaultQueries
+            .getChapterThumbnailByIdentity(chapterId, thumbnail.identity.value)
+            .awaitAsOne()
+            ._id
+        database.vaultQueries.updateChapterThumbnail(
+            chapterId = chapterId,
+            thumbnailId = thumbnailId,
+        )
     }
 }

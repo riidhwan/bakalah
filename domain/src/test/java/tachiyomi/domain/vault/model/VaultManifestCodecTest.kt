@@ -60,6 +60,51 @@ class VaultManifestCodecTest {
     }
 
     @Test
+    fun `older manga manifest without chapter thumbnail is decoded`() {
+        val body = """
+            {
+              "app": "bakalah-content-vault",
+              "layoutVersion": 4,
+              "vaultIdentity": "vault-1",
+              "mangaIdentity": "manga-1",
+              "revisionId": "manga-rev",
+              "revisionNumber": 1,
+              "metadata": {
+                "title": "One Piece"
+              },
+              "chapters": [
+                {
+                  "identity": "chapter-1",
+                  "title": "Chapter 1",
+                  "chapterNumber": 1.0,
+                  "sourceOrder": 0,
+                  "content": {
+                    "path": "content/chapter-1.cbz",
+                    "format": "CBZ",
+                    "integrity": {
+                      "sizeBytes": 123,
+                      "checksumSha256": "chapter-checksum"
+                    }
+                  },
+                  "revisionId": "chapter-rev",
+                  "revisionNumber": 1,
+                  "dateUpload": 50,
+                  "createdAt": 50,
+                  "updatedAt": 60
+                }
+              ],
+              "createdAt": 10,
+              "updatedAt": 20
+            }
+        """.trimIndent()
+
+        val result = codec.decodeManga(body)
+
+        (result is VaultManifestReadResult.Success) shouldBe true
+        (result as VaultManifestReadResult.Success).manifest.chapters.single().thumbnail shouldBe null
+    }
+
+    @Test
     fun `older unsupported layout is refused`() {
         val result = codec.decodeRoot(codec.encodeRoot(rootManifest().copy(layoutVersion = 0)))
 

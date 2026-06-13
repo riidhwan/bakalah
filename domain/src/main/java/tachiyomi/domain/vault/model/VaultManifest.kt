@@ -6,7 +6,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 const val CONTENT_VAULT_APP_ID = "bakalah-content-vault"
-const val CURRENT_VAULT_LAYOUT_VERSION = 4L
+const val CURRENT_VAULT_LAYOUT_VERSION = 5L
 const val ROOT_VAULT_MANIFEST_NAME = "content-vault.json"
 
 private const val MIN_SUPPORTED_VAULT_LAYOUT_VERSION = 1L
@@ -102,10 +102,22 @@ data class VaultManifestChapter(
     val scanlator: String? = null,
     val sourceOrder: Long,
     val content: VaultManifestChapterContent,
+    val thumbnail: VaultManifestChapterThumbnail? = null,
     val revisionId: String,
     val revisionNumber: Long,
     val dateUpload: Long,
     val createdAt: Long,
+    val updatedAt: Long,
+)
+
+@Serializable
+data class VaultManifestChapterThumbnail(
+    val identity: String,
+    val path: String,
+    val mediaType: String? = null,
+    val integrity: VaultContentIntegrity? = null,
+    val revisionId: String,
+    val revisionNumber: Long,
     val updatedAt: Long,
 )
 

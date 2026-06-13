@@ -53,6 +53,7 @@ CREATE TABLE vault_chapters(
     content_format INTEGER AS VaultChapterContentFormat NOT NULL,
     size_bytes INTEGER NOT NULL,
     checksum_sha256 TEXT NOT NULL,
+    thumbnail_id INTEGER,
     revision_id TEXT NOT NULL,
     revision_number INTEGER NOT NULL,
     date_upload INTEGER NOT NULL,
@@ -104,6 +105,23 @@ CREATE TABLE vault_covers(
 );
 
 CREATE INDEX vault_covers_manga_id_index ON vault_covers(manga_id);
+
+CREATE TABLE vault_chapter_thumbnails(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    chapter_id INTEGER NOT NULL,
+    identity TEXT NOT NULL,
+    path TEXT NOT NULL,
+    media_type TEXT,
+    size_bytes INTEGER,
+    checksum_sha256 TEXT,
+    revision_id TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE CASCADE,
+    UNIQUE(chapter_id, identity)
+);
+
+CREATE INDEX vault_chapter_thumbnails_chapter_id_index ON vault_chapter_thumbnails(chapter_id);
 
 CREATE TABLE vault_reading_state(
     chapter_id INTEGER NOT NULL PRIMARY KEY,
@@ -289,17 +307,77 @@ ON CONFLICT(vault_id, identity) DO UPDATE SET
     updated_at = excluded.updated_at;
 
 getChaptersForManga:
-SELECT *
+SELECT
+    vault_chapters._id,
+    vault_chapters.manga_id,
+    vault_chapters.identity,
+    vault_chapters.title,
+    vault_chapters.chapter_number,
+    vault_chapters.volume_number,
+    vault_chapters.scanlator,
+    vault_chapters.source_order,
+    vault_chapters.content_path,
+    vault_chapters.content_format,
+    vault_chapters.size_bytes,
+    vault_chapters.checksum_sha256,
+    vault_chapters.revision_id,
+    vault_chapters.revision_number,
+    vault_chapters.date_upload,
+    vault_chapters.created_at,
+    vault_chapters.updated_at,
+    vault_chapter_thumbnails._id AS thumbnail_row_id,
+    vault_chapter_thumbnails.identity AS thumbnail_identity,
+    vault_chapter_thumbnails.path AS thumbnail_path,
+    vault_chapter_thumbnails.media_type AS thumbnail_media_type,
+    vault_chapter_thumbnails.size_bytes AS thumbnail_size_bytes,
+    vault_chapter_thumbnails.checksum_sha256 AS thumbnail_checksum_sha256,
+    vault_chapter_thumbnails.revision_id AS thumbnail_revision_id,
+    vault_chapter_thumbnails.revision_number AS thumbnail_revision_number,
+    vault_chapter_thumbnails.updated_at AS thumbnail_updated_at
 FROM vault_chapters
+LEFT JOIN vault_chapter_thumbnails ON vault_chapter_thumbnails._id = vault_chapters.thumbnail_id
 WHERE manga_id = :mangaId
 ORDER BY source_order;
 
 getChaptersForVault:
-SELECT vault_chapters.*
+SELECT
+    vault_chapters._id,
+    vault_chapters.manga_id,
+    vault_chapters.identity,
+    vault_chapters.title,
+    vault_chapters.chapter_number,
+    vault_chapters.volume_number,
+    vault_chapters.scanlator,
+    vault_chapters.source_order,
+    vault_chapters.content_path,
+    vault_chapters.content_format,
+    vault_chapters.size_bytes,
+    vault_chapters.checksum_sha256,
+    vault_chapters.revision_id,
+    vault_chapters.revision_number,
+    vault_chapters.date_upload,
+    vault_chapters.created_at,
+    vault_chapters.updated_at,
+    vault_chapter_thumbnails._id AS thumbnail_row_id,
+    vault_chapter_thumbnails.identity AS thumbnail_identity,
+    vault_chapter_thumbnails.path AS thumbnail_path,
+    vault_chapter_thumbnails.media_type AS thumbnail_media_type,
+    vault_chapter_thumbnails.size_bytes AS thumbnail_size_bytes,
+    vault_chapter_thumbnails.checksum_sha256 AS thumbnail_checksum_sha256,
+    vault_chapter_thumbnails.revision_id AS thumbnail_revision_id,
+    vault_chapter_thumbnails.revision_number AS thumbnail_revision_number,
+    vault_chapter_thumbnails.updated_at AS thumbnail_updated_at
 FROM vault_chapters
 JOIN vault_mangas ON vault_mangas._id = vault_chapters.manga_id
+LEFT JOIN vault_chapter_thumbnails ON vault_chapter_thumbnails._id = vault_chapters.thumbnail_id
 WHERE vault_mangas.vault_id = :vaultId
 ORDER BY vault_mangas.sort_key, vault_chapters.source_order;
+
+getChapterByIdentity:
+SELECT *
+FROM vault_chapters
+WHERE manga_id = :mangaId
+AND identity = :identity;
 
 deleteChaptersNotInIdentities:
 DELETE FROM vault_chapters
@@ -313,12 +391,12 @@ WHERE manga_id = :mangaId;
 upsertChapter:
 INSERT INTO vault_chapters(
     _id, manga_id, identity, title, chapter_number, volume_number, scanlator, source_order,
-    content_path, content_format, size_bytes, checksum_sha256, revision_id, revision_number,
+    content_path, content_format, size_bytes, checksum_sha256, thumbnail_id, revision_id, revision_number,
     date_upload, created_at, updated_at
 )
 VALUES (
     nullif(:id, -1), :mangaId, :identity, :title, :chapterNumber, :volumeNumber, :scanlator, :sourceOrder,
-    :contentPath, :contentFormat, :sizeBytes, :checksumSha256, :revisionId, :revisionNumber,
+    :contentPath, :contentFormat, :sizeBytes, :checksumSha256, NULL, :revisionId, :revisionNumber,
     :dateUpload, :createdAt, :updatedAt
 )
 ON CONFLICT(manga_id, identity) DO UPDATE SET
@@ -335,6 +413,43 @@ ON CONFLICT(manga_id, identity) DO UPDATE SET
     revision_number = excluded.revision_number,
     date_upload = excluded.date_upload,
     updated_at = excluded.updated_at;
+
+updateChapterThumbnail:
+UPDATE vault_chapters
+SET thumbnail_id = :thumbnailId
+WHERE _id = :chapterId;
+
+upsertChapterThumbnail:
+INSERT INTO vault_chapter_thumbnails(
+    _id, chapter_id, identity, path, media_type, size_bytes, checksum_sha256, revision_id, revision_number, updated_at
+)
+VALUES (
+    nullif(:id, -1), :chapterId, :identity, :path, :mediaType, :sizeBytes, :checksumSha256, :revisionId,
+    :revisionNumber, :updatedAt
+)
+ON CONFLICT(chapter_id, identity) DO UPDATE SET
+    path = excluded.path,
+    media_type = excluded.media_type,
+    size_bytes = excluded.size_bytes,
+    checksum_sha256 = excluded.checksum_sha256,
+    revision_id = excluded.revision_id,
+    revision_number = excluded.revision_number,
+    updated_at = excluded.updated_at;
+
+getChapterThumbnailByIdentity:
+SELECT *
+FROM vault_chapter_thumbnails
+WHERE chapter_id = :chapterId
+AND identity = :identity;
+
+deleteChapterThumbnailsNotInIdentities:
+DELETE FROM vault_chapter_thumbnails
+WHERE chapter_id = :chapterId
+AND identity NOT IN :identities;
+
+deleteChapterThumbnailsForChapter:
+DELETE FROM vault_chapter_thumbnails
+WHERE chapter_id = :chapterId;
 
 getLabels:
 SELECT *

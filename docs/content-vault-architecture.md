@@ -65,10 +65,10 @@ The remote Vault Root is app-owned. A valid root contains `content-vault.json`, 
 Current layout constants live in `VaultManifest.kt`:
 
 - `CONTENT_VAULT_APP_ID = "bakalah-content-vault"`
-- `CURRENT_VAULT_LAYOUT_VERSION = 4`
+- `CURRENT_VAULT_LAYOUT_VERSION = 5`
 - `ROOT_VAULT_MANIFEST_NAME = "content-vault.json"`
 
-Library-to-Vault Capture requires the next layout version because newly captured or replaced chapters need chapter-level provenance in remote manga manifests. Existing version 3 manifests can be read by treating missing chapter provenance as absent; touched manifests are upgraded when written.
+Vault Chapter Thumbnail-aware writes require layout version 5 because chapter records can reference optional vault-owned thumbnail assets. Existing version 4 manifests can be read by treating missing chapter thumbnails as absent; touched manifests are upgraded when written.
 
 The layout is hybrid:
 
