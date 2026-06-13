@@ -556,33 +556,10 @@
     <ID>MagicNumber:BangumiUtils.kt$3</ID>
     <ID>MagicNumber:BangumiUtils.kt$4</ID>
     <ID>MagicNumber:BangumiUtils.kt$5</ID>
-    <ID>MagicNumber:BaseColorScheme.kt$BaseColorScheme$0xFF0C0C0C</ID>
-    <ID>MagicNumber:BaseColorScheme.kt$BaseColorScheme$0xFF131313</ID>
-    <ID>MagicNumber:BaseColorScheme.kt$BaseColorScheme$0xFF1B1B1B</ID>
     <ID>MagicNumber:BasePreferenceWidget.kt$200</ID>
     <ID>MagicNumber:BaseSmartSearchEngine.kt$BaseSmartSearchEngine$5</ID>
     <ID>MagicNumber:BrowseIcons.kt$0x1F888888</ID>
     <ID>MagicNumber:CategoryPreferencesCleanupMigration.kt$CategoryPreferencesCleanupMigration$10f</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFF11111B</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFF181825</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFF1E1E2E</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFF313244</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFF4C4F69</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFF585B70</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFF68001C</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFF8839EF</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFACB0BE</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFCBA6F7</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFCDD0DA</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFCDD6F4</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFD20F39</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFD61C41</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFDCE0E8</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFE6E9EF</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFEF9FB4</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFEFF1F5</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFF38BA8</ID>
-    <ID>MagicNumber:CatppuccinColorScheme.kt$CatppuccinColorScheme$0xFFFF0558</ID>
     <ID>MagicNumber:ChapterDownloadIndicator.kt$0.5f</ID>
     <ID>MagicNumber:ChapterNavigator.kt$90f</ID>
     <ID>MagicNumber:ChapterRecognition.kt$ChapterRecognition$10</ID>
@@ -649,46 +626,6 @@
     <ID>MagicNumber:GeneralSettingsPage.kt$3</ID>
     <ID>MagicNumber:GetApplicationRelease.kt$GetApplicationRelease$3</ID>
     <ID>MagicNumber:GlobalSearchItem.kt$99f</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF000000</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF003917</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF005927</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF006D32</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF017737</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF0A0F0B</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF0F1510</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF181D18</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF188140</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF1C211C</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF262B26</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF2C322C</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF313630</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF353B35</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF3F493F</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF410002</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF680008</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF690005</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF6F7A6E</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF7ADB8F</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF889487</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF93000A</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF97f7a9</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFF9D0012</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFBA1A1A</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFBECABC</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFC7282A</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFD33131</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFD6DCD3</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFDAE6D7</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFDFE4DB</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFE4EAE1</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFEAEFE6</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFEDF2E9</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFF0F5EC</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFF6FBF2</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFFFB3AC</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFFFB4AB</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFFFDAD6</ID>
-    <ID>MagicNumber:GreenAppleColorScheme.kt$GreenAppleColorScheme$0xFFFFFFFF</ID>
     <ID>MagicNumber:Hash.kt$Hash$15</ID>
     <ID>MagicNumber:Hash.kt$Hash$240</ID>
     <ID>MagicNumber:Hash.kt$Hash$4</ID>
@@ -734,49 +671,6 @@
     <ID>MagicNumber:KitsuSearch.kt$KitsuAlgoliaSearchItem$1000</ID>
     <ID>MagicNumber:LNavigation.kt$LNavigation$0.33f</ID>
     <ID>MagicNumber:LNavigation.kt$LNavigation$0.66f</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF000000</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF111129</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF130038</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF15132d</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF171531</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF1D193B</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF1D1A22</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF241f41</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF282446</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF322F38</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF360096</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF3B3841</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF3D0090</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF3D2F6B</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF410002</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF423271</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF4A4453</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF5512D8</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF690005</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF6D3BF0</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF6D41C8</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF7B46AF</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF7B7485</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF93000A</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFF958E9F</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFA177FF</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFBA1A1A</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFC9B0E6</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFCBC3D6</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFCDBDFF</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFDACCEC</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFDED0F1</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFDED7E3</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFE4D5F8</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFE7E0EC</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFEADCFD</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFEDE2FF</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFEEE2FF</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFEFE6FF</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFF5EEFA</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFFFB4AB</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFFFDAD6</ID>
-    <ID>MagicNumber:LavenderColorScheme.kt$LavenderColorScheme$0xFFFFFFFF</ID>
     <ID>MagicNumber:LibraryScreenModel.kt$LibraryScreenModel$10</ID>
     <ID>MagicNumber:LibraryScreenModel.kt$LibraryScreenModel$25</ID>
     <ID>MagicNumber:LibraryScreenModel.kt$LibraryScreenModel$5</ID>
@@ -823,42 +717,6 @@
     <ID>MagicNumber:MangaUpdatesApi.kt$MangaUpdatesApi$200</ID>
     <ID>MagicNumber:MetadataUpdateJob.kt$MetadataUpdateJob$5</ID>
     <ID>MagicNumber:MetadataUpdateNotifier.kt$MetadataUpdateNotifier$40</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF006638</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF00894b</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF16151D</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF1C1B1F</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF221320</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF251522</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF281624</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF2D1600</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF2D1C2A</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF2F1F2C</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF313033</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF333043</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF386412</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF3F0017</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF524346</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF55971C</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF66183C</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF847376</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFF9F8C8F</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFBB0054</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFBD1C5C</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFD1377C</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFD6C1C4</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFDAC0CD</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFE5E1E5</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFE8D1DD</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFEFBAD4</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFF02475</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFF4F0F4</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFF9E6F1</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFFCF3F8</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFFEF9FC</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFFFB1C4</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFFFD9E1</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFFFFBFF</ID>
-    <ID>MagicNumber:MidnightDuskColorScheme.kt$MidnightDuskColorScheme$0xFFFFFFFF</ID>
     <ID>MagicNumber:MigrationFlag.kt$MigrationFlag.CUSTOM_COVER$0b01000</ID>
     <ID>MagicNumber:MigrationFlag.kt$MigrationFlag.NOTES$0b100000</ID>
     <ID>MagicNumber:MigrationFlag.kt$MigrationFlag.REMOVE_DOWNLOAD$0b10000</ID>
@@ -868,10 +726,6 @@
     <ID>MagicNumber:MigrationListScreenModel.kt$MigrationListScreenModel$5</ID>
     <ID>MagicNumber:Modifier.kt$0.16f</ID>
     <ID>MagicNumber:Modifier.kt$0.22f</ID>
-    <ID>MagicNumber:MonochromeColorScheme.kt$MonochromeColorScheme$0xFF000000</ID>
-    <ID>MagicNumber:MonochromeColorScheme.kt$MonochromeColorScheme$0xFF777777</ID>
-    <ID>MagicNumber:MonochromeColorScheme.kt$MonochromeColorScheme$0xFF888888</ID>
-    <ID>MagicNumber:MonochromeColorScheme.kt$MonochromeColorScheme$0xFFFFFFFF</ID>
     <ID>MagicNumber:MyAnimeListApi.kt$MyAnimeListApi$64</ID>
     <ID>MagicNumber:MyAnimeListInterceptor.kt$MyAnimeListInterceptor$401</ID>
     <ID>MagicNumber:NetworkExtensionStore.kt$NetworkExtensionStore$3</ID>
@@ -889,32 +743,6 @@
     <ID>MagicNumber:NetworkExtensionStore.kt$NetworkExtensionStore.Source$6</ID>
     <ID>MagicNumber:NetworkExtensionStore.kt$NetworkExtensionStore.Source$7</ID>
     <ID>MagicNumber:NetworkHelper.kt$NetworkHelper$30</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF000000</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF2E3440</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF373F4D</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF397E91</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF3B4252</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF3E4756</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF414C5C</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF4E5766</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF505968</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF506275</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF5E81AC</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF6d717b</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF81A1C1</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF88C0D0</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF8CA8CD</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF90939a</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFF91B4D7</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFFBF616A</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFFD1D7E0</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFFD6DCE6</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFFD8DEE9</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFFDAE0EA</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFFE5E9F0</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFFE9EDF3</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFFECEFF4</ID>
-    <ID>MagicNumber:NordColorScheme.kt$NordColorScheme$0xFFF2F4F8</ID>
     <ID>MagicNumber:Page.kt$Page$100</ID>
     <ID>MagicNumber:PagerConfig.kt$PagerConfig$3</ID>
     <ID>MagicNumber:PagerConfig.kt$PagerConfig$4</ID>
@@ -994,48 +822,6 @@
     <ID>MagicNumber:SettingsSearchScreen.kt$10</ID>
     <ID>MagicNumber:SettingsSecurityScreen.kt$10</ID>
     <ID>MagicNumber:SettingsSecurityScreen.kt$5</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF000000</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF1D1011</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF201A1A</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF261819</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF2C2222</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF302525</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF322727</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF3C2F2F</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF3D2C2D</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF410002</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF463536</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF463737</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF594042</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF5F441D</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF67001D</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF690005</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF775930</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF87683D</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF8D7071</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF91002A</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFF93000A</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFA10833</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFA9898B</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFB61F40</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFBA1A1A</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFD53855</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFE1BEC0</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFE8C08E</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFED4A65</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFEED4D5</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFF6EAED</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFF7DCDD</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFFAFAFA</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFFDE2E3</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFFFB2B8</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFFFB4AB</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFFFDAD6</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFFFECED</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFFFF0F0</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFFFF7F1</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFFFF8F7</ID>
-    <ID>MagicNumber:StrawberryColorScheme.kt$StrawberryColorScheme$0xFFFFFFFF</ID>
     <ID>MagicNumber:SupportUsScreen.kt$SupportUsScreen$200</ID>
     <ID>MagicNumber:Surface.kt$100f</ID>
     <ID>MagicNumber:Surface.kt$4.5f</ID>
@@ -1045,138 +831,7 @@
     <ID>MagicNumber:SuwayomiApi.kt$SuwayomiApi$8</ID>
     <ID>MagicNumber:Tabs.kt$0.08f</ID>
     <ID>MagicNumber:Tabs.kt$0.12f</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF001945</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF002203</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF002D6E</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF003909</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF00429B</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF005312</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF0058CA</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF006E1B</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF1A181D</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF1B1B1F</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF1E1C22</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF211F26</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF292730</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF302E38</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF303034</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF410002</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF44464F</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF690005</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF757780</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF7ADC77</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF8F9099</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF93000A</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFF95F990</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFB0C6FF</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFBA1A1A</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFC5C6D0</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFD9E2FF</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFE3E2E6</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFF2F0F4</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFF3EDF7</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFF5F1F8</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFF7F2FA</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFFCF7FF</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFFEFBFF</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFFFB4AB</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFFFDAD6</ID>
-    <ID>MagicNumber:TachiyomiColorScheme.kt$TachiyomiColorScheme$0xFFFFFFFF</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF1B1B1E</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF1B1B22</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF20202E</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF21212E</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF221437</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF262636</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF2A2A3C</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF303044</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF313033</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF36364D</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF38294E</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF49454E</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF4E4065</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF574360</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF5C4D4B</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF66577E</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF7A757E</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF84531E</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFF958F99</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFC8BED0</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFCBC4CE</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFD6BAFF</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFD7D0DA</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFDFD8E2</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFE3E0F2</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFE5E1E6</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFE8E0EB</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFEDDCFF</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFEEE6F1</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFF3B375</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFF3EFF4</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFF7EEFA</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFF7F5FF</ID>
-    <ID>MagicNumber:TakoColorScheme.kt$TakoColorScheme$0xFFFDD6B0</ID>
     <ID>MagicNumber:TallImageSplitCalculator.kt$TallImageSplitCalculator$3</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF000000</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF008080</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF050505</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF18544E</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF200508</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF202125</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF202C2E</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF222F31</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF233133</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF28383A</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF2A1616</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF2F4244</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF40E0D0</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF6F7977</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFF899391</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFBF1F2F</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFBFDFDF</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFCFE5E4</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFDFDEDA</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFE1E9E7</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFE6EEEC</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFEBF3F1</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFF0F8F6</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFF7FFFD</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFFAFAFA</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFFF7F7F</ID>
-    <ID>MagicNumber:TealTurqoiseColorScheme.kt$TealTurqoiseColorScheme$0xFFFFFFFF</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF001c3b</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF001f28</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF003544</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF004d61</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF006780</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF020400</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF072642</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF072947</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF082b4b</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF093257</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF0A3861</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF40484c</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF5ed4fc</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF70787c</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF78ffd6</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF8a9296</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF92f7bc</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFF9AE1FF</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFB4D4DF</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFa12b03</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFb8eaff</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFbfc8cc</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFc3fada</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFd5e3ff</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFe2e8ec</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFe5ecf1</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFe8eff5</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFedf4fA</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFf5faff</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFfdfbff</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFff987f</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFffe3c4</ID>
-    <ID>MagicNumber:TidalWaveColorScheme.kt$TidalWaveColorScheme$0xFFffffff</ID>
     <ID>MagicNumber:TimeUtils.kt$4</ID>
     <ID>MagicNumber:TrackInfoDialog.kt$TrackChapterSelectorScreen.Model$10000</ID>
     <ID>MagicNumber:TrackInfoDialogSelector.kt$3L</ID>
@@ -1253,71 +908,6 @@
     <ID>MagicNumber:WheelPicker.kt$0.2f</ID>
     <ID>MagicNumber:WheelPicker.kt$1.2f</ID>
     <ID>MagicNumber:WorkManagerExtensions.kt$500</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF000000</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF001947</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF00419E</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF0C0C0C</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF1E1E1E</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF222222</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF2A2A2A</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF2D2D2D</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF313131</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF333333</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF383838</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF3F3F3F</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF515151</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF5A5A5A</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF717171</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF838383</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFF999999</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFA6A6A6</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFCECECE</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFCFCFCF</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFD1D1D1</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFD8E2FF</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFDADADA</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFDDDDDD</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFE4E4E4</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFE6E6E6</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFE8E8E8</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFECECEC</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFEFEFEF</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFF4F4F4</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFFDFDFD</ID>
-    <ID>MagicNumber:YinYangColorScheme.kt$YinYangColorScheme$0xFFFFFFFF</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF211A18</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF231B00</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF2E221F</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF312521</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF332723</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF362F2D</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF3A2F05</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF3B0A00</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF413531</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF4C403D</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF524619</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF53433F</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF5F1600</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF6B5E2F</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF85736E</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFF862200</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFA08C87</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFAE3200</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFD7C68D</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFD8C2BC</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFEBCDC2</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFECE3E0</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFEDE0DD</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFF1E7E4</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFF5E2A7</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFF6EBE7</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFFAF4F2</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFFBEEEB</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFFBF6F4</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFFCFCFC</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFFFB59D</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFFFDBCF</ID>
-    <ID>MagicNumber:YotsubaColorScheme.kt$YotsubaColorScheme$0xFFFFFFFF</ID>
     <ID>MagicNumber:ZipWriter.kt$ZipWriter$8192</ID>
     <ID>MatchingDeclarationName:ChapterDownloadIndicator.kt$ChapterDownloadAction</ID>
     <ID>MatchingDeclarationName:ChapterNavigator.kt$ChapterNavigatorType</ID>
