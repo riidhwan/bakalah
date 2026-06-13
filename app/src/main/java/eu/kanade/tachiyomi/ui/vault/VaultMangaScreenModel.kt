@@ -426,6 +426,7 @@ class VaultMangaScreenModel(
     data class VaultChapterItem(
         val chapter: VaultChapter,
         val cacheState: VaultChapterCacheState?,
+        val thumbnailUri: String? = null,
     ) {
         val state: VaultCacheState
             get() = cacheState?.state ?: VaultCacheState.VAULT_ONLY
