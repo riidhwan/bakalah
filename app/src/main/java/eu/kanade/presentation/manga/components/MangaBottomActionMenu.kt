@@ -41,11 +41,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -92,7 +92,7 @@ fun MangaBottomActionMenu(
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             val haptic = LocalHapticFeedback.current
-            val confirm = remember { mutableStateListOf(false, false, false, false, false, false, false, false) }
+            val confirm = remember { MutableList(MANGA_ACTION_COUNT) { false }.toMutableStateList() }
             var resetJob by remember { mutableStateOf<Job?>(null) }
             val onLongClickItem: (Int) -> Unit = { toConfirmIndex ->
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -116,8 +116,8 @@ fun MangaBottomActionMenu(
                     Button(
                         title = stringResource(MR.strings.action_bookmark),
                         icon = Icons.Outlined.BookmarkAdd,
-                        toConfirm = confirm[0],
-                        onLongClick = { onLongClickItem(0) },
+                        toConfirm = confirm[BOOKMARK_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(BOOKMARK_ACTION_INDEX) },
                         onClick = onBookmarkClicked,
                     )
                 }
@@ -125,8 +125,8 @@ fun MangaBottomActionMenu(
                     Button(
                         title = stringResource(MR.strings.action_remove_bookmark),
                         icon = Icons.Outlined.BookmarkRemove,
-                        toConfirm = confirm[1],
-                        onLongClick = { onLongClickItem(1) },
+                        toConfirm = confirm[REMOVE_BOOKMARK_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(REMOVE_BOOKMARK_ACTION_INDEX) },
                         onClick = onRemoveBookmarkClicked,
                     )
                 }
@@ -134,8 +134,8 @@ fun MangaBottomActionMenu(
                     Button(
                         title = stringResource(MR.strings.action_mark_as_read),
                         icon = Icons.Outlined.DoneAll,
-                        toConfirm = confirm[2],
-                        onLongClick = { onLongClickItem(2) },
+                        toConfirm = confirm[MARK_AS_READ_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(MARK_AS_READ_ACTION_INDEX) },
                         onClick = onMarkAsReadClicked,
                     )
                 }
@@ -143,8 +143,8 @@ fun MangaBottomActionMenu(
                     Button(
                         title = stringResource(MR.strings.action_mark_as_unread),
                         icon = Icons.Outlined.RemoveDone,
-                        toConfirm = confirm[3],
-                        onLongClick = { onLongClickItem(3) },
+                        toConfirm = confirm[MARK_AS_UNREAD_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(MARK_AS_UNREAD_ACTION_INDEX) },
                         onClick = onMarkAsUnreadClicked,
                     )
                 }
@@ -152,8 +152,8 @@ fun MangaBottomActionMenu(
                     Button(
                         title = stringResource(MR.strings.action_mark_previous_as_read),
                         icon = ImageVector.vectorResource(R.drawable.ic_done_prev_24dp),
-                        toConfirm = confirm[4],
-                        onLongClick = { onLongClickItem(4) },
+                        toConfirm = confirm[MARK_PREVIOUS_AS_READ_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(MARK_PREVIOUS_AS_READ_ACTION_INDEX) },
                         onClick = onMarkPreviousAsReadClicked,
                     )
                 }
@@ -161,8 +161,8 @@ fun MangaBottomActionMenu(
                     Button(
                         title = stringResource(MR.strings.action_download),
                         icon = Icons.Outlined.Download,
-                        toConfirm = confirm[5],
-                        onLongClick = { onLongClickItem(5) },
+                        toConfirm = confirm[DOWNLOAD_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(DOWNLOAD_ACTION_INDEX) },
                         onClick = onDownloadClicked,
                     )
                 }
@@ -170,8 +170,8 @@ fun MangaBottomActionMenu(
                     Button(
                         title = stringResource(MR.strings.action_delete),
                         icon = Icons.Outlined.Delete,
-                        toConfirm = confirm[6],
-                        onLongClick = { onLongClickItem(6) },
+                        toConfirm = confirm[DELETE_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(DELETE_ACTION_INDEX) },
                         onClick = onDeleteClicked,
                     )
                 }
@@ -179,8 +179,8 @@ fun MangaBottomActionMenu(
                     Button(
                         title = stringResource(MR.strings.vault_action_add_to_vault),
                         icon = Icons.Outlined.CloudUpload,
-                        toConfirm = confirm[7],
-                        onLongClick = { onLongClickItem(7) },
+                        toConfirm = confirm[ADD_TO_VAULT_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(ADD_TO_VAULT_ACTION_INDEX) },
                         onClick = onAddToVaultClicked,
                     )
                 }
@@ -262,7 +262,7 @@ fun LibraryBottomActionMenu(
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             val haptic = LocalHapticFeedback.current
-            val confirm = remember { mutableStateListOf(false, false, false, false, false, false) }
+            val confirm = remember { MutableList(LIBRARY_ACTION_COUNT) { false }.toMutableStateList() }
             var resetJob by remember { mutableStateOf<Job?>(null) }
             val onLongClickItem: (Int) -> Unit = { toConfirmIndex ->
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -285,22 +285,22 @@ fun LibraryBottomActionMenu(
                 Button(
                     title = stringResource(MR.strings.action_move_category),
                     icon = Icons.AutoMirrored.Outlined.Label,
-                    toConfirm = confirm[0],
-                    onLongClick = { onLongClickItem(0) },
+                    toConfirm = confirm[CHANGE_CATEGORY_ACTION_INDEX],
+                    onLongClick = { onLongClickItem(CHANGE_CATEGORY_ACTION_INDEX) },
                     onClick = onChangeCategoryClicked,
                 )
                 Button(
                     title = stringResource(MR.strings.action_mark_as_read),
                     icon = Icons.Outlined.DoneAll,
-                    toConfirm = confirm[1],
-                    onLongClick = { onLongClickItem(1) },
+                    toConfirm = confirm[LIBRARY_MARK_AS_READ_ACTION_INDEX],
+                    onLongClick = { onLongClickItem(LIBRARY_MARK_AS_READ_ACTION_INDEX) },
                     onClick = onMarkAsReadClicked,
                 )
                 Button(
                     title = stringResource(MR.strings.action_mark_as_unread),
                     icon = Icons.Outlined.RemoveDone,
-                    toConfirm = confirm[2],
-                    onLongClick = { onLongClickItem(2) },
+                    toConfirm = confirm[LIBRARY_MARK_AS_UNREAD_ACTION_INDEX],
+                    onLongClick = { onLongClickItem(LIBRARY_MARK_AS_UNREAD_ACTION_INDEX) },
                     onClick = onMarkAsUnreadClicked,
                 )
                 if (onDownloadClicked != null) {
@@ -308,8 +308,8 @@ fun LibraryBottomActionMenu(
                     Button(
                         title = stringResource(MR.strings.action_download),
                         icon = Icons.Outlined.Download,
-                        toConfirm = confirm[3],
-                        onLongClick = { onLongClickItem(3) },
+                        toConfirm = confirm[LIBRARY_DOWNLOAD_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(LIBRARY_DOWNLOAD_ACTION_INDEX) },
                         onClick = { downloadExpanded = !downloadExpanded },
                     ) {
                         DownloadDropdownMenu(
@@ -324,15 +324,15 @@ fun LibraryBottomActionMenu(
                     Button(
                         title = stringResource(MR.strings.migrate),
                         icon = Icons.Outlined.SwapCalls,
-                        toConfirm = confirm[4],
-                        onLongClick = { onLongClickItem(4) },
+                        toConfirm = confirm[MIGRATE_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(MIGRATE_ACTION_INDEX) },
                         onClick = onMigrateClicked,
                     )
                     Button(
                         title = stringResource(MR.strings.action_delete),
                         icon = Icons.Outlined.Delete,
-                        toConfirm = confirm[5],
-                        onLongClick = { onLongClickItem(5) },
+                        toConfirm = confirm[LIBRARY_DELETE_ACTION_INDEX],
+                        onLongClick = { onLongClickItem(LIBRARY_DELETE_ACTION_INDEX) },
                         onClick = onDeleteClicked,
                     )
                 } else {
@@ -366,3 +366,21 @@ fun LibraryBottomActionMenu(
 }
 
 private val BottomBarMenuDpOffset = DpOffset(0.dp, 0.dp)
+
+private const val MANGA_ACTION_COUNT = 8
+private const val BOOKMARK_ACTION_INDEX = 0
+private const val REMOVE_BOOKMARK_ACTION_INDEX = 1
+private const val MARK_AS_READ_ACTION_INDEX = 2
+private const val MARK_AS_UNREAD_ACTION_INDEX = 3
+private const val MARK_PREVIOUS_AS_READ_ACTION_INDEX = 4
+private const val DOWNLOAD_ACTION_INDEX = 5
+private const val DELETE_ACTION_INDEX = 6
+private const val ADD_TO_VAULT_ACTION_INDEX = 7
+
+private const val LIBRARY_ACTION_COUNT = 6
+private const val CHANGE_CATEGORY_ACTION_INDEX = 0
+private const val LIBRARY_MARK_AS_READ_ACTION_INDEX = 1
+private const val LIBRARY_MARK_AS_UNREAD_ACTION_INDEX = 2
+private const val LIBRARY_DOWNLOAD_ACTION_INDEX = 3
+private const val MIGRATE_ACTION_INDEX = 4
+private const val LIBRARY_DELETE_ACTION_INDEX = 5

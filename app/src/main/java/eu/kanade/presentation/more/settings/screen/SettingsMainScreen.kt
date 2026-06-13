@@ -61,14 +61,14 @@ object SettingsMainScreen : Screen() {
         val surface = MaterialTheme.colorScheme.surface
         val dark = isSystemInDarkTheme()
         return remember(surface, dark) {
-            val arr = FloatArray(3)
+            val arr = FloatArray(HSL_COMPONENT_COUNT)
             ColorUtils.colorToHSL(surface.toArgb(), arr)
             arr[2] = if (dark) {
-                arr[2] - 0.05f
+                arr[LIGHTNESS_INDEX] - DARK_SURFACE_LIGHTNESS_OFFSET
             } else {
-                arr[2] + 0.02f
+                arr[LIGHTNESS_INDEX] + LIGHT_SURFACE_LIGHTNESS_OFFSET
             }.coerceIn(0f, 1f)
-            Color.hsl(arr[0], arr[1], arr[2])
+            Color.hsl(arr[HUE_INDEX], arr[SATURATION_INDEX], arr[LIGHTNESS_INDEX])
         }
     }
 
@@ -235,3 +235,10 @@ object SettingsMainScreen : Screen() {
         ),
     )
 }
+
+private const val HSL_COMPONENT_COUNT = 3
+private const val HUE_INDEX = 0
+private const val SATURATION_INDEX = 1
+private const val LIGHTNESS_INDEX = 2
+private const val DARK_SURFACE_LIGHTNESS_OFFSET = 0.05f
+private const val LIGHT_SURFACE_LIGHTNESS_OFFSET = 0.02f

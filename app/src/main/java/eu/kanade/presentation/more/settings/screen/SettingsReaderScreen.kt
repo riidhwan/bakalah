@@ -39,8 +39,8 @@ object SettingsReaderScreen : SearchableSettings {
                 preference = readerPref.doubleTapAnimSpeed,
                 entries = mapOf(
                     1 to stringResource(MR.strings.double_tap_anim_speed_0),
-                    500 to stringResource(MR.strings.double_tap_anim_speed_normal),
-                    250 to stringResource(MR.strings.double_tap_anim_speed_fast),
+                    NORMAL_DOUBLE_TAP_ANIMATION_MILLIS to stringResource(MR.strings.double_tap_anim_speed_normal),
+                    FAST_DOUBLE_TAP_ANIMATION_MILLIS to stringResource(MR.strings.double_tap_anim_speed_fast),
                 ),
                 title = stringResource(MR.strings.pref_double_tap_anim_speed),
             ),
@@ -87,7 +87,7 @@ object SettingsReaderScreen : SearchableSettings {
                         1 to stringResource(MR.strings.black_background),
                         2 to stringResource(MR.strings.gray_background),
                         0 to stringResource(MR.strings.white_background),
-                        3 to stringResource(MR.strings.automatic_background),
+                        AUTOMATIC_READER_THEME to stringResource(MR.strings.automatic_background),
                     ),
                     title = stringResource(MR.strings.pref_reader_theme),
                 ),
@@ -229,7 +229,7 @@ object SettingsReaderScreen : SearchableSettings {
                     )
                         .associateWith { stringResource(it.titleRes) },
                     title = stringResource(MR.strings.pref_read_with_tapping_inverted),
-                    enabled = navMode != 5,
+                    enabled = navMode != DISABLED_TAP_ZONE_NAV_MODE,
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = imageScaleTypePref,
@@ -257,7 +257,7 @@ object SettingsReaderScreen : SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.navigateToPan,
                     title = stringResource(MR.strings.pref_navigate_pan),
-                    enabled = navMode != 5,
+                    enabled = navMode != DISABLED_TAP_ZONE_NAV_MODE,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = dualPageSplitPref,
@@ -332,7 +332,7 @@ object SettingsReaderScreen : SearchableSettings {
                         it.WEBTOON_PADDING_MIN..it.WEBTOON_PADDING_MAX
                     },
                     title = stringResource(MR.strings.pref_webtoon_side_padding),
-                    valueString = numberFormat.format(webtoonSidePadding / 100f),
+                    valueString = numberFormat.format(webtoonSidePadding / PERCENT_DIVISOR),
                     onValueChanged = { webtoonSidePaddingPref.set(it) },
                 ),
                 Preference.PreferenceItem.ListPreference(
@@ -426,3 +426,9 @@ object SettingsReaderScreen : SearchableSettings {
         )
     }
 }
+
+private const val NORMAL_DOUBLE_TAP_ANIMATION_MILLIS = 500
+private const val FAST_DOUBLE_TAP_ANIMATION_MILLIS = 250
+private const val AUTOMATIC_READER_THEME = 3
+private const val DISABLED_TAP_ZONE_NAV_MODE = 5
+private const val PERCENT_DIVISOR = 100f

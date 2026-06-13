@@ -302,11 +302,11 @@ object SettingsDataScreen : SearchableSettings {
                 Preference.PreferenceItem.ListPreference(
                     preference = preferences.localCacheLimitBytes,
                     entries = mapOf(
-                        512L * 1024L * 1024L to "512 MB",
-                        1L * 1024L * 1024L * 1024L to "1 GB",
-                        2L * 1024L * 1024L * 1024L to "2 GB",
-                        5L * 1024L * 1024L * 1024L to "5 GB",
-                        10L * 1024L * 1024L * 1024L to "10 GB",
+                        CACHE_LIMIT_512_MB to "512 MB",
+                        CACHE_LIMIT_1_GB to "1 GB",
+                        CACHE_LIMIT_2_GB to "2 GB",
+                        CACHE_LIMIT_5_GB to "5 GB",
+                        CACHE_LIMIT_10_GB to "10 GB",
                     ),
                     title = "Local cache limit",
                     subtitleProvider = { value, _ -> formatBytes(value) },
@@ -341,7 +341,7 @@ object SettingsDataScreen : SearchableSettings {
                 "Fill in WebDAV URL, username, and password first"
             }
             is ContentVaultConnectionTestResult.Unauthorized -> {
-                if (statusCode == 401) {
+                if (statusCode == HTTP_UNAUTHORIZED) {
                     "WebDAV returned 401 Unauthorized"
                 } else {
                     "WebDAV returned 403 Forbidden"
@@ -434,11 +434,11 @@ object SettingsDataScreen : SearchableSettings {
                     preference = backupPreferences.backupInterval,
                     entries = mapOf(
                         0 to stringResource(MR.strings.off),
-                        6 to stringResource(MR.strings.update_6hour),
-                        12 to stringResource(MR.strings.update_12hour),
-                        24 to stringResource(MR.strings.update_24hour),
-                        48 to stringResource(MR.strings.update_48hour),
-                        168 to stringResource(MR.strings.update_weekly),
+                        BACKUP_INTERVAL_6_HOURS to stringResource(MR.strings.update_6hour),
+                        BACKUP_INTERVAL_12_HOURS to stringResource(MR.strings.update_12hour),
+                        BACKUP_INTERVAL_24_HOURS to stringResource(MR.strings.update_24hour),
+                        BACKUP_INTERVAL_48_HOURS to stringResource(MR.strings.update_48hour),
+                        BACKUP_INTERVAL_WEEKLY_HOURS to stringResource(MR.strings.update_weekly),
                     ),
                     title = stringResource(MR.strings.pref_backup_interval),
                     onValueChanged = {
@@ -642,3 +642,21 @@ object SettingsDataScreen : SearchableSettings {
         )
     }
 }
+
+private const val BYTES_PER_KIB = 1024L
+private const val BYTES_PER_MIB = BYTES_PER_KIB * BYTES_PER_KIB
+private const val BYTES_PER_GIB = BYTES_PER_MIB * BYTES_PER_KIB
+
+private const val CACHE_LIMIT_512_MB = 512L * BYTES_PER_MIB
+private const val CACHE_LIMIT_1_GB = 1L * BYTES_PER_GIB
+private const val CACHE_LIMIT_2_GB = 2L * BYTES_PER_GIB
+private const val CACHE_LIMIT_5_GB = 5L * BYTES_PER_GIB
+private const val CACHE_LIMIT_10_GB = 10L * BYTES_PER_GIB
+
+private const val HTTP_UNAUTHORIZED = 401
+
+private const val BACKUP_INTERVAL_6_HOURS = 6
+private const val BACKUP_INTERVAL_12_HOURS = 12
+private const val BACKUP_INTERVAL_24_HOURS = 24
+private const val BACKUP_INTERVAL_48_HOURS = 48
+private const val BACKUP_INTERVAL_WEEKLY_HOURS = 168

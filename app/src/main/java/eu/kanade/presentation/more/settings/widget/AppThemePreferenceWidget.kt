@@ -135,7 +135,7 @@ fun AppThemePreviewItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(9f / 16f)
+            .aspectRatio(PREVIEW_ASPECT_RATIO_WIDTH / PREVIEW_ASPECT_RATIO_HEIGHT)
             .border(
                 width = 4.dp,
                 color = if (selected) {
@@ -160,8 +160,8 @@ fun AppThemePreviewItem(
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxHeight(0.8f)
-                    .weight(0.7f)
+                    .fillMaxHeight(APP_BAR_TEXT_HEIGHT_FRACTION)
+                    .weight(APP_BAR_TEXT_WEIGHT)
                     .padding(end = 4.dp)
                     .background(
                         color = MaterialTheme.colorScheme.onSurface,
@@ -170,7 +170,7 @@ fun AppThemePreviewItem(
             )
 
             Box(
-                modifier = Modifier.weight(0.3f),
+                modifier = Modifier.weight(APP_BAR_ACTION_WEIGHT),
                 contentAlignment = Alignment.CenterEnd,
             ) {
                 if (selected) {
@@ -191,7 +191,7 @@ fun AppThemePreviewItem(
                     color = DividerDefaults.color,
                     shape = MaterialTheme.shapes.small,
                 )
-                .fillMaxWidth(0.5f)
+                .fillMaxWidth(COVER_WIDTH_FRACTION)
                 .aspectRatio(MangaCover.Book.ratio),
         ) {
             Row(
@@ -243,7 +243,7 @@ fun AppThemePreviewItem(
                     Box(
                         modifier = Modifier
                             .padding(start = 8.dp)
-                            .alpha(0.6f)
+                            .alpha(BOTTOM_BAR_TEXT_ALPHA)
                             .height(17.dp)
                             .weight(1f)
                             .background(
@@ -272,3 +272,11 @@ private fun AppThemesListPreview() {
         }
     }
 }
+
+private const val PREVIEW_ASPECT_RATIO_WIDTH = 9f
+private const val PREVIEW_ASPECT_RATIO_HEIGHT = 16f
+private const val APP_BAR_TEXT_HEIGHT_FRACTION = 0.8f
+private const val APP_BAR_TEXT_WEIGHT = 0.7f
+private const val APP_BAR_ACTION_WEIGHT = 0.3f
+private const val COVER_WIDTH_FRACTION = 0.5f
+private const val BOTTOM_BAR_TEXT_ALPHA = 0.6f
