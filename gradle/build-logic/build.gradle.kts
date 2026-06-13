@@ -29,6 +29,7 @@ dependencies {
     compileOnly(libs.android.gradle)
     compileOnly(libs.kotlin.compose.compiler.gradle)
     compileOnly(libs.kotlin.gradle)
+    implementation(libs.detekt.gradle)
     implementation(libs.spotless.gradle)
     implementation(libs.tapmoc.gradle)
 
@@ -62,6 +63,10 @@ gradlePlugin {
         register("compose-android") {
             id = mihonx.plugins.compose.get().pluginId
             implementationClass = "PluginComposeAndroid"
+        }
+        register("detekt") {
+            id = mihonx.plugins.detekt.get().pluginId
+            implementationClass = "PluginDetekt"
         }
         register("kotlin-multiplatform") {
             id = mihonx.plugins.kotlin.multiplatform.get().pluginId

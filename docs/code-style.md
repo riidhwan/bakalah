@@ -15,6 +15,20 @@ Spotless applies ktlint to `src/**/*.kt` and `*.kts`, trims trailing whitespace,
 
 The project uses official Kotlin style via `kotlin.code.style=official`. Do not manually fight ktlint. If a layout or expression becomes hard to read after formatting, simplify the code rather than adding local formatting workarounds.
 
+## Static Analysis
+
+Detekt tracks Kotlin code smells across project Kotlin sources, tests, Kotlin Gradle scripts, and build logic. The shared configuration and baseline live under `config/detekt/`.
+
+Run Detekt through the compact Gradle wrapper during command-heavy work:
+
+```shell
+scripts/gradlew-compact detekt
+```
+
+Detekt is advisory for now: existing findings are captured in the committed baseline, and Detekt tasks ignore failures so release assembly is not blocked by historical debt. Treat new findings in files you materially change as part of the change. If a changed file contains unrelated historical findings that would materially expand the task, explain the exact findings and why deferring them is appropriate, then ask the maintainer before leaving them unresolved.
+
+The intended direction is to tighten Detekt into a hard gate once the baseline has shrunk enough that failures are actionable instead of noisy.
+
 ## Kotlin Conventions
 
 Use idiomatic Kotlin and prefer explicit, narrow APIs.

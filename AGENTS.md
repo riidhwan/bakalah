@@ -11,6 +11,7 @@ This is a multi-module Kotlin/Android Gradle project. Key modules are `app/` for
 - `./gradlew testDebugUnitTest` runs JVM unit tests for the debug variant.
 - `./gradlew verifySqlDelightMigration` validates database migrations.
 - `./gradlew spotlessCheck` checks formatting; `./gradlew spotlessApply` fixes supported formatting issues.
+- `./gradlew detekt` runs advisory Kotlin code-smell analysis.
 - `./gradlew clean` removes Gradle build outputs.
 
 Use Android Studio with the project Gradle wrapper for day-to-day development and device/emulator testing.
@@ -18,7 +19,7 @@ For release preparation, follow `docs/release-process.md`.
 
 ## Coding Style & Naming Conventions
 
-Kotlin uses official Kotlin style (`kotlin.code.style=official`) and Spotless with ktlint. Keep files newline-terminated, avoid trailing whitespace, follow existing package boundaries (`eu.kanade.tachiyomi`, `tachiyomi`, `mihon`), and prefer module-local patterns. For detailed conventions and antipatterns, read `docs/code-style.md`.
+Kotlin uses official Kotlin style (`kotlin.code.style=official`), Spotless with ktlint, and advisory Detekt checks for code smells. Keep files newline-terminated, avoid trailing whitespace, follow existing package boundaries (`eu.kanade.tachiyomi`, `tachiyomi`, `mihon`), and prefer module-local patterns. For detailed conventions and antipatterns, read `docs/code-style.md`.
 
 ## Testing Guidelines
 
@@ -48,6 +49,8 @@ Before making non-trivial code changes, read the relevant docs:
 - Read `docs/code-style.md` when writing or reviewing Kotlin, Compose, coroutine/Flow code, SQLDelight changes, tests, or shared services.
 
 Keep edits aligned with those documents. If implementation needs to diverge, explain the reason in the change summary.
+
+When editing Kotlin or Kotlin Gradle script files, inspect Detekt findings for the affected scope and fix findings in files you materially changed. If a changed file has unrelated historical Detekt findings that would materially expand the task, report the exact findings and why they should be deferred, then ask the user for a decision before leaving them unresolved.
 
 When making code or configuration changes, also review `AGENTS.md` and the relevant files under `docs/`. Update them in the same change whenever commands, architecture, module ownership, workflow expectations, branding, release behavior, or coding guidance would otherwise become stale.
 

@@ -1,0 +1,5 @@
+# Detekt is currently advisory for Bakalah. Keep this file focused on
+# project-specific overrides and let Detekt's default rule set do the rest.
+config:
+  validation: true
+  warningsAsErrors: false
