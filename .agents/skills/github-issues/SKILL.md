@@ -287,6 +287,14 @@ Architectural layers:
 Fits normal PR budget:
 Split plan:
 
+## Completion Criteria
+
+Observable conditions that must be true before closing this issue.
+
+## How to Test
+
+Manual scenarios, automated commands, screenshots, or review evidence expected before completion.
+
 ## Verification
 
 Commands, checks, or review evidence expected before completion.
