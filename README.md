@@ -1,22 +1,48 @@
 # Bakalah
 
-Bakalah is a personal Android comic reader fork derived from [Mihon](https://mihon.app/).
+Bakalah is a personal Android comic reader forked from [Mihon](https://mihon.app/).
 
-While it still builds on Mihon's reader, source, library, tracker, backup, and local-content foundations, Bakalah is moving in a different direction. The fork removes the bulk/background library update workflow and puts more weight on intentional browsing: visiting chosen extension-backed sources when looking for new content, closer to how someone would browse a site directly.
+It is built around intentional reading and user-owned content — not background library polling.
+It keeps Mihon's reading experience, extension-backed browsing, local file support, tracking, and backup.
 
-Bakalah also focuses more on user-owned local content and cloud-backed content. Cloud-backed local content is still being built; today the repository contains early WebDAV setup and storage model work, with the intended experience documented in [Content Vault PRD](./docs/content-vault-prd.md).
+The main addition is Vault: a longer-lived collection for comics you want to own, organize, and move between devices.
 
-## Project Direction
+## What Bakalah Focuses On
 
-- Personal Android comic reader fork with its own app name, icon, application ID, updater target, and release process.
-- No Library Chapter Update System: no bulk/background chapter polling for library entries, recent-updates screens or widgets, update badges, update notifications, or related scheduling/settings.
-- Intentional Source Browsing remains central: users visit extension-backed sources when they want to find new content.
-- Local content remains important, with ongoing work toward a Content Vault for cloud-backed user-owned content.
-- Internal source package names still include Mihon and Tachiyomi namespaces where changing them would not affect the installed app identity.
+- Reading comics comfortably on Android.
+- Browsing sources when you choose to look for something, instead of relying on bulk background chapter checks.
+- Keeping local files important for user-owned content already on your device.
+- Using Vault as a longer-lived collection for comics you want to keep beyond one device.
+- Adding selected chapters to Vault from local files or from series already saved in your Library.
+- Reading cached Vault chapters and choosing what stays on the device.
+- Keeping original local files and normal Downloads untouched when adding content to Vault.
 
-For project-specific language, see [CONTEXT.md](./CONTEXT.md). For architecture and module ownership, see [docs/architecture.md](./docs/architecture.md).
+## What Changed From Mihon
 
-## Build Locally
+Bakalah does not include Mihon's old bulk/background Library Chapter Update System. There are no background library chapter checks, recent-updates screens or widgets, update badges, update notifications, or related scheduling settings.
+
+You can still browse extension-backed sources, read from your Library, use local files, track reading progress, and use the reader experience inherited from Mihon.
+
+## Vault
+
+Vault is Bakalah's main feature direction. It is meant for comics you want to treat as yours, not just something temporarily downloaded from a source.
+
+With Vault, Bakalah is working toward a collection where you can:
+
+- keep comics in a user-owned Vault Collection
+- organize comics with Vault Labels
+- edit Vault Metadata
+- cache chapters for reading on the current device
+- move between devices through WebDAV-backed storage
+- add chapters without rewriting your original local files or normal downloads
+
+## Support
+
+Bakalah is mainly maintained for personal use. Outside issues and pull requests may not be reviewed, accepted, or aligned with the maintainer's current direction.
+
+This repository is not the upstream Mihon support channel. For Mihon itself, use Mihon's own website, repository, and community channels.
+
+## For Developers
 
 Use the Gradle wrapper from the repository root:
 
@@ -30,15 +56,10 @@ Useful checks:
 ./gradlew testDebugUnitTest
 ./gradlew verifySqlDelightMigration
 ./gradlew spotlessCheck
+./gradlew detekt
 ```
 
 Release preparation and publication are documented in [docs/release-process.md](./docs/release-process.md).
-
-## Contributing and Support
-
-Bakalah is mainly maintained for personal use. There is no guarantee that outside issues or pull requests will be reviewed, accepted, or aligned with the maintainer's current direction.
-
-This repository is not the upstream Mihon support channel. For Mihon itself, use Mihon's own website, repository, and community channels.
 
 ## Upstream and License
 
