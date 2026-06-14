@@ -42,25 +42,6 @@ Bakalah is mainly maintained for personal use. Outside issues and pull requests 
 
 This repository is not the upstream Mihon support channel. For Mihon itself, use Mihon's own website, repository, and community channels.
 
-## For Developers
-
-Use the Gradle wrapper from the repository root:
-
-```shell
-./gradlew assembleDebug
-```
-
-Useful checks:
-
-```shell
-./gradlew testDebugUnitTest
-./gradlew verifySqlDelightMigration
-./gradlew spotlessCheck
-./gradlew detekt
-```
-
-Release preparation and publication are documented in [docs/release-process.md](./docs/release-process.md).
-
 ## Upstream and License
 
 Bakalah is derived from Mihon and keeps the same Apache-2.0 license. See [LICENSE](./LICENSE).
