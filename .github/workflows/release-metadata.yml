@@ -15,27 +15,35 @@ permissions:
 
 jobs:
   validate:
-    if: github.repository == 'riidhwan/bakalah' && startsWith(github.head_ref, 'release/')
     name: Validate release readiness
     runs-on: ubuntu-24.04
 
     steps:
+      - name: Skip non-release branch
+        if: ${{ !startsWith(github.head_ref, 'release/') }}
+        run: echo "Not a release branch; release readiness validation is not required."
+
       - name: Checkout
+        if: ${{ startsWith(github.head_ref, 'release/') }}
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Set up JDK
+        if: ${{ startsWith(github.head_ref, 'release/') }}
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           java-version-file: .github/.java-version
           distribution: temurin
 
       - name: Set up Gradle
+        if: ${{ startsWith(github.head_ref, 'release/') }}
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Validate release branch
+        if: ${{ startsWith(github.head_ref, 'release/') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: .github/scripts/validate-release-branch.sh "${{ github.head_ref }}" --check-remote
 
       - name: Build release app
+        if: ${{ startsWith(github.head_ref, 'release/') }}
         run: ./gradlew assembleRelease -Penable-updater

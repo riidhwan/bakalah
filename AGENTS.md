@@ -35,7 +35,7 @@ Recent commits use short, imperative subjects such as `Add vertical chapter navi
 
 Pull requests should include a summary, linked issue when applicable, testing performed, and a brief self-review. For UI changes, include screenshots and verify relevant themes and tablet mode. CI expects formatting, Detekt, unit tests, SQLDelight migration checks, and release assembly to pass.
 
-Release versions use `release/MAJOR.MINOR.PATCH` branches merged into `main`; automation creates annotated `vMAJOR.MINOR.PATCH` tags. The branch and tag versions must match the Android `versionName`, `versionCode` must increase for public releases, and GitHub Releases are created as drafts for manual verification before publishing.
+Release versions use `release/MAJOR.MINOR.PATCH` branches merged into `main`; automation creates annotated `vMAJOR.MINOR.PATCH` tags. The branch and tag versions must match the Android `versionName`, `versionCode` must increase for public releases, and GitHub Releases are published automatically after the release workflow verifies the artifact set.
 
 ## Security & Configuration Tips
 
