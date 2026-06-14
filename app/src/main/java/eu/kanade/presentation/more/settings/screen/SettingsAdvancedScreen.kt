@@ -28,6 +28,7 @@ import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.extension.interactor.TrustExtension
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.screen.advanced.ClearDatabaseScreen
+import eu.kanade.presentation.more.settings.screen.advanced.DatabaseViewerScreen
 import eu.kanade.presentation.more.settings.screen.debug.DebugInfoScreen
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.library.MetadataUpdateJob
@@ -189,6 +190,11 @@ object SettingsAdvancedScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_clear_database),
                     subtitle = stringResource(MR.strings.pref_clear_database_summary),
                     onClick = { navigator.push(ClearDatabaseScreen()) },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.pref_database_viewer),
+                    subtitle = stringResource(MR.strings.pref_database_viewer_summary),
+                    onClick = { navigator.push(DatabaseViewerScreen()) },
                 ),
             ),
         )

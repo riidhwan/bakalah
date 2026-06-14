@@ -750,6 +750,15 @@
     <string name="download_cache_invalidated">Recreating download index</string>
     <string name="pref_clear_database">Clear database</string>
     <string name="pref_clear_database_summary">Delete history for entries that are not saved in your library</string>
+    <string name="pref_database_viewer">Database viewer</string>
+    <string name="pref_database_viewer_summary">Inspect app database tables</string>
+    <string name="database_viewer_no_tables">No database tables found</string>
+    <string name="database_viewer_row_count">%1$d rows</string>
+    <string name="database_viewer_row_count_unknown">Row count unavailable</string>
+    <string name="database_viewer_empty_table">No rows in this table</string>
+    <string name="database_viewer_previous_page">Previous page</string>
+    <string name="database_viewer_next_page">Next page</string>
+    <string name="database_viewer_page_label">%1$d-%2$d of %3$d rows</string>
     <string name="clear_database_source_item_count">%1$d non-library entries in database</string>
     <string name="clear_database_text">You’re about to remove entries from the database</string>
     <string name="clear_database_history_warning">Read chapters and progress of non-library entries will be lost</string>
