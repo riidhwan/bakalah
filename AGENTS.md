@@ -12,6 +12,7 @@ This is a multi-module Kotlin/Android Gradle project. Key modules are `app/` for
 - `./gradlew verifySqlDelightMigration` validates database migrations.
 - `./gradlew spotlessCheck` checks formatting; `./gradlew spotlessApply` fixes supported formatting issues.
 - `./gradlew detekt` runs advisory Kotlin code-smell analysis.
+- `scripts/check-presentation-screens` warns about bloated Compose screen files and blocks new oversized `*Screen.kt` files.
 - `./gradlew clean` removes Gradle build outputs.
 
 Use Android Studio with the project Gradle wrapper for day-to-day development and device/emulator testing.
@@ -20,6 +21,8 @@ For release preparation, follow `docs/release-process.md`.
 ## Coding Style & Naming Conventions
 
 Kotlin uses official Kotlin style (`kotlin.code.style=official`), Spotless with ktlint, and advisory Detekt checks for code smells. Keep files newline-terminated, avoid trailing whitespace, follow existing package boundaries (`eu.kanade.tachiyomi`, `tachiyomi`, `mihon`), and prefer module-local patterns. For detailed conventions and antipatterns, read `docs/code-style.md`.
+
+Keep Compose `*Screen.kt` files thin. Split independently reviewable UI areas such as headers, list rows, dialogs, sheets, metadata editors, and control clusters into the feature's `components` subpackage before a screen file grows into a multi-feature container. Run `scripts/check-presentation-screens` when making presentation changes.
 
 ## Testing Guidelines
 
