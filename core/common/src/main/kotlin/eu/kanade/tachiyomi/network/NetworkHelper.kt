@@ -1,7 +1,9 @@
 package eu.kanade.tachiyomi.network
 
 import android.content.Context
+import com.chuckerteam.chucker.api.ChuckerCollector
 import com.chuckerteam.chucker.api.ChuckerInterceptor
+import com.chuckerteam.chucker.api.RetentionManager
 import eu.kanade.tachiyomi.network.interceptor.CloudflareInterceptor
 import eu.kanade.tachiyomi.network.interceptor.IgnoreGzipInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UncaughtExceptionInterceptor
@@ -36,6 +38,13 @@ class NetworkHelper(
             .addInterceptor(UserAgentInterceptor(::defaultUserAgentProvider))
             .addInterceptor(
                 ChuckerInterceptor.Builder(context)
+                    .collector(
+                        ChuckerCollector(
+                            context = context,
+                            showNotification = false,
+                            retentionPeriod = RetentionManager.Period.ONE_HOUR,
+                        ),
+                    )
                     .maxContentLength(250_000L)
                     .redactHeaders("Authorization", "Cookie", "Set-Cookie", "Proxy-Authorization")
                     .build(),

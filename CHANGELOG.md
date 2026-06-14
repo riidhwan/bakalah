@@ -15,6 +15,12 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - Add a read-only database viewer under Settings > Advanced > Data for inspecting app SQLite tables.
 - Add Vault chapter Properties with remote content and thumbnail paths, long-press path copying, and direct chapter/thumbnail downloads to the device Downloads directory.
 
+### Improved
+- Show coarse Add to Vault progress in the collapsed status bar with Vault ring notification icons.
+
+### Other
+- Disable Chucker's debug notification so it does not hide Vault progress in the status bar.
+
 ## [v0.26.2] - 2026-06-13
 ### Added
 - Add debug-only Chucker HTTP inspection for app network requests.

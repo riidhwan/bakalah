@@ -26,7 +26,7 @@ class LocalVaultImportNotifier(
         Notifications.CHANNEL_VAULT_PROGRESS,
     ) {
         setLargeIcon(BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher))
-        setSmallIcon(R.drawable.ic_mihon)
+        setSmallIcon(R.drawable.ic_vault_progress_0_24dp)
         setOnlyAlertOnce(true)
     }
 
@@ -57,6 +57,7 @@ class LocalVaultImportNotifier(
                 Notifications.ID_VAULT_IMPORT_PROGRESS,
                 progressNotificationBuilder
                     .asLockedProgress()
+                    .setSmallIcon(progress.statusBarIcon())
                     .setContentTitle(title)
                     .setContentText(text)
                     .setProgress(0, 0, true)
@@ -72,6 +73,7 @@ class LocalVaultImportNotifier(
             Notifications.ID_VAULT_IMPORT_PROGRESS,
             progressNotificationBuilder
                 .asLockedProgress()
+                .setSmallIcon(progress.statusBarIcon())
                 .setContentTitle(title)
                 .setContentText(text)
                 .setProgress(progress.total, progress.current, false)
@@ -87,9 +89,21 @@ class LocalVaultImportNotifier(
         return context.stringResource(MR.strings.vault_import_progress_title, percent)
     }
 
+    private fun LocalVaultImportProgress.statusBarIcon(): Int {
+        if (total <= 0) return R.drawable.ic_vault_progress_0_24dp
+
+        return when ((current.coerceAtLeast(0) * 100) / total.coerceAtLeast(1)) {
+            in 75..Int.MAX_VALUE -> R.drawable.ic_vault_progress_75_24dp
+            in 50..74 -> R.drawable.ic_vault_progress_50_24dp
+            in 25..49 -> R.drawable.ic_vault_progress_25_24dp
+            else -> R.drawable.ic_vault_progress_0_24dp
+        }
+    }
+
     private fun preparingBuilder(mangaTitle: String): NotificationCompat.Builder {
         return progressNotificationBuilder
             .asLockedProgress()
+            .setSmallIcon(R.drawable.ic_vault_progress_0_24dp)
             .setContentTitle(context.stringResource(MR.strings.vault_importing))
             .setContentText(mangaTitle)
             .setProgress(0, 0, true)
@@ -132,6 +146,7 @@ class LocalVaultImportNotifier(
             Notifications.ID_VAULT_IMPORT_COMPLETE,
             completeNotificationBuilder
                 .asDismissibleResult()
+                .setSmallIcon(R.drawable.ic_vault_progress_100_24dp)
                 .setContentTitle(context.stringResource(MR.strings.vault_import_complete))
                 .setContentText(
                     context.stringResource(
@@ -154,6 +169,7 @@ class LocalVaultImportNotifier(
             Notifications.ID_VAULT_IMPORT_COMPLETE,
             completeNotificationBuilder
                 .asDismissibleResult()
+                .setSmallIcon(R.drawable.ic_vault_progress_100_24dp)
                 .setContentTitle(context.stringResource(MR.strings.vault_import_complete))
                 .setContentText(
                     context.stringResource(
@@ -174,6 +190,7 @@ class LocalVaultImportNotifier(
             Notifications.ID_VAULT_IMPORT_COMPLETE,
             completeNotificationBuilder
                 .asDismissibleResult()
+                .setSmallIcon(R.drawable.ic_warning_white_24dp)
                 .setContentTitle(context.stringResource(MR.strings.vault_import_error_upload_failed))
                 .setContentText(context.stringResource(MR.strings.vault_import_error_background_failed))
                 .setProgress(0, 0, false)
@@ -187,6 +204,7 @@ class LocalVaultImportNotifier(
             Notifications.ID_VAULT_IMPORT_COMPLETE,
             completeNotificationBuilder
                 .asDismissibleResult()
+                .setSmallIcon(R.drawable.ic_close_24dp)
                 .setContentTitle(context.stringResource(MR.strings.vault_import_cancelled))
                 .setContentText(context.stringResource(MR.strings.vault_import_cancelled_detail))
                 .setProgress(0, 0, false)
