@@ -72,7 +72,7 @@ class DefaultVaultChapterThumbnailImageNormalizer : VaultChapterThumbnailImageNo
     }
 
     private companion object {
-        const val THUMBNAIL_SIZE_PX = 128
+        const val THUMBNAIL_SIZE_PX = 256
         const val THUMBNAIL_JPEG_QUALITY = 90
     }
 }
