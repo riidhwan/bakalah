@@ -1,5 +1,6 @@
 package eu.kanade.presentation.vault
 
+import eu.kanade.presentation.vault.components.searchUnassignedVaultLabels
 import io.kotest.matchers.collections.shouldContainExactly
 import org.junit.jupiter.api.Test
 import tachiyomi.domain.vault.model.VaultIdentity

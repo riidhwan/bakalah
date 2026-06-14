@@ -29,6 +29,14 @@ Detekt is advisory for now: existing findings are captured in the committed base
 
 The intended direction is to tighten Detekt into a hard gate once the baseline has shrunk enough that failures are actionable instead of noisy.
 
+Presentation screens also have a lightweight repository check:
+
+```shell
+scripts/check-presentation-screens
+```
+
+This check warns on large `*Screen.kt` files, high composable counts, long callback surfaces, and too many dialog/sheet/menu declarations in one screen file. It fails new `*Screen.kt` files over the hard line-count threshold and fails known large screens if they grow beyond their recorded baseline. Treat warnings as prompts to inspect ownership boundaries rather than as numeric cleanup goals.
+
 ## Kotlin Conventions
 
 Use idiomatic Kotlin and prefer explicit, narrow APIs.
@@ -116,6 +124,8 @@ Compose code should make state flow clear.
 - Keep `LaunchedEffect` keys precise. Avoid `LaunchedEffect(Unit)` unless the effect is intentionally one-time for that composition.
 - Use existing components from `presentation-core` before creating new UI primitives.
 - Keep feature components near their feature unless they are reusable across multiple features.
+- Keep `*Screen.kt` files thin. A screen file should usually contain the route/shell composable and closely coupled layout only; split independently reviewable headers, list rows, dialogs, bottom sheets, metadata editors, and feature-specific control clusters into the feature's `components` subpackage, such as `eu.kanade.presentation.manga.components` or `eu.kanade.presentation.vault.components`.
+- Treat `*Screen.kt` files over 600 lines, public screen composables with long callback lists, or files with many local `@Composable` declarations as review signals. New screen files over 900 lines should be split before landing unless there is a documented reason.
 
 Antipatterns:
 
@@ -123,6 +133,7 @@ Antipatterns:
 - Passing a whole screen model into reusable UI components when callbacks would be clearer.
 - Duplicating material wrappers or theme logic already available in `presentation-core`.
 - Hiding expensive computation inside composable recomposition paths.
+- Letting one presentation screen file accumulate multiple subfeatures such as label management, metadata editing, list rows, properties sheets, and state-label policy.
 
 ## Coroutines and Flow
 

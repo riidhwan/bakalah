@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+WARN_LINES=${WARN_LINES:-600}
+FAIL_LINES=${FAIL_LINES:-900}
+WARN_COMPOSABLES=${WARN_COMPOSABLES:-12}
+WARN_CALLBACKS=${WARN_CALLBACKS:-10}
+WARN_SURFACES=${WARN_SURFACES:-5}
+
+# Existing large screens are tracked as debt so the check can prevent new debt
+# without forcing unrelated changes to refactor historical files.
+known_large_screen_limit() {
+  case "$1" in
+    app/src/main/java/eu/kanade/presentation/vault/VaultMangaScreen.kt)
+      echo 1266
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+count_matches() {
+  local pattern=$1
+  local file=$2
+
+  rg --count "$pattern" "$file" 2>/dev/null || true
+}
+
+count_public_screen_callbacks() {
+  local file=$1
+
+  awk '
+    /^[[:space:]]*fun[[:space:]][A-Za-z0-9_]*Screen[[:space:]]*\(/ {
+      in_screen = 1
+      current = 0
+    }
+    in_screen && /^[[:space:]]*on[A-Z][A-Za-z0-9]*:[[:space:]]*\(/ {
+      current++
+    }
+    in_screen && /^[[:space:]]*\)[[:space:]]*\{/ {
+      if (current > max) {
+        max = current
+      }
+      in_screen = 0
+      current = 0
+    }
+    END {
+      print max + 0
+    }
+  ' "$file"
+}
+
+fail=0
+warn=0
+
+while IFS= read -r file; do
+  lines=$(wc -l < "$file")
+  composables=$(count_matches '^[[:space:]]*@Composable[[:space:]]*$' "$file")
+  callbacks=$(count_public_screen_callbacks "$file")
+  surfaces=$(count_matches '^[[:space:]]*(private|internal)?[[:space:]]*fun[[:space:]][A-Za-z0-9_]*(Dialog|Sheet|Menu|Dropdown)' "$file")
+
+  if (( lines > FAIL_LINES )); then
+    if known_limit=$(known_large_screen_limit "$file"); then
+      if (( lines > known_limit )); then
+        echo "FAIL: $file has $lines lines; known baseline is $known_limit. Split presentation subfeatures before growing this screen."
+        fail=1
+      else
+        echo "WARN: $file has $lines lines; this is known presentation debt and should not grow beyond $known_limit."
+        warn=1
+      fi
+    else
+      echo "FAIL: $file has $lines lines. Keep *Screen.kt thin; split headers, lists, dialogs, sheets, and row components into sibling files."
+      fail=1
+    fi
+  elif (( lines > WARN_LINES )); then
+    echo "WARN: $file has $lines lines. Consider splitting independently reviewable UI areas."
+    warn=1
+  fi
+
+  if (( composables > WARN_COMPOSABLES )); then
+    echo "WARN: $file declares $composables @Composable blocks. A screen file should usually delegate subfeatures to sibling files."
+    warn=1
+  fi
+
+  if (( callbacks > WARN_CALLBACKS )); then
+    echo "WARN: $file has $callbacks callback parameters. Consider grouping related events or moving subfeature UI out of the screen file."
+    warn=1
+  fi
+
+  if (( surfaces > WARN_SURFACES )); then
+    echo "WARN: $file declares $surfaces dialog/sheet/menu/dropdown composables. Move independent interaction surfaces into focused files."
+    warn=1
+  fi
+done < <(rg --files app/src/main/java/eu/kanade/presentation | rg 'Screen\.kt$')
+
+if (( fail == 1 )); then
+  exit 1
+fi
+
+if (( warn == 0 )); then
+  echo "Presentation screen size check passed."
+fi
