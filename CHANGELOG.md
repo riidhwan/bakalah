@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+
+## [v0.27.0] - 2026-06-14
 ### Added
 - Add a read-only database viewer under Settings > Advanced > Data for inspecting app SQLite tables.
 - Add Vault chapter Properties with remote content and thumbnail paths, long-press path copying, and direct chapter/thumbnail downloads to the device Downloads directory.
