@@ -1,7 +1,9 @@
 package eu.kanade.presentation.vault
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
@@ -28,6 +31,7 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
@@ -71,6 +75,8 @@ import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.tachiyomi.ui.vault.VaultMangaScreenModel
+import eu.kanade.tachiyomi.ui.vault.remotePathFor
+import eu.kanade.tachiyomi.ui.vault.remoteThumbnailPathFor
 import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultMangaStatus
@@ -89,6 +95,10 @@ fun VaultMangaScreen(
     onClickCache: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickEvict: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRetry: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onLongPressPath: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onClickDownloadCbz: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onLongPressThumbnailPath: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onClickDownloadThumbnail: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onChapterThumbnailVisible: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickDelete: () -> Unit,
@@ -155,6 +165,10 @@ fun VaultMangaScreen(
                 onClickCache = onClickCache,
                 onClickEvict = onClickEvict,
                 onClickRetry = onClickRetry,
+                onLongPressPath = onLongPressPath,
+                onClickDownloadCbz = onClickDownloadCbz,
+                onLongPressThumbnailPath = onLongPressThumbnailPath,
+                onClickDownloadThumbnail = onClickDownloadThumbnail,
                 onClickRead = onClickRead,
                 onChapterThumbnailVisible = onChapterThumbnailVisible,
                 onClickAssignLabel = onClickAssignLabel,
@@ -207,6 +221,10 @@ private fun VaultChapterList(
     onClickCache: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickEvict: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRetry: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onLongPressPath: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onClickDownloadCbz: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onLongPressThumbnailPath: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onClickDownloadThumbnail: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onChapterThumbnailVisible: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickAssignLabel: (VaultLabel) -> Unit,
@@ -242,10 +260,15 @@ private fun VaultChapterList(
             contentType = { "vault-chapter" },
         ) { item ->
             VaultChapterListItem(
+                state = state,
                 item = item,
                 onClickCache = { onClickCache(item) },
                 onClickEvict = { onClickEvict(item) },
                 onClickRetry = { onClickRetry(item) },
+                onLongPressPath = { onLongPressPath(item) },
+                onClickDownloadCbz = { onClickDownloadCbz(item) },
+                onLongPressThumbnailPath = { onLongPressThumbnailPath(item) },
+                onClickDownloadThumbnail = { onClickDownloadThumbnail(item) },
                 onClickRead = { onClickRead(item) },
                 onChapterThumbnailVisible = { onChapterThumbnailVisible(item) },
                 modifier = Modifier.animateItem(),
@@ -837,15 +860,21 @@ private fun VaultMangaStats(
 
 @Composable
 private fun VaultChapterListItem(
+    state: VaultMangaScreenModel.State,
     item: VaultMangaScreenModel.VaultChapterItem,
     onClickCache: () -> Unit,
     onClickEvict: () -> Unit,
     onClickRetry: () -> Unit,
+    onLongPressPath: () -> Unit,
+    onClickDownloadCbz: () -> Unit,
+    onLongPressThumbnailPath: () -> Unit,
+    onClickDownloadThumbnail: () -> Unit,
     onClickRead: () -> Unit,
     onChapterThumbnailVisible: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var showProperties by remember { mutableStateOf(false) }
 
     LaunchedEffect(item.chapter.id, item.needsThumbnailLoad) {
         if (item.needsThumbnailLoad) {
@@ -900,18 +929,26 @@ private fun VaultChapterListItem(
                 onClickCache = onClickCache,
                 onClickRetry = onClickRetry,
             )
-            if (item.state == VaultCacheState.CACHED) {
-                Box {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(
-                            imageVector = Icons.Outlined.MoreVert,
-                            contentDescription = stringResource(MR.strings.action_menu_overflow_description),
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false },
-                    ) {
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Outlined.MoreVert,
+                        contentDescription = stringResource(MR.strings.action_menu_overflow_description),
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(MR.strings.vault_chapter_properties)) },
+                        leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                        onClick = {
+                            showMenu = false
+                            showProperties = true
+                        },
+                    )
+                    if (item.state == VaultCacheState.CACHED) {
                         DropdownMenuItem(
                             text = { Text(stringResource(MR.strings.vault_action_evict_from_device)) },
                             leadingIcon = { Icon(Icons.Outlined.DeleteOutline, contentDescription = null) },
@@ -923,6 +960,176 @@ private fun VaultChapterListItem(
                     }
                 }
             }
+        }
+    }
+
+    if (showProperties) {
+        VaultChapterPropertiesSheet(
+            state = state,
+            item = item,
+            onLongPressPath = onLongPressPath,
+            onClickDownloadCbz = onClickDownloadCbz,
+            onLongPressThumbnailPath = onLongPressThumbnailPath,
+            onClickDownloadThumbnail = onClickDownloadThumbnail,
+            onDismissRequest = { showProperties = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VaultChapterPropertiesSheet(
+    state: VaultMangaScreenModel.State,
+    item: VaultMangaScreenModel.VaultChapterItem,
+    onLongPressPath: () -> Unit,
+    onClickDownloadCbz: () -> Unit,
+    onLongPressThumbnailPath: () -> Unit,
+    onClickDownloadThumbnail: () -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    val remotePath = state.remotePathFor(item)
+    val thumbnailPath = state.remoteThumbnailPathFor(item)
+    val isExporting = item.chapter.id in state.exportingChapterIds
+    val isExportingThumbnail = item.chapter.id in state.exportingThumbnailChapterIds
+    val canUseRemotePath = remotePath != null
+    val canDownload = canUseRemotePath && item.canDownloadCbz && !isExporting
+    val canUseThumbnailRemotePath = thumbnailPath != null
+    val canDownloadThumbnail = canUseThumbnailRemotePath && !isExportingThumbnail
+
+    ModalBottomSheet(onDismissRequest = onDismissRequest) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = item.chapter.title,
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            VaultChapterPathProperty(
+                label = stringResource(
+                    if (canUseRemotePath) {
+                        MR.strings.vault_chapter_remote_path
+                    } else {
+                        MR.strings.vault_chapter_content_path
+                    },
+                ),
+                value = remotePath ?: item.chapter.content.path,
+                isDownloading = isExporting,
+                canDownload = canDownload,
+                downloadContentDescription = stringResource(MR.strings.vault_chapter_download_cbz),
+                onClickDownload = onClickDownloadCbz,
+                onLongPressPath = onLongPressPath.takeIf { canUseRemotePath },
+            )
+            VaultChapterPathProperty(
+                label = stringResource(MR.strings.vault_chapter_thumbnail_remote_path),
+                value = thumbnailPath ?: item.chapter.thumbnail?.path ?: stringResource(MR.strings.not_applicable),
+                isDownloading = isExportingThumbnail,
+                canDownload = canDownloadThumbnail,
+                downloadContentDescription = stringResource(MR.strings.vault_chapter_download_thumbnail),
+                onClickDownload = onClickDownloadThumbnail,
+                onLongPressPath = onLongPressThumbnailPath.takeIf { canUseThumbnailRemotePath },
+            )
+            VaultChapterProperty(
+                label = stringResource(MR.strings.vault_chapter_file_size),
+                value = formatBytes(item.chapter.content.sizeBytes),
+            )
+            VaultChapterProperty(
+                label = stringResource(MR.strings.vault_chapter_device_state),
+                value = item.state.label(),
+            )
+            if (!canUseRemotePath) {
+                Text(
+                    text = stringResource(MR.strings.vault_chapter_remote_path_unavailable),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun VaultChapterPathProperty(
+    label: String,
+    value: String,
+    isDownloading: Boolean,
+    canDownload: Boolean,
+    downloadContentDescription: String,
+    onClickDownload: () -> Unit,
+    onLongPressPath: (() -> Unit)?,
+) {
+    val effectiveDownloadContentDescription = if (isDownloading) {
+        stringResource(MR.strings.vault_chapter_downloading_cbz)
+    } else {
+        downloadContentDescription
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = value,
+                modifier = Modifier.combinedClickable(
+                    enabled = onLongPressPath != null,
+                    onClick = {},
+                    onLongClick = onLongPressPath,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        IconButton(
+            enabled = canDownload,
+            onClick = onClickDownload,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Download,
+                contentDescription = effectiveDownloadContentDescription,
+            )
+        }
+    }
+}
+
+@Composable
+private fun VaultChapterProperty(
+    label: String,
+    value: String,
+    selectable: Boolean = false,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (selectable) {
+            SelectionContainer {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        } else {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

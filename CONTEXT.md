@@ -248,9 +248,17 @@ _Avoid_: Vault Cover, chapter cover, local thumbnail, cached page
 A chapter from the Content Vault whose readable content file is currently present on the device.
 _Avoid_: Downloaded chapter, synced chapter, offline chapter
 
+**Vault Chapter Export**:
+Saving a Vault Chapter's readable content file from the Content Vault to a user-visible location outside Bakalah's Local Content Cache.
+_Avoid_: Cache, download, sync
+
 **Original Chapter File**:
 The CBZ chapter content file accepted into the Content Vault as readable vault content.
 _Avoid_: Chapter folder, synced file
+
+**Vault Chapter Remote Path**:
+The path to a Vault Chapter's readable content inside WebDAV Vault Storage, including the configured Vault Root path.
+_Avoid_: File URL, provider path, account path, local cache path
 
 **Vault CBZ Chapter**:
 A Vault Chapter whose readable content is a validated CBZ file recorded in the Vault Catalogue and eligible for Cache-First Reading.

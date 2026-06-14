@@ -34,8 +34,10 @@ object Notifications {
      */
     private const val GROUP_VAULT = "group_vault"
     const val CHANNEL_VAULT_PROGRESS = "vault_progress_channel"
+    const val CHANNEL_VAULT_COMPLETE = "vault_complete_channel"
     const val ID_VAULT_IMPORT_PROGRESS = -801
     const val ID_VAULT_IMPORT_COMPLETE = -802
+    const val ID_VAULT_CHAPTER_EXPORT_COMPLETE = -803
 
     /**
      * Notification channel and ids used by the downloader.
@@ -154,6 +156,12 @@ object Notifications {
                     setName(context.stringResource(MR.strings.channel_progress))
                     setGroup(GROUP_VAULT)
                     setShowBadge(false)
+                },
+                buildNotificationChannel(CHANNEL_VAULT_COMPLETE, IMPORTANCE_HIGH) {
+                    setName(context.stringResource(MR.strings.channel_complete))
+                    setGroup(GROUP_VAULT)
+                    setShowBadge(false)
+                    setSound(null, null)
                 },
                 buildNotificationChannel(CHANNEL_INCOGNITO_MODE, IMPORTANCE_LOW) {
                     setName(context.stringResource(MR.strings.pref_incognito_mode))

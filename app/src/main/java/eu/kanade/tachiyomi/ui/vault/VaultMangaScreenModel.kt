@@ -1,8 +1,12 @@
 package eu.kanade.tachiyomi.ui.vault
+
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.tachiyomi.data.vault.cache.VaultCacheEvictionResult
 import eu.kanade.tachiyomi.data.vault.cache.VaultCachePolicyService
+import eu.kanade.tachiyomi.data.vault.export.VaultChapterExportResult
+import eu.kanade.tachiyomi.data.vault.export.VaultChapterExportService
+import eu.kanade.tachiyomi.data.vault.export.vaultChapterRemotePath
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayLoader
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayResult
 import eu.kanade.tachiyomi.data.vault.publishing.VaultCoverPublishService
@@ -18,6 +22,7 @@ import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferService
 import eu.kanade.tachiyomi.data.vault.transfer.WebDavVaultTransferStorage
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.util.lang.compareToCaseInsensitiveNaturalOrder
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
@@ -32,6 +37,7 @@ import tachiyomi.domain.vault.interactor.duplicateTitleKey
 import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
+import tachiyomi.domain.vault.model.VaultChapterContentFormat
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMangaStatus
@@ -54,6 +60,7 @@ class VaultMangaScreenModel(
     private val coverPublishService: VaultCoverPublishService = Injekt.get(),
     private val metadataPublishService: VaultMetadataPublishService = Injekt.get(),
     private val chapterThumbnailDisplayLoader: VaultChapterThumbnailDisplayLoader = Injekt.get(),
+    private val chapterExportService: VaultChapterExportService = Injekt.get(),
 ) : StateScreenModel<VaultMangaScreenModel.State>(State()) {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
@@ -65,12 +72,14 @@ class VaultMangaScreenModel(
             val manga = repository.getMangaById(mangaId)
             val mangaLabels = manga?.let { loadedManga -> repository.getLabelsForManga(loadedManga.id) }.orEmpty()
             val vaultLabels = manga?.let { loadedManga -> repository.getLabels(loadedManga.vaultId) }.orEmpty()
+            val config = preferences.getWebDavConfig()
             mutableState.update {
                 it.copy(
                     manga = manga,
                     isLoading = manga != null,
                     mangaLabels = mangaLabels,
                     vaultLabels = vaultLabels,
+                    configuredVaultRootPath = config.rootPath.takeIf { config.isComplete },
                 )
             }
             if (manga == null) {
@@ -280,6 +289,86 @@ class VaultMangaScreenModel(
         }
     }
 
+    fun exportChapter(item: VaultChapterItem) {
+        screenModelScope.launchIO {
+            val currentState = mutableState.value
+            val manga = currentState.manga ?: return@launchIO
+            if (item.chapter.content.format != VaultChapterContentFormat.CBZ) {
+                _events.send(Event.ChapterExportFailed("Unsupported chapter format"))
+                return@launchIO
+            }
+            if (item.state in EXPORT_BLOCKED_STATES) {
+                _events.send(Event.ChapterExportFailed("Chapter is busy"))
+                return@launchIO
+            }
+            if (item.chapter.id in currentState.exportingChapterIds) return@launchIO
+
+            mutableState.update { it.copy(exportingChapterIds = it.exportingChapterIds + item.chapter.id) }
+            try {
+                val result = try {
+                    val latestItem =
+                        mutableState.value.chapters.firstOrNull { it.chapter.id == item.chapter.id } ?: item
+                    chapterExportService.export(
+                        manga = manga,
+                        chapter = latestItem.chapter,
+                        cacheState = latestItem.cacheState,
+                        localStaging = localStaging(),
+                    )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    logcat(LogPriority.ERROR, e)
+                    VaultChapterExportResult.SaveFailed
+                }
+                when (result) {
+                    is VaultChapterExportResult.Exported -> _events.send(Event.ChapterExported(result.filename))
+                    else -> _events.send(Event.ChapterExportFailed(result.toFailureDetail()))
+                }
+            } finally {
+                mutableState.update { it.copy(exportingChapterIds = it.exportingChapterIds - item.chapter.id) }
+            }
+        }
+    }
+
+    fun exportChapterThumbnail(item: VaultChapterItem) {
+        screenModelScope.launchIO {
+            val currentState = mutableState.value
+            val manga = currentState.manga ?: return@launchIO
+            if (item.chapter.thumbnail == null) {
+                _events.send(Event.ChapterExportFailed("Remote thumbnail file not found"))
+                return@launchIO
+            }
+            if (item.chapter.id in currentState.exportingThumbnailChapterIds) return@launchIO
+
+            mutableState.update {
+                it.copy(exportingThumbnailChapterIds = it.exportingThumbnailChapterIds + item.chapter.id)
+            }
+            try {
+                val result = try {
+                    val latestItem =
+                        mutableState.value.chapters.firstOrNull { it.chapter.id == item.chapter.id } ?: item
+                    chapterExportService.exportThumbnail(
+                        manga = manga,
+                        chapter = latestItem.chapter,
+                    )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    logcat(LogPriority.ERROR, e)
+                    VaultChapterExportResult.SaveFailed
+                }
+                when (result) {
+                    is VaultChapterExportResult.Exported -> _events.send(Event.ChapterExported(result.filename))
+                    else -> _events.send(Event.ChapterExportFailed(result.toFailureDetail()))
+                }
+            } finally {
+                mutableState.update {
+                    it.copy(exportingThumbnailChapterIds = it.exportingThumbnailChapterIds - item.chapter.id)
+                }
+            }
+        }
+    }
+
     fun deleteManga() {
         screenModelScope.launchIO {
             val manga = mutableState.value.manga ?: return@launchIO
@@ -460,6 +549,11 @@ class VaultMangaScreenModel(
 
     private companion object {
         val INTERRUPTED_CACHE_STATES = setOf(VaultCacheState.QUEUED, VaultCacheState.CACHING)
+        val EXPORT_BLOCKED_STATES = setOf(
+            VaultCacheState.QUEUED,
+            VaultCacheState.CACHING,
+            VaultCacheState.PUBLISHING,
+        )
     }
 
     data class VaultChapterItem(
@@ -475,6 +569,10 @@ class VaultMangaScreenModel(
 
         val needsThumbnailLoad: Boolean
             get() = chapter.thumbnail != null && thumbnail == VaultChapterThumbnailDisplayResult.Unavailable
+
+        val canDownloadCbz: Boolean
+            get() = chapter.content.format == VaultChapterContentFormat.CBZ &&
+                state !in EXPORT_BLOCKED_STATES
     }
 
     data class VaultMetadataEdit(
@@ -500,6 +598,8 @@ class VaultMangaScreenModel(
         data class DeleteFailed(val detail: String) : Event
         data object MetadataPublished : Event
         data class MetadataPublishFailed(val detail: String) : Event
+        data class ChapterExported(val filename: String) : Event
+        data class ChapterExportFailed(val detail: String) : Event
         data class PendingActionUnavailable(val action: VaultScreenModel.PendingAction) : Event
     }
 
@@ -515,7 +615,25 @@ class VaultMangaScreenModel(
         val isPublishingMetadata: Boolean = false,
         val metadataPublishSuccessCount: Int = 0,
         val coverUri: String? = null,
+        val configuredVaultRootPath: String? = null,
+        val exportingChapterIds: Set<Long> = emptySet(),
+        val exportingThumbnailChapterIds: Set<Long> = emptySet(),
     )
+}
+
+internal fun VaultMangaScreenModel.State.remotePathFor(
+    item: VaultMangaScreenModel.VaultChapterItem,
+): String? {
+    val rootPath = configuredVaultRootPath ?: return null
+    return vaultChapterRemotePath(rootPath, item.chapter.content.path)
+}
+
+internal fun VaultMangaScreenModel.State.remoteThumbnailPathFor(
+    item: VaultMangaScreenModel.VaultChapterItem,
+): String? {
+    val rootPath = configuredVaultRootPath ?: return null
+    val thumbnailPath = item.chapter.thumbnail?.path ?: return null
+    return vaultChapterRemotePath(rootPath, thumbnailPath)
 }
 
 private fun VaultMangaScreenModel.State.labelEdits(): List<VaultMangaScreenModel.VaultLabelEdit> {
@@ -595,5 +713,16 @@ private fun VaultMetadataPublishResult.toFailureDetail(): String {
         is VaultMetadataPublishResult.Malformed -> "Malformed manifest: $manifestPath"
         VaultMetadataPublishResult.LabelNameConflict -> "Vault Label names must be unique"
         VaultMetadataPublishResult.PublishFailed -> "Could not publish Vault metadata"
+    }
+}
+
+private fun VaultChapterExportResult.toFailureDetail(): String {
+    return when (this) {
+        is VaultChapterExportResult.Exported -> "Exported"
+        VaultChapterExportResult.IncompleteConfiguration -> "Vault configuration incomplete"
+        VaultChapterExportResult.RemoteFileNotFound -> "Remote chapter file not found"
+        VaultChapterExportResult.IntegrityCheckFailed -> "Downloaded file failed integrity check"
+        VaultChapterExportResult.UnsupportedFormat -> "Unsupported chapter format"
+        VaultChapterExportResult.SaveFailed -> "Could not download CBZ"
     }
 }
