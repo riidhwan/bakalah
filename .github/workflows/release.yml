@@ -196,6 +196,6 @@ jobs:
             bakalah-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
             bakalah-x86-${{ needs.get_tag.outputs.tag }}.apk
             bakalah-x86_64-${{ needs.get_tag.outputs.tag }}.apk
-          draft: true
+          draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}

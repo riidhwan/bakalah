@@ -1,6 +1,6 @@
 # Release Process
 
-Bakalah releases are started by merging a reviewed release branch into `main`. Release automation validates the release metadata, creates a version tag, builds and signs the release artifacts, creates a draft GitHub Release, and leaves final publication to a manual verification step.
+Bakalah releases are started by merging a reviewed release branch into `main`. Release automation validates the release metadata, creates a version tag, builds and signs the release artifacts, and publishes the GitHub Release.
 
 ## Version Rules
 
@@ -26,9 +26,8 @@ Use this checklist for every public release:
 - Run and record any additional pre-release verification commands in the pull request.
 - Merge the release pull request only after review and required checks pass.
 - Wait for release automation to create the annotated release tag on the merged revision.
-- Wait for release automation to create the draft GitHub Release.
-- Verify all expected artifacts, artifact names, release notes, and install or upgrade behavior before publishing the draft.
-- Publish the GitHub Release only after the draft passes verification.
+- Wait for release automation to publish the GitHub Release.
+- Verify all expected artifacts, artifact names, release notes, and install or upgrade behavior on the published release.
 - Run the post-publish smoke test.
 
 ## Release Metadata Verification
@@ -38,7 +37,7 @@ Before merging the release branch, update `CHANGELOG.md`:
 - Move relevant `Unreleased` entries into a new section for the release version.
 - Use a heading in the form `## [vMAJOR.MINOR.PATCH] - YYYY-MM-DD`.
 - Keep the existing changelog categories when they apply.
-- Keep the release section non-empty; release automation uses it to generate the draft GitHub Release notes.
+- Keep the release section non-empty; release automation uses it to generate the published GitHub Release notes.
 
 For a release branch named `release/0.19.9`, release metadata must resolve to:
 
@@ -76,15 +75,13 @@ Use `bakalah-{tag}.apk` as the default recommendation for users who are unsure w
 
 ## Publication
 
-The workflow creates the GitHub Release as a draft and fills its notes from the matching `CHANGELOG.md` release section. Before publishing it, verify that:
+The workflow publishes the GitHub Release and fills its notes from the matching `CHANGELOG.md` release section. After publication, verify that:
 
 - All six expected artifacts are attached.
 - The artifact names use the intended release tag.
 - The release APK installs or upgrades successfully on a test device.
 - The FOSS APK installs or upgrades successfully when testing that variant.
 - The release notes match the release section in `CHANGELOG.md`.
-
-Publish the draft only after these checks pass.
 
 ## Post-Publish Smoke Test
 
@@ -96,6 +93,6 @@ After publishing the GitHub Release, verify that:
 
 ## Bad Release Handling
 
-If a draft release fails verification because of transient infrastructure or signing issues, keep the tag and rerun the release workflow for that tag after fixing the issue. If the failure is due to bad release metadata that somehow passed checks and no draft or published release exists, delete the tag, fix the issue through a new release pull request, and let automation recreate the tag.
+If release creation fails because of transient infrastructure or signing issues, keep the tag and rerun the release workflow for that tag after fixing the issue. If the failure is due to bad release metadata that somehow passed checks and no published release exists, delete the tag, fix the issue through a new release pull request, and let automation recreate the tag.
 
 If a published release is bad, prefer publishing a new patch release that supersedes it. Delete or hide published assets only when the artifact is actively harmful, such as a signing, security, or install-breaking issue.
