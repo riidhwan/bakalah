@@ -13,6 +13,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
+import eu.kanade.tachiyomi.util.system.copyToClipboard
 import kotlinx.coroutines.flow.collectLatest
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.MR
@@ -42,6 +43,25 @@ data class VaultMangaScreen(
             },
             onClickRetry = {
                 screenModel.retryChapter(it)
+            },
+            onLongPressPath = {
+                state.remotePathFor(it)?.let { path ->
+                    context.copyToClipboard(context.stringResource(MR.strings.vault_chapter_remote_path), path)
+                }
+            },
+            onClickDownloadCbz = {
+                screenModel.exportChapter(it)
+            },
+            onLongPressThumbnailPath = {
+                state.remoteThumbnailPathFor(it)?.let { path ->
+                    context.copyToClipboard(
+                        context.stringResource(MR.strings.vault_chapter_thumbnail_remote_path),
+                        path,
+                    )
+                }
+            },
+            onClickDownloadThumbnail = {
+                screenModel.exportChapterThumbnail(it)
             },
             onClickRead = {
                 context.startActivity(ReaderActivity.newVaultIntent(context, mangaId, it.chapter.id))
@@ -93,6 +113,14 @@ data class VaultMangaScreen(
                     is VaultMangaScreenModel.Event.MetadataPublishFailed ->
                         snackbarHostState.showSnackbar(
                             context.stringResource(MR.strings.vault_metadata_publish_failed_details, event.detail),
+                        )
+                    is VaultMangaScreenModel.Event.ChapterExported ->
+                        snackbarHostState.showSnackbar(
+                            context.stringResource(MR.strings.vault_chapter_download_complete, event.filename),
+                        )
+                    is VaultMangaScreenModel.Event.ChapterExportFailed ->
+                        snackbarHostState.showSnackbar(
+                            context.stringResource(MR.strings.vault_chapter_download_failed_details, event.detail),
                         )
                     is VaultMangaScreenModel.Event.PendingActionUnavailable ->
                         snackbarHostState.showSnackbar(event.action.unavailableMessage(context))

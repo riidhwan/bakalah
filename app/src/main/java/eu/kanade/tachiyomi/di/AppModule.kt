@@ -21,6 +21,7 @@ import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultCaptureService
 import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultChapterPublisher
 import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultChapterPublisherBoundary
 import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultChapterStager
+import eu.kanade.tachiyomi.data.vault.export.VaultChapterExportService
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultChapterPublisher
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultChapterPublisherBoundary
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultChapterStager
@@ -197,6 +198,7 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { DelayedTrackingStore(app) }
 
         addSingletonFactory { ImageSaver(app) }
+        addSingletonFactory { VaultChapterExportService(app, get(), get()) }
 
         addSingletonFactory { AndroidStorageFolderProvider(app) }
         addSingletonFactory { LocalSourceFileSystem(get()) }
