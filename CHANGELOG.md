@@ -12,6 +12,13 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.28.0] - 2026-06-14
+### Improved
+- Increase Vault chapter thumbnail size to 256 px for sharper generated thumbnails.
+
+### Other
+- Split the Vault manga presentation screen into focused components and add screen-size guardrails.
+
 ## [v0.27.0] - 2026-06-14
 ### Added
 - Add a read-only database viewer under Settings > Advanced > Data for inspecting app SQLite tables.
