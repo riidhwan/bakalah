@@ -93,14 +93,11 @@ class VaultMangaScreenModel(
                 repository.getChaptersAsFlow(mangaId),
                 repository.getCacheStatesForMangaAsFlow(mangaId),
             ) { chapters, cacheStates ->
-                val cacheByChapter = cacheStates.associateBy { it.chapterId }
-                chapters.map { chapter ->
-                    VaultChapterItem(
-                        chapter = chapter,
-                        cacheState = cacheByChapter[chapter.id],
-                        thumbnail = VaultChapterThumbnailDisplayResult.Unavailable,
-                    )
-                }
+                buildVaultChapterItems(
+                    chapters = chapters,
+                    cacheStates = cacheStates,
+                    previousItems = mutableState.value.chapters,
+                )
             }
                 .catch {
                     logcat(LogPriority.ERROR, it)
@@ -662,6 +659,26 @@ internal fun orderVaultMangaDetailChapters(
             .compareToCaseInsensitiveNaturalOrder(first.chapter.title.duplicateTitleKey())
             .takeIf { it != 0 }
             ?: first.chapter.sourceOrder.compareTo(second.chapter.sourceOrder)
+    }
+}
+
+internal fun buildVaultChapterItems(
+    chapters: List<VaultChapter>,
+    cacheStates: List<VaultChapterCacheState>,
+    previousItems: List<VaultMangaScreenModel.VaultChapterItem>,
+): List<VaultMangaScreenModel.VaultChapterItem> {
+    val cacheByChapter = cacheStates.associateBy { it.chapterId }
+    val previousByChapter = previousItems.associateBy { it.chapter.id }
+    return chapters.map { chapter ->
+        val previous = previousByChapter[chapter.id]
+        VaultMangaScreenModel.VaultChapterItem(
+            chapter = chapter,
+            cacheState = cacheByChapter[chapter.id],
+            thumbnail = previous
+                ?.thumbnail
+                ?.takeIf { previous.chapter.thumbnail?.identity == chapter.thumbnail?.identity }
+                ?: VaultChapterThumbnailDisplayResult.Unavailable,
+        )
     }
 }
 
