@@ -1,7 +1,6 @@
 package eu.kanade.presentation.reader
 
 import android.graphics.PointF
-import android.net.Uri
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,52 +26,35 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailCrop
-import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import eu.kanade.tachiyomi.ui.reader.VaultChapterThumbnailCapture
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
-import java.io.File
 import kotlin.math.max
 import kotlin.math.min
 
 @Composable
 fun VaultChapterThumbnailCropOverlay(
-    page: ReaderPage,
+    capture: VaultChapterThumbnailCapture,
     isPublishing: Boolean,
     onConfirm: (VaultChapterThumbnailCrop) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val density = LocalDensity.current
     var imageView by remember { mutableStateOf<SubsamplingScaleImageView?>(null) }
-    val imageFile by produceState<File?>(initialValue = null, key1 = page) {
-        value = withContext(Dispatchers.IO) {
-            val stream = page.stream ?: return@withContext null
-            val dir = File(context.cacheDir, "vault-chapter-thumbnail-crop").apply {
-                mkdirs()
-                listFiles()?.forEach(File::delete)
-            }
-            File.createTempFile("page-${page.index}-", ".image", dir).also { file ->
-                stream().use { input ->
-                    file.outputStream().use(input::copyTo)
-                }
-            }
-        }
+    val imageSource = remember(capture) {
+        ImageSource.bitmap(capture.bitmap)
     }
 
     Box(
@@ -93,56 +75,52 @@ fun VaultChapterThumbnailCropOverlay(
             val verticalCropPaddingPx = with(density) { verticalScrimHeight.toPx() }.toInt()
             val cropSizePx = with(density) { cropSize.toPx() }
 
-            if (imageFile == null) {
-                CircularProgressIndicator(color = Color.White)
-            } else {
-                AndroidView(
-                    factory = { viewContext ->
-                        SubsamplingScaleImageView(viewContext).apply {
-                            layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-                            setMinimumDpi(1)
-                            setMinimumScaleType(SubsamplingScaleImageView.SCALE_TYPE_CUSTOM)
-                            setPanLimit(SubsamplingScaleImageView.PAN_LIMIT_OUTSIDE)
-                            setDoubleTapZoomStyle(SubsamplingScaleImageView.ZOOM_FOCUS_CENTER)
-                            setCropFramePadding(horizontalCropPaddingPx, verticalCropPaddingPx)
-                            setOnImageEventListener(
-                                object : SubsamplingScaleImageView.DefaultOnImageEventListener() {
-                                    override fun onReady() {
-                                        setupVaultChapterThumbnailCropZoom(cropSizePx)
-                                    }
-                                },
-                            )
-                            setOnStateChangedListener(
-                                object : SubsamplingScaleImageView.DefaultOnStateChangedListener() {
-                                    override fun onScaleChanged(newScale: Float, origin: Int) {
-                                        clampVaultChapterThumbnailCropToFrame(cropSizePx)
-                                    }
+            AndroidView(
+                factory = { viewContext ->
+                    SubsamplingScaleImageView(viewContext).apply {
+                        layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+                        setMinimumDpi(1)
+                        setMinimumScaleType(SubsamplingScaleImageView.SCALE_TYPE_CUSTOM)
+                        setPanLimit(SubsamplingScaleImageView.PAN_LIMIT_OUTSIDE)
+                        setDoubleTapZoomStyle(SubsamplingScaleImageView.ZOOM_FOCUS_CENTER)
+                        setCropFramePadding(horizontalCropPaddingPx, verticalCropPaddingPx)
+                        setOnImageEventListener(
+                            object : SubsamplingScaleImageView.DefaultOnImageEventListener() {
+                                override fun onReady() {
+                                    setupVaultChapterThumbnailCropZoom(cropSizePx)
+                                }
+                            },
+                        )
+                        setOnStateChangedListener(
+                            object : SubsamplingScaleImageView.DefaultOnStateChangedListener() {
+                                override fun onScaleChanged(newScale: Float, origin: Int) {
+                                    clampVaultChapterThumbnailCropToFrame(cropSizePx)
+                                }
 
-                                    override fun onCenterChanged(newCenter: PointF?, origin: Int) {
-                                        clampVaultChapterThumbnailCropToFrame(cropSizePx)
-                                    }
-                                },
-                            )
-                            setImage(ImageSource.uri(viewContext, Uri.fromFile(imageFile)))
-                        }
-                    },
-                    update = { view ->
-                        imageView = view
-                        view.setCropFramePadding(horizontalCropPaddingPx, verticalCropPaddingPx)
-                        if (view.hasImage()) {
-                            view.setVaultChapterThumbnailCropMinScale(cropSizePx)
-                        }
-                        if (!view.hasImage()) {
-                            view.setImage(ImageSource.uri(context, Uri.fromFile(imageFile)))
-                        }
-                    },
-                    onRelease = { view ->
-                        if (imageView === view) imageView = null
-                        view.recycle()
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+                                override fun onCenterChanged(newCenter: PointF?, origin: Int) {
+                                    clampVaultChapterThumbnailCropToFrame(cropSizePx)
+                                }
+                            },
+                        )
+                        setImage(imageSource)
+                    }
+                },
+                update = { view ->
+                    imageView = view
+                    view.setCropFramePadding(horizontalCropPaddingPx, verticalCropPaddingPx)
+                    if (view.hasImage()) {
+                        view.setVaultChapterThumbnailCropMinScale(cropSizePx)
+                    }
+                    if (!view.hasImage()) {
+                        view.setImage(imageSource)
+                    }
+                },
+                onRelease = { view ->
+                    if (imageView === view) imageView = null
+                    view.recycle()
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
 
             Box(
                 modifier = Modifier
@@ -211,7 +189,7 @@ fun VaultChapterThumbnailCropOverlay(
                         view.toVaultChapterThumbnailCrop(cropSizePx)
                     }?.let(onConfirm)
                 },
-                enabled = imageFile != null && !isPublishing,
+                enabled = !isPublishing,
             ) {
                 if (isPublishing) {
                     CircularProgressIndicator(
@@ -223,7 +201,7 @@ fun VaultChapterThumbnailCropOverlay(
                     Icon(
                         imageVector = Icons.Outlined.Check,
                         contentDescription = stringResource(MR.strings.action_done),
-                        tint = if (imageFile != null) Color.White else Color.White.copy(alpha = 0.38f),
+                        tint = Color.White,
                     )
                 }
             }

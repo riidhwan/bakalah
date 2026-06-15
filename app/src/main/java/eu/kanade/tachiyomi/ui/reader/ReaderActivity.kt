@@ -16,6 +16,7 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.View.INVISIBLE
 import android.view.View.LAYER_TYPE_HARDWARE
 import android.view.WindowManager
 import android.widget.Toast
@@ -293,7 +294,7 @@ class ReaderActivity : BaseActivity() {
                 is ReaderViewModel.Dialog.VaultChapterThumbnailCrop -> {
                     BackHandler(onBack = viewModel::closeVaultChapterThumbnailCrop)
                     VaultChapterThumbnailCropOverlay(
-                        page = dialog.page,
+                        capture = dialog.capture,
                         isPublishing = dialog.isPublishing,
                         onConfirm = viewModel::confirmVaultChapterThumbnailCrop,
                         onCancel = viewModel::closeVaultChapterThumbnailCrop,
@@ -548,9 +549,35 @@ class ReaderActivity : BaseActivity() {
                 menuToggleToast = toast(if (enabled) MR.strings.on else MR.strings.off)
             },
             showVaultChapterThumbnail = state.canSetVaultChapterThumbnail,
-            onClickVaultChapterThumbnail = viewModel::openVaultChapterThumbnailCrop,
+            onClickVaultChapterThumbnail = ::openVaultChapterThumbnailCrop,
             onClickSettings = viewModel::openSettingsDialog,
         )
+    }
+
+    private fun openVaultChapterThumbnailCrop() {
+        val viewer = viewModel.state.value.viewer
+        if (viewer == null) {
+            toast(MR.strings.vault_chapter_thumbnail_unavailable)
+        } else {
+            setMenuVisibility(false)
+            val composeOverlayVisibility = binding.composeOverlay.visibility
+            val navigationOverlayVisibility = binding.navigationOverlay.visibility
+            binding.composeOverlay.visibility = INVISIBLE
+            binding.navigationOverlay.visibility = INVISIBLE
+            viewer.getView().post {
+                viewer.getView().post {
+                    viewer.captureVaultChapterThumbnail { capture ->
+                        binding.composeOverlay.visibility = composeOverlayVisibility
+                        binding.navigationOverlay.visibility = navigationOverlayVisibility
+                        if (capture == null) {
+                            toast(MR.strings.vault_chapter_thumbnail_unavailable)
+                            return@captureVaultChapterThumbnail
+                        }
+                        viewModel.openVaultChapterThumbnailCrop(capture)
+                    }
+                }
+            }
+        }
     }
 
     /**

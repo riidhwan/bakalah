@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Changed
+- Capture Vault chapter thumbnails from the visible webtoon reader viewport instead of a single source page crop, allowing thumbnails to span visible page joins without including reader controls.
 
 ## [v0.28.0] - 2026-06-14
 ### Improved

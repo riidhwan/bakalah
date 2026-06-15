@@ -15,6 +15,11 @@ interface VaultChapterThumbnailImageNormalizer {
         stream: () -> InputStream,
         crop: VaultChapterThumbnailCrop,
     ): ByteArray?
+
+    suspend fun normalize(
+        bitmap: Bitmap,
+        crop: VaultChapterThumbnailCrop,
+    ): ByteArray?
 }
 
 class DefaultVaultChapterThumbnailImageNormalizer : VaultChapterThumbnailImageNormalizer {
@@ -33,41 +38,55 @@ class DefaultVaultChapterThumbnailImageNormalizer : VaultChapterThumbnailImageNo
         } ?: return@withContext null
 
         try {
-            val left = crop.left.coerceIn(0, bitmap.width - 1)
-            val top = crop.top.coerceIn(0, bitmap.height - 1)
-            val size = crop.size
-                .coerceAtMost(bitmap.width - left)
-                .coerceAtMost(bitmap.height - top)
-                .coerceAtLeast(1)
-            val sourceRect = Rect(
-                left,
-                top,
-                (left + size).coerceIn(1, bitmap.width),
-                (top + size).coerceIn(1, bitmap.height),
-            )
-            val cropSize = min(sourceRect.width(), sourceRect.height())
-            val cropped = Bitmap.createBitmap(
-                bitmap,
-                sourceRect.left,
-                sourceRect.top,
-                cropSize,
-                cropSize,
-            )
-            try {
-                val scaled = Bitmap.createScaledBitmap(cropped, THUMBNAIL_SIZE_PX, THUMBNAIL_SIZE_PX, true)
-                try {
-                    ByteArrayOutputStream().use { output ->
-                        scaled.compress(Bitmap.CompressFormat.JPEG, THUMBNAIL_JPEG_QUALITY, output)
-                        output.toByteArray()
-                    }
-                } finally {
-                    if (scaled !== cropped) scaled.recycle()
-                }
-            } finally {
-                if (cropped !== bitmap) cropped.recycle()
-            }
+            normalizeBitmap(bitmap, crop)
         } finally {
             bitmap.recycle()
+        }
+    }
+
+    override suspend fun normalize(
+        bitmap: Bitmap,
+        crop: VaultChapterThumbnailCrop,
+    ): ByteArray? = withContext(Dispatchers.IO) {
+        normalizeBitmap(bitmap, crop)
+    }
+
+    private fun normalizeBitmap(
+        bitmap: Bitmap,
+        crop: VaultChapterThumbnailCrop,
+    ): ByteArray? {
+        val left = crop.left.coerceIn(0, bitmap.width - 1)
+        val top = crop.top.coerceIn(0, bitmap.height - 1)
+        val size = crop.size
+            .coerceAtMost(bitmap.width - left)
+            .coerceAtMost(bitmap.height - top)
+            .coerceAtLeast(1)
+        val sourceRect = Rect(
+            left,
+            top,
+            (left + size).coerceIn(1, bitmap.width),
+            (top + size).coerceIn(1, bitmap.height),
+        )
+        val cropSize = min(sourceRect.width(), sourceRect.height())
+        val cropped = Bitmap.createBitmap(
+            bitmap,
+            sourceRect.left,
+            sourceRect.top,
+            cropSize,
+            cropSize,
+        )
+        try {
+            val scaled = Bitmap.createScaledBitmap(cropped, THUMBNAIL_SIZE_PX, THUMBNAIL_SIZE_PX, true)
+            try {
+                return ByteArrayOutputStream().use { output ->
+                    scaled.compress(Bitmap.CompressFormat.JPEG, THUMBNAIL_JPEG_QUALITY, output)
+                    output.toByteArray()
+                }
+            } finally {
+                if (scaled !== cropped) scaled.recycle()
+            }
+        } finally {
+            if (cropped !== bitmap) cropped.recycle()
         }
     }
 

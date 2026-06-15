@@ -209,8 +209,12 @@ The amount of storage used by one Vault Manga's vault-owned chapter content.
 _Avoid_: Vault Storage Usage, local cache usage, manga cache size
 
 **Vault Chapter Thumbnail**:
-A vault-owned image associated with one Vault Chapter for visual identification in Vault browsing surfaces, separate from the readable chapter content and from the Vault Cover.
-_Avoid_: Chapter page, preview cache, manga cover
+The vault-owned square image used to represent one Vault Chapter in Vault browsing surfaces, separate from the readable chapter content and from the Vault Cover.
+_Avoid_: Vault Cover, chapter cover, local thumbnail, cached page
+
+**Reader Viewport Thumbnail Capture**:
+Creating a Vault Chapter Thumbnail from the visible comic artwork area in the Reader, including artwork split across visible pages when that is what the user is viewing.
+_Avoid_: Current page thumbnail, page crop, screenshot
 
 **Vault Storage Quota**:
 The user's storage budget or provider-reported limit for a Content Vault.
@@ -239,10 +243,6 @@ _Avoid_: File metadata, local metadata, ComicInfo truth
 **Vault Cover**:
 The vault-owned image used to represent a manga in the Vault Catalogue.
 _Avoid_: Chapter cover, local thumbnail, cached page
-
-**Vault Chapter Thumbnail**:
-The vault-owned square image used to represent one Vault Chapter in the Vault Catalogue.
-_Avoid_: Vault Cover, chapter cover, local thumbnail, cached page
 
 **Cached Chapter**:
 A chapter from the Content Vault whose readable content file is currently present on the device.

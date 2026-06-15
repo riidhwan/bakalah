@@ -1,18 +1,27 @@
 package eu.kanade.tachiyomi.ui.reader.viewer.webtoon
 
+import android.graphics.Bitmap
 import android.graphics.PointF
+import android.graphics.Rect
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.core.app.ActivityCompat
+import androidx.core.view.children
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.WebtoonLayoutManager
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
+import eu.kanade.tachiyomi.ui.reader.VaultChapterThumbnailCapture
+import eu.kanade.tachiyomi.ui.reader.VaultChapterThumbnailCaptureRect
+import eu.kanade.tachiyomi.ui.reader.VaultChapterThumbnailCaptureRegion
 import eu.kanade.tachiyomi.ui.reader.model.ChapterTransition
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
@@ -193,6 +202,48 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
         return frame
     }
 
+    override val supportsVaultChapterThumbnailCapture: Boolean = true
+
+    override fun captureVaultChapterThumbnail(onCaptured: (VaultChapterThumbnailCapture?) -> Unit) {
+        if (frame.width <= 0 || frame.height <= 0 || !recycler.isVisible) {
+            onCaptured(null)
+            return
+        }
+        val bitmap = Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888)
+        val regions = recycler.children.mapNotNull { child ->
+            val position = recycler.getChildAdapterPosition(child).takeIf { it != RecyclerView.NO_POSITION }
+                ?: return@mapNotNull null
+            val rect = child.visibleCaptureRect(frame) ?: return@mapNotNull null
+            when (val item = adapter.items.getOrNull(position)) {
+                is ReaderPage -> VaultChapterThumbnailCaptureRegion.Page(item, rect)
+                is ChapterTransition -> VaultChapterThumbnailCaptureRegion.Transition(rect)
+                else -> null
+            }
+        }.toList()
+        if (regions.isEmpty()) {
+            bitmap.recycle()
+            onCaptured(null)
+            return
+        }
+
+        val location = IntArray(2)
+        frame.getLocationInWindow(location)
+        val sourceRect = Rect(
+            location[0],
+            location[1],
+            location[0] + frame.width,
+            location[1] + frame.height,
+        )
+        PixelCopy.request(activity.window, sourceRect, bitmap, { result ->
+            if (result == PixelCopy.SUCCESS) {
+                onCaptured(VaultChapterThumbnailCapture(bitmap, regions))
+            } else {
+                bitmap.recycle()
+                onCaptured(null)
+            }
+        }, Handler(Looper.getMainLooper()))
+    }
+
     /**
      * Destroys this viewer. Called when leaving the reader or swapping viewers.
      */
@@ -359,6 +410,19 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
             min(position + 3, adapter.itemCount - 1),
         )
     }
+}
+
+private fun View.visibleCaptureRect(root: View): VaultChapterThumbnailCaptureRect? {
+    val rootLocation = IntArray(2)
+    root.getLocationInWindow(rootLocation)
+    val visibleRect = Rect()
+    if (!getGlobalVisibleRect(visibleRect)) return null
+    val left = (visibleRect.left - rootLocation[0]).coerceAtLeast(0)
+    val top = (visibleRect.top - rootLocation[1]).coerceAtLeast(0)
+    val right = (visibleRect.right - rootLocation[0]).coerceAtMost(root.width)
+    val bottom = (visibleRect.bottom - rootLocation[1]).coerceAtMost(root.height)
+    if (right <= left || bottom <= top) return null
+    return VaultChapterThumbnailCaptureRect(left, top, right, bottom)
 }
 
 // Double the cache size to reduce rebinds/recycles incurred by the extra layout space on scroll direction changes
