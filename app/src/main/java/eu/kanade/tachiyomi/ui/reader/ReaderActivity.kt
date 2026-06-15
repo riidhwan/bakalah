@@ -18,6 +18,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.View.INVISIBLE
 import android.view.View.LAYER_TYPE_HARDWARE
+import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -564,20 +565,46 @@ class ReaderActivity : BaseActivity() {
             val navigationOverlayVisibility = binding.navigationOverlay.visibility
             binding.composeOverlay.visibility = INVISIBLE
             binding.navigationOverlay.visibility = INVISIBLE
-            viewer.getView().post {
-                viewer.getView().post {
-                    viewer.captureVaultChapterThumbnail { capture ->
-                        binding.composeOverlay.visibility = composeOverlayVisibility
-                        binding.navigationOverlay.visibility = navigationOverlayVisibility
-                        if (capture == null) {
-                            toast(MR.strings.vault_chapter_thumbnail_unavailable)
-                            return@captureVaultChapterThumbnail
-                        }
-                        viewModel.openVaultChapterThumbnailCrop(capture)
+            captureVaultChapterThumbnailAfterNextDraw(viewer.getView()) {
+                viewer.captureVaultChapterThumbnail { capture ->
+                    binding.composeOverlay.visibility = composeOverlayVisibility
+                    binding.navigationOverlay.visibility = navigationOverlayVisibility
+                    if (capture == null) {
+                        toast(MR.strings.vault_chapter_thumbnail_unavailable)
+                        return@captureVaultChapterThumbnail
                     }
+                    viewModel.openVaultChapterThumbnailCrop(capture)
                 }
             }
         }
+    }
+
+    private fun captureVaultChapterThumbnailAfterNextDraw(
+        view: View,
+        capture: () -> Unit,
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            view.viewTreeObserver.registerFrameCommitCallback(capture)
+            view.invalidate()
+            return
+        }
+
+        val observer = view.viewTreeObserver
+        observer.addOnDrawListener(
+            object : ViewTreeObserver.OnDrawListener {
+                override fun onDraw() {
+                    view.post {
+                        if (observer.isAlive) {
+                            observer.removeOnDrawListener(this)
+                        } else {
+                            view.viewTreeObserver.removeOnDrawListener(this)
+                        }
+                        capture()
+                    }
+                }
+            },
+        )
+        view.invalidate()
     }
 
     /**
