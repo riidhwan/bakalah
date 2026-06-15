@@ -3,10 +3,12 @@ package eu.kanade.tachiyomi.ui.vault
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayResult
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
+import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
 import tachiyomi.domain.vault.model.VaultChapterContent
 import tachiyomi.domain.vault.model.VaultChapterContentFormat
+import tachiyomi.domain.vault.model.VaultChapterThumbnail
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultRevision
 
@@ -31,6 +33,44 @@ class VaultMangaScreenModelTest {
         )
     }
 
+    @Test
+    fun `chapter item rebuild preserves loaded thumbnail when cache state changes`() {
+        val chapter = chapter(id = 1, thumbnailIdentity = "thumbnail-1")
+        val previous = VaultMangaScreenModel.VaultChapterItem(
+            chapter = chapter,
+            cacheState = null,
+            thumbnail = VaultChapterThumbnailDisplayResult.Ready("file:///thumbnail-1.jpg"),
+        )
+
+        val rebuilt = buildVaultChapterItems(
+            chapters = listOf(chapter),
+            cacheStates = listOf(cacheState(chapterId = chapter.id)),
+            previousItems = listOf(previous),
+        )
+
+        rebuilt.single().thumbnail shouldBe previous.thumbnail
+        rebuilt.single().state shouldBe VaultCacheState.CACHED
+    }
+
+    @Test
+    fun `chapter item rebuild resets thumbnail when thumbnail identity changes`() {
+        val previousChapter = chapter(id = 1, thumbnailIdentity = "thumbnail-1")
+        val updatedChapter = chapter(id = 1, thumbnailIdentity = "thumbnail-2")
+        val previous = VaultMangaScreenModel.VaultChapterItem(
+            chapter = previousChapter,
+            cacheState = null,
+            thumbnail = VaultChapterThumbnailDisplayResult.Ready("file:///thumbnail-1.jpg"),
+        )
+
+        val rebuilt = buildVaultChapterItems(
+            chapters = listOf(updatedChapter),
+            cacheStates = emptyList(),
+            previousItems = listOf(previous),
+        )
+
+        rebuilt.single().thumbnail shouldBe VaultChapterThumbnailDisplayResult.Unavailable
+    }
+
     private fun chapterItem(
         id: Long,
         title: String,
@@ -38,27 +78,65 @@ class VaultMangaScreenModelTest {
         chapterNumber: Double = id.toDouble(),
         cacheState: VaultChapterCacheState? = null,
     ) = VaultMangaScreenModel.VaultChapterItem(
-        chapter = VaultChapter(
+        chapter = chapter(
             id = id,
-            mangaId = 1,
-            identity = VaultIdentity("chapter-$id"),
             title = title,
-            chapterNumber = chapterNumber,
-            volumeNumber = null,
-            scanlator = null,
             sourceOrder = sourceOrder,
-            content = VaultChapterContent(
-                path = "content/manga/chapter-$id/chapter.cbz",
-                format = VaultChapterContentFormat.CBZ,
-                sizeBytes = 1,
-                checksumSha256 = "checksum-$id",
-            ),
-            revision = VaultRevision("revision-$id", 1),
-            dateUpload = 1,
-            createdAt = 1,
-            updatedAt = 1,
+            chapterNumber = chapterNumber,
         ),
         cacheState = cacheState,
         thumbnail = VaultChapterThumbnailDisplayResult.NotImplemented,
+    )
+
+    private fun chapter(
+        id: Long,
+        title: String = "Chapter $id",
+        sourceOrder: Long = id,
+        chapterNumber: Double = id.toDouble(),
+        thumbnailIdentity: String? = null,
+    ) = VaultChapter(
+        id = id,
+        mangaId = 1,
+        identity = VaultIdentity("chapter-$id"),
+        title = title,
+        chapterNumber = chapterNumber,
+        volumeNumber = null,
+        scanlator = null,
+        sourceOrder = sourceOrder,
+        content = VaultChapterContent(
+            path = "content/manga/chapter-$id/chapter.cbz",
+            format = VaultChapterContentFormat.CBZ,
+            sizeBytes = 1,
+            checksumSha256 = "checksum-$id",
+        ),
+        thumbnail = thumbnailIdentity?.let {
+            VaultChapterThumbnail(
+                id = id,
+                chapterId = id,
+                identity = VaultIdentity(it),
+                path = "content/manga/chapter-$id/thumbnail/$it.jpg",
+                mediaType = "image/jpeg",
+                sizeBytes = 1,
+                checksumSha256 = "thumbnail-checksum-$id",
+                revision = VaultRevision("thumbnail-revision-$id", 1),
+                updatedAt = 1,
+            )
+        },
+        revision = VaultRevision("revision-$id", 1),
+        dateUpload = 1,
+        createdAt = 1,
+        updatedAt = 1,
+    )
+
+    private fun cacheState(chapterId: Long) = VaultChapterCacheState(
+        chapterId = chapterId,
+        state = VaultCacheState.CACHED,
+        localPath = "vault/chapter-$chapterId.cbz",
+        sizeBytes = 1,
+        checksumSha256 = "checksum-$chapterId",
+        lastVerifiedAt = 1,
+        lastOpenedAt = 2,
+        updatedAt = 2,
+        failureReason = null,
     )
 }
