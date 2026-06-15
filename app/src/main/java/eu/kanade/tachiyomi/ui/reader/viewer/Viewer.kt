@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.ui.reader.viewer
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import eu.kanade.tachiyomi.ui.reader.VaultChapterThumbnailCapture
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 
@@ -15,6 +16,19 @@ interface Viewer {
      * Returns the view this viewer uses.
      */
     fun getView(): View
+
+    /**
+     * Whether this viewer can capture rendered artwork for Vault Chapter Thumbnails.
+     */
+    val supportsVaultChapterThumbnailCapture: Boolean
+        get() = false
+
+    /**
+     * Captures the visible rendered artwork area for Vault Chapter Thumbnail creation.
+     */
+    fun captureVaultChapterThumbnail(onCaptured: (VaultChapterThumbnailCapture?) -> Unit) {
+        onCaptured(null)
+    }
 
     /**
      * Destroys this viewer. Called when leaving the reader or swapping viewers.

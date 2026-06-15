@@ -1,0 +1,3 @@
+# Capture Vault Chapter Thumbnails from Reader Viewport
+
+Vault Chapter Thumbnails will be created through Reader Viewport Thumbnail Capture in the webtoon/continuous Reader instead of cropping a single source page image. This matches long-form reading where the meaningful thumbnail composition may span visible parts of multiple pages, and it avoids page-boundary ambiguity by assigning the thumbnail to the Vault Chapter whose artwork is at the center of the final crop. The capture uses the rendered comic artwork viewport, excludes reader chrome and overlays, blocks transition/loading/error-centered captures, and does not fall back to the old page-based cropper.

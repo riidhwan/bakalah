@@ -1001,34 +1001,38 @@ class ReaderViewModel @JvmOverloads constructor(
         mutableState.update { it.copy(dialog = Dialog.Settings) }
     }
 
-    fun openVaultChapterThumbnailCrop() {
-        val page = state.value.currentReadyPageForVaultChapterThumbnail ?: return
-        mutableState.update { it.copy(dialog = Dialog.VaultChapterThumbnailCrop(page)) }
+    fun openVaultChapterThumbnailCrop(capture: VaultChapterThumbnailCapture) {
+        if (!state.value.canSetVaultChapterThumbnail) return
+        mutableState.update { it.copy(dialog = Dialog.VaultChapterThumbnailCrop(capture)) }
     }
 
     fun confirmVaultChapterThumbnailCrop(crop: VaultChapterThumbnailCrop) {
         val dialog = state.value.dialog as? Dialog.VaultChapterThumbnailCrop ?: return
         if (dialog.isPublishing) return
-        val page = dialog.page
-        if (page.status != Page.State.Ready) return
+        val capture = dialog.capture
+        if (VaultChapterThumbnailCapturePolicy.resolveOwner(capture.regions, crop.toCaptureRect()) == null) {
+            eventChannel.trySend(Event.SetVaultChapterThumbnailResult(SetVaultChapterThumbnailResult.Unavailable))
+            return
+        }
         mutableState.update { it.copy(dialog = dialog.copy(isPublishing = true)) }
 
         viewModelScope.launchNonCancellable {
-            val result = setVaultChapterThumbnail(page, crop)
+            val result = setVaultChapterThumbnail(capture, crop)
             mutableState.update { it.copy(dialog = null) }
             eventChannel.send(Event.SetVaultChapterThumbnailResult(result))
         }
     }
 
     private suspend fun setVaultChapterThumbnail(
-        page: ReaderPage,
+        capture: VaultChapterThumbnailCapture,
         crop: VaultChapterThumbnailCrop,
     ): SetVaultChapterThumbnailResult {
-        check(page.status == Page.State.Ready)
+        val page = VaultChapterThumbnailCapturePolicy.resolveOwner(capture.regions, crop.toCaptureRect())
+            ?: return SetVaultChapterThumbnailResult.Unavailable
         val vaultSession = readerSession as? ReaderSession.Vault ?: return SetVaultChapterThumbnailResult.Unavailable
         val chapter = vaultSession.chapters.firstOrNull { it.id == page.chapter.chapter.id }
             ?: return SetVaultChapterThumbnailResult.Unavailable
-        val jpegBytes = normalizedVaultThumbnailBytes(page, crop)
+        val jpegBytes = normalizedVaultThumbnailBytes(capture, crop)
             ?: return SetVaultChapterThumbnailResult.Unavailable
 
         val result = runCatching {
@@ -1056,11 +1060,10 @@ class ReaderViewModel @JvmOverloads constructor(
     }
 
     private suspend fun normalizedVaultThumbnailBytes(
-        page: ReaderPage,
+        capture: VaultChapterThumbnailCapture,
         crop: VaultChapterThumbnailCrop,
     ): ByteArray? {
-        val stream = page.stream ?: return null
-        return vaultChapterThumbnailImageNormalizer.normalize(stream, crop)
+        return vaultChapterThumbnailImageNormalizer.normalize(capture.bitmap, crop)
     }
 
     fun closeVaultChapterThumbnailCrop() {
@@ -1282,15 +1285,8 @@ class ReaderViewModel @JvmOverloads constructor(
         val totalPages: Int
             get() = currentChapter?.pages?.size ?: -1
 
-        val currentReadyPageForVaultChapterThumbnail: ReaderPage?
-            get() {
-                if (!isVaultSession) return null
-                val page = currentChapter?.pages?.getOrNull(currentPage - 1) ?: return null
-                return page.takeIf { it.status == Page.State.Ready }
-            }
-
         val canSetVaultChapterThumbnail: Boolean
-            get() = currentReadyPageForVaultChapterThumbnail != null
+            get() = isVaultSession && viewer?.supportsVaultChapterThumbnailCapture == true
     }
 
     sealed interface Dialog {
@@ -1300,7 +1296,7 @@ class ReaderViewModel @JvmOverloads constructor(
         data object OrientationModeSelect : Dialog
         data class PageActions(val page: ReaderPage) : Dialog
         data class VaultChapterThumbnailCrop(
-            val page: ReaderPage,
+            val capture: VaultChapterThumbnailCapture,
             val isPublishing: Boolean = false,
         ) : Dialog
     }
@@ -1397,4 +1393,13 @@ class ReaderViewModel @JvmOverloads constructor(
             val chapters: List<VaultChapter>,
         ) : ReaderSession
     }
+}
+
+private fun VaultChapterThumbnailCrop.toCaptureRect(): VaultChapterThumbnailCaptureRect {
+    return VaultChapterThumbnailCaptureRect(
+        left = left,
+        top = top,
+        right = left + size,
+        bottom = top + size,
+    )
 }
