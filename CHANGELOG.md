@@ -12,6 +12,10 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.29.1] - 2026-06-15
+### Fixed
+- Wait for hidden reader overlays before capturing Vault chapter thumbnails.
+
 ## [v0.29.0] - 2026-06-15
 ### Changed
 - Capture Vault chapter thumbnails from the visible webtoon reader viewport instead of a single source page crop, allowing thumbnails to span visible page joins without including reader controls.
