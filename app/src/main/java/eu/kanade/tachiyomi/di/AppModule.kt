@@ -29,6 +29,9 @@ import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultImportService
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultMangaScanner
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultMangaScannerBoundary
+import eu.kanade.tachiyomi.data.vault.operation.VaultMetadataPublishOperationHandler
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationHandler
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationManager
 import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailCacheStore
 import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailDisplayLoader
 import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailPublishService
@@ -170,6 +173,9 @@ class AppModule(val app: Application) : InjektModule {
         }
         addSingletonFactory { VaultCoverPublishService(get<NetworkHelper>(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultMetadataPublishService(get<NetworkHelper>(), get(), get(), get(), get()) }
+        addSingletonFactory<VaultOperationHandler> { VaultMetadataPublishOperationHandler(get(), get()) }
+        addSingletonFactory<List<VaultOperationHandler>> { listOf(get<VaultOperationHandler>()) }
+        addSingletonFactory { VaultOperationManager(app, get(), get()) }
         addSingletonFactory<VaultChapterThumbnailCacheStore> { DefaultVaultChapterThumbnailCacheStore(get()) }
         addSingletonFactory<VaultChapterThumbnailPublishService> {
             DefaultVaultChapterThumbnailPublishService(get(), get(), get(), get(), get(), get())

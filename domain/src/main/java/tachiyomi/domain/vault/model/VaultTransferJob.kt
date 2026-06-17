@@ -3,8 +3,11 @@ package tachiyomi.domain.vault.model
 data class VaultTransferJob(
     val id: Long,
     val vaultId: Long,
+    val mangaId: Long? = null,
     val chapterId: Long?,
     val importRequestId: Long? = null,
+    val operationKey: String? = null,
+    val payloadJson: String? = null,
     val type: VaultTransferType,
     val state: VaultTransferState,
     val remotePath: String?,

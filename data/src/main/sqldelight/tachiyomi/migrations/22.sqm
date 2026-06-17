@@ -1,0 +1,9 @@
+ALTER TABLE vault_transfer_jobs ADD COLUMN manga_id INTEGER REFERENCES vault_mangas(_id) ON DELETE SET NULL;
+
+ALTER TABLE vault_transfer_jobs ADD COLUMN operation_key TEXT;
+
+ALTER TABLE vault_transfer_jobs ADD COLUMN payload_json TEXT;
+
+CREATE INDEX vault_transfer_jobs_manga_id_index ON vault_transfer_jobs(manga_id, state, updated_at);
+
+CREATE INDEX vault_transfer_jobs_operation_key_index ON vault_transfer_jobs(operation_key, state, updated_at);

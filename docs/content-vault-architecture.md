@@ -238,7 +238,7 @@ Metadata, cover, and deletion operations follow the same publish shape:
 
 Local-to-Vault Import and Library-to-Vault Capture deliberately keep workflow-specific one-chapter publishing services. Shared publishing helpers should stay limited to mechanics that do not hide duplicate policy, staging source, provenance, ordering, cover selection, replacement behavior, or workflow result semantics.
 
-`VaultMetadataPublishService` updates manga metadata, labels, and label sensitivity without rewriting chapter content. Vault Label identities remain stable across renames so label assignment and sensitivity are not tied to display names. Because labels are embedded in manga manifests in the current layout, renaming a label or changing sensitivity rewrites each manga manifest that already contains that label. `VaultCoverPublishService` uploads a new vault-owned cover asset and updates the manga/root manifests. Vault Chapter Thumbnail publishing uploads a new vault-owned thumbnail asset and updates the owning chapter record in the manga manifest without rewriting readable chapter content. `VaultMangaDeletionService` removes the manga pointer from the root manifest, refreshes the index, deletes the remote manga manifest, chapter CBZ files, cover assets, and thumbnail assets as cleanup, and removes app-managed local state for that Vault Manga. It does not delete Local Manga files, Downloads, or arbitrary local files.
+`VaultMetadataPublishService` updates manga metadata, labels, and label sensitivity without rewriting chapter content. Vault Manga Detail starts metadata and label edits through the reusable Vault Operation path, which stores the latest publish intent in `vault_transfer_jobs`, runs the publish through WorkManager, and shows an explicit pending overlay until the refreshed Local Vault Index catches up. Vault Label identities remain stable across renames so label assignment and sensitivity are not tied to display names. Because labels are embedded in manga manifests in the current layout, renaming a label or changing sensitivity rewrites each manga manifest that already contains that label. `VaultCoverPublishService` uploads a new vault-owned cover asset and updates the manga/root manifests. Vault Chapter Thumbnail publishing uploads a new vault-owned thumbnail asset and updates the owning chapter record in the manga manifest without rewriting readable chapter content. `VaultMangaDeletionService` removes the manga pointer from the root manifest, refreshes the index, deletes the remote manga manifest, chapter CBZ files, cover assets, and thumbnail assets as cleanup, and removes app-managed local state for that Vault Manga. It does not delete Local Manga files, Downloads, or arbitrary local files.
 
 ## Transfers and Integrity
 
@@ -264,6 +264,49 @@ Transfer states are:
 - `INTEGRITY_FAULT`
 
 Uploads and downloads use staged paths. The service validates size and SHA-256 checksum before promoting staged content. Cache downloads update `vault_chapter_cache_state` to `CACHED` only after successful integrity verification. Failed or integrity-faulted work remains represented as job/cache state. Cache failures can expose retry; Library-to-Vault Capture failures are terminal in v1 and are rerun only through a fresh Add to Vault action.
+
+## Vault Operation Policy
+
+Vault work that can take longer than an immediate screen interaction should be modeled as a typed Vault Operation rather than as one-off screen-model coroutine logic. A Vault Operation is a user-requested or app-started unit of Vault Feature work whose progress, completion, failure, or pending effect may need to remain visible beyond one immediate tap.
+
+The existing `vault_transfer_jobs` table is the current domain-visible operation trail for transfer-like and publish-like work. Future implementation may broaden this concept into a Vault Operation Queue, but new work should first reuse or extend the same lifecycle instead of inventing separate per-feature job state.
+
+Every Vault Operation declares an execution policy before implementation:
+
+- Blocking Foreground: for short work where the user cannot proceed until the result is known.
+- Visible Background: for durable work such as uploads, downloads, refreshes, imports, captures, and publishes that should survive navigation or app process interruption.
+- Optimistic Background Publish: for reversible metadata-style mutations where the UI may show a pending local effect while the remote manifest publish runs in the background.
+- Fire And Report: for non-critical derived work where canonical state is unaffected until the work succeeds.
+
+The policy determines the default durability, UI blocking behavior, queue visibility, notification behavior, pending UI overlay, retry and cancel capability, conflict display, success feedback, and failure feedback. Feature-specific code supplies only the operation type, payload, validation rules, executor, optional optimistic overlay, index reconciliation, and sanitized failure mapping.
+
+Screen models may request Vault Operations, observe operation state, and render authoritative index state together with pending overlays. Screen models should not own remote publish lifecycles, retry semantics, notification plumbing, WorkManager details, or durable result trails. App services own execution, Android runtime coordination, progress, cancellation, and result mapping. Domain interactors own reusable planning and conflict rules. Repositories expose authoritative Local Vault Index state and, where supported, pending operation overlays.
+
+Optimistic UI is allowed only when pending state is explicit. The UI may reflect a pending mutation before remote success, but it must remain visually distinguishable from confirmed catalogue state and failures must not silently collapse into success. Remote manifests remain catalogue authority; successful operations reconcile by refreshing or updating the Local Vault Index and clearing the pending overlay.
+
+### Reusable Vault Operation Code
+
+The reusable operation implementation currently lives in `app/src/main/java/eu/kanade/tachiyomi/data/vault/operation` and reuses `vault_transfer_jobs` as the durable queue. The table name remains unchanged, but operation-capable jobs carry optional `manga_id`, `operation_key`, and `payload_json` fields in addition to the existing transfer type, state, counts, detail JSON, timestamps, and failure reason.
+
+The main reusable pieces are:
+
+- `VaultOperationPolicy`: documents the execution policy for each operation handler. The first active policy is `OptimisticBackgroundPublish`.
+- `VaultOperationHandler`: binds one `VaultTransferType` to payload decoding, execution, and sanitized failure mapping.
+- `VaultOperationManager`: creates or updates durable jobs, coalesces queued work by operation key, and enqueues the generic WorkManager worker.
+- `VaultOperationWorker`: loads active jobs for an operation key, marks queued jobs running, dispatches them to the registered handler, records terminal state, and continues into a queued follow-up job for the same key.
+- Operation payload models, such as `VaultMetadataPublishPayload`, are versioned JSON contracts stored in `payload_json`.
+
+Metadata and label publishing is the first reusable operation. Its operation key is `vault-metadata:<mangaId>`. If a matching job is still `QUEUED`, enqueueing replaces that job's payload with the latest user intent. If a matching job is `RUNNING`, enqueueing leaves it alone and maintains at most one queued follow-up job with the newest payload. Vault Manga Detail observes manga-scoped transfer jobs, decodes the newest non-terminal metadata payload, and overlays pending metadata and labels on top of the authoritative Local Vault Index state. A successful publish refreshes the Local Vault Index and clears the overlay when no non-terminal payload remains; a failed job leaves the confirmed index state authoritative and reports sanitized failure feedback.
+
+Future reusable operations should follow this pattern:
+
+1. Add or reuse a `VaultTransferType`.
+2. Define a small versioned payload model whose JSON can survive process death and app upgrades.
+3. Pick an operation key that represents the coalescing/conflict boundary, usually scoped by Vault Manga when user intent replaces earlier intent.
+4. Implement a `VaultOperationHandler` that validates and decodes the payload, calls the existing workflow service, and maps failures to stable sanitized reason strings.
+5. Register the handler in `AppModule`.
+6. Expose pending state from repository job flows rather than mutating Local Vault Index rows optimistically.
+7. Keep the existing workflow service responsible for remote manifest validation, publish mechanics, catalogue refresh, cleanup, and result mapping.
 
 Vault Chapter Export is not a `VaultTransferService` job and does not update Local Content Cache state. From the Vault Manga Detail Screen, a user can download one CBZ chapter into the device-visible Downloads directory. Export prefers an already verified Cached Chapter when available, otherwise fetches the root-inclusive Vault Chapter Remote Path from WebDAV, verifies size and SHA-256 against the Vault Catalogue record, writes a unique browser-style filename, and reports sanitized failure feedback. Successful exports show immediate feedback and a completion notification so the browser-style download is visible after the sheet or screen is dismissed.
 

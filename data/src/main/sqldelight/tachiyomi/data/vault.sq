@@ -151,8 +151,11 @@ CREATE INDEX vault_chapter_cache_state_state_index ON vault_chapter_cache_state(
 CREATE TABLE vault_transfer_jobs(
     _id INTEGER NOT NULL PRIMARY KEY,
     vault_id INTEGER NOT NULL,
+    manga_id INTEGER,
     chapter_id INTEGER,
     import_request_id INTEGER,
+    operation_key TEXT,
+    payload_json TEXT,
     type INTEGER AS VaultTransferType NOT NULL,
     state INTEGER AS VaultTransferState NOT NULL,
     remote_path TEXT,
@@ -172,14 +175,17 @@ CREATE TABLE vault_transfer_jobs(
     started_at INTEGER,
     completed_at INTEGER,
     FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
+    FOREIGN KEY(manga_id) REFERENCES vault_mangas(_id) ON DELETE SET NULL,
     FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE SET NULL,
     FOREIGN KEY(import_request_id) REFERENCES vault_import_requests(_id) ON DELETE SET NULL
 );
 
 CREATE INDEX vault_transfer_jobs_vault_id_index ON vault_transfer_jobs(vault_id, state, updated_at);
 CREATE INDEX vault_transfer_jobs_state_index ON vault_transfer_jobs(state, updated_at);
+CREATE INDEX vault_transfer_jobs_manga_id_index ON vault_transfer_jobs(manga_id, state, updated_at);
 CREATE INDEX vault_transfer_jobs_chapter_id_index ON vault_transfer_jobs(chapter_id);
 CREATE INDEX vault_transfer_jobs_import_request_id_index ON vault_transfer_jobs(import_request_id);
+CREATE INDEX vault_transfer_jobs_operation_key_index ON vault_transfer_jobs(operation_key, state, updated_at);
 
 CREATE TABLE vault_import_target_hints(
     local_manga_id INTEGER NOT NULL PRIMARY KEY,
@@ -749,13 +755,32 @@ FROM vault_transfer_jobs
 WHERE vault_id = :vaultId
 ORDER BY created_at, _id;
 
+getTransferJobsForManga:
+SELECT *
+FROM vault_transfer_jobs
+WHERE manga_id = :mangaId
+OR chapter_id IN (
+    SELECT _id
+    FROM vault_chapters
+    WHERE manga_id = :mangaId
+)
+ORDER BY created_at, _id;
+
 deleteTransferJobsForManga:
 DELETE FROM vault_transfer_jobs
-WHERE chapter_id IN (
+WHERE manga_id = :mangaId
+OR chapter_id IN (
     SELECT _id
     FROM vault_chapters
     WHERE manga_id = :mangaId
 );
+
+getActiveTransferJobsForOperationKey:
+SELECT *
+FROM vault_transfer_jobs
+WHERE operation_key = :operationKey
+AND state IN :states
+ORDER BY created_at, _id;
 
 getTransferJobsByState:
 SELECT *
@@ -770,19 +795,24 @@ WHERE _id = :id;
 
 upsertTransferJob:
 INSERT INTO vault_transfer_jobs(
-    _id, vault_id, chapter_id, import_request_id, type, state, remote_path, local_path, staged_path, size_bytes,
+    _id, vault_id, manga_id, chapter_id, import_request_id, operation_key, payload_json,
+    type, state, remote_path, local_path, staged_path, size_bytes,
     checksum_sha256, failure_reason, added_count, replaced_count, failed_count, cancelled_count, detail_json, attempts,
     created_at, updated_at, started_at, completed_at
 )
 VALUES (
-    nullif(:id, -1), :vaultId, :chapterId, :importRequestId, :type, :state, :remotePath, :localPath, :stagedPath,
+    nullif(:id, -1), :vaultId, :mangaId, :chapterId, :importRequestId, :operationKey, :payloadJson,
+    :type, :state, :remotePath, :localPath, :stagedPath,
     :sizeBytes, :checksumSha256, :failureReason, :addedCount, :replacedCount, :failedCount, :cancelledCount,
     :detailJson, :attempts, :createdAt, :updatedAt, :startedAt, :completedAt
 )
 ON CONFLICT(_id) DO UPDATE SET
     vault_id = excluded.vault_id,
+    manga_id = excluded.manga_id,
     chapter_id = excluded.chapter_id,
     import_request_id = excluded.import_request_id,
+    operation_key = excluded.operation_key,
+    payload_json = excluded.payload_json,
     type = excluded.type,
     state = excluded.state,
     remote_path = excluded.remote_path,

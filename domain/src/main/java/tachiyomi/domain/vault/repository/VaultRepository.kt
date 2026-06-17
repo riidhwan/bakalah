@@ -126,6 +126,10 @@ interface VaultRepository {
 
     suspend fun getTransferJobsForVault(vaultId: Long): List<VaultTransferJob>
 
+    fun getTransferJobsForMangaAsFlow(mangaId: Long): Flow<List<VaultTransferJob>>
+
+    suspend fun getActiveTransferJobsForOperationKey(operationKey: String): List<VaultTransferJob>
+
     suspend fun getTransferJobsByState(states: List<VaultTransferState>): List<VaultTransferJob>
 
     suspend fun getTransferJob(id: Long): VaultTransferJob?

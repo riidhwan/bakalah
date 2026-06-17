@@ -681,6 +681,22 @@ class VaultRepositoryImpl(
             .awaitAsList()
     }
 
+    override fun getTransferJobsForMangaAsFlow(mangaId: Long): Flow<List<VaultTransferJob>> {
+        return database.vaultQueries
+            .getTransferJobsForManga(mangaId, VaultMapper::mapTransferJob)
+            .subscribeToList()
+    }
+
+    override suspend fun getActiveTransferJobsForOperationKey(operationKey: String): List<VaultTransferJob> {
+        return database.vaultQueries
+            .getActiveTransferJobsForOperationKey(
+                operationKey = operationKey,
+                states = listOf(VaultTransferState.QUEUED, VaultTransferState.RUNNING),
+                mapper = VaultMapper::mapTransferJob,
+            )
+            .awaitAsList()
+    }
+
     override suspend fun getTransferJobsByState(states: List<VaultTransferState>): List<VaultTransferJob> {
         if (states.isEmpty()) return emptyList()
         return database.vaultQueries
@@ -699,8 +715,11 @@ class VaultRepositoryImpl(
             database.vaultQueries.upsertTransferJob(
                 id = job.id,
                 vaultId = job.vaultId,
+                mangaId = job.mangaId,
                 chapterId = job.chapterId,
                 importRequestId = job.importRequestId,
+                operationKey = job.operationKey,
+                payloadJson = job.payloadJson,
                 type = job.type,
                 state = job.state,
                 remotePath = job.remotePath,

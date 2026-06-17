@@ -7,15 +7,14 @@ import eu.kanade.tachiyomi.data.vault.cache.VaultCachePolicyService
 import eu.kanade.tachiyomi.data.vault.export.VaultChapterExportResult
 import eu.kanade.tachiyomi.data.vault.export.VaultChapterExportService
 import eu.kanade.tachiyomi.data.vault.export.vaultChapterRemotePath
+import eu.kanade.tachiyomi.data.vault.operation.VaultMetadataLabelEditPayload
+import eu.kanade.tachiyomi.data.vault.operation.VaultMetadataPublishPayload
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationManager
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayLoader
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayResult
 import eu.kanade.tachiyomi.data.vault.publishing.VaultCoverPublishService
-import eu.kanade.tachiyomi.data.vault.publishing.VaultLabelPublishEdit
 import eu.kanade.tachiyomi.data.vault.publishing.VaultMangaDeletionResult
 import eu.kanade.tachiyomi.data.vault.publishing.VaultMangaDeletionService
-import eu.kanade.tachiyomi.data.vault.publishing.VaultMetadataPublishRequest
-import eu.kanade.tachiyomi.data.vault.publishing.VaultMetadataPublishResult
-import eu.kanade.tachiyomi.data.vault.publishing.VaultMetadataPublishService
 import eu.kanade.tachiyomi.data.vault.transfer.UniFileVaultTransferLocalStaging
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferResult
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferService
@@ -29,6 +28,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.system.logcat
@@ -38,9 +39,12 @@ import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultChapterCacheState
 import tachiyomi.domain.vault.model.VaultChapterContentFormat
+import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMangaStatus
+import tachiyomi.domain.vault.model.VaultMetadata
+import tachiyomi.domain.vault.model.VaultTransferJob
 import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.model.VaultTransferType
 import tachiyomi.domain.vault.model.WebDavVaultConfig
@@ -58,7 +62,8 @@ class VaultMangaScreenModel(
     private val storageManager: StorageManager = Injekt.get(),
     private val deletionService: VaultMangaDeletionService = Injekt.get(),
     private val coverPublishService: VaultCoverPublishService = Injekt.get(),
-    private val metadataPublishService: VaultMetadataPublishService = Injekt.get(),
+    private val operationManager: VaultOperationManager = Injekt.get(),
+    private val json: Json = Injekt.get(),
     private val chapterThumbnailDisplayLoader: VaultChapterThumbnailDisplayLoader = Injekt.get(),
     private val chapterExportService: VaultChapterExportService = Injekt.get(),
 ) : StateScreenModel<VaultMangaScreenModel.State>(State()) {
@@ -66,6 +71,7 @@ class VaultMangaScreenModel(
     private val _events = Channel<Event>(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
     private val loadingChapterThumbnailIds = Collections.synchronizedSet(mutableSetOf<Long>())
+    private val observedTerminalMetadataJobIds = Collections.synchronizedSet(mutableSetOf<Long>())
 
     init {
         screenModelScope.launchIO {
@@ -86,8 +92,69 @@ class VaultMangaScreenModel(
                 _events.send(Event.LoadFailed)
                 return@launchIO
             }
+            observedTerminalMetadataJobIds.addAll(
+                repository.getTransferJobsForVault(manga.vaultId)
+                    .filter { it.isCompletedMetadataOperationForCurrentManga() }
+                    .map { it.id },
+            )
             reloadCoverCache()
             recoverInterruptedCacheJobs(manga)
+
+            screenModelScope.launchIO {
+                combine(
+                    repository.getMangaAsFlow(manga.vaultId),
+                    repository.getLabelsAsFlow(manga.vaultId),
+                    repository.getLabelsByMangaForVaultAsFlow(manga.vaultId),
+                    repository.getTransferJobsForMangaAsFlow(mangaId),
+                ) { mangaList, vaultLabels, labelsByManga, transferJobs ->
+                    val authoritativeManga = mangaList.firstOrNull { it.id == mangaId }
+                    val authoritativeMangaLabels = labelsByManga[mangaId].orEmpty()
+                    val overlay = transferJobs.latestMetadataOverlay(json)
+                    VaultMangaMetadataSnapshot(
+                        manga = authoritativeManga?.withOverlay(overlay),
+                        mangaLabels = overlay?.mangaLabels(vaultLabels) ?: authoritativeMangaLabels,
+                        vaultLabels = overlay?.vaultLabels(vaultLabels) ?: vaultLabels,
+                        pendingLabelIdentities = overlay?.pendingLabelIdentities(authoritativeMangaLabels).orEmpty(),
+                        isPublishingMetadata = transferJobs.any {
+                            it.type == VaultTransferType.METADATA_PUBLISH &&
+                                it.mangaId == mangaId &&
+                                (it.state == VaultTransferState.QUEUED || it.state == VaultTransferState.RUNNING)
+                        },
+                        terminalJobs = transferJobs.filter { it.isCompletedMetadataOperationForCurrentManga() },
+                    )
+                }
+                    .catch {
+                        logcat(LogPriority.ERROR, it)
+                        _events.send(Event.LoadFailed)
+                    }
+                    .collectLatest { snapshot ->
+                        mutableState.update {
+                            it.copy(
+                                manga = snapshot.manga,
+                                mangaLabels = snapshot.mangaLabels,
+                                vaultLabels = snapshot.vaultLabels,
+                                pendingLabelIdentities = snapshot.pendingLabelIdentities,
+                                isPublishingMetadata = snapshot.isPublishingMetadata,
+                            )
+                        }
+                        snapshot.terminalJobs.forEach { job ->
+                            if (observedTerminalMetadataJobIds.add(job.id)) {
+                                if (job.state == VaultTransferState.SUCCEEDED) {
+                                    mutableState.update {
+                                        it.copy(metadataPublishSuccessCount = it.metadataPublishSuccessCount + 1)
+                                    }
+                                    _events.send(Event.MetadataPublished)
+                                } else {
+                                    _events.send(
+                                        Event.MetadataPublishFailed(
+                                            job.failureReason.toMetadataPublishFailureDetail(),
+                                        ),
+                                    )
+                                }
+                            }
+                        }
+                    }
+            }
 
             combine(
                 repository.getChaptersAsFlow(mangaId),
@@ -390,10 +457,11 @@ class VaultMangaScreenModel(
 
     fun publishMetadata(edit: VaultMetadataEdit) {
         screenModelScope.launchIO {
-            mutableState.update { it.copy(isPublishingMetadata = true) }
+            val manga = mutableState.value.manga ?: return@launchIO
             val result = runCatching {
-                metadataPublishService.publish(
-                    VaultMetadataPublishRequest(
+                operationManager.enqueueMetadataPublish(
+                    vaultId = manga.vaultId,
+                    payload = VaultMetadataPublishPayload(
                         mangaId = mangaId,
                         title = edit.title,
                         author = edit.author,
@@ -401,7 +469,7 @@ class VaultMangaScreenModel(
                         description = edit.description,
                         status = edit.status,
                         labels = edit.labels.map {
-                            VaultLabelPublishEdit(
+                            VaultMetadataLabelEditPayload(
                                 identity = it.identity,
                                 name = it.name,
                                 isSensitive = it.isSensitive,
@@ -412,26 +480,16 @@ class VaultMangaScreenModel(
                 )
             }.getOrElse {
                 logcat(LogPriority.ERROR, it)
-                VaultMetadataPublishResult.PublishFailed
+                null
             }
-            when (result) {
-                VaultMetadataPublishResult.Published -> {
-                    reloadMangaMetadata()
-                    mutableState.update {
-                        it.copy(metadataPublishSuccessCount = it.metadataPublishSuccessCount + 1)
-                    }
-                    _events.send(Event.MetadataPublished)
-                }
-                else -> _events.send(Event.MetadataPublishFailed(result.toFailureDetail()))
-            }
-            mutableState.update { it.copy(isPublishingMetadata = false) }
+            if (result == null) _events.send(Event.MetadataPublishFailed("Could not enqueue Vault metadata publish"))
         }
     }
 
     fun assignLabel(label: VaultLabel) {
         publishLabelEdit(
             editLabel = { edit ->
-                edit.copy(assigned = edit.identity == label.identity.value || edit.assigned)
+                edit.copy(assigned = edit.matches(label) || edit.assigned)
             },
         )
     }
@@ -457,7 +515,7 @@ class VaultMangaScreenModel(
     fun removeLabelAssignment(label: VaultLabel) {
         publishLabelEdit(
             editLabel = { edit ->
-                if (edit.identity == label.identity.value) {
+                if (edit.matches(label)) {
                     edit.copy(assigned = false)
                 } else {
                     edit
@@ -469,7 +527,7 @@ class VaultMangaScreenModel(
     fun toggleLabelSensitivity(label: VaultLabel) {
         publishLabelEdit(
             editLabel = { edit ->
-                if (edit.identity == label.identity.value) {
+                if (edit.matches(label)) {
                     edit.copy(isSensitive = !label.isSensitive)
                 } else {
                     edit
@@ -496,16 +554,11 @@ class VaultMangaScreenModel(
         )
     }
 
-    private suspend fun reloadMangaMetadata() {
-        val manga = repository.getMangaById(mangaId) ?: return
-        val mangaLabels = repository.getLabelsForManga(manga.id)
-        val vaultLabels = repository.getLabels(manga.vaultId)
-        mutableState.update {
-            it.copy(
-                manga = manga,
-                mangaLabels = mangaLabels,
-                vaultLabels = vaultLabels,
-            )
+    private fun VaultLabelEdit.matches(label: VaultLabel): Boolean {
+        return if (isPendingLabelIdentity(label.identity.value)) {
+            identity == null && VaultMetadata.normalizeTitle(name) == VaultMetadata.normalizeTitle(label.name)
+        } else {
+            identity == label.identity.value
         }
     }
 
@@ -610,12 +663,114 @@ class VaultMangaScreenModel(
         val mangaLabels: List<VaultLabel> = emptyList(),
         val vaultLabels: List<VaultLabel> = emptyList(),
         val isPublishingMetadata: Boolean = false,
+        val pendingLabelIdentities: Set<String> = emptySet(),
         val metadataPublishSuccessCount: Int = 0,
         val coverUri: String? = null,
         val configuredVaultRootPath: String? = null,
         val exportingChapterIds: Set<Long> = emptySet(),
         val exportingThumbnailChapterIds: Set<Long> = emptySet(),
     )
+
+    private fun VaultTransferJob.isCompletedMetadataOperationForCurrentManga(): Boolean {
+        return type == VaultTransferType.METADATA_PUBLISH &&
+            mangaId == this@VaultMangaScreenModel.mangaId &&
+            isTerminal
+    }
+}
+
+private data class VaultMangaMetadataSnapshot(
+    val manga: VaultManga?,
+    val mangaLabels: List<VaultLabel>,
+    val vaultLabels: List<VaultLabel>,
+    val pendingLabelIdentities: Set<String>,
+    val isPublishingMetadata: Boolean,
+    val terminalJobs: List<VaultTransferJob>,
+)
+
+private data class VaultMetadataPendingOverlay(
+    val payload: VaultMetadataPublishPayload,
+)
+
+private fun List<VaultTransferJob>.latestMetadataOverlay(json: Json): VaultMetadataPendingOverlay? {
+    return filter {
+        it.type == VaultTransferType.METADATA_PUBLISH &&
+            it.isTerminal.not() &&
+            it.payloadJson != null
+    }
+        .maxWithOrNull(compareBy<VaultTransferJob> { it.updatedAt }.thenBy { it.id })
+        ?.payloadJson
+        ?.let { payloadJson ->
+            try {
+                VaultMetadataPendingOverlay(json.decodeFromString<VaultMetadataPublishPayload>(payloadJson))
+            } catch (_: SerializationException) {
+                null
+            }
+        }
+}
+
+private fun VaultManga.withOverlay(overlay: VaultMetadataPendingOverlay?): VaultManga {
+    overlay ?: return this
+    val payload = overlay.payload
+    return copy(
+        metadata = VaultMetadata(
+            title = payload.title,
+            author = payload.author.trim().takeIf(String::isNotBlank),
+            artist = payload.artist.trim().takeIf(String::isNotBlank),
+            description = payload.description.trim().takeIf(String::isNotBlank),
+            status = payload.status,
+        ),
+    )
+}
+
+private fun VaultMetadataPendingOverlay.vaultLabels(authoritativeLabels: List<VaultLabel>): List<VaultLabel> {
+    val authoritativeByIdentity = authoritativeLabels.associateBy { it.identity.value }
+    val pendingLabels = payload.labels.mapIndexedNotNull { index, label ->
+        val name = label.name.trim().takeIf(String::isNotBlank) ?: return@mapIndexedNotNull null
+        val existing = label.identity?.let(authoritativeByIdentity::get)
+        existing?.copy(
+            name = name,
+            sortKey = VaultMetadata.normalizeTitle(name),
+            isSensitive = label.isSensitive,
+        ) ?: VaultLabel(
+            id = -1L - index,
+            vaultId = authoritativeLabels.firstOrNull()?.vaultId ?: -1,
+            identity = VaultIdentity(label.identity ?: pendingLabelIdentity(name)),
+            name = name,
+            sortKey = VaultMetadata.normalizeTitle(name),
+            isSensitive = label.isSensitive,
+            createdAt = 0,
+            updatedAt = 0,
+        )
+    }
+    return (pendingLabels + authoritativeLabels)
+        .distinctBy { it.identity.value }
+        .sortedBy { it.sortKey }
+}
+
+private fun VaultMetadataPendingOverlay.mangaLabels(authoritativeLabels: List<VaultLabel>): List<VaultLabel> {
+    val labels = vaultLabels(authoritativeLabels).associateBy { it.identity.value }
+    return payload.labels
+        .filter { it.assigned }
+        .mapNotNull { label ->
+            val name = label.name.trim().takeIf(String::isNotBlank) ?: return@mapNotNull null
+            labels[label.identity ?: pendingLabelIdentity(name)]
+        }
+        .sortedBy { it.sortKey }
+}
+
+private fun VaultMetadataPendingOverlay.pendingLabelIdentities(
+    authoritativeMangaLabels: List<VaultLabel>,
+): Set<String> {
+    val authoritativeAssigned = authoritativeMangaLabels.map { it.identity.value }.toSet()
+    return payload.labels
+        .filter { it.assigned }
+        .mapNotNull { label ->
+            val name = label.name.trim().takeIf(String::isNotBlank) ?: return@mapNotNull null
+            label.identity
+                ?.takeIf { it !in authoritativeAssigned }
+                ?: pendingLabelIdentity(name)
+        }
+        .toSet()
 }
 
 internal fun VaultMangaScreenModel.State.remotePathFor(
@@ -637,13 +792,21 @@ private fun VaultMangaScreenModel.State.labelEdits(): List<VaultMangaScreenModel
     val assigned = mangaLabels.map { it.identity.value }.toSet()
     return vaultLabels.map {
         VaultMangaScreenModel.VaultLabelEdit(
-            identity = it.identity.value,
+            identity = it.identity.value.takeUnless(::isPendingLabelIdentity),
             name = it.name,
             isSensitive = it.isSensitive,
             assigned = it.identity.value in assigned,
         )
     }
 }
+
+private fun pendingLabelIdentity(name: String): String = "$PENDING_LABEL_IDENTITY_PREFIX${VaultMetadata.normalizeTitle(
+    name,
+)}"
+
+private fun isPendingLabelIdentity(identity: String): Boolean = identity.startsWith(PENDING_LABEL_IDENTITY_PREFIX)
+
+private const val PENDING_LABEL_IDENTITY_PREFIX = "pending:"
 
 internal fun orderVaultMangaDetailChapters(
     chapters: List<VaultMangaScreenModel.VaultChapterItem>,
@@ -713,23 +876,25 @@ private fun VaultMangaDeletionResult.cleanupWarningDetail(): String? {
     }
 }
 
-private fun VaultMetadataPublishResult.toFailureDetail(): String {
+private fun String?.toMetadataPublishFailureDetail(): String {
     return when (this) {
-        VaultMetadataPublishResult.Published -> "Published"
-        VaultMetadataPublishResult.TitleRequired -> "Title is required"
-        VaultMetadataPublishResult.IncompleteConfiguration -> "Incomplete configuration"
-        VaultMetadataPublishResult.VaultNotFound -> "Vault not found"
-        VaultMetadataPublishResult.MangaNotFound -> "Vault Manga not found"
-        VaultMetadataPublishResult.NotVault -> "Remote root is not a Bakalah Content Vault"
-        is VaultMetadataPublishResult.UnsupportedOlderVersion -> "Unsupported older layout version $layoutVersion"
-        is VaultMetadataPublishResult.UnsupportedNewerVersion -> "Unsupported newer layout version $layoutVersion"
-        is VaultMetadataPublishResult.IdentityChanged -> "Remote identity changed to ${remoteIdentity.value}"
-        is VaultMetadataPublishResult.RevisionMismatch -> "Vault revision changed to ${currentRevision.id}"
-        is VaultMetadataPublishResult.ManifestNotFound -> "Manifest not found: $manifestPath"
-        is VaultMetadataPublishResult.IdentityMismatch -> "Manifest identity mismatch: $manifestPath"
-        is VaultMetadataPublishResult.Malformed -> "Malformed manifest: $manifestPath"
-        VaultMetadataPublishResult.LabelNameConflict -> "Vault Label names must be unique"
-        VaultMetadataPublishResult.PublishFailed -> "Could not publish Vault metadata"
+        "title_required" -> "Title is required"
+        "incomplete_configuration" -> "Incomplete configuration"
+        "vault_not_found" -> "Vault not found"
+        "manga_not_found" -> "Vault Manga not found"
+        "not_vault" -> "Remote root is not a Bakalah Content Vault"
+        "unsupported_older_version" -> "Unsupported older layout version"
+        "unsupported_newer_version" -> "Unsupported newer layout version"
+        "identity_changed" -> "Remote identity changed"
+        "revision_mismatch" -> "Vault revision changed"
+        "manifest_not_found" -> "Manifest not found"
+        "identity_mismatch" -> "Manifest identity mismatch"
+        "malformed_manifest" -> "Malformed manifest"
+        "label_name_conflict" -> "Vault Label names must be unique"
+        "invalid_payload" -> "Invalid metadata operation"
+        "missing_payload" -> "Missing metadata operation payload"
+        "missing_handler" -> "Missing metadata operation handler"
+        else -> "Could not publish Vault metadata"
     }
 }
 

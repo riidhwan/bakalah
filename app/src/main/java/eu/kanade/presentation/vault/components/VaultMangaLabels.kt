@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,6 +41,7 @@ import tachiyomi.presentation.core.i18n.stringResource
 @Composable
 internal fun VaultLabelChips(
     labels: List<VaultLabel>,
+    pendingLabelIdentities: Set<String>,
     onClickLabel: (VaultLabel) -> Unit,
     onClickAdd: () -> Unit,
 ) {
@@ -50,6 +52,7 @@ internal fun VaultLabelChips(
         labels.forEach { label ->
             VaultLabelChip(
                 label = label,
+                isPending = label.identity.value in pendingLabelIdentities,
                 onClick = { onClickLabel(label) },
             )
         }
@@ -69,6 +72,7 @@ internal fun VaultLabelChips(
 @Composable
 private fun VaultLabelChip(
     label: VaultLabel,
+    isPending: Boolean,
     onClick: () -> Unit,
 ) {
     val colors = if (label.isSensitive) {
@@ -88,6 +92,17 @@ private fun VaultLabelChip(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        },
+        icon = if (isPending) {
+            {
+                Icon(
+                    imageVector = Icons.Outlined.Sync,
+                    contentDescription = stringResource(MR.strings.vault_label_pending_sync),
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        } else {
+            null
         },
         colors = colors,
     )

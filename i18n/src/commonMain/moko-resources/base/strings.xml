@@ -216,6 +216,7 @@
     <string name="vault_label_mark_not_sensitive">Mark as not sensitive</string>
     <string name="vault_label_remove_from_manga">Remove</string>
     <string name="vault_label_sensitive">Sensitive</string>
+    <string name="vault_label_pending_sync">Waiting to sync</string>
     <string name="vault_metadata_publish_complete">Vault Metadata updated</string>
     <string name="vault_metadata_publish_failed_details">Could not update Vault Metadata: %s</string>
     <string name="vault_local_cache_usage">Local Cache: %s</string>

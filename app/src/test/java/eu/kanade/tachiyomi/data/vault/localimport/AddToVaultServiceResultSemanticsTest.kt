@@ -710,6 +710,13 @@ class AddToVaultServiceResultSemanticsTest {
         override suspend fun deleteMangaLocalState(mangaId: Long) = Unit
         override fun getTransferJobsForVaultAsFlow(vaultId: Long): Flow<List<VaultTransferJob>> = emptyFlow()
         override suspend fun getTransferJobsForVault(vaultId: Long): List<VaultTransferJob> = transferJobs
+        override fun getTransferJobsForMangaAsFlow(mangaId: Long): Flow<List<VaultTransferJob>> = emptyFlow()
+        override suspend fun getActiveTransferJobsForOperationKey(operationKey: String): List<VaultTransferJob> {
+            return transferJobs.filter {
+                it.operationKey == operationKey &&
+                    (it.state == VaultTransferState.QUEUED || it.state == VaultTransferState.RUNNING)
+            }
+        }
         override suspend fun getTransferJobsByState(states: List<VaultTransferState>): List<VaultTransferJob> =
             transferJobs.filter { it.state in states }
         override suspend fun getTransferJob(id: Long): VaultTransferJob? = transferJobs.firstOrNull { it.id == id }
