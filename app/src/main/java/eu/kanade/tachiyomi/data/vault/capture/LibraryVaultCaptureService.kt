@@ -1,11 +1,11 @@
 package eu.kanade.tachiyomi.data.vault.capture
 
 import android.content.Context
-import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultImportProgress
-import eu.kanade.tachiyomi.data.vault.localimport.VaultImportProgressPhase
-import eu.kanade.tachiyomi.data.vault.localimport.deleteRecursively
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgress
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgressPhase
 import eu.kanade.tachiyomi.data.vault.refresh.AddToVaultIndexRefresher
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefresher
+import eu.kanade.tachiyomi.data.vault.staging.deleteRecursively
 import eu.kanade.tachiyomi.data.vault.transfer.AddToVaultChapterFailure
 import eu.kanade.tachiyomi.data.vault.transfer.AddToVaultTransferFinalizer
 import eu.kanade.tachiyomi.data.vault.webdav.LibraryVaultCaptureWebDavFactoryBoundary
@@ -61,7 +61,7 @@ internal class LibraryVaultCaptureService(
         targetMangaId: Long? = null,
         createNew: Boolean = false,
         createNewTitle: String? = null,
-        progress: (LocalVaultImportProgress) -> Unit = {},
+        progress: (AddToVaultProgress) -> Unit = {},
     ): LibraryVaultCaptureResult {
         if (!manga.favorite) return LibraryVaultCaptureResult.NotLibraryManga
         val source =
@@ -124,9 +124,9 @@ internal class LibraryVaultCaptureService(
         try {
             selectedChapters.forEachIndexed { index, chapter ->
                 currentCoroutineContext().ensureActive()
-                fun updatePhase(phase: VaultImportProgressPhase) {
+                fun updatePhase(phase: AddToVaultProgressPhase) {
                     progress(
-                        LocalVaultImportProgress(
+                        AddToVaultProgress(
                             current = index,
                             total = progressTotal,
                             chapterTitle = chapter.name,
@@ -135,7 +135,7 @@ internal class LibraryVaultCaptureService(
                         ),
                     )
                 }
-                updatePhase(VaultImportProgressPhase.PREPARING)
+                updatePhase(AddToVaultProgressPhase.PREPARING)
                 val chapterStagingRoot = File(stagingRoot, UUID.randomUUID().toString()).apply { mkdirs() }
                 val published = runCatching {
                     try {
@@ -162,7 +162,7 @@ internal class LibraryVaultCaptureService(
                     failures += AddToVaultChapterFailure(chapter.name, error.captureFailureCategory())
                     return@forEachIndexed
                 }
-                updatePhase(VaultImportProgressPhase.REFRESHING)
+                updatePhase(AddToVaultProgressPhase.REFRESHING)
                 indexRefresher.refreshPublishedMangaId(vault.identity, published.mangaIdentity.value)
                     ?.let { vaultMangaId ->
                         repository.upsertImportTargetHint(
@@ -184,7 +184,7 @@ internal class LibraryVaultCaptureService(
                     added += 1
                 }
                 progress(
-                    LocalVaultImportProgress(
+                    AddToVaultProgress(
                         current = index + 1,
                         total = progressTotal,
                         chapterTitle = chapter.name,

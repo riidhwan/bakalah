@@ -5,11 +5,11 @@ import com.hippo.unifile.UniFile
 import eu.kanade.domain.chapter.model.toSChapter
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadProvider
-import eu.kanade.tachiyomi.data.vault.localimport.CbzEntry
-import eu.kanade.tachiyomi.data.vault.localimport.VaultImportProgressPhase
-import eu.kanade.tachiyomi.data.vault.localimport.digest
-import eu.kanade.tachiyomi.data.vault.localimport.validateCbz
-import eu.kanade.tachiyomi.data.vault.localimport.writeStoredCbz
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgressPhase
+import eu.kanade.tachiyomi.data.vault.staging.CbzEntry
+import eu.kanade.tachiyomi.data.vault.staging.digest
+import eu.kanade.tachiyomi.data.vault.staging.validateCbz
+import eu.kanade.tachiyomi.data.vault.staging.writeStoredCbz
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +31,7 @@ internal interface LibraryVaultChapterStager {
         manga: Manga,
         chapter: Chapter,
         stagingRoot: File,
-        progressPhase: (VaultImportProgressPhase) -> Unit,
+        progressPhase: (AddToVaultProgressPhase) -> Unit,
     ): LibraryVaultStagedChapter
 
     suspend fun findCaptureCover(manga: Manga, source: HttpSource): LibraryVaultCaptureCover?
@@ -47,7 +47,7 @@ internal class DefaultLibraryVaultChapterStager(
         manga: Manga,
         chapter: Chapter,
         stagingRoot: File,
-        progressPhase: (VaultImportProgressPhase) -> Unit,
+        progressPhase: (AddToVaultProgressPhase) -> Unit,
     ): LibraryVaultStagedChapter = withIOContext {
         val chapterDir = File(stagingRoot, UUID.randomUUID().toString()).apply { mkdirs() }
         val chapterUniFile = UniFile.fromFile(chapterDir) ?: error("staging")
@@ -60,19 +60,19 @@ internal class DefaultLibraryVaultChapterStager(
                 source = source,
             )
             if (downloaded != null) {
-                progressPhase(VaultImportProgressPhase.COPYING_DOWNLOADED)
+                progressPhase(AddToVaultProgressPhase.COPYING_DOWNLOADED)
                 runCatching {
                     copyDownloadedPages(downloaded, chapterUniFile)
                 }.getOrElse {
                     chapterUniFile.listFiles().orEmpty().forEach { file -> file.delete() }
-                    progressPhase(VaultImportProgressPhase.DOWNLOADING)
+                    progressPhase(AddToVaultProgressPhase.DOWNLOADING)
                     fetchSourcePages(source, chapter, chapterUniFile)
                 }
             } else {
-                progressPhase(VaultImportProgressPhase.DOWNLOADING)
+                progressPhase(AddToVaultProgressPhase.DOWNLOADING)
                 fetchSourcePages(source, chapter, chapterUniFile)
             }
-            progressPhase(VaultImportProgressPhase.COMPRESSING)
+            progressPhase(AddToVaultProgressPhase.COMPRESSING)
             val entries = chapterUniFile.listFiles().orEmpty()
                 .filter { !it.isDirectory && ImageUtil.isImage(it.name) { it.openInputStream() } }
                 .sortedBy { it.name.orEmpty() }

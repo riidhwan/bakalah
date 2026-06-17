@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.data.vault.publishing
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshResult
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshService
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
+import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.remote.getTextOrNull
 import eu.kanade.tachiyomi.data.vault.remote.isSuccess
 import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
@@ -286,8 +287,6 @@ class VaultMetadataPublishService internal constructor(
     private suspend fun delete(config: WebDavVaultConfig, path: String) {
         remoteStorageFactory.create(config).delete(path)
     }
-
-    private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
 
     private fun String.trimToNull(): String? = trim().takeIf(String::isNotBlank)
 }

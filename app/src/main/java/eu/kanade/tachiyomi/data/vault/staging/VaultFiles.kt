@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.data.vault.localimport
+package eu.kanade.tachiyomi.data.vault.staging
 
 import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.util.lang.compareToCaseInsensitiveNaturalOrder
@@ -9,6 +9,8 @@ import okio.source
 import tachiyomi.core.common.storage.extension
 import tachiyomi.core.common.util.system.ImageUtil
 import tachiyomi.source.local.io.Format
+import java.io.ByteArrayOutputStream
+import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
 internal data class FileDigest(
@@ -101,6 +103,13 @@ internal fun UniFile.relativePathFrom(root: UniFile): String {
     return relativePathFromUriStrings(root.uri.toString(), uri.toString())
 }
 
+internal fun relativePathFromUriStrings(rootUri: String, fileUri: String): String {
+    return fileUri
+        .decodePercentEscapes()
+        .removePrefix(rootUri.decodePercentEscapes().trimEnd('/', '\\'))
+        .trimStart('/', '\\')
+}
+
 internal fun UniFile.deleteRecursively() {
     if (isDirectory) {
         listFiles().orEmpty().forEach { it.deleteRecursively() }
@@ -109,6 +118,36 @@ internal fun UniFile.deleteRecursively() {
 }
 
 internal fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
+
+private fun String.decodePercentEscapes(): String {
+    val result = StringBuilder(length)
+    val bytes = ByteArrayOutputStream()
+
+    fun flushBytes() {
+        if (bytes.size() > 0) {
+            result.append(bytes.toByteArray().toString(StandardCharsets.UTF_8))
+            bytes.reset()
+        }
+    }
+
+    var index = 0
+    while (index < length) {
+        val char = this[index]
+        if (char == '%' && index + 2 < length) {
+            val value = substring(index + 1, index + 3).toIntOrNull(16)
+            if (value != null) {
+                bytes.write(value)
+                index += 3
+                continue
+            }
+        }
+        flushBytes()
+        result.append(char)
+        index++
+    }
+    flushBytes()
+    return result.toString()
+}
 
 private val OCTET_MEDIA_TYPE = "application/octet-stream".toMediaType()
 private const val PENDING_DIRECTORY_CBZ_CHECKSUM_PREFIX = "pending-directory-cbz:"

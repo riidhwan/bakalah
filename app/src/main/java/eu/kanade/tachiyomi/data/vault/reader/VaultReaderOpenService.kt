@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.data.vault.reader
 
 import eu.kanade.tachiyomi.data.vault.cache.VaultCachePolicyService
+import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferLocalStaging
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferResult
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferService
@@ -135,8 +136,6 @@ class VaultReaderOpenService(
         }
         return VaultTransferResult.Failed("cache job still running")
     }
-
-    private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
 
     private fun VaultTransferResult.failureReason(): String {
         return when (this) {

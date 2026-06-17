@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.data.vault.publishing
 
+import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorage
 import eu.kanade.tachiyomi.data.vault.transfer.vaultTransferIntegrity
 import eu.kanade.tachiyomi.data.vault.webdav.RemoteVaultWebDav
@@ -96,8 +97,6 @@ internal class DefaultVaultChapterThumbnailDisplayLoader(
             remotePath = thumbnail.path,
         )
     }
-
-    private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
 
     private companion object {
         val ACTIVE_TRANSFER_STATES = setOf(VaultTransferState.QUEUED, VaultTransferState.RUNNING)

@@ -1,12 +1,15 @@
 package eu.kanade.tachiyomi.data.vault.localimport
 
 import com.hippo.unifile.UniFile
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgressPhase
 import eu.kanade.tachiyomi.data.vault.publishing.VaultContentUploadFailure
 import eu.kanade.tachiyomi.data.vault.publishing.VaultContentUploader
 import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishTarget
 import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishTransaction
 import eu.kanade.tachiyomi.data.vault.publishing.VaultPromotableUpload
 import eu.kanade.tachiyomi.data.vault.publishing.VaultUploadCover
+import eu.kanade.tachiyomi.data.vault.remote.childPath
+import eu.kanade.tachiyomi.data.vault.staging.coverMediaType
 import eu.kanade.tachiyomi.data.vault.webdav.VaultWebDav
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
@@ -43,7 +46,7 @@ internal interface LocalVaultChapterPublisherBoundary {
         allowReplacement: Boolean,
         stagingRoot: File,
         localSourceName: String?,
-        progressPhase: (VaultImportProgressPhase) -> Unit,
+        progressPhase: (AddToVaultProgressPhase) -> Unit,
     ): LocalVaultChapterPublishResult
 }
 
@@ -68,7 +71,7 @@ internal class LocalVaultChapterPublisher(
         allowReplacement: Boolean,
         stagingRoot: File,
         localSourceName: String?,
-        progressPhase: (VaultImportProgressPhase) -> Unit,
+        progressPhase: (AddToVaultProgressPhase) -> Unit,
     ): LocalVaultChapterPublishResult {
         val publishContext = publishTransaction.prepare(
             storage = webDav,
@@ -93,14 +96,14 @@ internal class LocalVaultChapterPublisher(
             error("unconfirmed_duplicate")
         }
 
-        progressPhase(VaultImportProgressPhase.COMPRESSING)
+        progressPhase(AddToVaultProgressPhase.COMPRESSING)
         val preparedChapter = chapterStager.stageForUpload(localChapter, stagingRoot)
         val chapterIdentity = replacement?.identity ?: UUID.randomUUID().toString()
         val contentIdentity = if (replacement == null) chapterIdentity else UUID.randomUUID().toString()
         var contentUpload: VaultPromotableUpload? = null
         var promotedCoverPath: String? = null
         try {
-            progressPhase(VaultImportProgressPhase.UPLOADING)
+            progressPhase(AddToVaultProgressPhase.UPLOADING)
             val uploadedChapter = contentUploader.uploadChapterFile(
                 storage = webDav,
                 config = config,
@@ -130,7 +133,7 @@ internal class LocalVaultChapterPublisher(
                 -> importManga.metadata
             }
             val importedCover = remoteMangaManifest?.cover ?: runCatching {
-                progressPhase(VaultImportProgressPhase.UPLOADING)
+                progressPhase(AddToVaultProgressPhase.UPLOADING)
                 coverFile?.let { file ->
                     contentUploader.uploadCover(
                         storage = webDav,
@@ -179,7 +182,7 @@ internal class LocalVaultChapterPublisher(
                 updatedAt = now,
             )
 
-            progressPhase(VaultImportProgressPhase.PUBLISHING)
+            progressPhase(AddToVaultProgressPhase.PUBLISHING)
             publishTransaction.commit(
                 storage = webDav,
                 config = config,

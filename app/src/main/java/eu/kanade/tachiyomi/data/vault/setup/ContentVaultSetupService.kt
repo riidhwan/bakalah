@@ -4,6 +4,7 @@ import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteListResult
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorage
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteWriteResult
+import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.remote.getTextOrNull
 import kotlinx.serialization.json.Json
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
@@ -183,8 +184,6 @@ internal class ContentVaultSetupService(
         preferences.setWebDavConfig(config, identity)
         return ContentVaultSetupResult.Initialized(identity, manifest.displayName)
     }
-
-    private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
 
     private fun String.matchesWebDavPath(path: String): Boolean {
         val cleanSelf = trimEnd('/')

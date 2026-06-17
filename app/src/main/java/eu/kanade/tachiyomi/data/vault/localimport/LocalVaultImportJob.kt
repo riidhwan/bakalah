@@ -8,6 +8,7 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.data.vault.add.AddToVaultJobRunner
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultNotifier
 import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultCaptureJob
 import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.setForegroundSafely
@@ -27,7 +28,7 @@ class LocalVaultImportJob(
     private val getManga: GetManga = Injekt.get()
     private val repository: VaultRepository = Injekt.get()
     private val importService: LocalVaultImportService = Injekt.get()
-    private val notifier = LocalVaultImportNotifier(context)
+    private val notifier = AddToVaultNotifier(context)
     private val runner = AddToVaultJobRunner(getManga, repository)
 
     override suspend fun doWork(): Result {
@@ -117,24 +118,6 @@ class LocalVaultImportJob(
             return true
         }
     }
-}
-
-data class LocalVaultImportProgress(
-    val current: Int,
-    val total: Int,
-    val chapterTitle: String?,
-    val indeterminate: Boolean = false,
-    val phase: VaultImportProgressPhase? = null,
-)
-
-enum class VaultImportProgressPhase {
-    PREPARING,
-    COPYING_DOWNLOADED,
-    DOWNLOADING,
-    COMPRESSING,
-    UPLOADING,
-    PUBLISHING,
-    REFRESHING,
 }
 
 private const val TAG = "LocalVaultImport"

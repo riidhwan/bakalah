@@ -3,7 +3,7 @@ package eu.kanade.tachiyomi.data.vault.localimport
 import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.localimport.ScannedLocalVaultChapter
-import eu.kanade.tachiyomi.data.vault.localimport.digest
+import eu.kanade.tachiyomi.data.vault.staging.digest
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe

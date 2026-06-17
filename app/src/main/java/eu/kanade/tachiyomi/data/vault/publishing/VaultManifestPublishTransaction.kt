@@ -1,6 +1,6 @@
 package eu.kanade.tachiyomi.data.vault.publishing
 
-import eu.kanade.tachiyomi.data.vault.localimport.childPath
+import eu.kanade.tachiyomi.data.vault.remote.childPath
 import kotlinx.serialization.json.Json
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ROOT_VAULT_MANIFEST_NAME

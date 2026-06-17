@@ -8,8 +8,8 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.data.vault.add.AddToVaultJobRunner
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultNotifier
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultImportJob
-import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultImportNotifier
 import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.setForegroundSafely
 import eu.kanade.tachiyomi.util.system.workManager
@@ -28,7 +28,7 @@ class LibraryVaultCaptureJob(
     private val getManga: GetManga = Injekt.get()
     private val repository: VaultRepository = Injekt.get()
     private val captureService: LibraryVaultCaptureService = Injekt.get()
-    private val notifier = LocalVaultImportNotifier(context)
+    private val notifier = AddToVaultNotifier(context)
     private val runner = AddToVaultJobRunner(getManga, repository)
 
     override suspend fun doWork(): Result {
