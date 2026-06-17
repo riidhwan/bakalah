@@ -1,10 +1,10 @@
 package eu.kanade.tachiyomi.data.vault.publishing
 
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.data.vault.localimport.FileDigest
-import eu.kanade.tachiyomi.data.vault.localimport.childPath
-import eu.kanade.tachiyomi.data.vault.localimport.digest
-import eu.kanade.tachiyomi.data.vault.localimport.toHex
+import eu.kanade.tachiyomi.data.vault.remote.childPath
+import eu.kanade.tachiyomi.data.vault.staging.FileDigest
+import eu.kanade.tachiyomi.data.vault.staging.digest
+import eu.kanade.tachiyomi.data.vault.staging.toHex
 import tachiyomi.core.common.storage.extension
 import tachiyomi.core.common.storage.nameWithoutExtension
 import tachiyomi.domain.vault.model.VaultContentIntegrity

@@ -1,11 +1,11 @@
 package eu.kanade.tachiyomi.data.vault.capture
 
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.data.vault.localimport.CbzEntry
-import eu.kanade.tachiyomi.data.vault.localimport.VaultImportProgressPhase
-import eu.kanade.tachiyomi.data.vault.localimport.childPath
-import eu.kanade.tachiyomi.data.vault.localimport.digest
-import eu.kanade.tachiyomi.data.vault.localimport.writeStoredCbz
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgressPhase
+import eu.kanade.tachiyomi.data.vault.remote.childPath
+import eu.kanade.tachiyomi.data.vault.staging.CbzEntry
+import eu.kanade.tachiyomi.data.vault.staging.digest
+import eu.kanade.tachiyomi.data.vault.staging.writeStoredCbz
 import eu.kanade.tachiyomi.data.vault.webdav.LibraryVaultCaptureWebDav
 import eu.kanade.tachiyomi.source.online.HttpSource
 import io.kotest.assertions.throwables.shouldThrow
@@ -550,7 +550,7 @@ class LibraryVaultChapterPublisherTest {
             manga: Manga,
             chapter: Chapter,
             stagingRoot: File,
-            progressPhase: (VaultImportProgressPhase) -> Unit,
+            progressPhase: (AddToVaultProgressPhase) -> Unit,
         ): LibraryVaultStagedChapter {
             val digest = file.digest()
             return LibraryVaultStagedChapter(file, digest.sizeBytes, digest.sha256)
@@ -567,7 +567,7 @@ class LibraryVaultChapterPublisherTest {
             manga: Manga,
             chapter: Chapter,
             stagingRoot: File,
-            progressPhase: (VaultImportProgressPhase) -> Unit,
+            progressPhase: (AddToVaultProgressPhase) -> Unit,
         ): LibraryVaultStagedChapter {
             throw IllegalArgumentException(message)
         }

@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.data.vault.localimport
+package eu.kanade.tachiyomi.data.vault.staging
 
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test

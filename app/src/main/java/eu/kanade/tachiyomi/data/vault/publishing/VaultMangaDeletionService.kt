@@ -6,6 +6,7 @@ import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshResult
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshService
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteWriteResult
+import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.remote.getTextOrNull
 import eu.kanade.tachiyomi.data.vault.remote.isSuccess
 import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
@@ -277,8 +278,6 @@ class VaultMangaDeletionService internal constructor(
         return result.isSuccess() ||
             (result as? VaultRemoteWriteResult.Failed)?.statusCode == HttpURLConnection.HTTP_GONE
     }
-
-    private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
 
     private fun String.toCachePathSegment(): String {
         return replace(Regex("""[^A-Za-z0-9._-]"""), "_")

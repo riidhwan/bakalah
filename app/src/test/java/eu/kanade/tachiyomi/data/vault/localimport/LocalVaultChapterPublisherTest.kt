@@ -1,12 +1,12 @@
 package eu.kanade.tachiyomi.data.vault.localimport
 
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.data.vault.localimport.CbzEntry
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultChapterStager
 import eu.kanade.tachiyomi.data.vault.localimport.ScannedLocalVaultChapter
-import eu.kanade.tachiyomi.data.vault.localimport.childPath
-import eu.kanade.tachiyomi.data.vault.localimport.digest
-import eu.kanade.tachiyomi.data.vault.localimport.writeStoredCbz
+import eu.kanade.tachiyomi.data.vault.remote.childPath
+import eu.kanade.tachiyomi.data.vault.staging.CbzEntry
+import eu.kanade.tachiyomi.data.vault.staging.digest
+import eu.kanade.tachiyomi.data.vault.staging.writeStoredCbz
 import eu.kanade.tachiyomi.data.vault.webdav.VaultWebDav
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldContain

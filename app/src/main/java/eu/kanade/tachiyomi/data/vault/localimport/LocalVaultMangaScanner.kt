@@ -1,6 +1,8 @@
 package eu.kanade.tachiyomi.data.vault.localimport
 
 import com.hippo.unifile.UniFile
+import eu.kanade.tachiyomi.data.vault.staging.isCbz
+import eu.kanade.tachiyomi.data.vault.staging.previewDigest
 import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

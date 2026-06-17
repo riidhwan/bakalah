@@ -1,7 +1,7 @@
 package eu.kanade.tachiyomi.data.vault.publishing
 
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.data.vault.localimport.toHex
+import eu.kanade.tachiyomi.data.vault.staging.toHex
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe

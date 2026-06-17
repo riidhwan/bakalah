@@ -1,10 +1,13 @@
 package eu.kanade.tachiyomi.data.vault.localimport
 
 import android.app.Application
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgress
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgressPhase
 import eu.kanade.tachiyomi.data.vault.refresh.AddToVaultIndexRefresher
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefresher
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
+import eu.kanade.tachiyomi.data.vault.staging.deleteRecursively
 import eu.kanade.tachiyomi.data.vault.transfer.AddToVaultChapterFailure
 import eu.kanade.tachiyomi.data.vault.transfer.AddToVaultTransferFinalizer
 import eu.kanade.tachiyomi.data.vault.webdav.RemoteVaultWebDav
@@ -91,7 +94,7 @@ class LocalVaultImportService internal constructor(
         targetMangaId: Long? = null,
         createNew: Boolean = false,
         createNewTitle: String? = null,
-        progress: (LocalVaultImportProgress) -> Unit = {},
+        progress: (AddToVaultProgress) -> Unit = {},
     ): LocalVaultImportResult {
         val config = preferences.getWebDavConfig()
         val vault = configuredVault() ?: return LocalVaultImportResult.IncompleteConfiguration
@@ -159,9 +162,9 @@ class LocalVaultImportService internal constructor(
         try {
             selectedChapters.forEachIndexed { index, localChapter ->
                 currentCoroutineContext().ensureActive()
-                fun updatePhase(phase: VaultImportProgressPhase? = null, indeterminate: Boolean = false) {
+                fun updatePhase(phase: AddToVaultProgressPhase? = null, indeterminate: Boolean = false) {
                     progress(
-                        LocalVaultImportProgress(
+                        AddToVaultProgress(
                             current = index,
                             total = progressTotal,
                             chapterTitle = localChapter.chapter.title,
@@ -170,7 +173,7 @@ class LocalVaultImportService internal constructor(
                         ),
                     )
                 }
-                updatePhase(VaultImportProgressPhase.PREPARING, indeterminate = true)
+                updatePhase(AddToVaultProgressPhase.PREPARING, indeterminate = true)
                 val chapterStagingRoot = File(stagingRoot, UUID.randomUUID().toString()).apply { mkdirs() }
                 val published = runCatching {
                     try {
@@ -198,7 +201,7 @@ class LocalVaultImportService internal constructor(
                         AddToVaultChapterFailure(localChapter.chapter.title, error.localImportFailureCategory())
                     return@forEachIndexed
                 }
-                updatePhase(VaultImportProgressPhase.REFRESHING, indeterminate = true)
+                updatePhase(AddToVaultProgressPhase.REFRESHING, indeterminate = true)
                 indexRefresher.refreshPublishedMangaId(vault.identity, published.mangaIdentity.value)
                     ?.let { vaultMangaId ->
                         repository.upsertImportTargetHint(
@@ -220,7 +223,7 @@ class LocalVaultImportService internal constructor(
                     added += 1
                 }
                 progress(
-                    LocalVaultImportProgress(
+                    AddToVaultProgress(
                         current = index + 1,
                         total = progressTotal,
                         chapterTitle = localChapter.chapter.title,

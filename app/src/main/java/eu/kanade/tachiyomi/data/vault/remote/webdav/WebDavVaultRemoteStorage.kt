@@ -1,13 +1,13 @@
 package eu.kanade.tachiyomi.data.vault.remote.webdav
 
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.data.vault.localimport.asRequestBody
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteEntry
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteListResult
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteReadResult
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorage
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteWriteResult
+import eu.kanade.tachiyomi.data.vault.staging.asRequestBody
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import kotlinx.coroutines.Dispatchers

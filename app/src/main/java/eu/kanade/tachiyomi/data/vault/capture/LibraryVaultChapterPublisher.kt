@@ -1,14 +1,14 @@
 package eu.kanade.tachiyomi.data.vault.capture
 
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.data.vault.localimport.VaultImportProgressPhase
-import eu.kanade.tachiyomi.data.vault.localimport.childPath
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgressPhase
 import eu.kanade.tachiyomi.data.vault.publishing.VaultContentUploadFailure
 import eu.kanade.tachiyomi.data.vault.publishing.VaultContentUploader
 import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishTarget
 import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishTransaction
 import eu.kanade.tachiyomi.data.vault.publishing.VaultPromotableUpload
 import eu.kanade.tachiyomi.data.vault.publishing.VaultUploadCover
+import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.webdav.LibraryVaultCaptureWebDav
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
@@ -50,7 +50,7 @@ internal interface LibraryVaultChapterPublisherBoundary {
         target: LibraryVaultActiveTarget,
         stagingRoot: File,
         allowReplacement: Boolean,
-        progressPhase: (VaultImportProgressPhase) -> Unit,
+        progressPhase: (AddToVaultProgressPhase) -> Unit,
     ): LibraryVaultChapterPublishResult
 }
 
@@ -75,7 +75,7 @@ internal class LibraryVaultChapterPublisher(
         target: LibraryVaultActiveTarget,
         stagingRoot: File,
         allowReplacement: Boolean,
-        progressPhase: (VaultImportProgressPhase) -> Unit,
+        progressPhase: (AddToVaultProgressPhase) -> Unit,
     ): LibraryVaultChapterPublishResult {
         val publishContext = publishTransaction.prepare(
             storage = webDav,
@@ -103,7 +103,7 @@ internal class LibraryVaultChapterPublisher(
         var contentUpload: VaultPromotableUpload? = null
         var promotedCoverPath: String? = null
         try {
-            progressPhase(VaultImportProgressPhase.UPLOADING)
+            progressPhase(AddToVaultProgressPhase.UPLOADING)
             val uploadedChapter = contentUploader.uploadChapterFile(
                 storage = webDav,
                 config = config,
@@ -156,7 +156,7 @@ internal class LibraryVaultChapterPublisher(
                 -> captureManga.metadata
             }
             val importedCover = remoteMangaManifest?.cover ?: runCatching {
-                progressPhase(VaultImportProgressPhase.UPLOADING)
+                progressPhase(AddToVaultProgressPhase.UPLOADING)
                 stager.findCaptureCover(manga, source)?.let { cover ->
                     contentUploader.uploadCover(
                         storage = webDav,
@@ -212,7 +212,7 @@ internal class LibraryVaultChapterPublisher(
                 updatedAt = now,
             )
 
-            progressPhase(VaultImportProgressPhase.PUBLISHING)
+            progressPhase(AddToVaultProgressPhase.PUBLISHING)
             publishTransaction.commit(
                 storage = webDav,
                 config = config,
@@ -282,7 +282,7 @@ internal class LibraryVaultChapterPublisher(
         manga: Manga,
         chapter: Chapter,
         stagingRoot: File,
-        progressPhase: (VaultImportProgressPhase) -> Unit,
+        progressPhase: (AddToVaultProgressPhase) -> Unit,
     ): LibraryVaultStagedChapter {
         return runCatching {
             stager.stageForCapture(source, manga, chapter, stagingRoot, progressPhase)

@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.data.vault.localimport
 import android.app.Application
 import android.content.Context
 import com.hippo.unifile.UniFile
+import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgressPhase
 import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultActiveTarget
 import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultCaptureResult
 import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultCaptureService
@@ -410,7 +411,7 @@ class AddToVaultServiceResultSemanticsTest {
             allowReplacement: Boolean,
             stagingRoot: File,
             localSourceName: String?,
-            progressPhase: (VaultImportProgressPhase) -> Unit,
+            progressPhase: (AddToVaultProgressPhase) -> Unit,
         ): LocalVaultChapterPublishResult = result
     }
 
@@ -433,7 +434,7 @@ class AddToVaultServiceResultSemanticsTest {
             target: LibraryVaultActiveTarget,
             stagingRoot: File,
             allowReplacement: Boolean,
-            progressPhase: (VaultImportProgressPhase) -> Unit,
+            progressPhase: (AddToVaultProgressPhase) -> Unit,
         ): LibraryVaultChapterPublishResult = result
     }
 

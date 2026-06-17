@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.data.vault.localimport
+package eu.kanade.tachiyomi.data.vault.staging
 
 import java.io.InputStream
 import java.io.OutputStream

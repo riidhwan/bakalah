@@ -1,4 +1,4 @@
-package eu.kanade.tachiyomi.data.vault.localimport
+package eu.kanade.tachiyomi.data.vault.add
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -14,7 +14,25 @@ import tachiyomi.i18n.MR
 import java.math.RoundingMode
 import java.text.NumberFormat
 
-class LocalVaultImportNotifier(
+data class AddToVaultProgress(
+    val current: Int,
+    val total: Int,
+    val chapterTitle: String?,
+    val indeterminate: Boolean = false,
+    val phase: AddToVaultProgressPhase? = null,
+)
+
+enum class AddToVaultProgressPhase {
+    PREPARING,
+    COPYING_DOWNLOADED,
+    DOWNLOADING,
+    COMPRESSING,
+    UPLOADING,
+    PUBLISHING,
+    REFRESHING,
+}
+
+class AddToVaultNotifier(
     private val context: Context,
 ) {
     private val percentFormatter = NumberFormat.getPercentInstance().apply {
@@ -48,7 +66,7 @@ class LocalVaultImportNotifier(
         return builder
     }
 
-    fun showProgress(progress: LocalVaultImportProgress) {
+    fun showProgress(progress: AddToVaultProgress) {
         val title = progress.progressTitle()
         if (progress.indeterminate) {
             val text = progress.phaseText()
@@ -82,14 +100,14 @@ class LocalVaultImportNotifier(
         )
     }
 
-    private fun LocalVaultImportProgress.progressTitle(): String {
+    private fun AddToVaultProgress.progressTitle(): String {
         if (total <= 0) return context.stringResource(MR.strings.vault_importing)
 
         val percent = percentFormatter.format(current.toFloat() / total.coerceAtLeast(1))
         return context.stringResource(MR.strings.vault_import_progress_title, percent)
     }
 
-    private fun LocalVaultImportProgress.statusBarIcon(): Int {
+    private fun AddToVaultProgress.statusBarIcon(): Int {
         if (total <= 0) return R.drawable.ic_vault_progress_0_24dp
 
         return when ((current.coerceAtLeast(0) * 100) / total.coerceAtLeast(1)) {
@@ -110,28 +128,28 @@ class LocalVaultImportNotifier(
             .withCancelAction()
     }
 
-    private fun LocalVaultImportProgress.phaseText(): String {
+    private fun AddToVaultProgress.phaseText(): String {
         val title = chapterTitle
         return when (phase) {
-            VaultImportProgressPhase.PREPARING -> title?.let {
+            AddToVaultProgressPhase.PREPARING -> title?.let {
                 context.stringResource(MR.strings.vault_import_phase_preparing, it)
             }
-            VaultImportProgressPhase.COPYING_DOWNLOADED -> title?.let {
+            AddToVaultProgressPhase.COPYING_DOWNLOADED -> title?.let {
                 context.stringResource(MR.strings.vault_import_phase_copying_downloaded, it)
             }
-            VaultImportProgressPhase.DOWNLOADING -> title?.let {
+            AddToVaultProgressPhase.DOWNLOADING -> title?.let {
                 context.stringResource(MR.strings.vault_import_phase_downloading, it)
             }
-            VaultImportProgressPhase.COMPRESSING -> title?.let {
+            AddToVaultProgressPhase.COMPRESSING -> title?.let {
                 context.stringResource(MR.strings.vault_import_phase_compressing, it)
             }
-            VaultImportProgressPhase.UPLOADING -> title?.let {
+            AddToVaultProgressPhase.UPLOADING -> title?.let {
                 context.stringResource(MR.strings.vault_import_phase_uploading, it)
             }
-            VaultImportProgressPhase.PUBLISHING -> title?.let {
+            AddToVaultProgressPhase.PUBLISHING -> title?.let {
                 context.stringResource(MR.strings.vault_import_phase_publishing, it)
             }
-            VaultImportProgressPhase.REFRESHING -> title?.let {
+            AddToVaultProgressPhase.REFRESHING -> title?.let {
                 context.stringResource(MR.strings.vault_import_phase_refreshing, it)
             }
             null -> null

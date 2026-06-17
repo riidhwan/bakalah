@@ -1,8 +1,8 @@
 package eu.kanade.tachiyomi.data.vault.refresh
 
-import eu.kanade.tachiyomi.data.vault.localimport.childPath
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorage
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
+import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.remote.getTextOrNull
 import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -104,8 +104,6 @@ class VaultCatalogueRefreshService internal constructor(
     }
 
     private suspend fun VaultRemoteStorage.get(path: String): String? = getTextOrNull(path)
-
-    private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
 }
 
 sealed interface VaultCatalogueRefreshResult {

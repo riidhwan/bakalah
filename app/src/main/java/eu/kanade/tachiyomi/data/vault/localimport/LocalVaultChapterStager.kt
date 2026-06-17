@@ -1,6 +1,13 @@
 package eu.kanade.tachiyomi.data.vault.localimport
 
 import com.hippo.unifile.UniFile
+import eu.kanade.tachiyomi.data.vault.staging.CbzEntry
+import eu.kanade.tachiyomi.data.vault.staging.collisionSafeCbzName
+import eu.kanade.tachiyomi.data.vault.staging.digest
+import eu.kanade.tachiyomi.data.vault.staging.directoryChapterCbzBaseName
+import eu.kanade.tachiyomi.data.vault.staging.numberedCbzEntryName
+import eu.kanade.tachiyomi.data.vault.staging.validateCbz
+import eu.kanade.tachiyomi.data.vault.staging.writeStoredCbz
 import eu.kanade.tachiyomi.util.lang.compareToCaseInsensitiveNaturalOrder
 import tachiyomi.core.common.storage.extension
 import tachiyomi.core.common.util.system.ImageUtil
