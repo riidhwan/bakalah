@@ -108,6 +108,10 @@ _Avoid_: Reading screen, page viewer
 A pushed screen for app preferences and configuration.
 _Avoid_: More Destination, preferences page
 
+**Vault Settings Screen**:
+A Settings Screen reached from the Vault Destination for configuring the Content Vault connection, identity validation, and device-local vault preferences.
+_Avoid_: Vault Destination, Data and Storage settings, More settings entry, sync settings
+
 **Download Queue Screen**:
 A pushed screen for viewing and controlling queued chapter downloads.
 _Avoid_: Downloads tab, download manager page

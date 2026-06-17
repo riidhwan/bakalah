@@ -15,6 +15,7 @@ import eu.kanade.presentation.util.Tab
 import eu.kanade.presentation.vault.VaultScreen
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.main.MainActivity
+import eu.kanade.tachiyomi.ui.setting.SettingsScreen
 import kotlinx.coroutines.flow.collectLatest
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.MR
@@ -46,6 +47,7 @@ data object VaultTab : Tab {
             snackbarHostState = snackbarHostState,
             onSearchQueryChange = screenModel::updateSearchQuery,
             onClickRefresh = screenModel::refreshVault,
+            onClickSettings = { navigator.push(SettingsScreen(SettingsScreen.Destination.Vault)) },
             onClickManga = { navigator.push(VaultMangaScreen(it)) },
             onLoadCover = screenModel::loadCover,
             onLabelFilterChange = screenModel::setLabelFilter,
