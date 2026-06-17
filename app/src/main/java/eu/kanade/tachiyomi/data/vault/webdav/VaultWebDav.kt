@@ -4,15 +4,11 @@ import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.data.vault.publishing.VaultContentUploadStorage
 import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishStorage
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorage
-import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.remote.getBytesOrNull
 import eu.kanade.tachiyomi.data.vault.remote.getTextOrNull
 import eu.kanade.tachiyomi.data.vault.remote.isSuccess
-import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
-import eu.kanade.tachiyomi.network.NetworkHelper
-import tachiyomi.domain.vault.model.WebDavVaultConfig
 
-internal interface LibraryVaultCaptureWebDav : VaultManifestPublishStorage, VaultContentUploadStorage {
+internal interface VaultWebDav : VaultManifestPublishStorage, VaultContentUploadStorage {
     override suspend fun get(path: String): String?
     override suspend fun getBytes(path: String): ByteArray?
     override suspend fun put(path: String, body: String): Boolean
@@ -23,23 +19,9 @@ internal interface LibraryVaultCaptureWebDav : VaultManifestPublishStorage, Vaul
     override suspend fun promote(stagedPath: String, finalPath: String): Boolean
 }
 
-internal interface LibraryVaultCaptureWebDavFactoryBoundary {
-    fun create(config: WebDavVaultConfig): LibraryVaultCaptureWebDav
-}
-
-internal class LibraryVaultCaptureWebDavFactory(
-    networkHelper: NetworkHelper,
-) : LibraryVaultCaptureWebDavFactoryBoundary {
-    private val storageFactory: VaultRemoteStorageFactory = WebDavVaultRemoteStorageFactory(networkHelper)
-
-    override fun create(config: WebDavVaultConfig): LibraryVaultCaptureWebDav {
-        return RemoteLibraryVaultCaptureWebDav(storageFactory.create(config))
-    }
-}
-
-private class RemoteLibraryVaultCaptureWebDav(
+internal class RemoteVaultWebDav(
     private val storage: VaultRemoteStorage,
-) : LibraryVaultCaptureWebDav {
+) : VaultWebDav {
     override suspend fun get(path: String): String? = storage.getTextOrNull(path)
 
     override suspend fun getBytes(path: String): ByteArray? = storage.getBytesOrNull(path)

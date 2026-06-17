@@ -1,9 +1,9 @@
 package eu.kanade.tachiyomi.data.vault.publishing
 
-import eu.kanade.tachiyomi.data.vault.localimport.resolveWebDavPath
+import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorage
 import eu.kanade.tachiyomi.data.vault.transfer.vaultTransferIntegrity
+import eu.kanade.tachiyomi.data.vault.webdav.RemoteVaultWebDav
 import eu.kanade.tachiyomi.data.vault.webdav.VaultWebDav
-import eu.kanade.tachiyomi.data.vault.webdav.VaultWebDavClient
 import eu.kanade.tachiyomi.network.NetworkHelper
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultManga
@@ -31,7 +31,7 @@ internal class DefaultVaultChapterThumbnailDisplayLoader(
     private val preferences: ContentVaultPreferences,
     private val cacheStore: VaultChapterThumbnailCacheStore,
     private val webDavFactory: (WebDavVaultConfig) -> VaultWebDav = {
-        VaultWebDavClient(it, networkHelper.nonCloudflareClient)
+        RemoteVaultWebDav(WebDavVaultRemoteStorage(it, networkHelper.nonCloudflareClient))
     },
 ) : VaultChapterThumbnailDisplayLoader {
 

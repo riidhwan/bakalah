@@ -1,17 +1,13 @@
 package eu.kanade.tachiyomi.data.vault.publishing
 
-import eu.kanade.tachiyomi.data.vault.localimport.resolveWebDavPath
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshResult
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshService
+import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
+import eu.kanade.tachiyomi.data.vault.remote.getTextOrNull
+import eu.kanade.tachiyomi.data.vault.remote.isSuccess
+import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
 import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.network.await
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import okhttp3.Credentials
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ROOT_VAULT_MANIFEST_NAME
@@ -26,18 +22,32 @@ import tachiyomi.domain.vault.model.VaultRevision
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
-import java.net.HttpURLConnection
 import java.util.UUID
 
-class VaultMetadataPublishService(
-    networkHelper: NetworkHelper,
+class VaultMetadataPublishService internal constructor(
     json: Json,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
     private val refreshService: VaultCatalogueRefreshService,
+    private val remoteStorageFactory: VaultRemoteStorageFactory,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
-    private val client = networkHelper.nonCloudflareClient
+    constructor(
+        networkHelper: NetworkHelper,
+        json: Json,
+        repository: VaultRepository,
+        preferences: ContentVaultPreferences,
+        refreshService: VaultCatalogueRefreshService,
+        now: () -> Long = System::currentTimeMillis,
+    ) : this(
+        json = json,
+        repository = repository,
+        preferences = preferences,
+        refreshService = refreshService,
+        remoteStorageFactory = WebDavVaultRemoteStorageFactory(networkHelper),
+        now = now,
+    )
+
     private val codec = VaultManifestCodec(json)
 
     suspend fun publish(request: VaultMetadataPublishRequest): VaultMetadataPublishResult {
@@ -252,22 +262,12 @@ class VaultMetadataPublishService(
         }
     }
 
-    private suspend fun get(config: WebDavVaultConfig, path: String): String? = withContext(Dispatchers.IO) {
-        val request = Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(path))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
-            .get()
-            .build()
-        client.newCall(request).await().use { response ->
-            response.takeIf { it.isSuccessful }?.body?.string()
-        }
-    }
+    private suspend fun get(config: WebDavVaultConfig, path: String): String? =
+        remoteStorageFactory.create(config).getTextOrNull(path)
 
-    private suspend fun putStaged(config: WebDavVaultConfig, path: String, body: String): Boolean = withContext(
-        Dispatchers.IO,
-    ) {
+    private suspend fun putStaged(config: WebDavVaultConfig, path: String, body: String): Boolean {
         val stagedPath = "$path.staged-${UUID.randomUUID()}"
-        runCatching {
+        return runCatching {
             put(config, stagedPath, body)
             move(config, stagedPath, path)
         }.onFailure {
@@ -276,49 +276,20 @@ class VaultMetadataPublishService(
     }
 
     private suspend fun put(config: WebDavVaultConfig, path: String, body: String) {
-        val request = Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(path))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
-            .put(body.toRequestBody(JSON_MEDIA_TYPE))
-            .build()
-        client.newCall(request).await().use { response ->
-            check(response.isSuccessful) { "remote upload failed with ${response.code}" }
-        }
+        check(remoteStorageFactory.create(config).putText(path, body).isSuccess()) { "remote upload failed" }
     }
 
     private suspend fun move(config: WebDavVaultConfig, stagedPath: String, finalPath: String) {
-        val request = Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(stagedPath))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
-            .header("Destination", config.serverUrl.resolveWebDavPath(finalPath).toString())
-            .header("Overwrite", "T")
-            .method("MOVE", ByteArray(0).toRequestBody(null))
-            .build()
-        client.newCall(request).await().use { response ->
-            check(
-                response.isSuccessful ||
-                    response.code == HttpURLConnection.HTTP_CREATED ||
-                    response.code == HttpURLConnection.HTTP_NO_CONTENT,
-            ) { "remote promote failed with ${response.code}" }
-        }
+        check(remoteStorageFactory.create(config).move(stagedPath, finalPath).isSuccess()) { "remote promote failed" }
     }
 
     private suspend fun delete(config: WebDavVaultConfig, path: String) {
-        val request = Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(path))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
-            .delete()
-            .build()
-        client.newCall(request).await().use { }
+        remoteStorageFactory.create(config).delete(path)
     }
 
     private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
 
     private fun String.trimToNull(): String? = trim().takeIf(String::isNotBlank)
-
-    private companion object {
-        val JSON_MEDIA_TYPE = "application/json".toMediaType()
-    }
 }
 
 data class VaultMetadataPublishRequest(

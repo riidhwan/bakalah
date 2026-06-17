@@ -41,6 +41,8 @@ import eu.kanade.tachiyomi.data.vault.publishing.VaultMetadataPublishService
 import eu.kanade.tachiyomi.data.vault.reader.ActiveVaultReaderSessions
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshService
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefresher
+import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
+import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.setup.ContentVaultSetupService
 import eu.kanade.tachiyomi.data.vault.webdav.LibraryVaultCaptureWebDavFactory
 import eu.kanade.tachiyomi.data.vault.webdav.LibraryVaultCaptureWebDavFactoryBoundary
@@ -158,13 +160,16 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { CoverCache(app) }
 
         addSingletonFactory { NetworkHelper(app, get()) }
+        addSingletonFactory<VaultRemoteStorageFactory> { WebDavVaultRemoteStorageFactory(get()) }
         addSingletonFactory { ContentVaultSetupService(get(), get(), get(), get()) }
-        addSingletonFactory { VaultCatalogueRefreshService(get(), get(), get(), get()) }
+        addSingletonFactory { VaultCatalogueRefreshService(get<NetworkHelper>(), get(), get(), get()) }
         addSingletonFactory<VaultCatalogueRefresher> { get<VaultCatalogueRefreshService>() }
         addSingletonFactory { ActiveVaultReaderSessions() }
-        addSingletonFactory { VaultMangaDeletionService(get(), get(), get(), get(), get(), get(), get()) }
-        addSingletonFactory { VaultCoverPublishService(get(), get(), get(), get(), get(), get()) }
-        addSingletonFactory { VaultMetadataPublishService(get(), get(), get(), get(), get()) }
+        addSingletonFactory {
+            VaultMangaDeletionService(get<NetworkHelper>(), get(), get(), get(), get(), get(), get())
+        }
+        addSingletonFactory { VaultCoverPublishService(get<NetworkHelper>(), get(), get(), get(), get(), get()) }
+        addSingletonFactory { VaultMetadataPublishService(get<NetworkHelper>(), get(), get(), get(), get()) }
         addSingletonFactory<VaultChapterThumbnailCacheStore> { DefaultVaultChapterThumbnailCacheStore(get()) }
         addSingletonFactory<VaultChapterThumbnailPublishService> {
             DefaultVaultChapterThumbnailPublishService(get(), get(), get(), get(), get(), get())

@@ -3,9 +3,10 @@ package eu.kanade.tachiyomi.data.vault.publishing
 import eu.kanade.tachiyomi.data.vault.localimport.childPath
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshResult
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefresher
+import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorage
 import eu.kanade.tachiyomi.data.vault.transfer.vaultTransferIntegrity
+import eu.kanade.tachiyomi.data.vault.webdav.RemoteVaultWebDav
 import eu.kanade.tachiyomi.data.vault.webdav.VaultWebDav
-import eu.kanade.tachiyomi.data.vault.webdav.VaultWebDavClient
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
@@ -38,7 +39,7 @@ internal class DefaultVaultChapterThumbnailPublishService(
     private val refreshService: VaultCatalogueRefresher,
     private val cacheStore: VaultChapterThumbnailCacheStore,
     private val webDavFactory: (WebDavVaultConfig) -> VaultWebDav = {
-        VaultWebDavClient(it, networkHelper.nonCloudflareClient)
+        RemoteVaultWebDav(WebDavVaultRemoteStorage(it, networkHelper.nonCloudflareClient))
     },
     private val identityFactory: () -> String = { UUID.randomUUID().toString() },
     private val now: () -> Long = System::currentTimeMillis,
