@@ -1,0 +1,15 @@
+ALTER TABLE vault_import_requests ADD COLUMN active_manga_identity TEXT;
+
+ALTER TABLE vault_import_requests ADD COLUMN active_manifest_path TEXT;
+
+ALTER TABLE vault_import_request_chapters ADD COLUMN state TEXT NOT NULL DEFAULT 'pending';
+
+ALTER TABLE vault_import_request_chapters ADD COLUMN is_replaced INTEGER AS Boolean NOT NULL DEFAULT 0;
+
+ALTER TABLE vault_import_request_chapters ADD COLUMN failure_category TEXT;
+
+ALTER TABLE vault_import_request_chapters ADD COLUMN processed_at INTEGER;
+
+ALTER TABLE vault_transfer_jobs ADD COLUMN import_request_id INTEGER REFERENCES vault_import_requests(_id) ON DELETE SET NULL;
+
+CREATE INDEX vault_transfer_jobs_import_request_id_index ON vault_transfer_jobs(import_request_id);

@@ -152,6 +152,7 @@ CREATE TABLE vault_transfer_jobs(
     _id INTEGER NOT NULL PRIMARY KEY,
     vault_id INTEGER NOT NULL,
     chapter_id INTEGER,
+    import_request_id INTEGER,
     type INTEGER AS VaultTransferType NOT NULL,
     state INTEGER AS VaultTransferState NOT NULL,
     remote_path TEXT,
@@ -171,12 +172,14 @@ CREATE TABLE vault_transfer_jobs(
     started_at INTEGER,
     completed_at INTEGER,
     FOREIGN KEY(vault_id) REFERENCES content_vaults(_id) ON DELETE CASCADE,
-    FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE SET NULL
+    FOREIGN KEY(chapter_id) REFERENCES vault_chapters(_id) ON DELETE SET NULL,
+    FOREIGN KEY(import_request_id) REFERENCES vault_import_requests(_id) ON DELETE SET NULL
 );
 
 CREATE INDEX vault_transfer_jobs_vault_id_index ON vault_transfer_jobs(vault_id, state, updated_at);
 CREATE INDEX vault_transfer_jobs_state_index ON vault_transfer_jobs(state, updated_at);
 CREATE INDEX vault_transfer_jobs_chapter_id_index ON vault_transfer_jobs(chapter_id);
+CREATE INDEX vault_transfer_jobs_import_request_id_index ON vault_transfer_jobs(import_request_id);
 
 CREATE TABLE vault_import_target_hints(
     local_manga_id INTEGER NOT NULL PRIMARY KEY,
@@ -195,6 +198,8 @@ CREATE TABLE vault_import_requests(
     workflow TEXT NOT NULL,
     target_manga_id INTEGER,
     create_new_title TEXT,
+    active_manga_identity TEXT,
+    active_manifest_path TEXT,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
 );
@@ -207,6 +212,10 @@ CREATE TABLE vault_import_request_chapters(
     selection_id TEXT NOT NULL,
     sort_order INTEGER NOT NULL,
     allow_replacement INTEGER AS Boolean NOT NULL,
+    state TEXT NOT NULL DEFAULT 'pending',
+    is_replaced INTEGER AS Boolean NOT NULL DEFAULT 0,
+    failure_category TEXT,
+    processed_at INTEGER,
     PRIMARY KEY(request_id, selection_id),
     FOREIGN KEY(request_id) REFERENCES vault_import_requests(_id) ON DELETE CASCADE
 );
@@ -653,10 +662,12 @@ WHERE local_manga_id = :localMangaId;
 
 insertImportRequest:
 INSERT INTO vault_import_requests(
-    _id, manga_id, workflow, target_manga_id, create_new_title, created_at, updated_at
+    _id, manga_id, workflow, target_manga_id, create_new_title, active_manga_identity, active_manifest_path,
+    created_at, updated_at
 )
 VALUES (
-    nullif(:id, -1), :mangaId, :workflow, :targetMangaId, :createNewTitle, :createdAt, :updatedAt
+    nullif(:id, -1), :mangaId, :workflow, :targetMangaId, :createNewTitle, :activeMangaIdentity,
+    :activeManifestPath, :createdAt, :updatedAt
 );
 
 lastInsertedImportRequestId:
@@ -664,10 +675,12 @@ SELECT last_insert_rowid();
 
 insertImportRequestChapter:
 INSERT INTO vault_import_request_chapters(
-    request_id, chapter_id, selection_id, sort_order, allow_replacement
+    request_id, chapter_id, selection_id, sort_order, allow_replacement, state, is_replaced, failure_category,
+    processed_at
 )
 VALUES (
-    :requestId, :chapterId, :selectionId, :sortOrder, :allowReplacement
+    :requestId, :chapterId, :selectionId, :sortOrder, :allowReplacement, :state, :isReplaced, :failureCategory,
+    :processedAt
 );
 
 getImportRequest:
@@ -680,6 +693,31 @@ SELECT *
 FROM vault_import_request_chapters
 WHERE request_id = :requestId
 ORDER BY sort_order, selection_id;
+
+updateImportRequestActiveTarget:
+UPDATE vault_import_requests
+SET active_manga_identity = :activeMangaIdentity,
+    active_manifest_path = :activeManifestPath,
+    updated_at = :updatedAt
+WHERE _id = :id;
+
+markImportRequestChapterCompleted:
+UPDATE vault_import_request_chapters
+SET state = 'completed',
+    is_replaced = :isReplaced,
+    failure_category = NULL,
+    processed_at = :processedAt
+WHERE request_id = :requestId
+AND selection_id = :selectionId;
+
+markImportRequestChapterFailed:
+UPDATE vault_import_request_chapters
+SET state = 'failed',
+    is_replaced = 0,
+    failure_category = :failureCategory,
+    processed_at = :processedAt
+WHERE request_id = :requestId
+AND selection_id = :selectionId;
 
 deleteImportRequest:
 DELETE FROM vault_import_requests
@@ -732,18 +770,19 @@ WHERE _id = :id;
 
 upsertTransferJob:
 INSERT INTO vault_transfer_jobs(
-    _id, vault_id, chapter_id, type, state, remote_path, local_path, staged_path, size_bytes, checksum_sha256,
-    failure_reason, added_count, replaced_count, failed_count, cancelled_count, detail_json, attempts,
+    _id, vault_id, chapter_id, import_request_id, type, state, remote_path, local_path, staged_path, size_bytes,
+    checksum_sha256, failure_reason, added_count, replaced_count, failed_count, cancelled_count, detail_json, attempts,
     created_at, updated_at, started_at, completed_at
 )
 VALUES (
-    nullif(:id, -1), :vaultId, :chapterId, :type, :state, :remotePath, :localPath, :stagedPath, :sizeBytes,
-    :checksumSha256, :failureReason, :addedCount, :replacedCount, :failedCount, :cancelledCount, :detailJson,
-    :attempts, :createdAt, :updatedAt, :startedAt, :completedAt
+    nullif(:id, -1), :vaultId, :chapterId, :importRequestId, :type, :state, :remotePath, :localPath, :stagedPath,
+    :sizeBytes, :checksumSha256, :failureReason, :addedCount, :replacedCount, :failedCount, :cancelledCount,
+    :detailJson, :attempts, :createdAt, :updatedAt, :startedAt, :completedAt
 )
 ON CONFLICT(_id) DO UPDATE SET
     vault_id = excluded.vault_id,
     chapter_id = excluded.chapter_id,
+    import_request_id = excluded.import_request_id,
     type = excluded.type,
     state = excluded.state,
     remote_path = excluded.remote_path,
@@ -761,6 +800,16 @@ ON CONFLICT(_id) DO UPDATE SET
     updated_at = excluded.updated_at,
     started_at = excluded.started_at,
     completed_at = excluded.completed_at;
+
+cancelInterruptedCaptureTransferJobsForImportRequest:
+UPDATE vault_transfer_jobs
+SET state = :state,
+    failure_reason = :failureReason,
+    updated_at = :updatedAt,
+    completed_at = :completedAt
+WHERE import_request_id = :importRequestId
+AND type = :type
+AND state = :runningState;
 
 lastInsertedTransferJobId:
 SELECT last_insert_rowid();

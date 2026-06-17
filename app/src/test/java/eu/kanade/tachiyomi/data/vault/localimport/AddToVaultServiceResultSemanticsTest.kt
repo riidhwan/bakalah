@@ -55,6 +55,9 @@ import tachiyomi.domain.vault.model.VaultChapterContentFormat
 import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultImportRequest
+import tachiyomi.domain.vault.model.VaultImportRequestChapter
+import tachiyomi.domain.vault.model.VaultImportRequestChapterState
+import tachiyomi.domain.vault.model.VaultImportRequestWorkflow
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMangaStatus
@@ -64,6 +67,7 @@ import tachiyomi.domain.vault.model.VaultReadingState
 import tachiyomi.domain.vault.model.VaultRevision
 import tachiyomi.domain.vault.model.VaultTransferJob
 import tachiyomi.domain.vault.model.VaultTransferState
+import tachiyomi.domain.vault.model.VaultTransferType
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
@@ -192,8 +196,7 @@ class AddToVaultServiceResultSemanticsTest {
 
         val result = service.capture(
             manga = manga().copy(favorite = true, source = 100),
-            selectedChapterIds = setOf("missing"),
-            createNew = true,
+            request = repository.setImportRequest(captureRequest("missing")),
         )
 
         result shouldBe LibraryVaultCaptureResult.UploadFailed
@@ -219,8 +222,7 @@ class AddToVaultServiceResultSemanticsTest {
 
         val result = service.capture(
             manga = manga().copy(favorite = true, source = 100),
-            selectedChapterIds = setOf("present", "missing"),
-            createNew = true,
+            request = repository.setImportRequest(captureRequest("present", "missing")),
         )
 
         result shouldBe LibraryVaultCaptureResult.Captured(
@@ -254,12 +256,94 @@ class AddToVaultServiceResultSemanticsTest {
 
         service.capture(
             manga = manga().copy(favorite = true, source = 100),
-            selectedChapterIds = setOf("present"),
-            createNew = true,
+            request = repository.setImportRequest(captureRequest("present")),
         )
 
         repository.importTargetHints.single().vaultMangaId shouldBe 84
         repository.events shouldBe listOf("refresh", "hint:84")
+    }
+
+    @Test
+    fun `capture restart skips processed request chapters and includes them in final counts`() = runTest {
+        val repository = FakeVaultRepository(vault = contentVault())
+        val publisher = FakeLibraryPublisher(
+            LibraryVaultChapterPublishResult(
+                target = LibraryVaultActiveTarget.Created("manga-1", "manga/one.json"),
+                mangaIdentity = VaultIdentity("manga-1"),
+                replaced = true,
+            ),
+        )
+        val service = captureService(
+            repository = repository,
+            chapterRepository = FakeChapterRepository(
+                listOf(chapter("completed"), chapter("failed"), chapter("pending")),
+            ),
+            publisher = publisher,
+        )
+        val request = captureRequest("completed", "failed", "pending").copy(
+            chapters = listOf(
+                captureRequestChapter("completed", 0).copy(
+                    state = VaultImportRequestChapterState.COMPLETED,
+                    isReplaced = false,
+                    processedAt = 10,
+                ),
+                captureRequestChapter("failed", 1).copy(
+                    state = VaultImportRequestChapterState.FAILED,
+                    failureCategory = "upload",
+                    processedAt = 11,
+                ),
+                captureRequestChapter("pending", 2),
+            ),
+        )
+
+        val result = service.capture(
+            manga = manga().copy(favorite = true, source = 100),
+            request = repository.setImportRequest(request),
+        )
+
+        result shouldBe LibraryVaultCaptureResult.Captured(
+            addedChapterCount = 1,
+            replacedChapterCount = 1,
+            failedChapterCount = 1,
+        )
+        publisher.publishedChapterUrls shouldBe listOf("pending")
+        repository.transferJobs.single().state shouldBe VaultTransferState.PARTIALLY_SUCCEEDED
+        repository.transferJobs.single().addedCount shouldBe 1
+        repository.transferJobs.single().replacedCount shouldBe 1
+        repository.transferJobs.single().failedCount shouldBe 1
+    }
+
+    @Test
+    fun `capture restart uses persisted create new target and interrupts old running job`() = runTest {
+        val repository = FakeVaultRepository(vault = contentVault())
+        repository.transferJobs += transferJob(
+            id = 5,
+            importRequestId = 99,
+            state = VaultTransferState.RUNNING,
+        )
+        val publisher = FakeLibraryPublisher()
+        val service = captureService(
+            repository = repository,
+            chapterRepository = FakeChapterRepository(listOf(chapter("present"))),
+            publisher = publisher,
+        )
+
+        service.capture(
+            manga = manga().copy(favorite = true, source = 100),
+            request = repository.setImportRequest(
+                captureRequest("present").copy(
+                    activeMangaIdentity = VaultIdentity("persisted-manga"),
+                    activeManifestPath = "manga/persisted.json",
+                ),
+            ),
+        )
+
+        publisher.targets.single() shouldBe LibraryVaultActiveTarget.Created(
+            mangaIdentity = "persisted-manga",
+            manifestPath = "manga/persisted.json",
+        )
+        repository.transferJobs.first { it.id == 5L }.state shouldBe VaultTransferState.CANCELLED
+        repository.transferJobs.first { it.id == 5L }.failureReason shouldBe "interrupted"
     }
 
     private fun localService(
@@ -339,6 +423,24 @@ class AddToVaultServiceResultSemanticsTest {
         chapterNumber = 1.0,
         sourceOrder = 0,
         dateUpload = 123,
+    )
+
+    private fun captureRequest(vararg selectionIds: String) = VaultImportRequest(
+        id = 99,
+        mangaId = 7,
+        workflow = VaultImportRequestWorkflow.LIBRARY_CAPTURE,
+        targetMangaId = null,
+        createNewTitle = "Manga",
+        createdAt = 1,
+        updatedAt = 1,
+        chapters = selectionIds.mapIndexed { index, selectionId -> captureRequestChapter(selectionId, index.toLong()) },
+    )
+
+    private fun captureRequestChapter(selectionId: String, sortOrder: Long) = VaultImportRequestChapter(
+        chapterId = null,
+        selectionId = selectionId,
+        sortOrder = sortOrder,
+        allowReplacement = false,
     )
 
     private fun localImportManga() = LocalVaultImportManga(
@@ -422,6 +524,9 @@ class AddToVaultServiceResultSemanticsTest {
             replaced = false,
         ),
     ) : LibraryVaultChapterPublisherBoundary {
+        val publishedChapterUrls = mutableListOf<String>()
+        val targets = mutableListOf<LibraryVaultActiveTarget>()
+
         override suspend fun publish(
             webDav: LibraryVaultCaptureWebDav,
             config: WebDavVaultConfig,
@@ -435,7 +540,11 @@ class AddToVaultServiceResultSemanticsTest {
             stagingRoot: File,
             allowReplacement: Boolean,
             progressPhase: (AddToVaultProgressPhase) -> Unit,
-        ): LibraryVaultChapterPublishResult = result
+        ): LibraryVaultChapterPublishResult {
+            publishedChapterUrls += chapter.url
+            targets += target
+            return result
+        }
     }
 
     private class FakeCaptureWebDavFactory : LibraryVaultCaptureWebDavFactoryBoundary {
@@ -502,9 +611,15 @@ class AddToVaultServiceResultSemanticsTest {
         var vault: ContentVault?,
     ) : VaultRepository {
         var manga = emptyList<VaultManga>()
+        var importRequest: VaultImportRequest? = null
         val events = mutableListOf<String>()
         val importTargetHints = mutableListOf<ImportTargetHint>()
         val transferJobs = mutableListOf<VaultTransferJob>()
+
+        fun setImportRequest(request: VaultImportRequest): VaultImportRequest {
+            importRequest = request
+            return request
+        }
 
         override fun getVaultsAsFlow(): Flow<List<ContentVault>> = emptyFlow()
         override suspend fun getVaultByIdentity(identity: ContentVaultIdentity): ContentVault? =
@@ -546,7 +661,49 @@ class AddToVaultServiceResultSemanticsTest {
         override fun getImportTargetHintAsFlow(localMangaId: Long): Flow<ImportTargetHint?> = emptyFlow()
         override suspend fun deleteImportTargetHint(localMangaId: Long) = Unit
         override suspend fun insertImportRequest(request: VaultImportRequest): Long = unsupported()
-        override suspend fun getImportRequest(id: Long): VaultImportRequest? = null
+        override suspend fun getImportRequest(id: Long): VaultImportRequest? = importRequest?.takeIf { it.id == id }
+        override suspend fun updateImportRequestActiveTarget(
+            id: Long,
+            activeMangaIdentity: VaultIdentity,
+            activeManifestPath: String,
+            updatedAt: Long,
+        ) {
+            importRequest = importRequest?.takeIf { it.id == id }?.copy(
+                activeMangaIdentity = activeMangaIdentity,
+                activeManifestPath = activeManifestPath,
+                updatedAt = updatedAt,
+            ) ?: importRequest
+        }
+        override suspend fun markImportRequestChapterCompleted(
+            requestId: Long,
+            selectionId: String,
+            isReplaced: Boolean,
+            processedAt: Long,
+        ) {
+            updateRequestChapter(requestId, selectionId) {
+                it.copy(
+                    state = VaultImportRequestChapterState.COMPLETED,
+                    isReplaced = isReplaced,
+                    failureCategory = null,
+                    processedAt = processedAt,
+                )
+            }
+        }
+        override suspend fun markImportRequestChapterFailed(
+            requestId: Long,
+            selectionId: String,
+            failureCategory: String,
+            processedAt: Long,
+        ) {
+            updateRequestChapter(requestId, selectionId) {
+                it.copy(
+                    state = VaultImportRequestChapterState.FAILED,
+                    isReplaced = false,
+                    failureCategory = failureCategory,
+                    processedAt = processedAt,
+                )
+            }
+        }
         override suspend fun deleteImportRequest(id: Long) = Unit
         override suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long = unsupported()
         override suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long = unsupported()
@@ -557,12 +714,71 @@ class AddToVaultServiceResultSemanticsTest {
             transferJobs.filter { it.state in states }
         override suspend fun getTransferJob(id: Long): VaultTransferJob? = transferJobs.firstOrNull { it.id == id }
         override suspend fun upsertTransferJob(job: VaultTransferJob): Long {
-            val id = job.id.takeIf { it != -1L } ?: 1L
+            val id = job.id.takeIf { it != -1L } ?: ((transferJobs.maxOfOrNull { it.id } ?: 0L) + 1L)
             transferJobs.removeAll { it.id == id }
             transferJobs += job.copy(id = id)
             return id
         }
+        override suspend fun cancelInterruptedCaptureTransferJobsForImportRequest(
+            importRequestId: Long,
+            completedAt: Long,
+        ) {
+            transferJobs.replaceAll { job ->
+                if (
+                    job.importRequestId == importRequestId &&
+                    job.type == VaultTransferType.CAPTURE_PUBLISH &&
+                    job.state == VaultTransferState.RUNNING
+                ) {
+                    job.copy(
+                        state = VaultTransferState.CANCELLED,
+                        failureReason = "interrupted",
+                        updatedAt = completedAt,
+                        completedAt = completedAt,
+                    )
+                } else {
+                    job
+                }
+            }
+        }
+
+        private fun updateRequestChapter(
+            requestId: Long,
+            selectionId: String,
+            transform: (VaultImportRequestChapter) -> VaultImportRequestChapter,
+        ) {
+            importRequest = importRequest?.takeIf { it.id == requestId }?.let { request ->
+                request.copy(
+                    chapters = request.chapters.map { chapter ->
+                        if (chapter.selectionId == selectionId) transform(chapter) else chapter
+                    },
+                )
+            } ?: importRequest
+        }
 
         private fun unsupported(): Nothing = error("Not used by this test")
     }
+
+    private fun transferJob(
+        id: Long,
+        importRequestId: Long?,
+        state: VaultTransferState,
+    ) = VaultTransferJob(
+        id = id,
+        vaultId = 1,
+        chapterId = null,
+        importRequestId = importRequestId,
+        type = VaultTransferType.CAPTURE_PUBLISH,
+        state = state,
+        remotePath = null,
+        localPath = null,
+        stagedPath = null,
+        sizeBytes = null,
+        checksumSha256 = null,
+        failureReason = null,
+        attempts = 1,
+        createdAt = 1,
+        updatedAt = 1,
+        startedAt = 1,
+        completedAt = null,
+    )
 }

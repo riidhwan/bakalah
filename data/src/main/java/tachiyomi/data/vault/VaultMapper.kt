@@ -13,6 +13,7 @@ import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultImportRequest
 import tachiyomi.domain.vault.model.VaultImportRequestChapter
+import tachiyomi.domain.vault.model.VaultImportRequestChapterState
 import tachiyomi.domain.vault.model.VaultImportRequestWorkflow
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
@@ -298,6 +299,8 @@ object VaultMapper {
         workflow: String,
         targetMangaId: Long?,
         createNewTitle: String?,
+        activeMangaIdentity: String?,
+        activeManifestPath: String?,
         createdAt: Long,
         updatedAt: Long,
         chapters: List<VaultImportRequestChapter>,
@@ -309,6 +312,8 @@ object VaultMapper {
             ?: VaultImportRequestWorkflow.LOCAL_IMPORT,
         targetMangaId = targetMangaId,
         createNewTitle = createNewTitle,
+        activeMangaIdentity = activeMangaIdentity?.let(::VaultIdentity),
+        activeManifestPath = activeManifestPath,
         createdAt = createdAt,
         updatedAt = updatedAt,
         chapters = chapters,
@@ -320,17 +325,26 @@ object VaultMapper {
         selectionId: String,
         sortOrder: Long,
         allowReplacement: Boolean,
+        state: String,
+        isReplaced: Boolean,
+        failureCategory: String?,
+        processedAt: Long?,
     ): VaultImportRequestChapter = VaultImportRequestChapter(
         chapterId = chapterId,
         selectionId = selectionId,
         sortOrder = sortOrder,
         allowReplacement = allowReplacement,
+        state = VaultImportRequestChapterState.fromStorageValue(state),
+        isReplaced = isReplaced,
+        failureCategory = failureCategory,
+        processedAt = processedAt,
     )
 
     fun mapTransferJob(
         id: Long,
         vaultId: Long,
         chapterId: Long?,
+        importRequestId: Long?,
         type: VaultTransferType,
         state: VaultTransferState,
         remotePath: String?,
@@ -353,6 +367,7 @@ object VaultMapper {
         id = id,
         vaultId = vaultId,
         chapterId = chapterId,
+        importRequestId = importRequestId,
         type = type,
         state = state,
         remotePath = remotePath,

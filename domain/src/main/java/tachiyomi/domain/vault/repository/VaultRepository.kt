@@ -93,6 +93,27 @@ interface VaultRepository {
 
     suspend fun getImportRequest(id: Long): VaultImportRequest?
 
+    suspend fun updateImportRequestActiveTarget(
+        id: Long,
+        activeMangaIdentity: VaultIdentity,
+        activeManifestPath: String,
+        updatedAt: Long,
+    )
+
+    suspend fun markImportRequestChapterCompleted(
+        requestId: Long,
+        selectionId: String,
+        isReplaced: Boolean,
+        processedAt: Long,
+    )
+
+    suspend fun markImportRequestChapterFailed(
+        requestId: Long,
+        selectionId: String,
+        failureCategory: String,
+        processedAt: Long,
+    )
+
     suspend fun deleteImportRequest(id: Long)
 
     suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long
@@ -110,4 +131,6 @@ interface VaultRepository {
     suspend fun getTransferJob(id: Long): VaultTransferJob?
 
     suspend fun upsertTransferJob(job: VaultTransferJob): Long
+
+    suspend fun cancelInterruptedCaptureTransferJobsForImportRequest(importRequestId: Long, completedAt: Long)
 }

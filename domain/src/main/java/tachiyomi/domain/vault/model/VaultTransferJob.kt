@@ -4,6 +4,7 @@ data class VaultTransferJob(
     val id: Long,
     val vaultId: Long,
     val chapterId: Long?,
+    val importRequestId: Long? = null,
     val type: VaultTransferType,
     val state: VaultTransferState,
     val remotePath: String?,
