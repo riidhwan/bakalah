@@ -90,7 +90,7 @@ internal class LibraryVaultChapterPublisher(
         val remoteMangaManifest = publishContext.remoteMangaManifest
         val mangaIdentity = publishContext.mangaIdentity
         val now = System.currentTimeMillis()
-        val stagedChapter = stager.stageForCapture(source, manga, chapter, stagingRoot, progressPhase)
+        val stagedChapter = stageChapter(source, manga, chapter, stagingRoot, progressPhase)
         val existingRemoteChapters = remoteMangaManifest?.chapters.orEmpty()
         val chapterDuplicateTitleKey = chapter.name.duplicateTitleKey()
         val replacement = existingRemoteChapters
@@ -277,6 +277,22 @@ internal class LibraryVaultChapterPublisher(
         repository.deleteCacheStates(replacedChapterIds)
     }
 
+    private suspend fun stageChapter(
+        source: HttpSource,
+        manga: Manga,
+        chapter: Chapter,
+        stagingRoot: File,
+        progressPhase: (VaultImportProgressPhase) -> Unit,
+    ): LibraryVaultStagedChapter {
+        return runCatching {
+            stager.stageForCapture(source, manga, chapter, stagingRoot, progressPhase)
+        }.getOrElse { error ->
+            if (error is CancellationException) throw error
+            if (error.message in CAPTURE_STAGING_FAILURES) throw error
+            error("download")
+        }
+    }
+
     private fun VaultMetadata.toManifestMetadata() = VaultManifestMetadata(
         title = title,
         author = author,
@@ -289,6 +305,10 @@ internal class LibraryVaultChapterPublisher(
         is LibraryVaultActiveTarget.Existing -> VaultManifestPublishTarget.Existing(manga.identity.value)
         is LibraryVaultActiveTarget.CreateNew -> VaultManifestPublishTarget.CreateNew(mangaIdentity, manifestPath)
         is LibraryVaultActiveTarget.Created -> VaultManifestPublishTarget.Created(mangaIdentity, manifestPath)
+    }
+
+    private companion object {
+        val CAPTURE_STAGING_FAILURES = setOf("downloaded_copy", "empty_pages", "staging")
     }
 }
 

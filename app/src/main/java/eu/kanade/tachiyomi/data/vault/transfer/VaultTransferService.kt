@@ -1,17 +1,14 @@
 package eu.kanade.tachiyomi.data.vault.transfer
 
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.data.vault.localimport.resolveWebDavPath
+import eu.kanade.tachiyomi.data.vault.remote.getBytesOrNull
+import eu.kanade.tachiyomi.data.vault.remote.isSuccess
+import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorage
 import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.network.await
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import okhttp3.Credentials
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapterCacheState
 import tachiyomi.domain.vault.model.VaultTransferJob
@@ -20,7 +17,6 @@ import tachiyomi.domain.vault.model.VaultTransferType
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import java.io.File
-import java.net.HttpURLConnection
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -380,58 +376,26 @@ interface VaultTransferLocalStaging {
 
 class WebDavVaultTransferStorage(
     networkHelper: NetworkHelper,
-    private val config: WebDavVaultConfig,
+    config: WebDavVaultConfig,
 ) : VaultTransferStorage {
-    private val client = networkHelper.nonCloudflareClient
+    private val storage = WebDavVaultRemoteStorage(config, networkHelper.nonCloudflareClient)
 
-    override suspend fun get(path: String): ByteArray? = withContext(Dispatchers.IO) {
-        val request = request(path).get().build()
-        client.newCall(request).await().use { response ->
-            response.takeIf { it.isSuccessful }?.body?.bytes()
-        }
+    override suspend fun get(path: String): ByteArray? = storage.getBytesOrNull(path)
+
+    override suspend fun put(path: String, bytes: ByteArray) {
+        check(storage.putBytes(path, bytes, OCTET_MEDIA_TYPE).isSuccess()) { "remote upload failed" }
     }
 
-    override suspend fun put(path: String, bytes: ByteArray) = withContext(Dispatchers.IO) {
-        val request = request(path)
-            .put(bytes.toRequestBody(OCTET_MEDIA_TYPE))
-            .build()
-        client.newCall(request).await().use { response ->
-            check(response.isSuccessful) { "remote upload failed with ${response.code}" }
-        }
+    override suspend fun promote(stagedPath: String, finalPath: String) {
+        check(storage.move(stagedPath, finalPath).isSuccess()) { "remote promote failed" }
     }
 
-    override suspend fun promote(stagedPath: String, finalPath: String) = withContext(Dispatchers.IO) {
-        val request = request(stagedPath)
-            .method("MOVE", ByteArray(0).toRequestBody(null))
-            .header("Destination", config.serverUrl.resolveWebDavPath(finalPath).toString())
-            .header("Overwrite", "T")
-            .build()
-        client.newCall(request).await().use { response ->
-            check(
-                response.isSuccessful ||
-                    response.code == HttpURLConnection.HTTP_CREATED ||
-                    response.code == HttpURLConnection.HTTP_NO_CONTENT,
-            ) { "remote promote failed with ${response.code}" }
-        }
-    }
-
-    override suspend fun delete(path: String) = withContext(Dispatchers.IO) {
-        val request = request(path).delete().build()
-        client.newCall(request).await().use { response ->
-            check(response.isSuccessful || response.code == HttpURLConnection.HTTP_NOT_FOUND) {
-                "remote cleanup failed with ${response.code}"
-            }
-        }
-    }
-
-    private fun request(path: String): Request.Builder {
-        return Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(path))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
+    override suspend fun delete(path: String) {
+        check(storage.delete(path).isSuccess()) { "remote cleanup failed" }
     }
 
     private companion object {
-        val OCTET_MEDIA_TYPE = "application/octet-stream".toMediaType()
+        const val OCTET_MEDIA_TYPE = "application/octet-stream"
     }
 }
 

@@ -339,6 +339,7 @@ internal class LibraryVaultCaptureService(
         return message?.takeIf {
             it in setOf(
                 "downloaded_copy",
+                "download",
                 "empty_pages",
                 "staging",
                 "upload",

@@ -1,21 +1,18 @@
 package eu.kanade.tachiyomi.data.vault.refresh
 
 import eu.kanade.tachiyomi.data.vault.localimport.childPath
-import eu.kanade.tachiyomi.data.vault.localimport.resolveWebDavPath
+import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorage
+import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
+import eu.kanade.tachiyomi.data.vault.remote.getTextOrNull
+import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
 import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.network.await
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import okhttp3.Credentials
-import okhttp3.Request
 import tachiyomi.domain.vault.interactor.BuildVaultCatalogueRefresh
 import tachiyomi.domain.vault.interactor.VaultCatalogueRefreshBuildResult
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ROOT_VAULT_MANIFEST_NAME
 import tachiyomi.domain.vault.model.VaultManifestCodec
 import tachiyomi.domain.vault.model.VaultManifestReadResult
-import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
 
@@ -23,13 +20,24 @@ interface VaultCatalogueRefresher {
     suspend fun refreshConfiguredVault(): VaultCatalogueRefreshResult
 }
 
-class VaultCatalogueRefreshService(
-    networkHelper: NetworkHelper,
+class VaultCatalogueRefreshService internal constructor(
     json: Json,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
+    private val remoteStorageFactory: VaultRemoteStorageFactory,
 ) : VaultCatalogueRefresher {
-    private val client = networkHelper.nonCloudflareClient
+    constructor(
+        networkHelper: NetworkHelper,
+        json: Json,
+        repository: VaultRepository,
+        preferences: ContentVaultPreferences,
+    ) : this(
+        json = json,
+        repository = repository,
+        preferences = preferences,
+        remoteStorageFactory = WebDavVaultRemoteStorageFactory(networkHelper),
+    )
+
     private val codec = VaultManifestCodec(json)
     private val refreshBuilder = BuildVaultCatalogueRefresh(codec)
 
@@ -38,8 +46,9 @@ class VaultCatalogueRefreshService(
         if (!config.isComplete) return VaultCatalogueRefreshResult.IncompleteConfiguration
 
         val rootManifestPath = config.rootPath.childPath(ROOT_VAULT_MANIFEST_NAME)
+        val remoteStorage = remoteStorageFactory.create(config)
         val rootManifestBody =
-            get(config, rootManifestPath) ?: return VaultCatalogueRefreshResult.ManifestNotFound(rootManifestPath)
+            remoteStorage.get(rootManifestPath) ?: return VaultCatalogueRefreshResult.ManifestNotFound(rootManifestPath)
         val rootManifest = when (val result = codec.decodeRoot(rootManifestBody)) {
             is VaultManifestReadResult.Success -> result.manifest
             is VaultManifestReadResult.UnsupportedOlderVersion ->
@@ -57,7 +66,7 @@ class VaultCatalogueRefreshService(
 
         val mangaManifestBodies = mutableMapOf<String, String>()
         rootManifest.manga.forEach { pointer ->
-            mangaManifestBodies[pointer.path] = get(config, config.rootPath.childPath(pointer.path))
+            mangaManifestBodies[pointer.path] = remoteStorage.get(config.rootPath.childPath(pointer.path))
                 ?: return VaultCatalogueRefreshResult.ManifestNotFound(pointer.path)
         }
 
@@ -94,16 +103,7 @@ class VaultCatalogueRefreshService(
         )
     }
 
-    private suspend fun get(config: WebDavVaultConfig, path: String): String? = withContext(Dispatchers.IO) {
-        val request = Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(path))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
-            .get()
-            .build()
-        client.newCall(request).await().use { response ->
-            response.takeIf { it.isSuccessful }?.body?.string()
-        }
-    }
+    private suspend fun VaultRemoteStorage.get(path: String): String? = getTextOrNull(path)
 
     private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
 }

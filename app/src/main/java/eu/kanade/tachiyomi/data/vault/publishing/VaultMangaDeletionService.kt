@@ -1,20 +1,17 @@
 package eu.kanade.tachiyomi.data.vault.publishing
 
 import eu.kanade.tachiyomi.data.vault.cache.VaultCachePolicyService
-import eu.kanade.tachiyomi.data.vault.localimport.resolveWebDavPath
 import eu.kanade.tachiyomi.data.vault.reader.ActiveVaultReaderSessions
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshResult
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshService
+import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
+import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteWriteResult
+import eu.kanade.tachiyomi.data.vault.remote.getTextOrNull
+import eu.kanade.tachiyomi.data.vault.remote.isSuccess
+import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.transfer.UniFileVaultTransferLocalStaging
 import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.network.await
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import okhttp3.Credentials
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.domain.storage.service.StorageManager
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVaultIdentity
@@ -30,17 +27,36 @@ import tachiyomi.domain.vault.service.ContentVaultPreferences
 import java.net.HttpURLConnection
 import java.util.UUID
 
-class VaultMangaDeletionService(
-    networkHelper: NetworkHelper,
+class VaultMangaDeletionService internal constructor(
     json: Json,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
     private val refreshService: VaultCatalogueRefreshService,
     private val activeReaderSessions: ActiveVaultReaderSessions,
     private val storageManager: StorageManager,
+    private val remoteStorageFactory: VaultRemoteStorageFactory,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
-    private val client = networkHelper.nonCloudflareClient
+    constructor(
+        networkHelper: NetworkHelper,
+        json: Json,
+        repository: VaultRepository,
+        preferences: ContentVaultPreferences,
+        refreshService: VaultCatalogueRefreshService,
+        activeReaderSessions: ActiveVaultReaderSessions,
+        storageManager: StorageManager,
+        now: () -> Long = System::currentTimeMillis,
+    ) : this(
+        json = json,
+        repository = repository,
+        preferences = preferences,
+        refreshService = refreshService,
+        activeReaderSessions = activeReaderSessions,
+        storageManager = storageManager,
+        remoteStorageFactory = WebDavVaultRemoteStorageFactory(networkHelper),
+        now = now,
+    )
+
     private val codec = VaultManifestCodec(json)
 
     suspend fun delete(mangaId: Long): VaultMangaDeletionResult {
@@ -194,22 +210,12 @@ class VaultMangaDeletionService(
         }
     }
 
-    private suspend fun get(config: WebDavVaultConfig, path: String): String? = withContext(Dispatchers.IO) {
-        val request = Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(path))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
-            .get()
-            .build()
-        client.newCall(request).await().use { response ->
-            response.takeIf { it.isSuccessful }?.body?.string()
-        }
-    }
+    private suspend fun get(config: WebDavVaultConfig, path: String): String? =
+        remoteStorageFactory.create(config).getTextOrNull(path)
 
-    private suspend fun putStaged(config: WebDavVaultConfig, path: String, body: String): Boolean = withContext(
-        Dispatchers.IO,
-    ) {
+    private suspend fun putStaged(config: WebDavVaultConfig, path: String, body: String): Boolean {
         val stagedPath = "$path.staged-${UUID.randomUUID()}"
-        runCatching {
+        return runCatching {
             put(config, stagedPath, body)
             move(config, stagedPath, path)
         }.onFailure {
@@ -218,31 +224,11 @@ class VaultMangaDeletionService(
     }
 
     private suspend fun put(config: WebDavVaultConfig, path: String, body: String) {
-        val request = Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(path))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
-            .put(body.toRequestBody(JSON_MEDIA_TYPE))
-            .build()
-        client.newCall(request).await().use { response ->
-            check(response.isSuccessful) { "remote upload failed with ${response.code}" }
-        }
+        check(remoteStorageFactory.create(config).putText(path, body).isSuccess()) { "remote upload failed" }
     }
 
     private suspend fun move(config: WebDavVaultConfig, stagedPath: String, finalPath: String) {
-        val request = Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(stagedPath))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
-            .header("Destination", config.serverUrl.resolveWebDavPath(finalPath).toString())
-            .header("Overwrite", "T")
-            .method("MOVE", ByteArray(0).toRequestBody(null))
-            .build()
-        client.newCall(request).await().use { response ->
-            check(
-                response.isSuccessful ||
-                    response.code == HttpURLConnection.HTTP_CREATED ||
-                    response.code == HttpURLConnection.HTTP_NO_CONTENT,
-            ) { "remote promote failed with ${response.code}" }
-        }
+        check(remoteStorageFactory.create(config).move(stagedPath, finalPath).isSuccess()) { "remote promote failed" }
     }
 
     private suspend fun cleanupRemoteFiles(config: WebDavVaultConfig, paths: List<String>): List<String> {
@@ -286,17 +272,10 @@ class VaultMangaDeletionService(
         }
     }
 
-    private suspend fun delete(config: WebDavVaultConfig, path: String): Boolean = withContext(Dispatchers.IO) {
-        val request = Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(path))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
-            .delete()
-            .build()
-        client.newCall(request).await().use { response ->
-            response.isSuccessful ||
-                response.code == HttpURLConnection.HTTP_NOT_FOUND ||
-                response.code == HttpURLConnection.HTTP_GONE
-        }
+    private suspend fun delete(config: WebDavVaultConfig, path: String): Boolean {
+        val result = remoteStorageFactory.create(config).delete(path)
+        return result.isSuccess() ||
+            (result as? VaultRemoteWriteResult.Failed)?.statusCode == HttpURLConnection.HTTP_GONE
     }
 
     private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')
@@ -309,7 +288,6 @@ class VaultMangaDeletionService(
     }
 
     private companion object {
-        val JSON_MEDIA_TYPE = "application/json".toMediaType()
         val ACTIVE_TRANSFER_STATES = setOf(VaultTransferState.QUEUED, VaultTransferState.RUNNING)
     }
 }

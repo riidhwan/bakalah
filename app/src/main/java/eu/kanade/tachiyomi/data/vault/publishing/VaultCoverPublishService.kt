@@ -1,21 +1,18 @@
 package eu.kanade.tachiyomi.data.vault.publishing
 
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.data.vault.localimport.resolveWebDavPath
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshResult
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshService
+import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
+import eu.kanade.tachiyomi.data.vault.remote.getBytesOrNull
+import eu.kanade.tachiyomi.data.vault.remote.getTextOrNull
+import eu.kanade.tachiyomi.data.vault.remote.isSuccess
+import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.transfer.UniFileVaultTransferLocalStaging
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferIntegrity
 import eu.kanade.tachiyomi.data.vault.transfer.vaultTransferIntegrity
 import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.network.await
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import okhttp3.Credentials
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.domain.storage.service.StorageManager
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVaultIdentity
@@ -30,19 +27,35 @@ import tachiyomi.domain.vault.model.VaultRevision
 import tachiyomi.domain.vault.model.WebDavVaultConfig
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
-import java.net.HttpURLConnection
 import java.util.UUID
 
-class VaultCoverPublishService(
-    networkHelper: NetworkHelper,
+class VaultCoverPublishService internal constructor(
     json: Json,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
     private val refreshService: VaultCatalogueRefreshService,
     private val storageManager: StorageManager,
+    private val remoteStorageFactory: VaultRemoteStorageFactory,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
-    private val client = networkHelper.nonCloudflareClient
+    constructor(
+        networkHelper: NetworkHelper,
+        json: Json,
+        repository: VaultRepository,
+        preferences: ContentVaultPreferences,
+        refreshService: VaultCatalogueRefreshService,
+        storageManager: StorageManager,
+        now: () -> Long = System::currentTimeMillis,
+    ) : this(
+        json = json,
+        repository = repository,
+        preferences = preferences,
+        refreshService = refreshService,
+        storageManager = storageManager,
+        remoteStorageFactory = WebDavVaultRemoteStorageFactory(networkHelper),
+        now = now,
+    )
+
     private val codec = VaultManifestCodec(json)
 
     suspend fun publish(request: VaultCoverPublishRequest): VaultCoverPublishResult {
@@ -269,19 +282,11 @@ class VaultCoverPublishService(
         ).joinToString("/") { it.toCachePathSegment() }
     }
 
-    private suspend fun getText(config: WebDavVaultConfig, path: String): String? = withContext(Dispatchers.IO) {
-        val request = request(config, path).get().build()
-        client.newCall(request).await().use { response ->
-            response.takeIf { it.isSuccessful }?.body?.string()
-        }
-    }
+    private suspend fun getText(config: WebDavVaultConfig, path: String): String? =
+        remoteStorageFactory.create(config).getTextOrNull(path)
 
-    private suspend fun getBytes(config: WebDavVaultConfig, path: String): ByteArray? = withContext(Dispatchers.IO) {
-        val request = request(config, path).get().build()
-        client.newCall(request).await().use { response ->
-            response.takeIf { it.isSuccessful }?.body?.bytes()
-        }
-    }
+    private suspend fun getBytes(config: WebDavVaultConfig, path: String): ByteArray? =
+        remoteStorageFactory.create(config).getBytesOrNull(path)
 
     private suspend fun putTextStaged(config: WebDavVaultConfig, path: String, body: String): Boolean {
         val stagedPath = "$path.staged-${UUID.randomUUID()}"
@@ -313,53 +318,23 @@ class VaultCoverPublishService(
     }
 
     private suspend fun putBytes(config: WebDavVaultConfig, path: String, bytes: ByteArray, mediaType: String?) {
-        val request = request(config, path)
-            .put(bytes.toRequestBody(mediaType?.toMediaTypeOrNull()))
-            .build()
-        client.newCall(request).await().use { response ->
-            check(response.isSuccessful) { "remote upload failed with ${response.code}" }
+        check(remoteStorageFactory.create(config).putBytes(path, bytes, mediaType).isSuccess()) {
+            "remote upload failed"
         }
     }
 
     private suspend fun move(config: WebDavVaultConfig, stagedPath: String, finalPath: String) {
-        val request = request(config, stagedPath)
-            .header("Destination", config.serverUrl.resolveWebDavPath(finalPath).toString())
-            .header("Overwrite", "T")
-            .method("MOVE", ByteArray(0).toRequestBody(null))
-            .build()
-        client.newCall(request).await().use { response ->
-            check(
-                response.isSuccessful ||
-                    response.code == HttpURLConnection.HTTP_CREATED ||
-                    response.code == HttpURLConnection.HTTP_NO_CONTENT,
-            ) { "remote promote failed with ${response.code}" }
-        }
+        check(remoteStorageFactory.create(config).move(stagedPath, finalPath).isSuccess()) { "remote promote failed" }
     }
 
     private suspend fun createDirectory(config: WebDavVaultConfig, path: String) {
-        val request = request(config, path, collection = true)
-            .method("MKCOL", ByteArray(0).toRequestBody(null))
-            .build()
-        client.newCall(request).await().use { response ->
-            check(response.isSuccessful || response.code == HttpURLConnection.HTTP_BAD_METHOD) {
-                "remote directory create failed with ${response.code}"
-            }
+        check(remoteStorageFactory.create(config).createDirectory(path).isSuccess()) {
+            "remote directory create failed"
         }
     }
 
     private suspend fun delete(config: WebDavVaultConfig, path: String) {
-        val request = request(config, path).delete().build()
-        client.newCall(request).await().use { }
-    }
-
-    private fun request(
-        config: WebDavVaultConfig,
-        path: String,
-        collection: Boolean = false,
-    ): Request.Builder {
-        return Request.Builder()
-            .url(config.serverUrl.resolveWebDavPath(path, collection = collection))
-            .header("Authorization", Credentials.basic(config.username.trim(), config.password))
+        remoteStorageFactory.create(config).delete(path)
     }
 
     private fun String.childPath(child: String): String = "${trimEnd('/')}/$child".trimStart('/')

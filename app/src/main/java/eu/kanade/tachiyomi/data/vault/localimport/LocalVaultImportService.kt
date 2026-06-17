@@ -3,9 +3,11 @@ package eu.kanade.tachiyomi.data.vault.localimport
 import android.app.Application
 import eu.kanade.tachiyomi.data.vault.refresh.AddToVaultIndexRefresher
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefresher
+import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
+import eu.kanade.tachiyomi.data.vault.remote.webdav.WebDavVaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.transfer.AddToVaultChapterFailure
 import eu.kanade.tachiyomi.data.vault.transfer.AddToVaultTransferFinalizer
-import eu.kanade.tachiyomi.data.vault.webdav.VaultWebDavClient
+import eu.kanade.tachiyomi.data.vault.webdav.RemoteVaultWebDav
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
@@ -36,7 +38,7 @@ class LocalVaultImportService internal constructor(
     private val scanner: LocalVaultMangaScannerBoundary,
     private val chapterPublisher: LocalVaultChapterPublisherBoundary,
 ) {
-    private val client = networkHelper.nonCloudflareClient
+    private val remoteStorageFactory: VaultRemoteStorageFactory = WebDavVaultRemoteStorageFactory(networkHelper)
     private val planner = BuildLocalVaultImportPlan()
     private val indexRefresher = AddToVaultIndexRefresher(repository, refreshService)
 
@@ -122,7 +124,7 @@ class LocalVaultImportService internal constructor(
         }
         val progressTotal = selectedChapters.size.coerceAtLeast(1)
 
-        val webDav = VaultWebDavClient(config, client)
+        val webDav = RemoteVaultWebDav(remoteStorageFactory.create(config))
         val now = System.currentTimeMillis()
         var job = VaultTransferJob(
             id = -1,

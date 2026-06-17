@@ -354,6 +354,36 @@ class LibraryVaultChapterPublisherTest {
         webDav.putFiles shouldBe emptyList()
     }
 
+    @Test
+    fun `unexpected staging failure is reported as download failure`() = runTest {
+        val webDav = FakeWebDav()
+        webDav.files[rootPath()] = codec.encodeRoot(rootManifest())
+
+        val error = shouldThrow<IllegalStateException> {
+            publisher(stager = FailingStager("source blew up")).publish(
+                webDav = webDav,
+                config = config,
+                vaultIdentity = vaultIdentity,
+                expectedVaultIdentity = vaultIdentity.value,
+                source = source(),
+                manga = manga(),
+                captureManga = captureManga(),
+                chapter = chapter("Chapter 1"),
+                target = LibraryVaultActiveTarget.CreateNew(
+                    mangaIdentity = "new-manga",
+                    manifestPath = "manga/new.json",
+                ),
+                stagingRoot = stagingRoot(),
+                allowReplacement = false,
+                progressPhase = {},
+            )
+        }
+
+        error.message shouldBe "download"
+        webDav.root().manga shouldBe emptyList()
+        webDav.putFiles shouldBe emptyList()
+    }
+
     private fun publisher(
         repository: FakeVaultRepository = FakeVaultRepository(),
         stager: LibraryVaultChapterStager = FakeStager(stagedFile()),
