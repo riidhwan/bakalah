@@ -83,6 +83,8 @@ internal class AddToVaultJobRunner(
                 workflow = workflow,
                 targetMangaId = targetMangaId,
                 createNewTitle = createNewTitle,
+                activeMangaIdentity = null,
+                activeManifestPath = null,
                 createdAt = now,
                 updatedAt = now,
                 chapters = selectedChapters,

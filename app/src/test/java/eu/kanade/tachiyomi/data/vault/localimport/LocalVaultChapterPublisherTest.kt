@@ -632,6 +632,24 @@ class LocalVaultChapterPublisherTest {
         override suspend fun deleteImportTargetHint(localMangaId: Long) = Unit
         override suspend fun insertImportRequest(request: VaultImportRequest): Long = unsupported()
         override suspend fun getImportRequest(id: Long): VaultImportRequest? = null
+        override suspend fun updateImportRequestActiveTarget(
+            id: Long,
+            activeMangaIdentity: VaultIdentity,
+            activeManifestPath: String,
+            updatedAt: Long,
+        ) = Unit
+        override suspend fun markImportRequestChapterCompleted(
+            requestId: Long,
+            selectionId: String,
+            isReplaced: Boolean,
+            processedAt: Long,
+        ) = Unit
+        override suspend fun markImportRequestChapterFailed(
+            requestId: Long,
+            selectionId: String,
+            failureCategory: String,
+            processedAt: Long,
+        ) = Unit
         override suspend fun deleteImportRequest(id: Long) = Unit
         override suspend fun upsertManifestSnapshot(snapshot: VaultManifestSnapshot): Long = unsupported()
         override suspend fun refreshCatalogue(refresh: VaultCatalogueRefresh): Long = unsupported()
@@ -642,6 +660,10 @@ class LocalVaultChapterPublisherTest {
             emptyList()
         override suspend fun getTransferJob(id: Long): VaultTransferJob? = null
         override suspend fun upsertTransferJob(job: VaultTransferJob): Long = unsupported()
+        override suspend fun cancelInterruptedCaptureTransferJobsForImportRequest(
+            importRequestId: Long,
+            completedAt: Long,
+        ) = Unit
 
         private fun unsupported(): Nothing = error("Not used by this test")
     }

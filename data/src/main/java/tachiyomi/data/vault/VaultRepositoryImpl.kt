@@ -27,6 +27,7 @@ import tachiyomi.domain.vault.model.VaultManifestSnapshot
 import tachiyomi.domain.vault.model.VaultReadingState
 import tachiyomi.domain.vault.model.VaultTransferJob
 import tachiyomi.domain.vault.model.VaultTransferState
+import tachiyomi.domain.vault.model.VaultTransferType
 import tachiyomi.domain.vault.repository.VaultRepository
 
 class VaultRepositoryImpl(
@@ -370,6 +371,8 @@ class VaultRepositoryImpl(
                 workflow = request.workflow.name,
                 targetMangaId = request.targetMangaId,
                 createNewTitle = request.createNewTitle,
+                activeMangaIdentity = request.activeMangaIdentity?.value,
+                activeManifestPath = request.activeManifestPath,
                 createdAt = request.createdAt,
                 updatedAt = request.updatedAt,
             )
@@ -387,6 +390,10 @@ class VaultRepositoryImpl(
                     selectionId = chapter.selectionId,
                     sortOrder = chapter.sortOrder,
                     allowReplacement = chapter.allowReplacement,
+                    state = chapter.state.storageValue,
+                    isReplaced = chapter.isReplaced,
+                    failureCategory = chapter.failureCategory,
+                    processedAt = chapter.processedAt,
                 )
             }
             requestId
@@ -407,9 +414,53 @@ class VaultRepositoryImpl(
             workflow = request.workflow,
             targetMangaId = request.target_manga_id,
             createNewTitle = request.create_new_title,
+            activeMangaIdentity = request.active_manga_identity,
+            activeManifestPath = request.active_manifest_path,
             createdAt = request.created_at,
             updatedAt = request.updated_at,
             chapters = chapters,
+        )
+    }
+
+    override suspend fun updateImportRequestActiveTarget(
+        id: Long,
+        activeMangaIdentity: VaultIdentity,
+        activeManifestPath: String,
+        updatedAt: Long,
+    ) {
+        database.vaultQueries.updateImportRequestActiveTarget(
+            id = id,
+            activeMangaIdentity = activeMangaIdentity.value,
+            activeManifestPath = activeManifestPath,
+            updatedAt = updatedAt,
+        )
+    }
+
+    override suspend fun markImportRequestChapterCompleted(
+        requestId: Long,
+        selectionId: String,
+        isReplaced: Boolean,
+        processedAt: Long,
+    ) {
+        database.vaultQueries.markImportRequestChapterCompleted(
+            requestId = requestId,
+            selectionId = selectionId,
+            isReplaced = isReplaced,
+            processedAt = processedAt,
+        )
+    }
+
+    override suspend fun markImportRequestChapterFailed(
+        requestId: Long,
+        selectionId: String,
+        failureCategory: String,
+        processedAt: Long,
+    ) {
+        database.vaultQueries.markImportRequestChapterFailed(
+            requestId = requestId,
+            selectionId = selectionId,
+            failureCategory = failureCategory,
+            processedAt = processedAt,
         )
     }
 
@@ -649,6 +700,7 @@ class VaultRepositoryImpl(
                 id = job.id,
                 vaultId = job.vaultId,
                 chapterId = job.chapterId,
+                importRequestId = job.importRequestId,
                 type = job.type,
                 state = job.state,
                 remotePath = job.remotePath,
@@ -676,6 +728,21 @@ class VaultRepositoryImpl(
                     .awaitAsOne()
             }
         }
+    }
+
+    override suspend fun cancelInterruptedCaptureTransferJobsForImportRequest(
+        importRequestId: Long,
+        completedAt: Long,
+    ) {
+        database.vaultQueries.cancelInterruptedCaptureTransferJobsForImportRequest(
+            importRequestId = importRequestId,
+            type = VaultTransferType.CAPTURE_PUBLISH,
+            runningState = VaultTransferState.RUNNING,
+            state = VaultTransferState.CANCELLED,
+            failureReason = "interrupted",
+            updatedAt = completedAt,
+            completedAt = completedAt,
+        )
     }
 
     private suspend fun upsertChapter(mangaId: Long, chapter: VaultChapter): Long {

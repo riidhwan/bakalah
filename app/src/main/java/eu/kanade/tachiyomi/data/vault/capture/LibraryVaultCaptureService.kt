@@ -27,8 +27,10 @@ import tachiyomi.domain.vault.model.LibraryVaultCaptureChapter
 import tachiyomi.domain.vault.model.LibraryVaultCaptureManga
 import tachiyomi.domain.vault.model.LibraryVaultCapturePlan
 import tachiyomi.domain.vault.model.LibraryVaultCaptureTarget
-import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultIdentity
+import tachiyomi.domain.vault.model.VaultImportRequest
+import tachiyomi.domain.vault.model.VaultImportRequestChapter
+import tachiyomi.domain.vault.model.VaultImportRequestChapterState
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultManifestChapter
@@ -56,11 +58,7 @@ internal class LibraryVaultCaptureService(
 
     suspend fun capture(
         manga: Manga,
-        selectedChapterIds: Set<String>,
-        allowedReplacementChapterIds: Set<String> = emptySet(),
-        targetMangaId: Long? = null,
-        createNew: Boolean = false,
-        createNewTitle: String? = null,
+        request: VaultImportRequest,
         progress: (AddToVaultProgress) -> Unit = {},
     ): LibraryVaultCaptureResult {
         if (!manga.favorite) return LibraryVaultCaptureResult.NotLibraryManga
@@ -69,30 +67,35 @@ internal class LibraryVaultCaptureService(
         val config = preferences.getWebDavConfig()
         val vault = configuredVault() ?: return LibraryVaultCaptureResult.IncompleteConfiguration
         val expectedVaultIdentity = preferences.configuredVaultIdentity.get().takeIf { it.isNotBlank() }
-        val selectedChapters = getChaptersByMangaId.await(manga.id)
+        val selectedChapterIds = request.selectedChapterIds
+        val selectedChaptersById = getChaptersByMangaId.await(manga.id)
             .filter { it.url in selectedChapterIds }
-        if (selectedChapters.isEmpty() && selectedChapterIds.isEmpty()) return LibraryVaultCaptureResult.NothingSelected
-        val missingSelectedChapterIds = selectedChapterIds - selectedChapters.map { it.url }.toSet()
+            .associateBy { it.url }
+        if (selectedChaptersById.isEmpty() && selectedChapterIds.isEmpty()) {
+            return LibraryVaultCaptureResult.NothingSelected
+        }
 
         val vaultManga = repository.getManga(vault.id)
         val existingChapters = repository.getChaptersForVault(vault.id).groupBy { it.mangaId }
         val captureManga = manga.toCaptureManga(source)
-            .withCreateNewTitle(createNew = createNew, title = createNewTitle)
+            .withCreateNewTitle(createNew = request.createNew, title = request.createNewTitle)
         val plan = planner.build(
             libraryManga = captureManga,
-            libraryChapters = selectedChapters.map { it.toCaptureChapter() },
+            libraryChapters = selectedChaptersById.values.map { it.toCaptureChapter() },
             vaultManga = vaultManga,
             existingChaptersByMangaId = existingChapters,
             hint = repository.getImportTargetHint(manga.id),
         )
-        val target = resolveTarget(plan.target, vaultManga, targetMangaId, createNew)
+        val target = resolveTarget(plan.target, vaultManga, request)
             ?: return LibraryVaultCaptureResult.TargetChoiceRequired(plan)
 
         val now = System.currentTimeMillis()
+        repository.cancelInterruptedCaptureTransferJobsForImportRequest(request.id, now)
         var job = VaultTransferJob(
             id = -1,
             vaultId = vault.id,
             chapterId = null,
+            importRequestId = request.id,
             type = VaultTransferType.CAPTURE_PUBLISH,
             state = VaultTransferState.RUNNING,
             remotePath = null,
@@ -108,21 +111,32 @@ internal class LibraryVaultCaptureService(
             completedAt = null,
         ).let { it.copy(id = repository.upsertTransferJob(it)) }
 
-        var added = 0
-        var replaced = 0
-        val failures = missingSelectedChapterIds
-            .map { AddToVaultChapterFailure(it, "missing_chapter") }
-            .toMutableList()
+        val pendingRequestChapters = request.pendingChapters()
+        val pendingChapters = pendingRequestChapters.mapNotNull { requestChapter ->
+            val chapter = selectedChaptersById[requestChapter.selectionId]
+            if (chapter == null) {
+                repository.markImportRequestChapterFailed(
+                    requestId = request.id,
+                    selectionId = requestChapter.selectionId,
+                    failureCategory = "missing_chapter",
+                    processedAt = System.currentTimeMillis(),
+                )
+                null
+            } else {
+                requestChapter to chapter
+            }
+        }
         val stagingRoot = captureStagingRoot().apply {
             deleteRecursively()
             mkdirs()
         }
         val webDav = webDavFactory.create(config)
-        val progressTotal = selectedChapters.size.coerceAtLeast(1)
+        val progressTotal = pendingRequestChapters.size.coerceAtLeast(1)
         var activeTarget = target
+        persistActiveCreateNewTarget(request.id, activeTarget)
 
         try {
-            selectedChapters.forEachIndexed { index, chapter ->
+            pendingChapters.forEachIndexed { index, (requestChapter, chapter) ->
                 currentCoroutineContext().ensureActive()
                 fun updatePhase(phase: AddToVaultProgressPhase) {
                     progress(
@@ -150,7 +164,7 @@ internal class LibraryVaultCaptureService(
                             chapter = chapter,
                             target = activeTarget,
                             stagingRoot = chapterStagingRoot,
-                            allowReplacement = chapter.url in allowedReplacementChapterIds,
+                            allowReplacement = chapter.url in request.replacementChapterIds,
                             progressPhase = ::updatePhase,
                         )
                     } finally {
@@ -159,9 +173,20 @@ internal class LibraryVaultCaptureService(
                 }.getOrElse { error ->
                     if (error is CancellationException) throw error
                     if (error is LibraryCaptureGlobalFailure) throw error
-                    failures += AddToVaultChapterFailure(chapter.name, error.captureFailureCategory())
+                    repository.markImportRequestChapterFailed(
+                        requestId = request.id,
+                        selectionId = requestChapter.selectionId,
+                        failureCategory = error.captureFailureCategory(),
+                        processedAt = System.currentTimeMillis(),
+                    )
                     return@forEachIndexed
                 }
+                repository.markImportRequestChapterCompleted(
+                    requestId = request.id,
+                    selectionId = requestChapter.selectionId,
+                    isReplaced = published.replaced,
+                    processedAt = System.currentTimeMillis(),
+                )
                 updatePhase(AddToVaultProgressPhase.REFRESHING)
                 indexRefresher.refreshPublishedMangaId(vault.identity, published.mangaIdentity.value)
                     ?.let { vaultMangaId ->
@@ -178,11 +203,6 @@ internal class LibraryVaultCaptureService(
                         )
                     }
                 activeTarget = published.target
-                if (published.replaced) {
-                    replaced += 1
-                } else {
-                    added += 1
-                }
                 progress(
                     AddToVaultProgress(
                         current = index + 1,
@@ -192,13 +212,15 @@ internal class LibraryVaultCaptureService(
                 )
             }
         } catch (e: CancellationException) {
+            val latestRequest = repository.getImportRequest(request.id) ?: request
+            val summary = latestRequest.checkpointSummary()
             repository.upsertTransferJob(
                 AddToVaultTransferFinalizer.cancel(
                     job = job,
-                    selectedCount = selectedChapters.size,
-                    added = added,
-                    replaced = replaced,
-                    failures = failures,
+                    selectedCount = latestRequest.chapters.size,
+                    added = summary.added,
+                    replaced = summary.replaced,
+                    failures = summary.failures,
                     completedAt = System.currentTimeMillis(),
                 ),
             )
@@ -206,22 +228,24 @@ internal class LibraryVaultCaptureService(
         } catch (e: LibraryCaptureGlobalFailure) {
             val completedAt = System.currentTimeMillis()
             val globalFailure = AddToVaultChapterFailure(e.chapterTitle ?: manga.title, e.category)
+            val latestRequest = repository.getImportRequest(request.id) ?: request
+            val summary = latestRequest.checkpointSummary()
             repository.upsertTransferJob(
                 AddToVaultTransferFinalizer.stopAfterGlobalFailure(
                     job = job,
-                    selectedCount = selectedChapters.size,
-                    added = added,
-                    replaced = replaced,
-                    failures = failures,
+                    selectedCount = latestRequest.chapters.size,
+                    added = summary.added,
+                    replaced = summary.replaced,
+                    failures = summary.failures,
                     globalFailure = globalFailure,
                     completedAt = completedAt,
                 ),
             )
-            return if (added + replaced > 0) {
+            return if (summary.added + summary.replaced > 0) {
                 LibraryVaultCaptureResult.Captured(
-                    addedChapterCount = added,
-                    replacedChapterCount = replaced,
-                    failedChapterCount = failures.size + 1,
+                    addedChapterCount = summary.added,
+                    replacedChapterCount = summary.replaced,
+                    failedChapterCount = summary.failures.size + 1,
                 )
             } else {
                 LibraryVaultCaptureResult.UploadFailed
@@ -231,21 +255,23 @@ internal class LibraryVaultCaptureService(
         }
 
         val completedAt = System.currentTimeMillis()
+        val latestRequest = repository.getImportRequest(request.id) ?: request
+        val summary = latestRequest.checkpointSummary()
         repository.upsertTransferJob(
             AddToVaultTransferFinalizer.complete(
                 job = job,
-                added = added,
-                replaced = replaced,
-                failures = failures,
+                added = summary.added,
+                replaced = summary.replaced,
+                failures = summary.failures,
                 completedAt = completedAt,
             ),
         )
 
-        return if (added + replaced > 0) {
+        return if (summary.added + summary.replaced > 0) {
             LibraryVaultCaptureResult.Captured(
-                addedChapterCount = added,
-                replacedChapterCount = replaced,
-                failedChapterCount = failures.size,
+                addedChapterCount = summary.added,
+                replacedChapterCount = summary.replaced,
+                failedChapterCount = summary.failures.size,
             )
         } else {
             LibraryVaultCaptureResult.UploadFailed
@@ -260,13 +286,20 @@ internal class LibraryVaultCaptureService(
     private fun resolveTarget(
         target: LibraryVaultCaptureTarget,
         vaultManga: List<VaultManga>,
-        targetMangaId: Long?,
-        createNew: Boolean,
+        request: VaultImportRequest,
     ): LibraryVaultActiveTarget? {
-        if (createNew) {
+        if (request.createNew) {
+            val activeMangaIdentity = request.activeMangaIdentity
+            val activeManifestPath = request.activeManifestPath
+            if (activeMangaIdentity != null && activeManifestPath != null) {
+                return LibraryVaultActiveTarget.Created(
+                    mangaIdentity = activeMangaIdentity.value,
+                    manifestPath = activeManifestPath,
+                )
+            }
             return LibraryVaultActiveTarget.CreateNew()
         }
-        targetMangaId
+        request.targetMangaId
             ?.let { id -> vaultManga.firstOrNull { it.id == id } }
             ?.let {
                 return LibraryVaultActiveTarget.Existing(
@@ -278,6 +311,28 @@ internal class LibraryVaultCaptureService(
             LibraryVaultCaptureTarget.CreateNew -> LibraryVaultActiveTarget.CreateNew()
             is LibraryVaultCaptureTarget.Existing -> LibraryVaultActiveTarget.Existing(target.manga, target.reason)
             is LibraryVaultCaptureTarget.Choose -> null
+        }
+    }
+
+    private suspend fun persistActiveCreateNewTarget(requestId: Long, target: LibraryVaultActiveTarget) {
+        when (target) {
+            is LibraryVaultActiveTarget.CreateNew -> {
+                repository.updateImportRequestActiveTarget(
+                    id = requestId,
+                    activeMangaIdentity = VaultIdentity(target.mangaIdentity),
+                    activeManifestPath = target.manifestPath,
+                    updatedAt = System.currentTimeMillis(),
+                )
+            }
+            is LibraryVaultActiveTarget.Created -> {
+                repository.updateImportRequestActiveTarget(
+                    id = requestId,
+                    activeMangaIdentity = VaultIdentity(target.mangaIdentity),
+                    activeManifestPath = target.manifestPath,
+                    updatedAt = System.currentTimeMillis(),
+                )
+            }
+            is LibraryVaultActiveTarget.Existing -> Unit
         }
     }
 
@@ -391,3 +446,32 @@ internal fun orderLibraryVaultCaptureChapters(
     }
     return merged.mapIndexed { index, chapter -> chapter.copy(sourceOrder = index.toLong()) }
 }
+
+internal fun VaultImportRequest.pendingChapters(): List<VaultImportRequestChapter> {
+    return chapters
+        .filter { it.state == VaultImportRequestChapterState.PENDING }
+        .sortedWith(compareBy<VaultImportRequestChapter> { it.sortOrder }.thenBy { it.selectionId })
+}
+
+internal fun VaultImportRequest.checkpointSummary(): LibraryVaultCaptureCheckpointSummary {
+    val completed = chapters.filter { it.state == VaultImportRequestChapterState.COMPLETED }
+    val failures = chapters
+        .filter { it.state == VaultImportRequestChapterState.FAILED }
+        .map {
+            AddToVaultChapterFailure(
+                title = it.selectionId,
+                category = it.failureCategory ?: "capture_failed",
+            )
+        }
+    return LibraryVaultCaptureCheckpointSummary(
+        added = completed.count { !it.isReplaced },
+        replaced = completed.count { it.isReplaced },
+        failures = failures,
+    )
+}
+
+internal data class LibraryVaultCaptureCheckpointSummary(
+    val added: Int,
+    val replaced: Int,
+    val failures: List<AddToVaultChapterFailure>,
+)

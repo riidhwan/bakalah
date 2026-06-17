@@ -44,11 +44,7 @@ class LibraryVaultCaptureJob(
             when (
                 val result = captureService.capture(
                     manga = manga,
-                    selectedChapterIds = request.selectedChapterIds,
-                    allowedReplacementChapterIds = request.replacementChapterIds,
-                    targetMangaId = request.targetMangaId,
-                    createNew = request.createNew,
-                    createNewTitle = request.createNewTitle,
+                    request = request,
                     progress = notifier::showProgress,
                 )
             ) {
