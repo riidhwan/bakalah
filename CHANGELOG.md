@@ -12,6 +12,16 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.30.0] - 2026-06-17
+### Added
+- Add Vault settings for configuring remote storage.
+- Add a Content Vault remote storage boundary.
+- Add Vault capture chapter checkpoints.
+- Add Vault operation metadata publishing.
+
+### Other
+- Decouple Vault capture helpers from local import.
+
 ## [v0.29.1] - 2026-06-15
 ### Fixed
 - Wait for hidden reader overlays before capturing Vault chapter thumbnails.
