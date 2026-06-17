@@ -170,13 +170,13 @@ class MangaScreen(
             }.takeIf { successState.canEditLocalMetadata },
             onVaultTargetClicked = {
                 screenModel.openLocalVaultTargetRow {
-                    navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage))
+                    navigator.push(SettingsScreen(SettingsScreen.Destination.Vault))
                 }
             },
             onEditNotesClicked = { navigator.push(MangaNotesScreen(manga = successState.manga)) },
             onAddToVaultClicked = {
                 screenModel.startAddToVault {
-                    navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage))
+                    navigator.push(SettingsScreen(SettingsScreen.Destination.Vault))
                 }
             },
             onMultiBookmarkClicked = screenModel::bookmarkChapters,

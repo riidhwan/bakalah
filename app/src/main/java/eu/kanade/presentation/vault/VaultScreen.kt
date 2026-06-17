@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined._18UpRating
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -56,6 +57,7 @@ import tachiyomi.presentation.core.components.material.PullRefresh
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
+import tachiyomi.presentation.core.screens.EmptyScreenAction
 import tachiyomi.presentation.core.screens.LoadingScreen
 import tachiyomi.presentation.core.theme.active
 import tachiyomi.presentation.core.util.plus
@@ -67,6 +69,7 @@ fun VaultScreen(
     snackbarHostState: SnackbarHostState,
     onSearchQueryChange: (String?) -> Unit,
     onClickRefresh: () -> Unit,
+    onClickSettings: () -> Unit,
     onClickManga: (Long) -> Unit,
     onLoadCover: (Long) -> Unit,
     onLabelFilterChange: (String?) -> Unit,
@@ -103,6 +106,15 @@ fun VaultScreen(
                         ),
                     )
                     VaultSortMenu(sort = state.sort, onSortChange = onSortChange)
+                    AppBarActions(
+                        listOf(
+                            AppBar.Action(
+                                title = stringResource(MR.strings.vault_action_settings),
+                                icon = Icons.Outlined.Settings,
+                                onClick = onClickSettings,
+                            ),
+                        ),
+                    )
                 },
                 scrollBehavior = scrollBehavior,
             )
@@ -121,6 +133,13 @@ fun VaultScreen(
                 state.vaults.isEmpty() -> EmptyScreen(
                     stringRes = MR.strings.vault_empty_no_configured_vault,
                     modifier = Modifier.padding(contentPadding),
+                    actions = listOf(
+                        EmptyScreenAction(
+                            stringRes = MR.strings.vault_action_setup,
+                            icon = Icons.Outlined.Settings,
+                            onClick = onClickSettings,
+                        ),
+                    ),
                 )
                 state.mangaItems.isEmpty() -> VaultList(
                     state = state,

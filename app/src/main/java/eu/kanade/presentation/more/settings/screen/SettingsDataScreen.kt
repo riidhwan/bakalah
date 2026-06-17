@@ -49,15 +49,11 @@ import eu.kanade.presentation.more.settings.screen.data.StorageInfo
 import eu.kanade.presentation.more.settings.widget.BasePreferenceWidget
 import eu.kanade.presentation.more.settings.widget.PrefsHorizontalPadding
 import eu.kanade.presentation.util.relativeTimeSpanString
-import eu.kanade.presentation.vault.formatBytes
 import eu.kanade.tachiyomi.data.backup.create.BackupCreateJob
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.export.LibraryExporter
 import eu.kanade.tachiyomi.data.export.LibraryExporter.ExportOptions
-import eu.kanade.tachiyomi.data.vault.setup.ContentVaultConnectionTestResult
-import eu.kanade.tachiyomi.data.vault.setup.ContentVaultSetupResult
-import eu.kanade.tachiyomi.data.vault.setup.ContentVaultSetupService
 import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.Dispatchers
@@ -73,8 +69,6 @@ import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetFavorites
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.storage.service.StoragePreferences
-import tachiyomi.domain.vault.model.WebDavVaultConfig
-import tachiyomi.domain.vault.service.ContentVaultPreferences
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.material.TextButton
 import tachiyomi.presentation.core.i18n.stringResource
@@ -106,17 +100,11 @@ object SettingsDataScreen : SearchableSettings {
     override fun getPreferences(): List<Preference> {
         val backupPreferences = Injekt.get<BackupPreferences>()
         val storagePreferences = Injekt.get<StoragePreferences>()
-        val contentVaultPreferences = Injekt.get<ContentVaultPreferences>()
-        val contentVaultSetupService = Injekt.get<ContentVaultSetupService>()
 
         return listOf(
             getStorageLocationPref(storagePreferences = storagePreferences),
             Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.pref_storage_location_info)),
 
-            getContentVaultGroup(
-                preferences = contentVaultPreferences,
-                setupService = contentVaultSetupService,
-            ),
             getBackupAndRestoreGroup(backupPreferences = backupPreferences),
             getDataGroup(),
             getExportGroup(),
@@ -190,173 +178,6 @@ object SettingsDataScreen : SearchableSettings {
                 }
             },
         )
-    }
-
-    @Composable
-    private fun getContentVaultGroup(
-        preferences: ContentVaultPreferences,
-        setupService: ContentVaultSetupService,
-    ): Preference.PreferenceGroup {
-        val context = LocalContext.current
-        val scope = rememberCoroutineScope()
-        var showInitializeDialog by remember { mutableStateOf(false) }
-        var processing by remember { mutableStateOf(false) }
-        val configuredIdentity by preferences.configuredVaultIdentity.collectAsState()
-
-        fun currentConfig() = WebDavVaultConfig(
-            serverUrl = preferences.webDavServerUrl.get(),
-            username = preferences.webDavUsername.get(),
-            password = preferences.webDavPassword.get(),
-            rootPath = preferences.webDavRootPath.get(),
-        )
-
-        fun showResult(result: ContentVaultSetupResult) {
-            when (result) {
-                ContentVaultSetupResult.ConnectionFailed -> context.toast("Could not connect to the WebDAV Vault Root")
-                ContentVaultSetupResult.EmptyRoot -> showInitializeDialog = true
-                ContentVaultSetupResult.IncompleteConfiguration -> context.toast(
-                    "Fill in all WebDAV vault fields first",
-                )
-                ContentVaultSetupResult.InvalidManifest -> context.toast(
-                    "Vault Root manifest is invalid or unsupported",
-                )
-                is ContentVaultSetupResult.IdentityChanged -> {
-                    context.toast("Vault identity changed; local Vault Index and cache were not reused")
-                }
-                ContentVaultSetupResult.NonVaultRoot -> context.toast(
-                    "Vault Root is not empty and is not a Content Vault",
-                )
-                is ContentVaultSetupResult.Connected -> context.toast("Connected to ${result.displayName}")
-                is ContentVaultSetupResult.Initialized -> context.toast("Initialized ${result.displayName}")
-            }
-        }
-
-        fun validate(initializeEmptyRoot: Boolean) {
-            scope.launch {
-                processing = true
-                val result = setupService.validate(currentConfig(), initializeEmptyRoot)
-                processing = false
-                showResult(result)
-            }
-        }
-
-        if (showInitializeDialog) {
-            AlertDialog(
-                onDismissRequest = { showInitializeDialog = false },
-                title = { Text("Initialize Content Vault") },
-                text = {
-                    Text("The Vault Root is empty or does not exist. Initialize it as a new Bakalah Content Vault?")
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showInitializeDialog = false
-                            validate(initializeEmptyRoot = true)
-                        },
-                    ) {
-                        Text("Initialize")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showInitializeDialog = false }) {
-                        Text(stringResource(MR.strings.action_cancel))
-                    }
-                },
-            )
-        }
-
-        return Preference.PreferenceGroup(
-            title = "Content Vault",
-            preferenceItems = listOf(
-                Preference.PreferenceItem.EditTextPreference(
-                    preference = preferences.webDavServerUrl,
-                    title = "WebDAV server URL",
-                    subtitle = "%s",
-                ),
-                Preference.PreferenceItem.EditTextPreference(
-                    preference = preferences.webDavRootPath,
-                    title = "Vault Root path",
-                    subtitle = "%s",
-                ),
-                Preference.PreferenceItem.EditTextPreference(
-                    preference = preferences.webDavUsername,
-                    title = stringResource(MR.strings.username),
-                    subtitle = if (preferences.webDavUsername.get().isBlank()) "" else "Set",
-                ),
-                Preference.PreferenceItem.EditTextPreference(
-                    preference = preferences.webDavPassword,
-                    title = stringResource(MR.strings.password),
-                    subtitle = if (preferences.webDavPassword.get().isBlank()) "" else "Set",
-                    isPassword = true,
-                ),
-                Preference.PreferenceItem.EditTextPreference(
-                    preference = preferences.newVaultDisplayName,
-                    title = "New vault display name",
-                    subtitle = "%s",
-                ),
-                Preference.PreferenceItem.TextPreference(
-                    title = "Configured vault",
-                    subtitle = configuredIdentity.ifBlank { "None" },
-                    enabled = false,
-                ),
-                Preference.PreferenceItem.ListPreference(
-                    preference = preferences.localCacheLimitBytes,
-                    entries = mapOf(
-                        CACHE_LIMIT_512_MB to "512 MB",
-                        CACHE_LIMIT_1_GB to "1 GB",
-                        CACHE_LIMIT_2_GB to "2 GB",
-                        CACHE_LIMIT_5_GB to "5 GB",
-                        CACHE_LIMIT_10_GB to "10 GB",
-                    ),
-                    title = "Local cache limit",
-                    subtitleProvider = { value, _ -> formatBytes(value) },
-                ),
-                Preference.PreferenceItem.TextPreference(
-                    title = "Test WebDAV connection",
-                    subtitle = "Checks whether the WebDAV endpoint accepts the credentials",
-                    enabled = !processing,
-                    onClick = {
-                        scope.launch {
-                            processing = true
-                            val result = setupService.testConnection(currentConfig())
-                            processing = false
-                            context.toast(result.toToastMessage())
-                        }
-                    },
-                ),
-                Preference.PreferenceItem.TextPreference(
-                    title = "Validate Vault Root",
-                    subtitle = "Connects to an existing vault or asks before initializing an empty root",
-                    enabled = !processing,
-                    onClick = { validate(initializeEmptyRoot = false) },
-                ),
-            ),
-        )
-    }
-
-    private fun ContentVaultConnectionTestResult.toToastMessage(): String {
-        return when (this) {
-            ContentVaultConnectionTestResult.Connected -> "WebDAV connection succeeded"
-            ContentVaultConnectionTestResult.IncompleteConfiguration -> {
-                "Fill in WebDAV URL, username, and password first"
-            }
-            is ContentVaultConnectionTestResult.Unauthorized -> {
-                if (statusCode == HTTP_UNAUTHORIZED) {
-                    "WebDAV returned 401 Unauthorized"
-                } else {
-                    "WebDAV returned 403 Forbidden"
-                }
-            }
-            is ContentVaultConnectionTestResult.Failed -> {
-                if (statusCode != null) {
-                    "WebDAV connection failed with HTTP $statusCode"
-                } else if (detail != null) {
-                    "WebDAV connection failed: $detail"
-                } else {
-                    "WebDAV connection failed before receiving a response"
-                }
-            }
-        }
     }
 
     @Composable
@@ -642,18 +463,6 @@ object SettingsDataScreen : SearchableSettings {
         )
     }
 }
-
-private const val BYTES_PER_KIB = 1024L
-private const val BYTES_PER_MIB = BYTES_PER_KIB * BYTES_PER_KIB
-private const val BYTES_PER_GIB = BYTES_PER_MIB * BYTES_PER_KIB
-
-private const val CACHE_LIMIT_512_MB = 512L * BYTES_PER_MIB
-private const val CACHE_LIMIT_1_GB = 1L * BYTES_PER_GIB
-private const val CACHE_LIMIT_2_GB = 2L * BYTES_PER_GIB
-private const val CACHE_LIMIT_5_GB = 5L * BYTES_PER_GIB
-private const val CACHE_LIMIT_10_GB = 10L * BYTES_PER_GIB
-
-private const val HTTP_UNAUTHORIZED = 401
 
 private const val BACKUP_INTERVAL_6_HOURS = 6
 private const val BACKUP_INTERVAL_12_HOURS = 12
