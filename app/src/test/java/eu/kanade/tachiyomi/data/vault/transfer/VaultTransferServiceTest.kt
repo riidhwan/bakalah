@@ -257,6 +257,13 @@ class VaultTransferServiceTest {
         override suspend fun getTransferJobsForVault(vaultId: Long): List<VaultTransferJob> {
             return transferJobs.values.filter { it.vaultId == vaultId }
         }
+        override fun getTransferJobsForMangaAsFlow(mangaId: Long): Flow<List<VaultTransferJob>> = emptyFlow()
+        override suspend fun getActiveTransferJobsForOperationKey(operationKey: String): List<VaultTransferJob> {
+            return transferJobs.values.filter {
+                it.operationKey == operationKey &&
+                    (it.state == VaultTransferState.QUEUED || it.state == VaultTransferState.RUNNING)
+            }
+        }
         override suspend fun getTransferJobsByState(states: List<VaultTransferState>): List<VaultTransferJob> {
             return transferJobs.values.filter { it.state in states }
         }

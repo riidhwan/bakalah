@@ -95,7 +95,7 @@ internal fun VaultMetadataEditDialog(
         },
         confirmButton = {
             TextButton(
-                enabled = !state.isPublishingMetadata && !titleError,
+                enabled = !titleError,
                 onClick = {
                     onSave(
                         VaultMangaScreenModel.VaultMetadataEdit(
@@ -146,13 +146,17 @@ private fun VaultMangaScreenModel.State.labelEdits(): List<VaultMangaScreenModel
     val assigned = mangaLabels.map { it.identity.value }.toSet()
     return vaultLabels.map {
         VaultMangaScreenModel.VaultLabelEdit(
-            identity = it.identity.value,
+            identity = it.identity.value.takeUnless(::isPendingLabelIdentity),
             name = it.name,
             isSensitive = it.isSensitive,
             assigned = it.identity.value in assigned,
         )
     }
 }
+
+private fun isPendingLabelIdentity(identity: String): Boolean = identity.startsWith(PENDING_LABEL_IDENTITY_PREFIX)
+
+private const val PENDING_LABEL_IDENTITY_PREFIX = "pending:"
 
 @Composable
 internal fun MetadataTextField(

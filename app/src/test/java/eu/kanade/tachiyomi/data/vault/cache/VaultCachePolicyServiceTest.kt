@@ -231,6 +231,9 @@ class VaultCachePolicyServiceTest {
         override suspend fun deleteMangaLocalState(mangaId: Long) = Unit
         override fun getTransferJobsForVaultAsFlow(vaultId: Long): Flow<List<VaultTransferJob>> = emptyFlow()
         override suspend fun getTransferJobsForVault(vaultId: Long): List<VaultTransferJob> = emptyList()
+        override fun getTransferJobsForMangaAsFlow(mangaId: Long): Flow<List<VaultTransferJob>> = emptyFlow()
+        override suspend fun getActiveTransferJobsForOperationKey(operationKey: String): List<VaultTransferJob> =
+            emptyList()
         override suspend fun getTransferJobsByState(
             states: List<VaultTransferState>,
         ): List<VaultTransferJob> = emptyList()

@@ -343,8 +343,11 @@ object VaultMapper {
     fun mapTransferJob(
         id: Long,
         vaultId: Long,
+        mangaId: Long?,
         chapterId: Long?,
         importRequestId: Long?,
+        operationKey: String?,
+        payloadJson: String?,
         type: VaultTransferType,
         state: VaultTransferState,
         remotePath: String?,
@@ -366,8 +369,11 @@ object VaultMapper {
     ): VaultTransferJob = VaultTransferJob(
         id = id,
         vaultId = vaultId,
+        mangaId = mangaId,
         chapterId = chapterId,
         importRequestId = importRequestId,
+        operationKey = operationKey,
+        payloadJson = payloadJson,
         type = type,
         state = state,
         remotePath = remotePath,

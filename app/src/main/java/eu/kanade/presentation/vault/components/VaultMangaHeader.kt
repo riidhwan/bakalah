@@ -99,6 +99,7 @@ internal fun VaultMangaHeader(
                 }
                 VaultLabelChips(
                     labels = state.mangaLabels,
+                    pendingLabelIdentities = state.pendingLabelIdentities,
                     onClickLabel = { selectedLabel = it },
                     onClickAdd = { showAddLabel = true },
                 )

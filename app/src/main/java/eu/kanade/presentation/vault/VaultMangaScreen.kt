@@ -52,9 +52,7 @@ fun VaultMangaScreen(
                             AppBar.OverflowAction(
                                 title = stringResource(MR.strings.vault_action_edit_metadata),
                                 onClick = {
-                                    if (!state.isPublishingMetadata) {
-                                        showMetadataEdit = true
-                                    }
+                                    showMetadataEdit = true
                                 },
                             ),
                             AppBar.OverflowAction(
