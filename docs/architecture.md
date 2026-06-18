@@ -152,8 +152,6 @@ For database-impacting changes, update SQLDelight migrations and run:
 ./gradlew verifySqlDelightMigration
 ```
 
-Run `./gradlew spotlessCheck` and `./gradlew detekt` before opening a pull request.
-
 ## Adding New Features
 
 For a new feature, start by identifying the layer that owns the change:
