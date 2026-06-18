@@ -60,6 +60,18 @@ class SourcesScreenModel(
                 }
             }
             .launchIn(screenModelScope)
+
+        extensionManager.installedExtensionsFlow
+            .onEach { extensions ->
+                val obsoleteSourceIds = extensions
+                    .filter { it.isObsolete }
+                    .flatMap { extension -> extension.sources.map { it.id } }
+                    .toSet()
+                mutableState.update { state ->
+                    state.copy(obsoleteSourceIds = obsoleteSourceIds)
+                }
+            }
+            .launchIn(screenModelScope)
     }
 
     private fun collectLatestSources(sources: List<Source>) {
@@ -135,6 +147,7 @@ class SourcesScreenModel(
         val selectedLanguage: String? = null,
         val includeSensitiveExtensions: Boolean = false,
         val sensitiveExtensions: Set<String> = emptySet(),
+        private val obsoleteSourceIds: Set<Long> = emptySet(),
         private val sources: List<Source> = listOf(),
     ) {
         val isEmpty = languages.isEmpty()
@@ -146,6 +159,10 @@ class SourcesScreenModel(
 
         fun isSensitiveExtensionPackage(pkgName: String): Boolean {
             return pkgName in sensitiveExtensions
+        }
+
+        fun isObsoleteSource(source: Source): Boolean {
+            return source.id in obsoleteSourceIds
         }
     }
 

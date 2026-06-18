@@ -14,6 +14,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ### Added
 - Add a Browse Sources sensitive toggle and source action for hiding marked extension-backed sources.
 
+### Changed
+- Open source rows to Latest when available and surface extension info and obsolete indicators from Browse Sources.
+
 ### Removed
 - Remove alternate reader modes and tap-zone customization so the reader always uses Long Strip.
 
