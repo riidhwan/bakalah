@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Fixed
+- Keep newly cached Vault chapters on device during cache-limit enforcement and show cached size in the Vault summary.
 
 ## [v0.30.0] - 2026-06-17
 ### Added

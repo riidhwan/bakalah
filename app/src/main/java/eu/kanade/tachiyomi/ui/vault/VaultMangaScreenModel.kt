@@ -245,7 +245,10 @@ class VaultMangaScreenModel(
                 )
                 service.execute(jobId).also { result ->
                     if (result == VaultTransferResult.Succeeded) {
-                        cachePolicy.enforceLimit(manga.vaultId)
+                        cachePolicy.enforceLimit(
+                            vaultId = manga.vaultId,
+                            protectedChapterIds = setOf(item.chapter.id),
+                        )
                     }
                 }
             }.getOrElse {
@@ -284,7 +287,10 @@ class VaultMangaScreenModel(
                     service.retry(job.id)
                 }.also { result ->
                     if (result == VaultTransferResult.Succeeded) {
-                        cachePolicy.enforceLimit(manga.vaultId)
+                        cachePolicy.enforceLimit(
+                            vaultId = manga.vaultId,
+                            protectedChapterIds = setOf(item.chapter.id),
+                        )
                     }
                 }
             }.getOrElse {
@@ -314,7 +320,10 @@ class VaultMangaScreenModel(
                 }
             activeCacheJobs.forEach {
                 if (service.execute(it.id) == VaultTransferResult.Succeeded) {
-                    cachePolicy.enforceLimit(manga.vaultId)
+                    cachePolicy.enforceLimit(
+                        vaultId = manga.vaultId,
+                        protectedChapterIds = setOfNotNull(it.chapterId),
+                    )
                 }
             }
             val activeCacheJobChapterIds = activeCacheJobs.mapNotNull { it.chapterId }.toSet()
