@@ -10,14 +10,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import eu.kanade.presentation.browse.ExtensionTrustDialog
 import eu.kanade.presentation.browse.SourceOptionsDialog
 import eu.kanade.presentation.browse.SourcesScreen
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.TabContent
+import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.ui.browse.extension.details.ExtensionDetailsScreen
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreen
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
@@ -32,9 +37,11 @@ fun Screen.sourcesTab(): TabContent {
     val navigator = LocalNavigator.currentOrThrow
     val screenModel = rememberScreenModel { SourcesScreenModel() }
     val state by screenModel.state.collectAsState()
+    var untrustedExtensionToTrust by remember { mutableStateOf<Extension.Untrusted?>(null) }
 
     return TabContent(
         titleRes = MR.strings.label_sources,
+        badgeNumber = state.totalUpdateCount.takeIf { it > 0 },
         actions = listOf(
             AppBar.Action(
                 title = stringResource(
@@ -72,7 +79,10 @@ fun Screen.sourcesTab(): TabContent {
                 onClickItem = { source, listing ->
                     navigator.push(BrowseSourceScreen(source.id, listing.query))
                 },
-                onClickPin = screenModel::togglePin,
+                onClickUpdateExtension = screenModel::updateExtension,
+                onClickTrust = { source ->
+                    untrustedExtensionToTrust = screenModel.getUntrustedExtension(source)
+                },
                 onLongClickItem = screenModel::showSourceDialog,
                 onLanguageFilterChange = screenModel::setLanguageFilter,
             )
@@ -102,6 +112,22 @@ fun Screen.sourcesTab(): TabContent {
                         screenModel.closeDialog()
                     },
                     onDismiss = screenModel::closeDialog,
+                )
+            }
+
+            untrustedExtensionToTrust?.let { extension ->
+                ExtensionTrustDialog(
+                    onClickConfirm = {
+                        screenModel.trustExtension(extension)
+                        untrustedExtensionToTrust = null
+                    },
+                    onClickDismiss = {
+                        screenModel.uninstallExtension(extension)
+                        untrustedExtensionToTrust = null
+                    },
+                    onDismissRequest = {
+                        untrustedExtensionToTrust = null
+                    },
                 )
             }
 

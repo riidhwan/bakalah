@@ -8,21 +8,24 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -37,8 +40,9 @@ import eu.kanade.tachiyomi.util.system.LocaleHelper
 import tachiyomi.domain.source.model.Pin
 import tachiyomi.domain.source.model.Source
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.components.Badge
+import tachiyomi.presentation.core.components.BadgeGroup
 import tachiyomi.presentation.core.components.ScrollbarLazyColumn
-import tachiyomi.presentation.core.components.material.SECONDARY_ALPHA
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.components.material.topSmallPaddingValues
 import tachiyomi.presentation.core.i18n.stringResource
@@ -53,7 +57,8 @@ fun SourcesScreen(
     state: SourcesScreenModel.State,
     contentPadding: PaddingValues,
     onClickItem: (Source, Listing) -> Unit,
-    onClickPin: (Source) -> Unit,
+    onClickUpdateExtension: (Source) -> Unit,
+    onClickTrust: (Source) -> Unit,
     onLongClickItem: (Source) -> Unit,
     onLanguageFilterChange: (String) -> Unit,
 ) {
@@ -74,6 +79,7 @@ fun SourcesScreen(
                     SourceLanguageFilterChips(
                         languages = state.languages,
                         selectedLanguage = state.selectedLanguage,
+                        updateCountForLanguage = state::updateCountForLanguage,
                         onLanguageFilterChange = onLanguageFilterChange,
                         modifier = Modifier.animateItem(),
                     )
@@ -87,9 +93,14 @@ fun SourcesScreen(
                         modifier = Modifier.animateItem(),
                         source = source,
                         isObsolete = state.isObsoleteSource(source),
+                        isSensitive = state.isSensitiveSource(source),
+                        isUntrusted = state.isUntrustedSource(source),
+                        isUpdateAvailable = state.isUpdateAvailable(source),
+                        isUpdating = state.isUpdating(source),
                         onClickItem = onClickItem,
+                        onClickUpdateExtension = onClickUpdateExtension,
+                        onClickTrust = onClickTrust,
                         onLongClickItem = onLongClickItem,
-                        onClickPin = onClickPin,
                     )
                 }
             }
@@ -101,6 +112,7 @@ fun SourcesScreen(
 private fun SourceLanguageFilterChips(
     languages: List<String>,
     selectedLanguage: String?,
+    updateCountForLanguage: (String) -> Int,
     onLanguageFilterChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -117,6 +129,7 @@ private fun SourceLanguageFilterChips(
             languages.forEach { language ->
                 SourceLanguageFilterChip(
                     label = LocaleHelper.getSourceDisplayName(language, context),
+                    updateCount = updateCountForLanguage(language),
                     selected = language == selectedLanguage,
                     onClick = {
                         if (language != selectedLanguage) {
@@ -132,6 +145,7 @@ private fun SourceLanguageFilterChips(
 @Composable
 private fun SourceLanguageFilterChip(
     label: String,
+    updateCount: Int,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -140,12 +154,22 @@ private fun SourceLanguageFilterChip(
             selected = selected,
             onClick = onClick,
             label = {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (updateCount > 0) {
+                        BadgeGroup {
+                            Badge(text = updateCount.toString())
+                        }
+                    }
+                }
             },
             contentPadding = PaddingValues(horizontal = 10.dp),
         )
@@ -156,25 +180,36 @@ private fun SourceLanguageFilterChip(
 private fun SourceItem(
     source: Source,
     isObsolete: Boolean,
+    isSensitive: Boolean,
+    isUntrusted: Boolean,
+    isUpdateAvailable: Boolean,
+    isUpdating: Boolean,
     onClickItem: (Source, Listing) -> Unit,
+    onClickUpdateExtension: (Source) -> Unit,
+    onClickTrust: (Source) -> Unit,
     onLongClickItem: (Source) -> Unit,
-    onClickPin: (Source) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BaseSourceItem(
         modifier = modifier,
         source = source,
         onClickItem = {
-            onClickItem(
-                source,
-                if (source.supportsLatest) Listing.Latest else Listing.Popular,
-            )
+            if (!isUntrusted) {
+                onClickItem(
+                    source,
+                    if (source.supportsLatest) Listing.Latest else Listing.Popular,
+                )
+            }
         },
         onLongClickItem = { onLongClickItem(source) },
         action = {
-            SourcePinButton(
+            SourceItemActions(
                 isPinned = Pin.Pinned in source.pin,
-                onClick = { onClickPin(source) },
+                isUntrusted = isUntrusted,
+                isUpdateAvailable = isUpdateAvailable,
+                isUpdating = isUpdating,
+                onClickUpdateExtension = { onClickUpdateExtension(source) },
+                onClickTrust = { onClickTrust(source) },
             )
         },
         content = { _, sourceLangString ->
@@ -182,6 +217,7 @@ private fun SourceItem(
                 source = source,
                 sourceLangString = sourceLangString,
                 isObsolete = isObsolete,
+                isSensitive = isSensitive,
             )
         },
     )
@@ -192,6 +228,7 @@ private fun RowScope.SourceItemContent(
     source: Source,
     sourceLangString: String?,
     isObsolete: Boolean,
+    isSensitive: Boolean,
 ) {
     Column(
         modifier = Modifier
@@ -204,13 +241,15 @@ private fun RowScope.SourceItemContent(
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodyMedium,
         )
-        if (sourceLangString != null || isObsolete) {
+        if (sourceLangString != null || isObsolete || isSensitive) {
             FlowRow(
                 modifier = Modifier.secondaryItemAlpha(),
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
             ) {
                 ProvideTextStyle(value = MaterialTheme.typography.bodySmall) {
+                    var hasShownElement = false
                     if (sourceLangString != null) {
+                        hasShownElement = true
                         Text(
                             text = sourceLangString,
                             maxLines = 1,
@@ -218,9 +257,19 @@ private fun RowScope.SourceItemContent(
                         )
                     }
                     if (isObsolete) {
-                        if (sourceLangString != null) DotSeparatorNoSpaceText()
+                        if (hasShownElement) DotSeparatorNoSpaceText()
+                        hasShownElement = true
                         Text(
                             text = stringResource(MR.strings.ext_obsolete).uppercase(),
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (isSensitive) {
+                        if (hasShownElement) DotSeparatorNoSpaceText()
+                        Text(
+                            text = stringResource(MR.strings.vault_label_sensitive).uppercase(),
                             color = MaterialTheme.colorScheme.error,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -233,26 +282,49 @@ private fun RowScope.SourceItemContent(
 }
 
 @Composable
-private fun SourcePinButton(
+private fun SourceItemActions(
     isPinned: Boolean,
-    onClick: () -> Unit,
+    isUntrusted: Boolean,
+    isUpdateAvailable: Boolean,
+    isUpdating: Boolean,
+    onClickUpdateExtension: () -> Unit,
+    onClickTrust: () -> Unit,
 ) {
-    val icon = if (isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin
-    val tint = if (isPinned) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onBackground.copy(
-            alpha = SECONDARY_ALPHA,
-        )
+    if (isUntrusted) {
+        TextButton(onClick = onClickTrust) {
+            Text(text = stringResource(MR.strings.ext_trust))
+        }
     }
-    val description = if (isPinned) MR.strings.action_unpin else MR.strings.action_pin
-    IconButton(onClick = onClick) {
-        Icon(
-            imageVector = icon,
-            tint = tint,
-            contentDescription = stringResource(description),
-        )
+    if (isUpdateAvailable) {
+        TextButton(
+            onClick = onClickUpdateExtension,
+            enabled = !isUpdating,
+        ) {
+            if (isUpdating) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 1.5.dp,
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+            }
+            Text(text = stringResource(MR.strings.ext_update))
+        }
     }
+    if (isPinned) {
+        SourcePinIndicator()
+    }
+}
+
+@Composable
+private fun SourcePinIndicator() {
+    Icon(
+        imageVector = Icons.Filled.PushPin,
+        tint = MaterialTheme.colorScheme.primary,
+        contentDescription = stringResource(MR.strings.pinned_sources),
+        modifier = Modifier
+            .padding(horizontal = MaterialTheme.padding.small)
+            .size(24.dp),
+    )
 }
 
 @Composable
