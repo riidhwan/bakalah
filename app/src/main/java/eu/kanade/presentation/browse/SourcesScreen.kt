@@ -4,8 +4,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
@@ -18,10 +20,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -29,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.browse.components.BaseSourceItem
+import eu.kanade.presentation.manga.components.DotSeparatorNoSpaceText
 import eu.kanade.tachiyomi.ui.browse.source.SourcesScreenModel
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreenModel.Listing
 import eu.kanade.tachiyomi.util.system.LocaleHelper
@@ -43,6 +45,7 @@ import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.LoadingScreen
 import tachiyomi.presentation.core.util.plus
+import tachiyomi.presentation.core.util.secondaryItemAlpha
 import tachiyomi.source.local.isLocal
 
 @Composable
@@ -83,6 +86,7 @@ fun SourcesScreen(
                     SourceItem(
                         modifier = Modifier.animateItem(),
                         source = source,
+                        isObsolete = state.isObsoleteSource(source),
                         onClickItem = onClickItem,
                         onLongClickItem = onLongClickItem,
                         onClickPin = onClickPin,
@@ -151,6 +155,7 @@ private fun SourceLanguageFilterChip(
 @Composable
 private fun SourceItem(
     source: Source,
+    isObsolete: Boolean,
     onClickItem: (Source, Listing) -> Unit,
     onLongClickItem: (Source) -> Unit,
     onClickPin: (Source) -> Unit,
@@ -159,25 +164,72 @@ private fun SourceItem(
     BaseSourceItem(
         modifier = modifier,
         source = source,
-        onClickItem = { onClickItem(source, Listing.Popular) },
+        onClickItem = {
+            onClickItem(
+                source,
+                if (source.supportsLatest) Listing.Latest else Listing.Popular,
+            )
+        },
         onLongClickItem = { onLongClickItem(source) },
         action = {
-            if (source.supportsLatest) {
-                TextButton(onClick = { onClickItem(source, Listing.Latest) }) {
-                    Text(
-                        text = stringResource(MR.strings.latest),
-                        style = LocalTextStyle.current.copy(
-                            color = MaterialTheme.colorScheme.primary,
-                        ),
-                    )
-                }
-            }
             SourcePinButton(
                 isPinned = Pin.Pinned in source.pin,
                 onClick = { onClickPin(source) },
             )
         },
+        content = { _, sourceLangString ->
+            SourceItemContent(
+                source = source,
+                sourceLangString = sourceLangString,
+                isObsolete = isObsolete,
+            )
+        },
     )
+}
+
+@Composable
+private fun RowScope.SourceItemContent(
+    source: Source,
+    sourceLangString: String?,
+    isObsolete: Boolean,
+) {
+    Column(
+        modifier = Modifier
+            .padding(horizontal = MaterialTheme.padding.medium)
+            .weight(1f),
+    ) {
+        Text(
+            text = source.name,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        if (sourceLangString != null || isObsolete) {
+            FlowRow(
+                modifier = Modifier.secondaryItemAlpha(),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
+            ) {
+                ProvideTextStyle(value = MaterialTheme.typography.bodySmall) {
+                    if (sourceLangString != null) {
+                        Text(
+                            text = sourceLangString,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (isObsolete) {
+                        if (sourceLangString != null) DotSeparatorNoSpaceText()
+                        Text(
+                            text = stringResource(MR.strings.ext_obsolete).uppercase(),
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -208,6 +260,7 @@ fun SourceOptionsDialog(
     source: Source,
     isSensitive: Boolean?,
     onClickPin: () -> Unit,
+    onClickExtensionInfo: (() -> Unit)?,
     onClickDisable: () -> Unit,
     onClickSensitive: (Boolean) -> Unit,
     onDismiss: () -> Unit,
@@ -226,6 +279,15 @@ fun SourceOptionsDialog(
                         .fillMaxWidth()
                         .padding(vertical = 16.dp),
                 )
+                if (onClickExtensionInfo != null) {
+                    Text(
+                        text = stringResource(MR.strings.label_extension_info),
+                        modifier = Modifier
+                            .clickable(onClick = onClickExtensionInfo)
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                    )
+                }
                 if (!source.isLocal()) {
                     if (isSensitive != null) {
                         Text(

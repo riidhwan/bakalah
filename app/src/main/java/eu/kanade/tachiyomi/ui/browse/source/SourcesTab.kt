@@ -18,6 +18,7 @@ import eu.kanade.presentation.browse.SourceOptionsDialog
 import eu.kanade.presentation.browse.SourcesScreen
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.TabContent
+import eu.kanade.tachiyomi.ui.browse.extension.details.ExtensionDetailsScreen
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreen
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import kotlinx.coroutines.flow.collectLatest
@@ -85,6 +86,12 @@ fun Screen.sourcesTab(): TabContent {
                     onClickPin = {
                         screenModel.togglePin(source)
                         screenModel.closeDialog()
+                    },
+                    onClickExtensionInfo = extensionPackage?.let { pkgName ->
+                        {
+                            navigator.push(ExtensionDetailsScreen(pkgName))
+                            screenModel.closeDialog()
+                        }
                     },
                     onClickDisable = {
                         screenModel.toggleSource(source)
