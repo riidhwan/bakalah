@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Launch
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -26,13 +25,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -40,7 +35,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import eu.kanade.domain.extension.interactor.ExtensionSourceItem
@@ -161,7 +155,6 @@ private fun ExtensionDetails(
     onClickIncognito: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
-    var showNsfwWarning by remember { mutableStateOf(false) }
 
     ScrollbarLazyColumn(
         contentPadding = contentPadding,
@@ -184,9 +177,6 @@ private fun ExtensionDetails(
                     }
                     Unit
                 }.takeIf { extension.isShared },
-                onClickAgeRating = {
-                    showNsfwWarning = true
-                },
                 onExtIncognitoChange = onClickIncognito,
             )
         }
@@ -203,20 +193,12 @@ private fun ExtensionDetails(
             )
         }
     }
-    if (showNsfwWarning) {
-        NsfwWarningDialog(
-            onClickConfirm = {
-                showNsfwWarning = false
-            },
-        )
-    }
 }
 
 @Composable
 private fun DetailsHeader(
     extension: Extension,
     extIncognitoMode: Boolean,
-    onClickAgeRating: () -> Unit,
     onClickUninstall: () -> Unit,
     onClickAppInfo: (() -> Unit)?,
     onExtIncognitoChange: (Boolean) -> Unit,
@@ -238,7 +220,6 @@ private fun DetailsHeader(
                             """
                             Extension name: ${extension.name} (lang: ${extension.lang}; package: ${extension.pkgName})
                             Extension version: ${extension.versionName} (lib: ${extension.libVersion}; version code: ${extension.versionCode})
-                            NSFW: ${extension.isNsfw}
                             """.trimIndent(),
                         )
 
@@ -301,25 +282,10 @@ private fun DetailsHeader(
             InfoDivider()
 
             InfoText(
-                modifier = Modifier.weight(if (extension.isNsfw) 1.5f else 1f),
+                modifier = Modifier.weight(1f),
                 primaryText = LocaleHelper.getSourceDisplayName(extension.lang, context),
                 secondaryText = stringResource(MR.strings.ext_info_language),
             )
-
-            if (extension.isNsfw) {
-                InfoDivider()
-
-                InfoText(
-                    modifier = Modifier.weight(1f),
-                    primaryText = stringResource(MR.strings.ext_nsfw_short),
-                    primaryTextStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Medium,
-                    ),
-                    secondaryText = stringResource(MR.strings.ext_info_age_rating),
-                    onClick = onClickAgeRating,
-                )
-            }
         }
 
         Row(
@@ -449,22 +415,5 @@ private fun SourceSwitchPreference(
             }
         },
         onPreferenceClick = { onClickSource(source.source.id) },
-    )
-}
-
-@Composable
-private fun NsfwWarningDialog(
-    onClickConfirm: () -> Unit,
-) {
-    AlertDialog(
-        text = {
-            Text(text = stringResource(MR.strings.ext_nsfw_warning))
-        },
-        confirmButton = {
-            TextButton(onClick = onClickConfirm) {
-                Text(text = stringResource(MR.strings.action_ok))
-            }
-        },
-        onDismissRequest = onClickConfirm,
     )
 }

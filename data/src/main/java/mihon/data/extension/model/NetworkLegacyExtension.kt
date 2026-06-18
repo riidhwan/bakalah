@@ -35,7 +35,6 @@ data class NetworkLegacyExtension(
             versionCode = code,
             versionName = version,
             lang = lang,
-            isNsfw = nsfw == 1,
             sources = if (sources.isNullOrEmpty()) {
                 listOf(
                     Extension.Available.Source(
