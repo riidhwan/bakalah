@@ -108,6 +108,74 @@ class GetEnabledSourcesTest {
         result.map { it.id } shouldContainExactly listOf(normalSource.id, sensitiveSource.id)
     }
 
+    @Test
+    fun `subscribe includes sources from untrusted extensions as stubs`() = runTest {
+        val repository = FakeSourceRepository(
+            sources = emptyList(),
+            onlineSources = emptyList(),
+        )
+        val preferences = sourcePreferences()
+        val extensionManager = extensionManager(
+            untrustedExtensions = listOf(untrustedExtension(pkgName = "pkg.untrusted")),
+            availableExtensions = listOf(
+                availableExtension(
+                    pkgName = "pkg.untrusted",
+                    sourceId = 1,
+                    sourceName = "Untrusted",
+                ),
+            ),
+        )
+
+        val result = GetEnabledSources(repository, preferences, extensionManager).subscribe().first()
+
+        result.map { it.id } shouldContainExactly listOf(1)
+        result.single().isStub shouldBe true
+    }
+
+    @Test
+    fun `subscribe includes untrusted extension row when source metadata is unavailable`() = runTest {
+        val repository = FakeSourceRepository(
+            sources = emptyList(),
+            onlineSources = emptyList(),
+        )
+        val preferences = sourcePreferences()
+        val extensionManager = extensionManager(
+            untrustedExtensions = listOf(
+                untrustedExtension(
+                    name = "Untrusted",
+                    pkgName = "eu.kanade.tachiyomi.extension.en.untrusted",
+                ),
+            ),
+        )
+
+        val result = GetEnabledSources(repository, preferences, extensionManager).subscribe().first()
+
+        result.map { it.name } shouldContainExactly listOf("Untrusted")
+        result.single().isStub shouldBe true
+    }
+
+    @Test
+    fun `subscribe includes untrusted extension row with disabled or unknown language`() = runTest {
+        val repository = FakeSourceRepository(
+            sources = emptyList(),
+            onlineSources = emptyList(),
+        )
+        val preferences = sourcePreferences(enabledLanguages = setOf("en"))
+        val extensionManager = extensionManager(
+            untrustedExtensions = listOf(
+                untrustedExtension(
+                    name = "Untrusted",
+                    pkgName = "org.example.untrusted",
+                ),
+            ),
+        )
+
+        val result = GetEnabledSources(repository, preferences, extensionManager).subscribe().first()
+
+        result.map { it.name } shouldContainExactly listOf("Untrusted")
+        result.single().isStub shouldBe true
+    }
+
     private fun source(
         id: Long,
         lang: String,
@@ -135,8 +203,12 @@ class GetEnabledSourcesTest {
 
     private fun extensionManager(
         installedExtensions: List<Extension.Installed> = emptyList(),
+        untrustedExtensions: List<Extension.Untrusted> = emptyList(),
+        availableExtensions: List<Extension.Available> = emptyList(),
     ) = mockk<ExtensionManager> {
         every { installedExtensionsFlow } returns MutableStateFlow(installedExtensions)
+        every { untrustedExtensionsFlow } returns MutableStateFlow(untrustedExtensions)
+        every { availableExtensionsFlow } returns MutableStateFlow(availableExtensions)
     }
 
     private fun installedExtension(
@@ -157,6 +229,42 @@ class GetEnabledSourcesTest {
         ),
         icon = null,
         isShared = true,
+    )
+
+    private fun untrustedExtension(
+        pkgName: String,
+        name: String = pkgName,
+    ) = Extension.Untrusted(
+        name = name,
+        pkgName = pkgName,
+        versionName = "1.0",
+        versionCode = 1,
+        libVersion = 1.0,
+        signatureHash = "signature",
+    )
+
+    private fun availableExtension(
+        pkgName: String,
+        sourceId: Long,
+        sourceName: String,
+    ) = Extension.Available(
+        name = pkgName,
+        pkgName = pkgName,
+        versionName = "1.0",
+        versionCode = 1,
+        libVersion = 1.0,
+        lang = "en",
+        sources = listOf(
+            Extension.Available.Source(
+                id = sourceId,
+                lang = "en",
+                name = sourceName,
+                baseUrl = "https://example.com",
+            ),
+        ),
+        apkUrl = "https://example.com/ext.apk",
+        iconUrl = "https://example.com/icon.png",
+        store = mockk(),
     )
 
     private fun <T> preference(value: T): Preference<T> {

@@ -15,6 +15,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - Add a Browse Sources sensitive toggle and source action for hiding marked extension-backed sources.
 
 ### Changed
+- Move extension update, sensitive, and untrusted trust actions into Browse Sources and hide installed extension groups from Browse Extensions.
 - Open source rows to Latest when available and surface extension info and obsolete indicators from Browse Sources.
 
 ### Removed
