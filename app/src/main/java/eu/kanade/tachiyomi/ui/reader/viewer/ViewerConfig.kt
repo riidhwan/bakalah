@@ -33,9 +33,6 @@ abstract class ViewerConfig(readerPreferences: ReaderPreferences, private val sc
     var dualPageRotateToFitInvert = false
         protected set
 
-    abstract var navigator: ViewerNavigation
-        protected set
-
     init {
         readerPreferences.readWithLongTap
             .register({ longTapEnabled = it })
@@ -55,8 +52,6 @@ abstract class ViewerConfig(readerPreferences: ReaderPreferences, private val sc
         readerPreferences.alwaysShowChapterTransition
             .register({ alwaysShowChapterTransition = it })
     }
-
-    protected abstract fun defaultNavigation(): ViewerNavigation
 
     fun <T> Preference<T>.register(
         valueAssignment: (T) -> Unit,
