@@ -18,6 +18,8 @@
     <string name="track">Tracking</string>
     <string name="delete_downloaded">Delete downloaded</string>
     <string name="history">History</string>
+    <string name="library_history">Library history</string>
+    <string name="local_history">Local history</string>
     <string name="scanlator">Scanlator</string>
 
     <!-- Screen titles -->

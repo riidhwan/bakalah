@@ -2,12 +2,13 @@ package tachiyomi.domain.history.repository
 
 import kotlinx.coroutines.flow.Flow
 import tachiyomi.domain.history.model.History
+import tachiyomi.domain.history.model.HistorySourceFilter
 import tachiyomi.domain.history.model.HistoryUpdate
 import tachiyomi.domain.history.model.HistoryWithRelations
 
 interface HistoryRepository {
 
-    fun getHistory(query: String): Flow<List<HistoryWithRelations>>
+    fun getHistory(query: String, sourceFilter: HistorySourceFilter): Flow<List<HistoryWithRelations>>
 
     suspend fun getLastHistory(): HistoryWithRelations?
 
@@ -19,7 +20,7 @@ interface HistoryRepository {
 
     suspend fun resetHistoryByMangaId(mangaId: Long)
 
-    suspend fun deleteAllHistory(): Boolean
+    suspend fun deleteAllHistory(sourceFilter: HistorySourceFilter): Boolean
 
     suspend fun upsertHistory(historyUpdate: HistoryUpdate)
 }

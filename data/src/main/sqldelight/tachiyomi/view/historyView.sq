@@ -26,7 +26,7 @@ JOIN (
 ) AS max_last_read
 ON chapters.manga_id = max_last_read.manga_id;
 
-history:
+historyByLibrary:
 SELECT
 id,
 mangaId,
@@ -42,7 +42,29 @@ readDuration
 FROM historyView
 WHERE historyView.readAt > 0
 AND maxReadAtChapterId = historyView.chapterId
-AND lower(historyView.title) LIKE ('%' || :query || '%')
+AND historyView.favorite = 1
+AND historyView.source != :localSourceId
+AND lower(historyView.title) LIKE ('%' || lower(:query) || '%')
+ORDER BY readAt DESC;
+
+historyByLocal:
+SELECT
+id,
+mangaId,
+chapterId,
+title,
+thumbnailUrl,
+source,
+favorite,
+cover_last_modified,
+chapterNumber,
+readAt,
+readDuration
+FROM historyView
+WHERE historyView.readAt > 0
+AND maxReadAtChapterId = historyView.chapterId
+AND historyView.source = :localSourceId
+AND lower(historyView.title) LIKE ('%' || lower(:query) || '%')
 ORDER BY readAt DESC;
 
 getLatestHistory:

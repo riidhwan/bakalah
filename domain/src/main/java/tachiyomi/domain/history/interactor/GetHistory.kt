@@ -2,6 +2,7 @@ package tachiyomi.domain.history.interactor
 
 import kotlinx.coroutines.flow.Flow
 import tachiyomi.domain.history.model.History
+import tachiyomi.domain.history.model.HistorySourceFilter
 import tachiyomi.domain.history.model.HistoryWithRelations
 import tachiyomi.domain.history.repository.HistoryRepository
 
@@ -13,7 +14,7 @@ class GetHistory(
         return repository.getHistoryByMangaId(mangaId)
     }
 
-    fun subscribe(query: String): Flow<List<HistoryWithRelations>> {
-        return repository.getHistory(query)
+    fun subscribe(query: String, sourceFilter: HistorySourceFilter): Flow<List<HistoryWithRelations>> {
+        return repository.getHistory(query, sourceFilter)
     }
 }

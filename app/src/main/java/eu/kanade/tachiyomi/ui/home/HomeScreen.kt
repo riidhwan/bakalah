@@ -38,7 +38,6 @@ import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.isTabletUi
 import eu.kanade.tachiyomi.ui.browse.BrowseTab
 import eu.kanade.tachiyomi.ui.download.DownloadQueueScreen
-import eu.kanade.tachiyomi.ui.history.HistoryTab
 import eu.kanade.tachiyomi.ui.library.LibraryTab
 import eu.kanade.tachiyomi.ui.local.LocalTab
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
@@ -74,7 +73,6 @@ object HomeScreen : Screen() {
         LibraryTab,
         LocalTab,
         VaultTab,
-        HistoryTab,
         BrowseTab,
         MoreTab,
     )
@@ -156,7 +154,6 @@ object HomeScreen : Screen() {
                             is Tab.Library -> LibraryTab
                             Tab.Local -> LocalTab
                             Tab.Vault -> VaultTab
-                            Tab.History -> HistoryTab
                             is Tab.Browse -> {
                                 if (it.toExtensions) {
                                     BrowseTab.showExtension()
@@ -284,7 +281,6 @@ object HomeScreen : Screen() {
         data class Library(val mangaIdToOpen: Long? = null) : Tab
         data object Local : Tab
         data object Vault : Tab
-        data object History : Tab
         data class Browse(val toExtensions: Boolean = false) : Tab
         data class More(val toDownloads: Boolean) : Tab
     }

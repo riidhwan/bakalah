@@ -24,7 +24,6 @@ import logcat.LogPriority
 import tachiyomi.core.common.preference.CheckboxState
 import tachiyomi.core.common.preference.mapAsCheckboxState
 import tachiyomi.core.common.util.lang.launchIO
-import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.SetMangaCategories
@@ -33,6 +32,7 @@ import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.history.interactor.GetHistory
 import tachiyomi.domain.history.interactor.GetNextChapters
 import tachiyomi.domain.history.interactor.RemoveHistory
+import tachiyomi.domain.history.model.HistorySourceFilter
 import tachiyomi.domain.history.model.HistoryWithRelations
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
@@ -44,6 +44,7 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
 class HistoryScreenModel(
+    private val sourceFilter: HistorySourceFilter,
     private val addTracks: AddTracks = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
     private val getDuplicateLibraryManga: GetDuplicateLibraryManga = Injekt.get(),
@@ -66,7 +67,7 @@ class HistoryScreenModel(
             state.map { it.searchQuery }
                 .distinctUntilChanged()
                 .flatMapLatest { query ->
-                    getHistory.subscribe(query ?: "")
+                    getHistory.subscribe(query ?: "", sourceFilter)
                         .distinctUntilChanged()
                         .catch { error ->
                             logcat(LogPriority.ERROR, error)
@@ -90,10 +91,6 @@ class HistoryScreenModel(
                     else -> null
                 }
             }
-    }
-
-    suspend fun getNextChapter(): Chapter? {
-        return withIOContext { getNextChapters.await(onlyUnread = false).firstOrNull() }
     }
 
     fun getNextChapterForManga(mangaId: Long, chapterId: Long) {
@@ -121,7 +118,7 @@ class HistoryScreenModel(
 
     fun removeAllHistory() {
         screenModelScope.launchIO {
-            val result = removeHistory.awaitAll()
+            val result = removeHistory.awaitAll(sourceFilter)
             if (!result) return@launchIO
             _events.send(Event.HistoryCleared)
         }
