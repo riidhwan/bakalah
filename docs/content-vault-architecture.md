@@ -1,6 +1,6 @@
 # Content Vault Architecture
 
-This document describes the current technical architecture of Bakalah's Content Vault implementation. It complements the product requirements in `docs/content-vault-prd.md`, the release-readiness checklist in `docs/content-vault-v1-readiness.md`, and the architectural decision in `docs/adr/0004-model-content-vault-as-separate-feature.md`.
+This document describes the current technical architecture of Bakalah's Content Vault implementation. It complements the architectural decision in `docs/adr/0004-model-content-vault-as-separate-feature.md`.
 
 ## Architectural Intent
 
@@ -396,4 +396,4 @@ For architecture-affecting changes, verify the relevant layer:
 - SQLDelight schema changes: `scripts/gradlew-compact verifySqlDelightMigration`.
 - Formatting: `scripts/gradlew-compact :app:spotlessCheck :domain:spotlessCheck :data:spotlessCheck`.
 
-Manual WebDAV, import, cache, and reading smoke coverage is tracked in `docs/content-vault-v1-readiness.md`.
+Manual WebDAV, import, cache, and reading smoke coverage should be tracked with the implementation or release work that changes those flows.
