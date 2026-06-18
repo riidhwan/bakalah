@@ -94,7 +94,6 @@ data class NetworkExtensionStore(
                 versionCode = extension.versionCode,
                 versionName = extension.versionName,
                 lang = if (lang.size == 1) lang.first() else "all",
-                isNsfw = extension.sources.maxOfOrNull { it.contentRating } == ContentRating.PORNOGRAPHIC,
                 sources = extension.sources.map { source ->
                     eu.kanade.tachiyomi.extension.model.Extension.Available.Source(
                         id = source.id,

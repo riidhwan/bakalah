@@ -21751,8 +21751,6 @@ HSPLeu/kanade/tachiyomi/extension/api/ExtensionJsonObject;->getLang()Ljava/lang/
 PLeu/kanade/tachiyomi/extension/api/ExtensionJsonObject;->getLang()Ljava/lang/String;
 HSPLeu/kanade/tachiyomi/extension/api/ExtensionJsonObject;->getName()Ljava/lang/String;
 PLeu/kanade/tachiyomi/extension/api/ExtensionJsonObject;->getName()Ljava/lang/String;
-HSPLeu/kanade/tachiyomi/extension/api/ExtensionJsonObject;->getNsfw()I
-PLeu/kanade/tachiyomi/extension/api/ExtensionJsonObject;->getNsfw()I
 HSPLeu/kanade/tachiyomi/extension/api/ExtensionJsonObject;->getPkg()Ljava/lang/String;
 PLeu/kanade/tachiyomi/extension/api/ExtensionJsonObject;->getPkg()Ljava/lang/String;
 HSPLeu/kanade/tachiyomi/extension/api/ExtensionJsonObject;->getSources()Ljava/util/List;
@@ -21834,11 +21832,6 @@ HSPLeu/kanade/tachiyomi/extension/util/ExtensionLoader;->isPackageAnExtension(La
 PLeu/kanade/tachiyomi/extension/util/ExtensionLoader;->isPackageAnExtension(Landroid/content/pm/PackageInfo;)Z
 HSPLeu/kanade/tachiyomi/extension/util/ExtensionLoader;->loadExtensions(Landroid/content/Context;)Ljava/util/List;
 PLeu/kanade/tachiyomi/extension/util/ExtensionLoader;->loadExtensions(Landroid/content/Context;)Ljava/util/List;
-Leu/kanade/tachiyomi/extension/util/ExtensionLoader$loadNsfwSource$2;
-HSPLeu/kanade/tachiyomi/extension/util/ExtensionLoader$loadNsfwSource$2;-><clinit>()V
-PLeu/kanade/tachiyomi/extension/util/ExtensionLoader$loadNsfwSource$2;-><clinit>()V
-HSPLeu/kanade/tachiyomi/extension/util/ExtensionLoader$loadNsfwSource$2;-><init>()V
-PLeu/kanade/tachiyomi/extension/util/ExtensionLoader$loadNsfwSource$2;-><init>()V
 Leu/kanade/tachiyomi/extension/util/ExtensionLoader$special$$inlined$injectLazy$1;
 HSPLeu/kanade/tachiyomi/extension/util/ExtensionLoader$special$$inlined$injectLazy$1;-><clinit>()V
 PLeu/kanade/tachiyomi/extension/util/ExtensionLoader$special$$inlined$injectLazy$1;-><clinit>()V

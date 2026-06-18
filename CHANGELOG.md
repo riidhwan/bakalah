@@ -18,6 +18,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - Open source rows to Latest when available and surface extension info and obsolete indicators from Browse Sources.
 
 ### Removed
+- Remove NSFW extension filtering, settings, badges, and warning surfaces.
 - Remove alternate reader modes and tap-zone customization so the reader always uses Long Strip.
 
 ### Fixed
