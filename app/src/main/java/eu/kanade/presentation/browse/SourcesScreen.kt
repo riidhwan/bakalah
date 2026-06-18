@@ -206,8 +206,10 @@ private fun SourcePinButton(
 @Composable
 fun SourceOptionsDialog(
     source: Source,
+    isSensitive: Boolean?,
     onClickPin: () -> Unit,
     onClickDisable: () -> Unit,
+    onClickSensitive: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -225,6 +227,21 @@ fun SourceOptionsDialog(
                         .padding(vertical = 16.dp),
                 )
                 if (!source.isLocal()) {
+                    if (isSensitive != null) {
+                        Text(
+                            text = stringResource(
+                                if (isSensitive) {
+                                    MR.strings.ext_mark_not_sensitive
+                                } else {
+                                    MR.strings.ext_set_as_sensitive
+                                },
+                            ),
+                            modifier = Modifier
+                                .clickable { onClickSensitive(!isSensitive) }
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                        )
+                    }
                     Text(
                         text = stringResource(MR.strings.action_disable),
                         modifier = Modifier

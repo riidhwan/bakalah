@@ -507,6 +507,8 @@
     <string name="ext_installed">Installed</string>
     <string name="ext_trust">Trust</string>
     <string name="ext_untrusted">Untrusted</string>
+    <string name="ext_set_as_sensitive">Set as sensitive</string>
+    <string name="ext_mark_not_sensitive">Mark not sensitive</string>
     <string name="ext_uninstall">Uninstall</string>
     <string name="ext_remove">Remove</string>
     <string name="ext_confirm_remove">Remove Extension?</string>

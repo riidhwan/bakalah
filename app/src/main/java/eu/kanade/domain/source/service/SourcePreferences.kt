@@ -7,6 +7,8 @@ import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.preference.getEnum
 import tachiyomi.core.common.preference.getLongArray
+import tachiyomi.core.common.preference.minusAssign
+import tachiyomi.core.common.preference.plusAssign
 import tachiyomi.domain.library.model.LibraryDisplayMode
 
 class SourcePreferences(
@@ -28,6 +30,16 @@ class SourcePreferences(
     val disabledSources: Preference<Set<String>> = preferenceStore.getStringSet("hidden_catalogues", emptySet())
 
     val incognitoExtensions: Preference<Set<String>> = preferenceStore.getStringSet("incognito_extensions", emptySet())
+
+    val sensitiveExtensions: Preference<Set<String>> = preferenceStore.getStringSet(
+        Preference.privateKey("sensitive_extensions"),
+        emptySet(),
+    )
+
+    val includeSensitiveExtensions: Preference<Boolean> = preferenceStore.getBoolean(
+        Preference.appStateKey("include_sensitive_extensions"),
+        false,
+    )
 
     val pinnedSources: Preference<Set<String>> = preferenceStore.getStringSet("pinned_catalogues", emptySet())
 
@@ -86,4 +98,16 @@ class SourcePreferences(
         "migration_hide_without_updates",
         false,
     )
+
+    fun markExtensionSensitive(pkgName: String) {
+        sensitiveExtensions += pkgName
+    }
+
+    fun unmarkExtensionSensitive(pkgName: String) {
+        sensitiveExtensions -= pkgName
+    }
+
+    fun removeSensitiveExtension(pkgName: String) {
+        unmarkExtensionSensitive(pkgName)
+    }
 }

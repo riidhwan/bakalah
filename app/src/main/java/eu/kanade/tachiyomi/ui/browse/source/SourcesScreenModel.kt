@@ -6,10 +6,14 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.domain.source.interactor.GetEnabledSources
 import eu.kanade.domain.source.interactor.ToggleSource
 import eu.kanade.domain.source.interactor.ToggleSourcePin
+import eu.kanade.domain.source.service.SourcePreferences
+import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.util.system.LocaleHelper
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import logcat.LogPriority
@@ -24,6 +28,8 @@ class SourcesScreenModel(
     private val getEnabledSources: GetEnabledSources = Injekt.get(),
     private val toggleSource: ToggleSource = Injekt.get(),
     private val toggleSourcePin: ToggleSourcePin = Injekt.get(),
+    private val sourcePreferences: SourcePreferences = Injekt.get(),
+    private val extensionManager: ExtensionManager = Injekt.get(),
 ) : StateScreenModel<SourcesScreenModel.State>(State()) {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
@@ -38,6 +44,22 @@ class SourcesScreenModel(
                 }
                 .collectLatest(::collectLatestSources)
         }
+
+        sourcePreferences.includeSensitiveExtensions.changes()
+            .onEach { includeSensitiveExtensions ->
+                mutableState.update { state ->
+                    state.copy(includeSensitiveExtensions = includeSensitiveExtensions)
+                }
+            }
+            .launchIn(screenModelScope)
+
+        sourcePreferences.sensitiveExtensions.changes()
+            .onEach { sensitiveExtensions ->
+                mutableState.update { state ->
+                    state.copy(sensitiveExtensions = sensitiveExtensions)
+                }
+            }
+            .launchIn(screenModelScope)
     }
 
     private fun collectLatestSources(sources: List<Source>) {
@@ -74,6 +96,23 @@ class SourcesScreenModel(
         toggleSourcePin.await(source)
     }
 
+    fun setIncludeSensitiveExtensions(includeSensitiveExtensions: Boolean) {
+        sourcePreferences.includeSensitiveExtensions.set(includeSensitiveExtensions)
+    }
+
+    fun getExtensionPackage(source: Source): String? {
+        return extensionManager.getExtensionPackage(source.id)
+    }
+
+    fun setSourceSensitive(source: Source, sensitive: Boolean) {
+        val pkgName = getExtensionPackage(source) ?: return
+        if (sensitive) {
+            sourcePreferences.markExtensionSensitive(pkgName)
+        } else {
+            sourcePreferences.unmarkExtensionSensitive(pkgName)
+        }
+    }
+
     fun showSourceDialog(source: Source) {
         mutableState.update { it.copy(dialog = Dialog(source)) }
     }
@@ -94,6 +133,8 @@ class SourcesScreenModel(
         val isLoading: Boolean = true,
         val languages: List<String> = listOf(),
         val selectedLanguage: String? = null,
+        val includeSensitiveExtensions: Boolean = false,
+        val sensitiveExtensions: Set<String> = emptySet(),
         private val sources: List<Source> = listOf(),
     ) {
         val isEmpty = languages.isEmpty()
@@ -102,6 +143,10 @@ class SourcesScreenModel(
             get() = sources
                 .filter { it.lang == selectedLanguage }
                 .sortedWith(sourceComparator)
+
+        fun isSensitiveExtensionPackage(pkgName: String): Boolean {
+            return pkgName in sensitiveExtensions
+        }
     }
 
     companion object {
