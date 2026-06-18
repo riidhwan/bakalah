@@ -14,14 +14,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderOrientation
-import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 
 @Composable
 fun ReaderBottomBar(
-    readingMode: ReadingMode,
-    onClickReadingMode: () -> Unit,
     orientation: ReaderOrientation,
     onClickOrientation: () -> Unit,
     cropEnabled: Boolean,
@@ -37,13 +34,6 @@ fun ReaderBottomBar(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onClickReadingMode) {
-            Icon(
-                painter = painterResource(readingMode.iconRes),
-                contentDescription = stringResource(MR.strings.viewer),
-            )
-        }
-
         IconButton(onClick = onClickOrientation) {
             Icon(
                 imageVector = orientation.icon,

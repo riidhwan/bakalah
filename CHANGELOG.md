@@ -11,6 +11,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Removed
+- Remove alternate reader modes and tap-zone customization so the reader always uses Long Strip.
+
 ### Fixed
 - Keep newly cached Vault chapters on device during cache-limit enforcement and show cached size in the Vault summary.
 

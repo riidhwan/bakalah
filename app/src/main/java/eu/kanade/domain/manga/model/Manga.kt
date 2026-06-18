@@ -15,7 +15,7 @@ import uy.kohesive.injekt.api.get
 
 // TODO: move these into the domain model
 val Manga.readingMode: Long
-    get() = viewerFlags and ReadingMode.MASK.toLong()
+    get() = ReadingMode.normalizeFlag((viewerFlags and ReadingMode.MASK.toLong()).toInt()).toLong()
 
 val Manga.readerOrientation: Long
     get() = viewerFlags and ReaderOrientation.MASK.toLong()

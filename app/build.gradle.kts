@@ -215,7 +215,6 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.androidx.coreSplashScreen)
     implementation(libs.androidx.recyclerView)
-    implementation(libs.androidx.viewPager)
     implementation(libs.androidx.profileInstaller)
 
     implementation(libs.bundles.androidx.lifecycle)
@@ -258,9 +257,6 @@ dependencies {
     implementation(libs.material)
     implementation(libs.flexibleAdapter)
     implementation(libs.photoView)
-    implementation(libs.directionalViewPager) {
-        exclude(group = "androidx.viewpager", module = "viewpager")
-    }
     implementation(libs.composeRichEditor)
     implementation(libs.aboutLibraries.compose)
     implementation(libs.bundles.voyager)

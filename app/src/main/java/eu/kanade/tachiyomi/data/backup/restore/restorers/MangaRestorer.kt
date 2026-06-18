@@ -9,6 +9,7 @@ import eu.kanade.tachiyomi.data.backup.models.BackupChapter
 import eu.kanade.tachiyomi.data.backup.models.BackupHistory
 import eu.kanade.tachiyomi.data.backup.models.BackupManga
 import eu.kanade.tachiyomi.data.backup.models.BackupTracking
+import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import tachiyomi.data.Database
 import tachiyomi.data.UpdateStrategyColumnAdapter
 import tachiyomi.domain.category.interactor.GetCategories
@@ -110,6 +111,7 @@ class MangaRestorer(
     }
 
     private suspend fun updateManga(manga: Manga): Manga {
+        val normalizedViewerFlags = ReadingMode.normalizeViewerFlags(manga.viewerFlags.toInt()).toLong()
         database.mangasQueries.update(
             source = manga.source,
             url = manga.url,
@@ -125,7 +127,7 @@ class MangaRestorer(
             nextUpdate = null,
             calculateInterval = null,
             initialized = manga.initialized,
-            viewer = manga.viewerFlags,
+            viewer = normalizedViewerFlags,
             chapterFlags = manga.chapterFlags,
             coverLastModified = manga.coverLastModified,
             dateAdded = manga.dateAdded,
@@ -135,7 +137,7 @@ class MangaRestorer(
             isSyncing = 1,
             notes = manga.notes,
         )
-        return manga
+        return manga.copy(viewerFlags = normalizedViewerFlags)
     }
 
     private suspend fun restoreNewManga(

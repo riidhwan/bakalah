@@ -57,7 +57,6 @@ import eu.kanade.presentation.reader.OrientationSelectDialog
 import eu.kanade.presentation.reader.ReaderContentOverlay
 import eu.kanade.presentation.reader.ReaderPageActionsDialog
 import eu.kanade.presentation.reader.ReaderPageIndicator
-import eu.kanade.presentation.reader.ReadingModeSelectDialog
 import eu.kanade.presentation.reader.VaultChapterThumbnailCropOverlay
 import eu.kanade.presentation.reader.appbars.ReaderAppBars
 import eu.kanade.presentation.reader.components.ChapterNavigatorType
@@ -79,7 +78,6 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderSettingsScreenModel
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderProgressIndicator
-import eu.kanade.tachiyomi.ui.reader.viewer.pager.R2LPagerViewer
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
 import eu.kanade.tachiyomi.util.system.isNightMode
 import eu.kanade.tachiyomi.util.system.openInBrowser
@@ -142,7 +140,6 @@ class ReaderActivity : BaseActivity() {
     private var config: ReaderConfig? = null
 
     private var menuToggleToast: Toast? = null
-    private var readingModeToast: Toast? = null
     private val displayRefreshHost = DisplayRefreshHost()
 
     private val windowInsetsController by lazy { WindowInsetsControllerCompat(window, window.decorView) }
@@ -271,7 +268,6 @@ class ReaderActivity : BaseActivity() {
         val settingsScreenModel = remember {
             ReaderSettingsScreenModel(
                 readerState = viewModel.state,
-                onChangeReadingMode = viewModel::setMangaReadingMode,
                 onChangeOrientation = viewModel::setMangaOrientationType,
             )
         }
@@ -330,18 +326,6 @@ class ReaderActivity : BaseActivity() {
                     screenModel = settingsScreenModel,
                 )
             }
-            is ReaderViewModel.Dialog.ReadingModeSelect -> {
-                ReadingModeSelectDialog(
-                    onDismissRequest = onDismissRequest,
-                    screenModel = settingsScreenModel,
-                    onChange = { stringRes ->
-                        menuToggleToast?.cancel()
-                        if (!readerPreferences.showReadingMode.get()) {
-                            menuToggleToast = toast(stringRes)
-                        }
-                    },
-                )
-            }
             is ReaderViewModel.Dialog.OrientationModeSelect -> {
                 OrientationSelectDialog(
                     onDismissRequest = onDismissRequest,
@@ -373,7 +357,6 @@ class ReaderActivity : BaseActivity() {
         viewModel.state.value.viewer?.destroy()
         config = null
         menuToggleToast?.cancel()
-        readingModeToast?.cancel()
     }
 
     override fun onPause() {
@@ -486,10 +469,8 @@ class ReaderActivity : BaseActivity() {
 
         val isHttpSource = viewModel.getSource() is HttpSource
 
-        val cropBorderPaged by readerPreferences.cropBorders.collectAsState()
         val cropBorderWebtoon by readerPreferences.cropBordersWebtoon.collectAsState()
-        val isPagerType = ReadingMode.isPagerType(viewModel.getMangaReadingMode())
-        val cropEnabled = if (isPagerType) cropBorderPaged else cropBorderWebtoon
+        val cropEnabled = cropBorderWebtoon
 
         val verticalNavigatorForLongStrip by readerPreferences.verticalNavigatorForLongStrip.collectAsState()
         val verticalNavigatorOnLeft by readerPreferences.verticalNavigatorOnLeft.collectAsState()
@@ -511,12 +492,8 @@ class ReaderActivity : BaseActivity() {
             onOpenInBrowser = ::openChapterInBrowser.takeIf { isHttpSource && !state.isVaultSession },
             onShare = ::shareChapter.takeIf { isHttpSource && !state.isVaultSession },
 
-            chapterNavigatorType = if (isPagerType || !verticalNavigatorForLongStrip) {
-                if (state.viewer is R2LPagerViewer) {
-                    ChapterNavigatorType.HORIZONTAL_RTL
-                } else {
-                    ChapterNavigatorType.HORIZONTAL_LTR
-                }
+            chapterNavigatorType = if (!verticalNavigatorForLongStrip) {
+                ChapterNavigatorType.HORIZONTAL_LTR
             } else {
                 if (verticalNavigatorOnLeft) {
                     ChapterNavigatorType.VERTICAL_LEFT
@@ -535,10 +512,6 @@ class ReaderActivity : BaseActivity() {
                 moveToPageIndex(it)
             },
 
-            readingMode = ReadingMode.fromPreference(
-                viewModel.getMangaReadingMode(resolveDefault = false),
-            ),
-            onClickReadingMode = viewModel::openReadingModeSelectDialog,
             orientation = ReaderOrientation.fromPreference(
                 viewModel.getMangaOrientation(resolveDefault = false),
             ),
@@ -562,13 +535,10 @@ class ReaderActivity : BaseActivity() {
         } else {
             setMenuVisibility(false)
             val composeOverlayVisibility = binding.composeOverlay.visibility
-            val navigationOverlayVisibility = binding.navigationOverlay.visibility
             binding.composeOverlay.visibility = INVISIBLE
-            binding.navigationOverlay.visibility = INVISIBLE
             captureVaultChapterThumbnailAfterNextDraw(viewer.getView()) {
                 viewer.captureVaultChapterThumbnail { capture ->
                     binding.composeOverlay.visibility = composeOverlayVisibility
-                    binding.navigationOverlay.visibility = navigationOverlayVisibility
                     if (capture == null) {
                         toast(MR.strings.vault_chapter_thumbnail_unavailable)
                         return@captureVaultChapterThumbnail
@@ -644,10 +614,6 @@ class ReaderActivity : BaseActivity() {
         updateViewerInset(readerPreferences.fullscreen.get(), readerPreferences.drawUnderCutout.get())
         binding.viewerContainer.addView(newViewer.getView())
 
-        if (readerPreferences.showReadingMode.get()) {
-            showReadingModeToast(viewModel.getMangaReadingMode())
-        }
-
         loadingIndicator = ReaderProgressIndicator(this)
         binding.readerContainer.addView(loadingIndicator)
 
@@ -685,15 +651,6 @@ class ReaderActivity : BaseActivity() {
         assistUrl?.let {
             val intent = it.toUri().toShareIntent(this, type = "text/plain")
             startActivity(intent)
-        }
-    }
-
-    private fun showReadingModeToast(mode: Int) {
-        try {
-            readingModeToast?.cancel()
-            readingModeToast = toast(ReadingMode.fromPreference(mode).stringRes)
-        } catch (_: ArrayIndexOutOfBoundsException) {
-            logcat(LogPriority.ERROR) { "Unknown reading mode: $mode" }
         }
     }
 

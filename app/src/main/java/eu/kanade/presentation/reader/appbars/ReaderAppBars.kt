@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.reader.components.ChapterNavigator
 import eu.kanade.presentation.reader.components.ChapterNavigatorType
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderOrientation
-import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import tachiyomi.presentation.core.components.material.padding
 
 private val readerBarsSlideAnimationSpec = tween<IntOffset>(200)
@@ -63,8 +62,6 @@ fun ReaderAppBars(
     totalPages: Int,
     onPageIndexChange: (Int) -> Unit,
 
-    readingMode: ReadingMode,
-    onClickReadingMode: () -> Unit,
     orientation: ReaderOrientation,
     onClickOrientation: () -> Unit,
     cropEnabled: Boolean,
@@ -156,8 +153,6 @@ fun ReaderAppBars(
                         .background(backgroundColor)
                         .padding(horizontal = MaterialTheme.padding.small)
                         .windowInsetsPadding(WindowInsets.navigationBars),
-                    readingMode = readingMode,
-                    onClickReadingMode = onClickReadingMode,
                     orientation = orientation,
                     onClickOrientation = onClickOrientation,
                     cropEnabled = cropEnabled,
