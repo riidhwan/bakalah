@@ -1,6 +1,8 @@
 package eu.kanade.domain.source.interactor
 
 import eu.kanade.domain.source.service.SourcePreferences
+import eu.kanade.tachiyomi.extension.ExtensionManager
+import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.online.HttpSource
 import io.kotest.matchers.collections.shouldContainExactly
@@ -23,6 +25,7 @@ import tachiyomi.domain.source.repository.SourcePagingSource
 import tachiyomi.domain.source.repository.SourceRepository
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.source.local.LocalSource
+import eu.kanade.tachiyomi.source.Source as ExtensionSource
 
 class GetEnabledSourcesTest {
 
@@ -34,14 +37,9 @@ class GetEnabledSourcesTest {
             sources = listOf(localSource),
             onlineSources = listOf(remoteSource),
         )
-        val preferences = mockk<SourcePreferences> {
-            every { pinnedSources } returns preference(emptySet())
-            every { enabledLanguages } returns preference(setOf("en", "other"))
-            every { disabledSources } returns preference(emptySet())
-            every { lastUsedSource } returns preference(LocalSource.ID)
-        }
+        val preferences = sourcePreferences(enabledLanguages = setOf("en", "other"))
 
-        val result = GetEnabledSources(repository, preferences).subscribe().first()
+        val result = GetEnabledSources(repository, preferences, extensionManager()).subscribe().first()
 
         result.map { it.id } shouldContainExactly listOf(remoteSource.id)
     }
@@ -58,16 +56,56 @@ class GetEnabledSourcesTest {
             sourceManager = FakeSourceManager(listOf(onlineSource)),
             database = mockk<Database>(),
         )
-        val preferences = mockk<SourcePreferences> {
-            every { pinnedSources } returns preference(emptySet())
-            every { enabledLanguages } returns preference(setOf("en"))
-            every { disabledSources } returns preference(emptySet())
-            every { lastUsedSource } returns preference(0)
-        }
+        val preferences = sourcePreferences()
 
-        val result = GetEnabledSources(repository, preferences).subscribe().first()
+        val result = GetEnabledSources(repository, preferences, extensionManager()).subscribe().first()
 
         result.single().supportsLatest shouldBe true
+    }
+
+    @Test
+    fun `subscribe hides sources from sensitive extensions when toggle is off`() = runTest {
+        val sensitiveSource = source(id = 1, lang = "en", name = "Sensitive")
+        val normalSource = source(id = 2, lang = "en", name = "Normal")
+        val repository = FakeSourceRepository(
+            sources = emptyList(),
+            onlineSources = listOf(sensitiveSource, normalSource),
+        )
+        val preferences = sourcePreferences(sensitiveExtensions = setOf("pkg.sensitive"))
+        val extensionManager = extensionManager(
+            installedExtensions = listOf(
+                installedExtension(pkgName = "pkg.sensitive", sourceId = sensitiveSource.id),
+                installedExtension(pkgName = "pkg.normal", sourceId = normalSource.id),
+            ),
+        )
+
+        val result = GetEnabledSources(repository, preferences, extensionManager).subscribe().first()
+
+        result.map { it.id } shouldContainExactly listOf(normalSource.id)
+    }
+
+    @Test
+    fun `subscribe shows sources from sensitive extensions when toggle is on`() = runTest {
+        val sensitiveSource = source(id = 1, lang = "en", name = "Sensitive")
+        val normalSource = source(id = 2, lang = "en", name = "Normal")
+        val repository = FakeSourceRepository(
+            sources = emptyList(),
+            onlineSources = listOf(sensitiveSource, normalSource),
+        )
+        val preferences = sourcePreferences(
+            sensitiveExtensions = setOf("pkg.sensitive"),
+            includeSensitiveExtensions = true,
+        )
+        val extensionManager = extensionManager(
+            installedExtensions = listOf(
+                installedExtension(pkgName = "pkg.sensitive", sourceId = sensitiveSource.id),
+                installedExtension(pkgName = "pkg.normal", sourceId = normalSource.id),
+            ),
+        )
+
+        val result = GetEnabledSources(repository, preferences, extensionManager).subscribe().first()
+
+        result.map { it.id } shouldContainExactly listOf(normalSource.id, sensitiveSource.id)
     }
 
     private fun source(
@@ -80,6 +118,46 @@ class GetEnabledSourcesTest {
         name = name,
         supportsLatest = true,
         isStub = false,
+    )
+
+    private fun sourcePreferences(
+        enabledLanguages: Set<String> = setOf("en"),
+        sensitiveExtensions: Set<String> = emptySet(),
+        includeSensitiveExtensions: Boolean = false,
+    ) = mockk<SourcePreferences> {
+        every { pinnedSources } returns preference(emptySet())
+        every { this@mockk.enabledLanguages } returns preference(enabledLanguages)
+        every { disabledSources } returns preference(emptySet())
+        every { lastUsedSource } returns preference(0)
+        every { this@mockk.sensitiveExtensions } returns preference(sensitiveExtensions)
+        every { this@mockk.includeSensitiveExtensions } returns preference(includeSensitiveExtensions)
+    }
+
+    private fun extensionManager(
+        installedExtensions: List<Extension.Installed> = emptyList(),
+    ) = mockk<ExtensionManager> {
+        every { installedExtensionsFlow } returns MutableStateFlow(installedExtensions)
+    }
+
+    private fun installedExtension(
+        pkgName: String,
+        sourceId: Long,
+    ) = Extension.Installed(
+        name = pkgName,
+        pkgName = pkgName,
+        versionName = "1.0",
+        versionCode = 1,
+        libVersion = 1.0,
+        lang = "en",
+        isNsfw = false,
+        pkgFactory = null,
+        sources = listOf(
+            mockk<ExtensionSource> {
+                every { id } returns sourceId
+            },
+        ),
+        icon = null,
+        isShared = true,
     )
 
     private fun <T> preference(value: T): Preference<T> {

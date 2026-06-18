@@ -3,6 +3,9 @@ package eu.kanade.tachiyomi.ui.browse.source
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.TravelExplore
+import androidx.compose.material.icons.outlined._18UpRating
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -21,6 +24,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
+import tachiyomi.presentation.core.theme.active
 
 @Composable
 fun Screen.sourcesTab(): TabContent {
@@ -31,6 +35,24 @@ fun Screen.sourcesTab(): TabContent {
     return TabContent(
         titleRes = MR.strings.label_sources,
         actions = listOf(
+            AppBar.Action(
+                title = stringResource(
+                    if (state.includeSensitiveExtensions) {
+                        MR.strings.vault_action_hide_sensitive
+                    } else {
+                        MR.strings.vault_action_include_sensitive
+                    },
+                ),
+                icon = Icons.Outlined._18UpRating,
+                iconTint = if (state.includeSensitiveExtensions) {
+                    MaterialTheme.colorScheme.active
+                } else {
+                    LocalContentColor.current
+                },
+                onClick = {
+                    screenModel.setIncludeSensitiveExtensions(!state.includeSensitiveExtensions)
+                },
+            ),
             AppBar.Action(
                 title = stringResource(MR.strings.action_global_search),
                 icon = Icons.Outlined.TravelExplore,
@@ -56,14 +78,20 @@ fun Screen.sourcesTab(): TabContent {
 
             state.dialog?.let { dialog ->
                 val source = dialog.source
+                val extensionPackage = screenModel.getExtensionPackage(source)
                 SourceOptionsDialog(
                     source = source,
+                    isSensitive = extensionPackage?.let(state::isSensitiveExtensionPackage),
                     onClickPin = {
                         screenModel.togglePin(source)
                         screenModel.closeDialog()
                     },
                     onClickDisable = {
                         screenModel.toggleSource(source)
+                        screenModel.closeDialog()
+                    },
+                    onClickSensitive = { sensitive ->
+                        screenModel.setSourceSensitive(source, sensitive)
                         screenModel.closeDialog()
                     },
                     onDismiss = screenModel::closeDialog,
