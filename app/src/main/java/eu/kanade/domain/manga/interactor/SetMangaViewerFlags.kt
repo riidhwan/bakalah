@@ -14,7 +14,10 @@ class SetMangaViewerFlags(
         mangaRepository.update(
             MangaUpdate(
                 id = id,
-                viewerFlags = manga.viewerFlags.setFlag(flag, ReadingMode.MASK.toLong()),
+                viewerFlags = manga.viewerFlags.setFlag(
+                    ReadingMode.normalizeFlag(flag.toInt()).toLong(),
+                    ReadingMode.MASK.toLong(),
+                ),
             ),
         )
     }

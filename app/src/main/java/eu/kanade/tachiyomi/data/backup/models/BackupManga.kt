@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.data.backup.models
 
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
+import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
 import tachiyomi.domain.manga.model.Manga
@@ -57,7 +58,9 @@ data class BackupManga(
             favorite = this@BackupManga.favorite,
             source = this@BackupManga.source,
             dateAdded = this@BackupManga.dateAdded,
-            viewerFlags = (this@BackupManga.viewer_flags ?: this@BackupManga.viewer).toLong(),
+            viewerFlags = ReadingMode.normalizeViewerFlags(
+                this@BackupManga.viewer_flags ?: this@BackupManga.viewer,
+            ).toLong(),
             chapterFlags = this@BackupManga.chapterFlags.toLong(),
             updateStrategy = this@BackupManga.updateStrategy,
             lastModifiedAt = this@BackupManga.lastModifiedAt,

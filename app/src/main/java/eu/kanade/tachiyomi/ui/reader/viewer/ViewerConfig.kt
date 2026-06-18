@@ -14,21 +14,12 @@ abstract class ViewerConfig(readerPreferences: ReaderPreferences, private val sc
 
     var imagePropertyChangedListener: (() -> Unit)? = null
 
-    var navigationModeChangedListener: (() -> Unit)? = null
-
-    var tappingInverted = ReaderPreferences.TappingInvertMode.NONE
     var longTapEnabled = true
     var usePageTransitions = false
     var doubleTapAnimDuration = 500
     var volumeKeysEnabled = false
     var volumeKeysInverted = false
     var alwaysShowChapterTransition = true
-    var navigationMode = 0
-        protected set
-
-    var forceNavigationOverlay = false
-
-    var navigationOverlayOnStart = false
 
     var dualPageSplit = false
         protected set
@@ -63,19 +54,9 @@ abstract class ViewerConfig(readerPreferences: ReaderPreferences, private val sc
 
         readerPreferences.alwaysShowChapterTransition
             .register({ alwaysShowChapterTransition = it })
-
-        forceNavigationOverlay = readerPreferences.showNavigationOverlayNewUser.get()
-        if (forceNavigationOverlay) {
-            readerPreferences.showNavigationOverlayNewUser.set(false)
-        }
-
-        readerPreferences.showNavigationOverlayOnStart
-            .register({ navigationOverlayOnStart = it })
     }
 
     protected abstract fun defaultNavigation(): ViewerNavigation
-
-    abstract fun updateNavigation(navigationMode: Int)
 
     fun <T> Preference<T>.register(
         valueAssignment: (T) -> Unit,

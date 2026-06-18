@@ -881,13 +881,8 @@ class ReaderViewModel @JvmOverloads constructor(
     /**
      * Returns the viewer position used by this manga or the default one.
      */
-    fun getMangaReadingMode(resolveDefault: Boolean = true): Int {
-        val default = readerPreferences.defaultReadingMode.get()
-        val readingMode = ReadingMode.fromPreference(manga?.readingMode?.toInt())
-        return when {
-            resolveDefault && readingMode == ReadingMode.DEFAULT -> default
-            else -> manga?.readingMode?.toInt() ?: default
-        }
+    fun getMangaReadingMode(): Int {
+        return ReadingMode.normalizeFlag(manga?.readingMode?.toInt())
     }
 
     /**
@@ -897,7 +892,7 @@ class ReaderViewModel @JvmOverloads constructor(
         if (readerSession is ReaderSession.Vault) return
         val manga = manga ?: return
         runBlocking(Dispatchers.IO) {
-            setMangaViewerFlags.awaitSetReadingMode(manga.id, readingMode.flagValue.toLong())
+            setMangaViewerFlags.awaitSetReadingMode(manga.id, ReadingMode.normalizeFlag(readingMode.flagValue).toLong())
             val currChapters = state.value.viewerChapters
             if (currChapters != null) {
                 // Save current page
@@ -954,12 +949,7 @@ class ReaderViewModel @JvmOverloads constructor(
     }
 
     fun toggleCropBorders(): Boolean {
-        val isPagerType = ReadingMode.isPagerType(getMangaReadingMode())
-        return if (isPagerType) {
-            readerPreferences.cropBorders.toggle()
-        } else {
-            readerPreferences.cropBordersWebtoon.toggle()
-        }
+        return readerPreferences.cropBordersWebtoon.toggle()
     }
 
     /**
@@ -983,10 +973,6 @@ class ReaderViewModel @JvmOverloads constructor(
 
     fun showLoadingDialog() {
         mutableState.update { it.copy(dialog = Dialog.Loading) }
-    }
-
-    fun openReadingModeSelectDialog() {
-        mutableState.update { it.copy(dialog = Dialog.ReadingModeSelect) }
     }
 
     fun openOrientationModeSelectDialog() {
@@ -1292,7 +1278,6 @@ class ReaderViewModel @JvmOverloads constructor(
     sealed interface Dialog {
         data object Loading : Dialog
         data object Settings : Dialog
-        data object ReadingModeSelect : Dialog
         data object OrientationModeSelect : Dialog
         data class PageActions(val page: ReaderPage) : Dialog
         data class VaultChapterThumbnailCrop(

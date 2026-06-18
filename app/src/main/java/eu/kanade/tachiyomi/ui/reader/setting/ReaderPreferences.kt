@@ -2,7 +2,6 @@ package eu.kanade.tachiyomi.ui.reader.setting
 
 import android.os.Build
 import androidx.compose.ui.graphics.BlendMode
-import dev.icerock.moko.resources.StringResource
 import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.preference.getEnum
@@ -38,18 +37,11 @@ class ReaderPreferences(
         false,
     )
 
-    val showReadingMode: Preference<Boolean> = preferenceStore.getBoolean("pref_show_reading_mode", true)
-
     val fullscreen: Preference<Boolean> = preferenceStore.getBoolean("fullscreen", true)
 
     val drawUnderCutout: Preference<Boolean> = preferenceStore.getBoolean("cutout_short", true)
 
     val keepScreenOn: Preference<Boolean> = preferenceStore.getBoolean("pref_keep_screen_on_key", false)
-
-    val defaultReadingMode: Preference<Int> = preferenceStore.getInt(
-        "pref_default_reading_mode_key",
-        ReadingMode.RIGHT_TO_LEFT.flagValue,
-    )
 
     val defaultOrientationType: Preference<Int> = preferenceStore.getInt(
         "pref_default_orientation_type_key",
@@ -61,22 +53,12 @@ class ReaderPreferences(
         true,
     )
 
-    val imageScaleType: Preference<Int> = preferenceStore.getInt("pref_image_scale_type_key", 1)
-
-    val zoomStart: Preference<Int> = preferenceStore.getInt("pref_zoom_start_key", 1)
-
     val readerTheme: Preference<Int> = preferenceStore.getInt("pref_reader_theme_key", 1)
 
     val alwaysShowChapterTransition: Preference<Boolean> = preferenceStore.getBoolean(
         "always_show_chapter_transition",
         true,
     )
-
-    val cropBorders: Preference<Boolean> = preferenceStore.getBoolean("crop_borders", false)
-
-    val navigateToPan: Preference<Boolean> = preferenceStore.getBoolean("navigate_pan", true)
-
-    val landscapeZoom: Preference<Boolean> = preferenceStore.getBoolean("landscape_zoom", true)
 
     val cropBordersWebtoon: Preference<Boolean> = preferenceStore.getBoolean("crop_borders_webtoon", false)
 
@@ -101,20 +83,9 @@ class ReaderPreferences(
 
     // region Split two-page spread
 
-    val dualPageSplitPaged: Preference<Boolean> = preferenceStore.getBoolean("pref_dual_page_split", false)
-
-    val dualPageInvertPaged: Preference<Boolean> = preferenceStore.getBoolean("pref_dual_page_invert", false)
-
     val dualPageSplitWebtoon: Preference<Boolean> = preferenceStore.getBoolean("pref_dual_page_split_webtoon", false)
 
     val dualPageInvertWebtoon: Preference<Boolean> = preferenceStore.getBoolean("pref_dual_page_invert_webtoon", false)
-
-    val dualPageRotateToFit: Preference<Boolean> = preferenceStore.getBoolean("pref_dual_page_rotate", false)
-
-    val dualPageRotateToFitInvert: Preference<Boolean> = preferenceStore.getBoolean(
-        "pref_dual_page_rotate_invert",
-        false,
-    )
 
     val dualPageRotateToFitWebtoon: Preference<Boolean> = preferenceStore.getBoolean(
         "pref_dual_page_rotate_webtoon",
@@ -157,47 +128,12 @@ class ReaderPreferences(
         false,
     )
 
-    val navigationModePager: Preference<Int> = preferenceStore.getInt("reader_navigation_mode_pager", 0)
-
-    val navigationModeWebtoon: Preference<Int> = preferenceStore.getInt("reader_navigation_mode_webtoon", 0)
-
-    val pagerNavInverted: Preference<TappingInvertMode> = preferenceStore.getEnum(
-        "reader_tapping_inverted",
-        TappingInvertMode.NONE,
-    )
-
-    val webtoonNavInverted: Preference<TappingInvertMode> = preferenceStore.getEnum(
-        "reader_tapping_inverted_webtoon",
-        TappingInvertMode.NONE,
-    )
-
-    val showNavigationOverlayNewUser: Preference<Boolean> = preferenceStore.getBoolean(
-        "reader_navigation_overlay_new_user",
-        true,
-    )
-
-    val showNavigationOverlayOnStart: Preference<Boolean> = preferenceStore.getBoolean(
-        "reader_navigation_overlay_on_start",
-        false,
-    )
-
     // endregion
 
     enum class FlashColor {
         BLACK,
         WHITE,
         WHITE_BLACK,
-    }
-
-    enum class TappingInvertMode(
-        val titleRes: StringResource,
-        val shouldInvertHorizontal: Boolean = false,
-        val shouldInvertVertical: Boolean = false,
-    ) {
-        NONE(MR.strings.tapping_inverted_none),
-        HORIZONTAL(MR.strings.tapping_inverted_horizontal, shouldInvertHorizontal = true),
-        VERTICAL(MR.strings.tapping_inverted_vertical, shouldInvertVertical = true),
-        BOTH(MR.strings.tapping_inverted_both, shouldInvertHorizontal = true, shouldInvertVertical = true),
     }
 
     enum class ReaderHideThreshold(val threshold: Int) {
@@ -212,31 +148,6 @@ class ReaderPreferences(
         const val WEBTOON_PADDING_MAX = 25
 
         const val MILLI_CONVERSION = 100
-
-        val TapZones = listOf(
-            MR.strings.label_default,
-            MR.strings.l_nav,
-            MR.strings.kindlish_nav,
-            MR.strings.edge_nav,
-            MR.strings.right_and_left_nav,
-            MR.strings.disabled_nav,
-        )
-
-        val ImageScaleType = listOf(
-            MR.strings.scale_type_fit_screen,
-            MR.strings.scale_type_stretch,
-            MR.strings.scale_type_fit_width,
-            MR.strings.scale_type_fit_height,
-            MR.strings.scale_type_original_size,
-            MR.strings.scale_type_smart_fit,
-        )
-
-        val ZoomStart = listOf(
-            MR.strings.zoom_start_automatic,
-            MR.strings.zoom_start_left,
-            MR.strings.zoom_start_right,
-            MR.strings.zoom_start_center,
-        )
 
         val ColorFilterMode = buildList {
             addAll(
