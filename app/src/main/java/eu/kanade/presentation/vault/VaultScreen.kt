@@ -282,6 +282,9 @@ private fun VaultSummary(
                 append(stringResource(MR.strings.vault_manga_count, mangaCount))
                 append(" · ")
                 append(formatBytes(vaultStorageUsageBytes))
+                append(" (")
+                append(formatBytes(localCacheUsageBytes))
+                append(" cached)")
             },
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
