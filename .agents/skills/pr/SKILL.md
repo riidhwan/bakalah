@@ -80,6 +80,7 @@ release/MAJOR.MINOR.PATCH
 ## Commits
 
 - Use short, imperative commit subjects, such as `Add vertical chapter navigator` or `Drop kotlinx-collections-immutable usage`.
+- For patch release PRs that combine an urgent fix with release metadata, use the normal fix summary as the commit subject, such as `Fix obsolete extension detection`; do not use a generic release-prep subject like `Prepare 0.31.1 patch release`.
 - Keep commits focused.
 - Commit only files that belong to the user-requested operation.
 - If unrelated changes exist in files you must touch, read them carefully and work with them instead of reverting them.
@@ -130,4 +131,4 @@ Fill PR bodies with:
 - Brief self-review notes about risk, migrations, changelog, docs, screenshots, and rollout concerns.
 - Screenshots only for UI changes; verify relevant themes and tablet mode for UI work.
 
-CI expects formatting, Detekt, unit tests, SQLDelight migration checks, and release assembly to pass when relevant to the change. Choose the verification set by risk and touched areas, and state any concrete blocker or residual risk if a check was not practical.
+CI expects formatting, Detekt, unit tests, and SQLDelight migration checks to pass when relevant to the change. Choose the verification set by risk and touched areas, and state any concrete blocker or residual risk if a check was not practical.

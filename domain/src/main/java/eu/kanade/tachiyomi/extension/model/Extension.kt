@@ -24,6 +24,7 @@ sealed class Extension {
         val pkgFactory: String?,
         val sources: List<Source>,
         val icon: Drawable?,
+        val signatureHash: String,
         val hasUpdate: Boolean = false,
         val isObsolete: Boolean = false,
         val isShared: Boolean,

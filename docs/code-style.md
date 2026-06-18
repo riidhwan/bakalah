@@ -25,7 +25,7 @@ Run Detekt through the compact Gradle wrapper during command-heavy work:
 scripts/gradlew-compact detekt
 ```
 
-Detekt is advisory for now: existing findings are captured in the committed baseline, and Detekt tasks ignore failures so release assembly is not blocked by historical debt. Treat new findings in files you materially change as part of the change. If a changed file contains unrelated historical findings that would materially expand the task, explain the exact findings and why deferring them is appropriate, then ask the maintainer before leaving them unresolved.
+Detekt is advisory for now: existing findings are captured in the committed baseline, and Detekt tasks ignore failures so release checks are not blocked by historical debt. Treat new findings in files you materially change as part of the change. If a changed file contains unrelated historical findings that would materially expand the task, explain the exact findings and why deferring them is appropriate, then ask the maintainer before leaving them unresolved.
 
 The intended direction is to tighten Detekt into a hard gate once the baseline has shrunk enough that failures are actionable instead of noisy.
 

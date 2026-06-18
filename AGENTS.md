@@ -7,7 +7,6 @@ This is a multi-module Kotlin/Android Gradle project. Key modules are `app/` for
 ## Build, Test, and Development Commands
 
 - `./gradlew assembleDebug` builds a local debug APK.
-- `./gradlew assembleRelease -Penable-updater` builds the CI-style release APK.
 - `./gradlew testDebugUnitTest` runs JVM unit tests for the debug variant.
 - `./gradlew verifySqlDelightMigration` validates database migrations.
 - `./gradlew spotlessCheck` checks formatting; `./gradlew spotlessApply` fixes supported formatting issues.

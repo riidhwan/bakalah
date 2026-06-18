@@ -308,6 +308,7 @@ internal object ExtensionLoader {
             sources = sources,
             pkgFactory = appInfo.metaData.getString(METADATA_SOURCE_FACTORY),
             icon = appInfo.loadIcon(pkgManager),
+            signatureHash = signatures.last(),
             isShared = extensionInfo.isShared,
         )
         return LoadResult.Success(extension)
