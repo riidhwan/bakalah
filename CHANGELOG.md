@@ -12,6 +12,10 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.31.2] - 2026-06-18
+### Fixed
+- Stop bottom reader taps from scrolling the Long Strip reader.
+
 ## [v0.31.1] - 2026-06-18
 ### Fixed
 - Mark installed extensions as obsolete when their original repository no longer lists them, even if another repository lists the same package.
