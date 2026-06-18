@@ -50,6 +50,7 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.browse.extension.details.SourcePreferencesScreen
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreenModel.Listing
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
+import eu.kanade.tachiyomi.ui.history.HistoryScreen
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
 import eu.kanade.tachiyomi.ui.webview.WebViewScreen
 import kotlinx.coroutines.channels.Channel
@@ -139,6 +140,7 @@ data class BrowseSourceScreen(
         }
         val isLocalSource = screenModel.source is LocalSource
         val catalogueSource = screenModel.source as? CatalogueSource
+        val localHistoryTitle = stringResource(MR.strings.local_history)
 
         LaunchedEffect(screenModel.source) {
             assistUrl = (screenModel.source as? HttpSource)?.baseUrl
@@ -162,6 +164,14 @@ data class BrowseSourceScreen(
                         onWebViewClick = onWebViewClick,
                         onHelpClick = onHelpClick,
                         onSettingsClick = { navigator.push(SourcePreferencesScreen(sourceId)) },
+                        onHistoryClick = {
+                            navigator.push(
+                                HistoryScreen.local(
+                                    localSourceId = LocalSource.ID,
+                                    title = localHistoryTitle,
+                                ),
+                            )
+                        }.takeIf { shouldShowLocalHistoryAction(isLocalSource, showNavigateUp) },
                         onSearch = screenModel::search,
                     )
 
@@ -345,3 +355,8 @@ internal fun BrowseSourceScreenModel.State.shouldCloseSearchOnNavigateUp(
 ): Boolean {
     return toolbarQuery != null && (!isUserQuery || !showNavigateUp || !canNavigateUp)
 }
+
+internal fun shouldShowLocalHistoryAction(
+    isLocalSource: Boolean,
+    showNavigateUp: Boolean,
+): Boolean = isLocalSource && !showNavigateUp

@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Changed
+- Split History into separate Library and Local history screens, each with scoped search and clearing.
 
 ## [v0.31.2] - 2026-06-18
 ### Fixed

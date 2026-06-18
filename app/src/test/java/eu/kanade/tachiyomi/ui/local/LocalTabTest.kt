@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.ui.local
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreenModel
 import eu.kanade.tachiyomi.ui.browse.source.browse.shouldCloseSearchOnNavigateUp
+import eu.kanade.tachiyomi.ui.browse.source.browse.shouldShowLocalHistoryAction
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
@@ -46,6 +47,24 @@ class LocalTabTest {
         state.shouldCloseSearchOnNavigateUp(
             showNavigateUp = true,
             canNavigateUp = true,
+        ) shouldBe false
+    }
+
+    @Test
+    fun `local history action is shown only for root local source screen`() {
+        shouldShowLocalHistoryAction(
+            isLocalSource = true,
+            showNavigateUp = false,
+        ) shouldBe true
+
+        shouldShowLocalHistoryAction(
+            isLocalSource = true,
+            showNavigateUp = true,
+        ) shouldBe false
+
+        shouldShowLocalHistoryAction(
+            isLocalSource = false,
+            showNavigateUp = false,
         ) shouldBe false
     }
 }

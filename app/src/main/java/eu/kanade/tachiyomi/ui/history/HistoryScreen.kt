@@ -1,71 +1,50 @@
 package eu.kanade.tachiyomi.ui.history
 
 import android.content.Context
-import androidx.compose.animation.graphics.res.animatedVectorResource
-import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
-import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
-import cafe.adriel.voyager.navigator.tab.TabOptions
 import eu.kanade.presentation.category.components.ChangeCategoryDialog
-import eu.kanade.presentation.history.HistoryScreen
 import eu.kanade.presentation.history.components.HistoryDeleteAllDialog
 import eu.kanade.presentation.history.components.HistoryDeleteDialog
 import eu.kanade.presentation.manga.DuplicateMangaDialog
-import eu.kanade.presentation.util.Tab
-import eu.kanade.tachiyomi.R
+import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
 import mihon.feature.migration.dialog.MigrateMangaDialog
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.domain.chapter.model.Chapter
+import tachiyomi.domain.history.model.HistorySourceFilter
 import tachiyomi.i18n.MR
-import tachiyomi.presentation.core.i18n.stringResource
+import eu.kanade.presentation.history.HistoryScreen as HistoryScreenContent
 
-data object HistoryTab : Tab {
-
-    private val snackbarHostState = SnackbarHostState()
-
-    private val resumeLastChapterReadEvent = Channel<Unit>()
-
-    override val options: TabOptions
-        @Composable
-        get() {
-            val isSelected = LocalTabNavigator.current.current.key == key
-            val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_history_enter)
-            return TabOptions(
-                index = 3u,
-                title = stringResource(MR.strings.label_recent_manga),
-                icon = rememberAnimatedVectorPainter(image, isSelected),
-            )
-        }
-
-    override suspend fun onReselect(navigator: Navigator) {
-        resumeLastChapterReadEvent.send(Unit)
-    }
+class HistoryScreen private constructor(
+    private val sourceFilterType: SourceFilterType,
+    private val localSourceId: Long,
+    private val title: String,
+) : Screen() {
 
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
-        val screenModel = rememberScreenModel { HistoryScreenModel() }
+        val snackbarHostState = remember { SnackbarHostState() }
+        val sourceFilter = sourceFilterType.toHistorySourceFilter(localSourceId)
+        val screenModel = rememberScreenModel { HistoryScreenModel(sourceFilter) }
         val state by screenModel.state.collectAsState()
 
-        HistoryScreen(
+        HistoryScreenContent(
+            title = title,
             state = state,
             snackbarHostState = snackbarHostState,
             onSearchQueryChange = screenModel::updateSearchQuery,
@@ -139,24 +118,52 @@ data object HistoryTab : Tab {
                         snackbarHostState.showSnackbar(context.stringResource(MR.strings.internal_error))
                     HistoryScreenModel.Event.HistoryCleared ->
                         snackbarHostState.showSnackbar(context.stringResource(MR.strings.clear_history_completed))
-                    is HistoryScreenModel.Event.OpenChapter -> openChapter(context, e.chapter)
+                    is HistoryScreenModel.Event.OpenChapter -> openChapter(context, snackbarHostState, e.chapter)
                 }
-            }
-        }
-
-        LaunchedEffect(Unit) {
-            resumeLastChapterReadEvent.receiveAsFlow().collectLatest {
-                openChapter(context, screenModel.getNextChapter())
             }
         }
     }
 
-    private suspend fun openChapter(context: Context, chapter: Chapter?) {
+    private suspend fun openChapter(
+        context: Context,
+        snackbarHostState: SnackbarHostState,
+        chapter: Chapter?,
+    ) {
         if (chapter != null) {
             val intent = ReaderActivity.newIntent(context, chapter.mangaId, chapter.id)
             context.startActivity(intent)
         } else {
             snackbarHostState.showSnackbar(context.stringResource(MR.strings.no_next_chapter))
+        }
+    }
+
+    private enum class SourceFilterType {
+        Library,
+        Local,
+    }
+
+    private fun SourceFilterType.toHistorySourceFilter(localSourceId: Long): HistorySourceFilter {
+        return when (this) {
+            SourceFilterType.Library -> HistorySourceFilter.Library(excludedLocalSourceId = localSourceId)
+            SourceFilterType.Local -> HistorySourceFilter.Local(localSourceId = localSourceId)
+        }
+    }
+
+    companion object {
+        fun library(excludedLocalSourceId: Long, title: String): HistoryScreen {
+            return HistoryScreen(
+                sourceFilterType = SourceFilterType.Library,
+                localSourceId = excludedLocalSourceId,
+                title = title,
+            )
+        }
+
+        fun local(localSourceId: Long, title: String): HistoryScreen {
+            return HistoryScreen(
+                sourceFilterType = SourceFilterType.Local,
+                localSourceId = localSourceId,
+                title = title,
+            )
         }
     }
 }

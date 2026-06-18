@@ -33,6 +33,7 @@ fun LibraryToolbar(
     onClickSelectAll: () -> Unit,
     onClickInvertSelection: () -> Unit,
     onClickFilter: () -> Unit,
+    onClickHistory: () -> Unit,
     onClickOpenRandomManga: () -> Unit,
     searchQuery: String?,
     onSearchQueryChange: (String?) -> Unit,
@@ -50,6 +51,7 @@ fun LibraryToolbar(
         searchQuery = searchQuery,
         onSearchQueryChange = onSearchQueryChange,
         onClickFilter = onClickFilter,
+        onClickHistory = onClickHistory,
         onClickOpenRandomManga = onClickOpenRandomManga,
         scrollBehavior = scrollBehavior,
     )
@@ -62,6 +64,7 @@ private fun LibraryRegularToolbar(
     searchQuery: String?,
     onSearchQueryChange: (String?) -> Unit,
     onClickFilter: () -> Unit,
+    onClickHistory: () -> Unit,
     onClickOpenRandomManga: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior?,
 ) {
@@ -95,6 +98,10 @@ private fun LibraryRegularToolbar(
                         icon = Icons.Outlined.FilterList,
                         iconTint = filterTint,
                         onClick = onClickFilter,
+                    ),
+                    AppBar.OverflowAction(
+                        title = stringResource(MR.strings.history),
+                        onClick = onClickHistory,
                     ),
                     AppBar.OverflowAction(
                         title = stringResource(MR.strings.action_open_random_manga),

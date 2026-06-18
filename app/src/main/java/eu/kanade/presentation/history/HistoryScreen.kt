@@ -32,6 +32,7 @@ import java.time.LocalDate
 
 @Composable
 fun HistoryScreen(
+    title: String,
     state: HistoryScreenModel.State,
     snackbarHostState: SnackbarHostState,
     onSearchQueryChange: (String?) -> Unit,
@@ -43,7 +44,7 @@ fun HistoryScreen(
     Scaffold(
         topBar = { scrollBehavior ->
             SearchToolbar(
-                titleContent = { AppBarTitle(stringResource(MR.strings.history)) },
+                titleContent = { AppBarTitle(title) },
                 searchQuery = state.searchQuery,
                 onChangeSearchQuery = onSearchQueryChange,
                 actions = {
@@ -149,6 +150,7 @@ internal fun HistoryScreenPreviews(
 ) {
     TachiyomiPreviewTheme {
         HistoryScreen(
+            title = stringResource(MR.strings.history),
             state = historyState,
             snackbarHostState = SnackbarHostState(),
             onSearchQueryChange = {},

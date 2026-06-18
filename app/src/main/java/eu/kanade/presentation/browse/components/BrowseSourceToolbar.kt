@@ -35,6 +35,7 @@ fun BrowseSourceToolbar(
     onWebViewClick: () -> Unit,
     onHelpClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onHistoryClick: (() -> Unit)? = null,
     onSearch: (String) -> Unit,
     scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
@@ -67,6 +68,14 @@ fun BrowseSourceToolbar(
                         ),
                     )
                     if (isLocalSource) {
+                        onHistoryClick?.let {
+                            add(
+                                AppBar.OverflowAction(
+                                    title = stringResource(MR.strings.history),
+                                    onClick = it,
+                                ),
+                            )
+                        }
                         add(
                             AppBar.OverflowAction(
                                 title = stringResource(MR.strings.label_help),
