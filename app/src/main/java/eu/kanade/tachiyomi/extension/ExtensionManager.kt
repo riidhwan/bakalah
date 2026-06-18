@@ -191,31 +191,13 @@ class ExtensionManager(
             return
         }
 
-        val installedExtensionsMap = installedExtensionMapFlow.value.toMutableMap()
-        var changed = false
-        for ((pkgName, extension) in installedExtensionsMap) {
-            val availableExt = availableExtensions.find { it.pkgName == pkgName }
-
-            if (availableExt == null && !extension.isObsolete) {
-                installedExtensionsMap[pkgName] = extension.copy(isObsolete = true)
-                changed = true
-            } else if (availableExt != null) {
-                val hasUpdate = extension.updateExists(availableExt)
-                if (extension.hasUpdate != hasUpdate) {
-                    installedExtensionsMap[pkgName] = extension.copy(
-                        hasUpdate = hasUpdate,
-                        store = availableExt.store,
-                    )
-                } else {
-                    installedExtensionsMap[pkgName] = extension.copy(
-                        store = availableExt.store,
-                    )
-                }
-                changed = true
-            }
-        }
-        if (changed) {
-            installedExtensionMapFlow.value = installedExtensionsMap
+        val installedExtensionsMap = installedExtensionMapFlow.value
+        val updatedInstalledExtensionsMap = reconcileInstalledExtensionStatuses(
+            installedExtensions = installedExtensionsMap,
+            availableExtensions = availableExtensions,
+        )
+        if (updatedInstalledExtensionsMap != installedExtensionsMap) {
+            installedExtensionMapFlow.value = updatedInstalledExtensionsMap
         }
         updatePendingUpdatesCount()
     }

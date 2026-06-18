@@ -228,6 +228,7 @@ class GetEnabledSourcesTest {
             },
         ),
         icon = null,
+        signatureHash = "signature",
         isShared = true,
     )
 
