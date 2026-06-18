@@ -218,6 +218,7 @@ private fun SourceItem(
                 sourceLangString = sourceLangString,
                 isObsolete = isObsolete,
                 isSensitive = isSensitive,
+                isUntrusted = isUntrusted,
             )
         },
     )
@@ -229,6 +230,7 @@ private fun RowScope.SourceItemContent(
     sourceLangString: String?,
     isObsolete: Boolean,
     isSensitive: Boolean,
+    isUntrusted: Boolean,
 ) {
     Column(
         modifier = Modifier
@@ -241,7 +243,7 @@ private fun RowScope.SourceItemContent(
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodyMedium,
         )
-        if (sourceLangString != null || isObsolete || isSensitive) {
+        if (sourceLangString != null || isObsolete || isSensitive || isUntrusted) {
             FlowRow(
                 modifier = Modifier.secondaryItemAlpha(),
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
@@ -270,6 +272,15 @@ private fun RowScope.SourceItemContent(
                         if (hasShownElement) DotSeparatorNoSpaceText()
                         Text(
                             text = stringResource(MR.strings.vault_label_sensitive).uppercase(),
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (isUntrusted) {
+                        if (hasShownElement) DotSeparatorNoSpaceText()
+                        Text(
+                            text = stringResource(MR.strings.ext_untrusted).uppercase(),
                             color = MaterialTheme.colorScheme.error,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
