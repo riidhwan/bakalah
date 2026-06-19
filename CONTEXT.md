@@ -164,6 +164,42 @@ _Avoid_: 18+ label, hidden category, private genre
 The top-level app destination for browsing and managing the Vault Collection.
 _Avoid_: Vault Surface, Local Destination, Library Destination, sync settings
 
+**Task Destination**:
+The top-level app destination for inspecting durable user-visible work records, starting with retained Add to Vault requests and their per-chapter outcomes.
+_Avoid_: Import Requests tab, job list, worker queue
+
+**Task Record**:
+A durable user-visible record of one accepted unit of app work, retained after completion so the user can inspect what was attempted and what happened.
+_Avoid_: Request row, job, worker, queue item
+
+**Add to Vault Task Record**:
+A Task Record backed by one retained Vault Import Request, representing an accepted Local-to-Vault Import or Library-to-Vault Capture action.
+_Avoid_: Import request row, Add to Vault job, transfer record
+
+**Task Item**:
+A durable per-content item within a Task Record, such as one selected chapter in an Add to Vault task, with its own pending, done, or failed outcome.
+_Avoid_: Chapter row, request chapter, subtask
+
+**Add to Vault Task Item**:
+A Task Item backed by one selected chapter in a retained Vault Import Request, recording that chapter's individual Add to Vault outcome.
+_Avoid_: Request chapter, chapter task, import chapter row
+
+**Completed Task Item**:
+A Task Item whose attempted work reached a successful terminal outcome.
+_Avoid_: Done task item, succeeded row, finished item
+
+**Failed Task Item**:
+A Task Item whose attempted work reached a terminal failure outcome and may include a sanitized failure category for inspection.
+_Avoid_: Error row, broken item, unsuccessful task
+
+**Pending Task Item**:
+A Task Item that has been accepted but has not yet reached a terminal completed or failed outcome.
+_Avoid_: Running item, loading item, in-progress row
+
+**Task Detail Screen**:
+A pushed screen from the Task Destination that shows the per-item outcome details for one durable work record.
+_Avoid_: Import request detail, chapters screen, job details
+
 **Vault Reading State**:
 The device-local page progress, read markers, bookmarks, and last-read timestamps for Vault Collection content.
 _Avoid_: Library state, history sync, tracking state, read-duration history

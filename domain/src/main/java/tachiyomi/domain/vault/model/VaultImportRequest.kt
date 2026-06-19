@@ -11,6 +11,8 @@ data class VaultImportRequest(
     val createdAt: Long,
     val updatedAt: Long,
     val chapters: List<VaultImportRequestChapter>,
+    val sourceMangaTitle: String? = null,
+    val targetMangaTitle: String? = null,
 ) {
     val createNew: Boolean
         get() = createNewTitle != null
@@ -23,6 +25,32 @@ data class VaultImportRequest(
             .filter { it.allowReplacement }
             .map { it.selectionId }
             .toSet()
+}
+
+data class VaultImportRequestSummary(
+    val id: Long,
+    val mangaId: Long,
+    val workflow: VaultImportRequestWorkflow,
+    val targetMangaId: Long?,
+    val createNewTitle: String?,
+    val activeMangaIdentity: VaultIdentity? = null,
+    val activeManifestPath: String? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val totalChapters: Int,
+    val pendingChapters: Int,
+    val completedChapters: Int,
+    val failedChapters: Int,
+    val replacedChapters: Int,
+    val sourceMangaTitle: String? = null,
+    val sourceMangaSourceId: Long? = null,
+    val sourceMangaFavorite: Boolean = false,
+    val sourceMangaThumbnailUrl: String? = null,
+    val sourceMangaCoverLastModified: Long = 0,
+    val targetMangaTitle: String? = null,
+) {
+    val createNew: Boolean
+        get() = createNewTitle != null
 }
 
 enum class VaultImportRequestWorkflow {
@@ -54,4 +82,5 @@ data class VaultImportRequestChapter(
     val isReplaced: Boolean = false,
     val failureCategory: String? = null,
     val processedAt: Long? = null,
+    val chapterTitle: String? = null,
 )

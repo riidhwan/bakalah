@@ -694,9 +694,67 @@ SELECT *
 FROM vault_import_requests
 WHERE _id = :id;
 
+getImportRequestForDisplay:
+SELECT
+    vault_import_requests._id,
+    vault_import_requests.manga_id,
+    vault_import_requests.workflow,
+    vault_import_requests.target_manga_id,
+    vault_import_requests.create_new_title,
+    vault_import_requests.active_manga_identity,
+    vault_import_requests.active_manifest_path,
+    vault_import_requests.created_at,
+    vault_import_requests.updated_at,
+    source_mangas.title AS source_manga_title,
+    target_mangas.title AS target_manga_title
+FROM vault_import_requests
+LEFT JOIN mangas AS source_mangas ON source_mangas._id = vault_import_requests.manga_id
+LEFT JOIN vault_mangas AS target_mangas ON target_mangas._id = vault_import_requests.target_manga_id
+WHERE vault_import_requests._id = :id;
+
+getImportRequestSummaries:
+SELECT
+    vault_import_requests._id,
+    vault_import_requests.manga_id,
+    vault_import_requests.workflow,
+    vault_import_requests.target_manga_id,
+    vault_import_requests.create_new_title,
+    vault_import_requests.active_manga_identity,
+    vault_import_requests.active_manifest_path,
+    vault_import_requests.created_at,
+    vault_import_requests.updated_at,
+    source_mangas.title AS source_manga_title,
+    source_mangas.source AS source_manga_source_id,
+    source_mangas.favorite AS source_manga_favorite,
+    source_mangas.thumbnail_url AS source_manga_thumbnail_url,
+    source_mangas.cover_last_modified AS source_manga_cover_last_modified,
+    target_mangas.title AS target_manga_title,
+    count(vault_import_request_chapters.selection_id) AS total_chapters,
+    coalesce(sum(CASE WHEN vault_import_request_chapters.state = 'pending' THEN 1 ELSE 0 END), 0) AS pending_chapters,
+    coalesce(sum(CASE WHEN vault_import_request_chapters.state = 'completed' THEN 1 ELSE 0 END), 0) AS completed_chapters,
+    coalesce(sum(CASE WHEN vault_import_request_chapters.state = 'failed' THEN 1 ELSE 0 END), 0) AS failed_chapters,
+    coalesce(sum(CASE WHEN vault_import_request_chapters.is_replaced THEN 1 ELSE 0 END), 0) AS replaced_chapters
+FROM vault_import_requests
+LEFT JOIN vault_import_request_chapters ON vault_import_request_chapters.request_id = vault_import_requests._id
+LEFT JOIN mangas AS source_mangas ON source_mangas._id = vault_import_requests.manga_id
+LEFT JOIN vault_mangas AS target_mangas ON target_mangas._id = vault_import_requests.target_manga_id
+GROUP BY vault_import_requests._id
+ORDER BY vault_import_requests.updated_at DESC, vault_import_requests._id DESC;
+
 getImportRequestChapters:
-SELECT *
+SELECT
+    vault_import_request_chapters.request_id,
+    vault_import_request_chapters.chapter_id,
+    vault_import_request_chapters.selection_id,
+    vault_import_request_chapters.sort_order,
+    vault_import_request_chapters.allow_replacement,
+    vault_import_request_chapters.state,
+    vault_import_request_chapters.is_replaced,
+    vault_import_request_chapters.failure_category,
+    vault_import_request_chapters.processed_at,
+    chapters.name AS chapter_title
 FROM vault_import_request_chapters
+LEFT JOIN chapters ON chapters._id = vault_import_request_chapters.chapter_id
 WHERE request_id = :requestId
 ORDER BY sort_order, selection_id;
 

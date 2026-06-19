@@ -10,6 +10,7 @@ import tachiyomi.domain.vault.model.VaultChapterCacheState
 import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultImportRequest
+import tachiyomi.domain.vault.model.VaultImportRequestSummary
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultManifestSnapshot
@@ -92,6 +93,12 @@ interface VaultRepository {
     suspend fun insertImportRequest(request: VaultImportRequest): Long
 
     suspend fun getImportRequest(id: Long): VaultImportRequest?
+
+    fun getImportRequestSummariesAsFlow(): Flow<List<VaultImportRequestSummary>> =
+        error("Not implemented")
+
+    fun getImportRequestAsFlow(id: Long): Flow<VaultImportRequest?> =
+        error("Not implemented")
 
     suspend fun updateImportRequestActiveTarget(
         id: Long,

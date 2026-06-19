@@ -7,6 +7,7 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToOneOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import tachiyomi.data.Database
 import tachiyomi.data.subscribeToList
@@ -21,6 +22,7 @@ import tachiyomi.domain.vault.model.VaultChapterThumbnail
 import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultImportRequest
+import tachiyomi.domain.vault.model.VaultImportRequestSummary
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultManifestSnapshot
@@ -420,6 +422,41 @@ class VaultRepositoryImpl(
             updatedAt = request.updated_at,
             chapters = chapters,
         )
+    }
+
+    override fun getImportRequestSummariesAsFlow(): Flow<List<VaultImportRequestSummary>> {
+        return database.vaultQueries
+            .getImportRequestSummaries(VaultMapper::mapImportRequestSummary)
+            .subscribeToList()
+    }
+
+    override fun getImportRequestAsFlow(id: Long): Flow<VaultImportRequest?> {
+        return combine(
+            database.vaultQueries
+                .getImportRequestForDisplay(id)
+                .asFlow()
+                .mapToOneOrNull(Dispatchers.IO),
+            database.vaultQueries
+                .getImportRequestChapters(id, VaultMapper::mapImportRequestChapter)
+                .subscribeToList(),
+        ) { request, chapters ->
+            request?.let {
+                VaultMapper.mapImportRequest(
+                    id = it._id,
+                    mangaId = it.manga_id,
+                    workflow = it.workflow,
+                    targetMangaId = it.target_manga_id,
+                    createNewTitle = it.create_new_title,
+                    activeMangaIdentity = it.active_manga_identity,
+                    activeManifestPath = it.active_manifest_path,
+                    createdAt = it.created_at,
+                    updatedAt = it.updated_at,
+                    chapters = chapters,
+                    sourceMangaTitle = it.source_manga_title,
+                    targetMangaTitle = it.target_manga_title,
+                )
+            }
+        }
     }
 
     override suspend fun updateImportRequestActiveTarget(

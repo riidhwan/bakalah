@@ -14,6 +14,7 @@ import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultImportRequest
 import tachiyomi.domain.vault.model.VaultImportRequestChapter
 import tachiyomi.domain.vault.model.VaultImportRequestChapterState
+import tachiyomi.domain.vault.model.VaultImportRequestSummary
 import tachiyomi.domain.vault.model.VaultImportRequestWorkflow
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
@@ -304,6 +305,8 @@ object VaultMapper {
         createdAt: Long,
         updatedAt: Long,
         chapters: List<VaultImportRequestChapter>,
+        sourceMangaTitle: String? = null,
+        targetMangaTitle: String? = null,
     ): VaultImportRequest = VaultImportRequest(
         id = id,
         mangaId = mangaId,
@@ -317,6 +320,54 @@ object VaultMapper {
         createdAt = createdAt,
         updatedAt = updatedAt,
         chapters = chapters,
+        sourceMangaTitle = sourceMangaTitle,
+        targetMangaTitle = targetMangaTitle,
+    )
+
+    fun mapImportRequestSummary(
+        id: Long,
+        mangaId: Long,
+        workflow: String,
+        targetMangaId: Long?,
+        createNewTitle: String?,
+        activeMangaIdentity: String?,
+        activeManifestPath: String?,
+        createdAt: Long,
+        updatedAt: Long,
+        sourceMangaTitle: String?,
+        sourceMangaSourceId: Long?,
+        sourceMangaFavorite: Boolean?,
+        sourceMangaThumbnailUrl: String?,
+        sourceMangaCoverLastModified: Long?,
+        targetMangaTitle: String?,
+        totalChapters: Long,
+        pendingChapters: Long,
+        completedChapters: Long,
+        failedChapters: Long,
+        replacedChapters: Long,
+    ): VaultImportRequestSummary = VaultImportRequestSummary(
+        id = id,
+        mangaId = mangaId,
+        workflow = VaultImportRequestWorkflow.entries
+            .firstOrNull { it.name == workflow }
+            ?: VaultImportRequestWorkflow.LOCAL_IMPORT,
+        targetMangaId = targetMangaId,
+        createNewTitle = createNewTitle,
+        activeMangaIdentity = activeMangaIdentity?.let(::VaultIdentity),
+        activeManifestPath = activeManifestPath,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        totalChapters = totalChapters.toInt(),
+        pendingChapters = pendingChapters.toInt(),
+        completedChapters = completedChapters.toInt(),
+        failedChapters = failedChapters.toInt(),
+        replacedChapters = replacedChapters.toInt(),
+        sourceMangaTitle = sourceMangaTitle,
+        sourceMangaSourceId = sourceMangaSourceId,
+        sourceMangaFavorite = sourceMangaFavorite ?: false,
+        sourceMangaThumbnailUrl = sourceMangaThumbnailUrl,
+        sourceMangaCoverLastModified = sourceMangaCoverLastModified ?: 0,
+        targetMangaTitle = targetMangaTitle,
     )
 
     fun mapImportRequestChapter(
@@ -329,6 +380,7 @@ object VaultMapper {
         isReplaced: Boolean,
         failureCategory: String?,
         processedAt: Long?,
+        chapterTitle: String?,
     ): VaultImportRequestChapter = VaultImportRequestChapter(
         chapterId = chapterId,
         selectionId = selectionId,
@@ -338,6 +390,7 @@ object VaultMapper {
         isReplaced = isReplaced,
         failureCategory = failureCategory,
         processedAt = processedAt,
+        chapterTitle = chapterTitle,
     )
 
     fun mapTransferJob(
