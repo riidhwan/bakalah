@@ -11,6 +11,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Added
+- Add a Task destination for inspecting retained Add to Vault requests and per-chapter outcomes.
+
 ### Changed
 - Split History into separate Library and Local history screens, each with scoped search and clearing.
 

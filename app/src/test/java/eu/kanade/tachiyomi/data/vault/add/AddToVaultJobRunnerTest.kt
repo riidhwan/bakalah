@@ -59,7 +59,7 @@ class AddToVaultJobRunnerTest {
     }
 
     @Test
-    fun `wrong workflow deletes request and fails`() = runTest {
+    fun `wrong workflow keeps request and fails`() = runTest {
         val fixture = fixture(request = request(workflow = VaultImportRequestWorkflow.LIBRARY_CAPTURE))
 
         val result = fixture.runner.run(
@@ -73,12 +73,12 @@ class AddToVaultJobRunnerTest {
         ) { _, _ -> ListenableWorker.Result.success() }
 
         (result is ListenableWorker.Result.Failure) shouldBe true
-        coVerify(exactly = 1) { fixture.repository.deleteImportRequest(1) }
+        coVerify(exactly = 0) { fixture.repository.deleteImportRequest(any()) }
         fixture.callbacks shouldBe Callbacks()
     }
 
     @Test
-    fun `missing manga deletes request and fails`() = runTest {
+    fun `missing manga keeps request and fails`() = runTest {
         val fixture = fixture(manga = null)
 
         val result = fixture.runner.run(
@@ -92,12 +92,12 @@ class AddToVaultJobRunnerTest {
         ) { _, _ -> ListenableWorker.Result.success() }
 
         (result is ListenableWorker.Result.Failure) shouldBe true
-        coVerify(exactly = 1) { fixture.repository.deleteImportRequest(1) }
+        coVerify(exactly = 0) { fixture.repository.deleteImportRequest(any()) }
         fixture.callbacks shouldBe Callbacks()
     }
 
     @Test
-    fun `success prepares workflow and deletes request`() = runTest {
+    fun `success prepares workflow and keeps request`() = runTest {
         val fixture = fixture()
 
         val result = fixture.runner.run(
@@ -115,12 +115,12 @@ class AddToVaultJobRunnerTest {
         }
 
         (result is ListenableWorker.Result.Success) shouldBe true
-        coVerify(exactly = 1) { fixture.repository.deleteImportRequest(1) }
+        coVerify(exactly = 0) { fixture.repository.deleteImportRequest(any()) }
         fixture.callbacks shouldBe Callbacks(foreground = 1, preparingTitles = listOf("Manga"))
     }
 
     @Test
-    fun `workflow failure shows error and deletes request`() = runTest {
+    fun `workflow failure shows error and keeps request`() = runTest {
         val fixture = fixture()
 
         val result = fixture.runner.run(
@@ -134,12 +134,12 @@ class AddToVaultJobRunnerTest {
         ) { _, _ -> ListenableWorker.Result.failure() }
 
         (result is ListenableWorker.Result.Failure) shouldBe true
-        coVerify(exactly = 1) { fixture.repository.deleteImportRequest(1) }
+        coVerify(exactly = 0) { fixture.repository.deleteImportRequest(any()) }
         fixture.callbacks shouldBe Callbacks(foreground = 1, preparingTitles = listOf("Manga"), errors = 1)
     }
 
     @Test
-    fun `workflow exception shows error and deletes request`() = runTest {
+    fun `workflow exception shows error and keeps request`() = runTest {
         val fixture = fixture()
 
         val result = fixture.runner.run(
@@ -153,12 +153,12 @@ class AddToVaultJobRunnerTest {
         ) { _, _ -> error("boom") }
 
         (result is ListenableWorker.Result.Failure) shouldBe true
-        coVerify(exactly = 1) { fixture.repository.deleteImportRequest(1) }
+        coVerify(exactly = 0) { fixture.repository.deleteImportRequest(any()) }
         fixture.callbacks shouldBe Callbacks(foreground = 1, preparingTitles = listOf("Manga"), errors = 1)
     }
 
     @Test
-    fun `workflow cancellation shows cancelled deletes request and rethrows`() = runTest {
+    fun `workflow cancellation shows cancelled keeps request and rethrows`() = runTest {
         val fixture = fixture()
 
         var cancellationThrown = false
@@ -177,7 +177,7 @@ class AddToVaultJobRunnerTest {
         }
 
         cancellationThrown shouldBe true
-        coVerify(exactly = 1) { fixture.repository.deleteImportRequest(1) }
+        coVerify(exactly = 0) { fixture.repository.deleteImportRequest(any()) }
         fixture.callbacks shouldBe Callbacks(foreground = 1, preparingTitles = listOf("Manga"), cancellations = 1)
     }
 

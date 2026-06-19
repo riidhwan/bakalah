@@ -36,12 +36,10 @@ internal class AddToVaultJobRunner(
 
         val request = repository.getImportRequest(requestId) ?: return ListenableWorker.Result.failure()
         if (request.workflow != expectedWorkflow) {
-            repository.deleteImportRequest(requestId)
             return ListenableWorker.Result.failure()
         }
 
         val manga = getManga.await(request.mangaId) ?: run {
-            repository.deleteImportRequest(requestId)
             return ListenableWorker.Result.failure()
         }
 
@@ -63,8 +61,6 @@ internal class AddToVaultJobRunner(
             logcat(LogPriority.ERROR, e) { "Background $workflowName failed for requestId=$requestId" }
             showError()
             ListenableWorker.Result.failure()
-        } finally {
-            repository.deleteImportRequest(requestId)
         }
     }
 
