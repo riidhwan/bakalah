@@ -473,6 +473,22 @@ class VaultRepositoryImpl(
         )
     }
 
+    override suspend fun resetRunningImportRequestChapters(requestId: Long) {
+        database.vaultQueries.resetRunningImportRequestChapters(requestId)
+    }
+
+    override suspend fun markImportRequestChapterRunning(
+        requestId: Long,
+        selectionId: String,
+        processedAt: Long,
+    ) {
+        database.vaultQueries.markImportRequestChapterRunning(
+            requestId = requestId,
+            selectionId = selectionId,
+            processedAt = processedAt,
+        )
+    }
+
     override suspend fun markImportRequestChapterCompleted(
         requestId: Long,
         selectionId: String,
@@ -496,6 +512,18 @@ class VaultRepositoryImpl(
         database.vaultQueries.markImportRequestChapterFailed(
             requestId = requestId,
             selectionId = selectionId,
+            failureCategory = failureCategory,
+            processedAt = processedAt,
+        )
+    }
+
+    override suspend fun markNonTerminalImportRequestChaptersFailed(
+        requestId: Long,
+        failureCategory: String,
+        processedAt: Long,
+    ) {
+        database.vaultQueries.markNonTerminalImportRequestChaptersFailed(
+            requestId = requestId,
             failureCategory = failureCategory,
             processedAt = processedAt,
         )

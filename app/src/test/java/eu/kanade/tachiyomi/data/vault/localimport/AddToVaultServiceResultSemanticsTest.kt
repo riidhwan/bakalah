@@ -187,6 +187,45 @@ class AddToVaultServiceResultSemanticsTest {
     }
 
     @Test
+    fun `local import records retained request chapter outcomes`() = runTest {
+        val repository = FakeVaultRepository(vault = contentVault())
+        val scanner = FakeLocalScanner(
+            scan = LocalVaultMangaScan(
+                manga = localImportManga(),
+                chapters = listOf(scannedLocalChapter("present")),
+                coverFile = null,
+            ),
+        )
+        val service = localService(
+            repository = repository,
+            scanner = scanner,
+            publisher = FakeLocalPublisher(
+                LocalVaultChapterPublishResult(
+                    target = LocalVaultActiveTarget.Created("manga-1", "manga/one.json"),
+                    mangaIdentity = VaultIdentity("manga-1"),
+                    replaced = false,
+                ),
+            ),
+        )
+        val request = captureRequest("present", "missing").copy(
+            workflow = VaultImportRequestWorkflow.LOCAL_IMPORT,
+        )
+
+        service.import(
+            localManga = manga(),
+            importRequest = repository.setImportRequest(request),
+            createNew = true,
+        )
+
+        repository.importRequest!!.chapters.map { it.selectionId to it.state } shouldBe listOf(
+            "present" to VaultImportRequestChapterState.COMPLETED,
+            "missing" to VaultImportRequestChapterState.FAILED,
+        )
+        repository.importRequest!!.chapters.first { it.selectionId == "missing" }.failureCategory shouldBe
+            "missing_chapter"
+    }
+
+    @Test
     fun `capture explicit missing selection returns upload failed and records transfer failure`() = runTest {
         val repository = FakeVaultRepository(vault = contentVault())
         val service = captureService(
@@ -674,6 +713,34 @@ class AddToVaultServiceResultSemanticsTest {
                 updatedAt = updatedAt,
             ) ?: importRequest
         }
+        override suspend fun resetRunningImportRequestChapters(requestId: Long) {
+            updateRequestChapters(requestId) {
+                if (it.state == VaultImportRequestChapterState.RUNNING) {
+                    it.copy(
+                        state = VaultImportRequestChapterState.PENDING,
+                        isReplaced = false,
+                        failureCategory = null,
+                        processedAt = null,
+                    )
+                } else {
+                    it
+                }
+            }
+        }
+        override suspend fun markImportRequestChapterRunning(
+            requestId: Long,
+            selectionId: String,
+            processedAt: Long,
+        ) {
+            updateRequestChapter(requestId, selectionId) {
+                it.copy(
+                    state = VaultImportRequestChapterState.RUNNING,
+                    isReplaced = false,
+                    failureCategory = null,
+                    processedAt = processedAt,
+                )
+            }
+        }
         override suspend fun markImportRequestChapterCompleted(
             requestId: Long,
             selectionId: String,
@@ -702,6 +769,27 @@ class AddToVaultServiceResultSemanticsTest {
                     failureCategory = failureCategory,
                     processedAt = processedAt,
                 )
+            }
+        }
+        override suspend fun markNonTerminalImportRequestChaptersFailed(
+            requestId: Long,
+            failureCategory: String,
+            processedAt: Long,
+        ) {
+            updateRequestChapters(requestId) {
+                if (
+                    it.state == VaultImportRequestChapterState.PENDING ||
+                    it.state == VaultImportRequestChapterState.RUNNING
+                ) {
+                    it.copy(
+                        state = VaultImportRequestChapterState.FAILED,
+                        isReplaced = false,
+                        failureCategory = failureCategory,
+                        processedAt = processedAt,
+                    )
+                } else {
+                    it
+                }
             }
         }
         override suspend fun deleteImportRequest(id: Long) = Unit
@@ -753,11 +841,18 @@ class AddToVaultServiceResultSemanticsTest {
             selectionId: String,
             transform: (VaultImportRequestChapter) -> VaultImportRequestChapter,
         ) {
+            updateRequestChapters(requestId) { chapter ->
+                if (chapter.selectionId == selectionId) transform(chapter) else chapter
+            }
+        }
+
+        private fun updateRequestChapters(
+            requestId: Long,
+            transform: (VaultImportRequestChapter) -> VaultImportRequestChapter,
+        ) {
             importRequest = importRequest?.takeIf { it.id == requestId }?.let { request ->
                 request.copy(
-                    chapters = request.chapters.map { chapter ->
-                        if (chapter.selectionId == selectionId) transform(chapter) else chapter
-                    },
+                    chapters = request.chapters.map(transform),
                 )
             } ?: importRequest
         }

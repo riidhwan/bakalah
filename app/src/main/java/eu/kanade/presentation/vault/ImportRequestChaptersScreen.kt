@@ -38,7 +38,6 @@ import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.LoadingScreen
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ImportRequestChaptersScreen(
@@ -115,14 +114,9 @@ private fun ImportRequestChapterItem(
             chapter.failureCategory?.let {
                 MetadataLine(text = stringResource(MR.strings.vault_import_request_chapter_failure, it))
             }
-            chapter.processedAt?.let {
-                MetadataLine(
-                    text = stringResource(MR.strings.vault_import_request_chapter_processed, it.compactElapsedTime()),
-                )
-            }
         }
         Box(
-            modifier = Modifier.width(88.dp),
+            modifier = Modifier.width(104.dp),
             contentAlignment = Alignment.CenterEnd,
         ) {
             ChapterStateIndicator(state = chapter.state)
@@ -154,11 +148,13 @@ private fun ChapterStateIndicator(
 ) {
     when (state) {
         VaultImportRequestChapterState.PENDING -> {
-            CircularProgressIndicator(
-                modifier = Modifier.size(20.dp),
-                strokeWidth = 2.dp,
+            StatusChip(
+                text = stringResource(MR.strings.vault_import_request_chapter_status_pending),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        VaultImportRequestChapterState.RUNNING -> RunningChip()
         VaultImportRequestChapterState.COMPLETED -> {
             SuccessChip()
         }
@@ -169,7 +165,30 @@ private fun ChapterStateIndicator(
                 contentColor = MaterialTheme.colorScheme.onErrorContainer,
             )
         }
+        VaultImportRequestChapterState.UNKNOWN -> {
+            StatusChip(
+                text = stringResource(MR.strings.vault_import_request_chapter_status_unknown),
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+            )
+        }
     }
+}
+
+@Composable
+private fun RunningChip() {
+    StatusChip(
+        text = stringResource(MR.strings.vault_import_request_chapter_status_running),
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        leadingIcon = {
+            CircularProgressIndicator(
+                modifier = Modifier.size(14.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        },
+    )
 }
 
 @Composable
@@ -211,19 +230,5 @@ private fun StatusChip(
             color = contentColor,
             maxLines = 1,
         )
-    }
-}
-
-@Composable
-private fun Long.compactElapsedTime(): String {
-    val now = System.currentTimeMillis()
-    val age = (now - this).coerceAtLeast(0).milliseconds
-    return when {
-        age.inWholeMinutes < 1 -> stringResource(MR.strings.vault_import_request_created_now)
-        age.inWholeHours < 1 -> "${age.inWholeMinutes}m"
-        age.inWholeDays < 1 -> "${age.inWholeHours}h"
-        age.inWholeDays < 30 -> "${age.inWholeDays}d"
-        age.inWholeDays < 365 -> "${age.inWholeDays / 30}mo"
-        else -> "${age.inWholeDays / 365}y"
     }
 }

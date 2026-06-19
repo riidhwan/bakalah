@@ -23,6 +23,7 @@ import tachiyomi.domain.vault.model.LocalVaultImportPlan
 import tachiyomi.domain.vault.model.LocalVaultImportTarget
 import tachiyomi.domain.vault.model.VaultChapter
 import tachiyomi.domain.vault.model.VaultIdentity
+import tachiyomi.domain.vault.model.VaultImportRequest
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultTransferJob
 import tachiyomi.domain.vault.model.VaultTransferState
@@ -89,6 +90,7 @@ class LocalVaultImportService internal constructor(
 
     suspend fun import(
         localManga: Manga,
+        importRequest: VaultImportRequest? = null,
         selectedChapterIds: Set<String>? = null,
         allowedReplacementChapterIds: Set<String> = emptySet(),
         targetMangaId: Long? = null,
@@ -117,10 +119,16 @@ class LocalVaultImportService internal constructor(
         val target = resolveTarget(plan.target, vaultManga, targetMangaId, createNew)
             ?: return LocalVaultImportResult.TargetChoiceRequired(plan)
 
-        val selectedIds = selectedChapterIds ?: plan.chapters
-            .filter { it.selectedByDefault }
-            .map { it.chapter.selectionId }
-            .toSet()
+        val pendingRequestChapters = importRequest?.pendingTaskItems.orEmpty()
+        val selectedIds = when {
+            importRequest != null -> pendingRequestChapters.map { it.selectionId }.toSet()
+            selectedChapterIds != null -> selectedChapterIds
+            else ->
+                plan.chapters
+                    .filter { it.selectedByDefault }
+                    .map { it.chapter.selectionId }
+                    .toSet()
+        }
         val selectedChapters = scan.chapters.filter { it.chapter.selectionId in selectedIds }
         if (selectedIds.isEmpty() || (selectedChapters.isEmpty() && selectedChapterIds == null)) {
             return LocalVaultImportResult.NothingSelected(plan)
@@ -151,7 +159,12 @@ class LocalVaultImportService internal constructor(
         var activeTarget = target.toActiveImportTarget()
         var added = 0
         var replaced = 0
-        val failures = (selectedIds - selectedChapters.map { it.chapter.selectionId }.toSet())
+        val missingSelectedIds = selectedIds - selectedChapters.map { it.chapter.selectionId }.toSet()
+        missingSelectedIds.forEach { selectionId ->
+            importRequest?.markRunning(selectionId)
+            importRequest?.markFailed(selectionId, "missing_chapter")
+        }
+        val failures = missingSelectedIds
             .map { AddToVaultChapterFailure(it, "missing_chapter") }
             .toMutableList()
         val stagingRoot = importStagingRoot().apply {
@@ -162,6 +175,7 @@ class LocalVaultImportService internal constructor(
         try {
             selectedChapters.forEachIndexed { index, localChapter ->
                 currentCoroutineContext().ensureActive()
+                importRequest?.markRunning(localChapter.chapter.selectionId)
                 fun updatePhase(phase: AddToVaultProgressPhase? = null, indeterminate: Boolean = false) {
                     progress(
                         AddToVaultProgress(
@@ -197,6 +211,10 @@ class LocalVaultImportService internal constructor(
                 }.getOrElse { error ->
                     if (error is CancellationException) throw error
                     if (error is LocalImportGlobalFailure) throw error
+                    importRequest?.markFailed(
+                        selectionId = localChapter.chapter.selectionId,
+                        failureCategory = error.localImportFailureCategory(),
+                    )
                     failures +=
                         AddToVaultChapterFailure(localChapter.chapter.title, error.localImportFailureCategory())
                     return@forEachIndexed
@@ -222,6 +240,10 @@ class LocalVaultImportService internal constructor(
                 } else {
                     added += 1
                 }
+                importRequest?.markCompleted(
+                    selectionId = localChapter.chapter.selectionId,
+                    isReplaced = published.replaced,
+                )
                 progress(
                     AddToVaultProgress(
                         current = index + 1,
@@ -231,6 +253,7 @@ class LocalVaultImportService internal constructor(
                 )
             }
         } catch (e: CancellationException) {
+            importRequest?.markNonTerminalFailed("cancelled")
             repository.upsertTransferJob(
                 AddToVaultTransferFinalizer.cancel(
                     job = job,
@@ -245,6 +268,7 @@ class LocalVaultImportService internal constructor(
         } catch (e: LocalImportGlobalFailure) {
             val completedAt = System.currentTimeMillis()
             val globalFailure = AddToVaultChapterFailure(e.chapterTitle ?: scan.manga.title, e.category)
+            importRequest?.markNonTerminalFailed(e.category, completedAt)
             repository.upsertTransferJob(
                 AddToVaultTransferFinalizer.stopAfterGlobalFailure(
                     job = job,
@@ -336,6 +360,43 @@ class LocalVaultImportService internal constructor(
     }
 
     private fun importStagingRoot(): File = File(app.cacheDir, "content-vault-import")
+
+    private suspend fun VaultImportRequest.markRunning(selectionId: String) {
+        repository.markImportRequestChapterRunning(
+            requestId = id,
+            selectionId = selectionId,
+            processedAt = System.currentTimeMillis(),
+        )
+    }
+
+    private suspend fun VaultImportRequest.markCompleted(selectionId: String, isReplaced: Boolean) {
+        repository.markImportRequestChapterCompleted(
+            requestId = id,
+            selectionId = selectionId,
+            isReplaced = isReplaced,
+            processedAt = System.currentTimeMillis(),
+        )
+    }
+
+    private suspend fun VaultImportRequest.markFailed(selectionId: String, failureCategory: String) {
+        repository.markImportRequestChapterFailed(
+            requestId = id,
+            selectionId = selectionId,
+            failureCategory = failureCategory,
+            processedAt = System.currentTimeMillis(),
+        )
+    }
+
+    private suspend fun VaultImportRequest.markNonTerminalFailed(
+        failureCategory: String,
+        processedAt: Long = System.currentTimeMillis(),
+    ) {
+        repository.markNonTerminalImportRequestChaptersFailed(
+            requestId = id,
+            failureCategory = failureCategory,
+            processedAt = processedAt,
+        )
+    }
 }
 
 sealed interface LocalVaultImportPreviewResult {

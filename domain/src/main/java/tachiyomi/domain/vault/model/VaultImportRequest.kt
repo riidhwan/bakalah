@@ -25,6 +25,17 @@ data class VaultImportRequest(
             .filter { it.allowReplacement }
             .map { it.selectionId }
             .toSet()
+
+    val pendingTaskItems: List<VaultImportRequestChapter>
+        get() = chapters
+            .filter { it.state == VaultImportRequestChapterState.PENDING }
+            .sortedWith(compareBy<VaultImportRequestChapter> { it.sortOrder }.thenBy { it.selectionId })
+
+    val nonTerminalTaskItems: List<VaultImportRequestChapter>
+        get() = chapters.filter {
+            it.state == VaultImportRequestChapterState.PENDING ||
+                it.state == VaultImportRequestChapterState.RUNNING
+        }
 }
 
 data class VaultImportRequestSummary(
@@ -39,6 +50,7 @@ data class VaultImportRequestSummary(
     val updatedAt: Long,
     val totalChapters: Int,
     val pendingChapters: Int,
+    val runningChapters: Int,
     val completedChapters: Int,
     val failedChapters: Int,
     val replacedChapters: Int,
@@ -62,13 +74,15 @@ enum class VaultImportRequestChapterState(
     val storageValue: String,
 ) {
     PENDING("pending"),
+    RUNNING("running"),
     COMPLETED("completed"),
     FAILED("failed"),
+    UNKNOWN("unknown"),
     ;
 
     companion object {
         fun fromStorageValue(value: String): VaultImportRequestChapterState {
-            return entries.firstOrNull { it.storageValue == value } ?: PENDING
+            return entries.firstOrNull { it.storageValue == value } ?: UNKNOWN
         }
     }
 }

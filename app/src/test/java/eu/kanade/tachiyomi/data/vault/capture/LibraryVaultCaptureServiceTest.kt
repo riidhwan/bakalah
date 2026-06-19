@@ -45,7 +45,7 @@ class LibraryVaultCaptureServiceTest {
             ),
         )
 
-        request.pendingChapters().map { it.selectionId } shouldBe listOf("pending-1", "pending-2")
+        request.pendingTaskItems.map { it.selectionId } shouldBe listOf("pending-1", "pending-2")
     }
 
     @Test

@@ -107,6 +107,16 @@ interface VaultRepository {
         updatedAt: Long,
     )
 
+    suspend fun resetRunningImportRequestChapters(
+        requestId: Long,
+    ): Unit = error("Not implemented")
+
+    suspend fun markImportRequestChapterRunning(
+        requestId: Long,
+        selectionId: String,
+        processedAt: Long,
+    ): Unit = error("Not implemented")
+
     suspend fun markImportRequestChapterCompleted(
         requestId: Long,
         selectionId: String,
@@ -120,6 +130,12 @@ interface VaultRepository {
         failureCategory: String,
         processedAt: Long,
     )
+
+    suspend fun markNonTerminalImportRequestChaptersFailed(
+        requestId: Long,
+        failureCategory: String,
+        processedAt: Long,
+    ): Unit = error("Not implemented")
 
     suspend fun deleteImportRequest(id: Long)
 
