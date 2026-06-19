@@ -34,10 +34,12 @@ internal class AddToVaultJobRunner(
     ): ListenableWorker.Result {
         requestId ?: return ListenableWorker.Result.failure()
 
-        val request = repository.getImportRequest(requestId) ?: return ListenableWorker.Result.failure()
-        if (request.workflow != expectedWorkflow) {
+        val loadedRequest = repository.getImportRequest(requestId) ?: return ListenableWorker.Result.failure()
+        if (loadedRequest.workflow != expectedWorkflow) {
             return ListenableWorker.Result.failure()
         }
+        repository.resetRunningImportRequestChapters(requestId)
+        val request = repository.getImportRequest(requestId) ?: loadedRequest
 
         val manga = getManga.await(request.mangaId) ?: run {
             return ListenableWorker.Result.failure()

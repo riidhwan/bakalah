@@ -731,6 +731,7 @@ SELECT
     target_mangas.title AS target_manga_title,
     count(vault_import_request_chapters.selection_id) AS total_chapters,
     coalesce(sum(CASE WHEN vault_import_request_chapters.state = 'pending' THEN 1 ELSE 0 END), 0) AS pending_chapters,
+    coalesce(sum(CASE WHEN vault_import_request_chapters.state = 'running' THEN 1 ELSE 0 END), 0) AS running_chapters,
     coalesce(sum(CASE WHEN vault_import_request_chapters.state = 'completed' THEN 1 ELSE 0 END), 0) AS completed_chapters,
     coalesce(sum(CASE WHEN vault_import_request_chapters.state = 'failed' THEN 1 ELSE 0 END), 0) AS failed_chapters,
     coalesce(sum(CASE WHEN vault_import_request_chapters.is_replaced THEN 1 ELSE 0 END), 0) AS replaced_chapters
@@ -765,6 +766,24 @@ SET active_manga_identity = :activeMangaIdentity,
     updated_at = :updatedAt
 WHERE _id = :id;
 
+resetRunningImportRequestChapters:
+UPDATE vault_import_request_chapters
+SET state = 'pending',
+    is_replaced = 0,
+    failure_category = NULL,
+    processed_at = NULL
+WHERE request_id = :requestId
+AND state = 'running';
+
+markImportRequestChapterRunning:
+UPDATE vault_import_request_chapters
+SET state = 'running',
+    is_replaced = 0,
+    failure_category = NULL,
+    processed_at = :processedAt
+WHERE request_id = :requestId
+AND selection_id = :selectionId;
+
 markImportRequestChapterCompleted:
 UPDATE vault_import_request_chapters
 SET state = 'completed',
@@ -782,6 +801,15 @@ SET state = 'failed',
     processed_at = :processedAt
 WHERE request_id = :requestId
 AND selection_id = :selectionId;
+
+markNonTerminalImportRequestChaptersFailed:
+UPDATE vault_import_request_chapters
+SET state = 'failed',
+    is_replaced = 0,
+    failure_category = :failureCategory,
+    processed_at = :processedAt
+WHERE request_id = :requestId
+AND state IN ('pending', 'running');
 
 deleteImportRequest:
 DELETE FROM vault_import_requests

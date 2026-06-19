@@ -15,6 +15,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - Add a Task destination for inspecting retained Add to Vault requests and per-chapter outcomes.
 
 ### Changed
+- Show actively processed Add to Vault Task Items as running instead of pending.
 - Split History into separate Library and Local history screens, each with scoped search and clearing.
 
 ## [v0.31.2] - 2026-06-18

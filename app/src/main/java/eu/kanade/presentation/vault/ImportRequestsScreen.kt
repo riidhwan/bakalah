@@ -213,6 +213,9 @@ private fun VaultImportRequestSummary.sourceCoverData(): MangaCoverModel? {
 private fun VaultImportRequestSummary.countSummary(): String {
     return listOfNotNull(
         stringResource(MR.strings.vault_import_request_progress, completedChapters, totalChapters),
+        runningChapters.takeIf { it > 0 }?.let {
+            stringResource(MR.strings.vault_import_request_running_short, it)
+        },
         failedChapters.takeIf { it > 0 }?.let {
             stringResource(MR.strings.vault_import_request_failed_short, it)
         },

@@ -44,6 +44,7 @@ class LocalVaultImportJob(
             when (
                 val result = importService.import(
                     localManga = manga,
+                    importRequest = request,
                     selectedChapterIds = request.selectedChapterIds,
                     allowedReplacementChapterIds = request.replacementChapterIds,
                     targetMangaId = request.targetMangaId,

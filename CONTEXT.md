@@ -194,7 +194,11 @@ _Avoid_: Error row, broken item, unsuccessful task
 
 **Pending Task Item**:
 A Task Item that has been accepted but has not yet reached a terminal completed or failed outcome.
-_Avoid_: Running item, loading item, in-progress row
+_Avoid_: Loading item, waiting row
+
+**Running Task Item**:
+A Task Item whose work is actively being attempted and has not yet reached a terminal completed or failed outcome.
+_Avoid_: Loading item, in-progress row, current row
 
 **Task Detail Screen**:
 A pushed screen from the Task Destination that shows the per-item outcome details for one durable work record.

@@ -220,6 +220,7 @@ class AddToVaultJobRunnerTest {
     ): Fixture {
         val repository = mockk<VaultRepository> {
             coEvery { getImportRequest(1) } returns request
+            coEvery { resetRunningImportRequestChapters(1) } returns Unit
             coEvery { deleteImportRequest(any()) } returns Unit
             coEvery { insertImportRequest(any()) } returns 1
         }

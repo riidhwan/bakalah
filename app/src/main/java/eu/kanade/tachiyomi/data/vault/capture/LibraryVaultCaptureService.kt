@@ -111,10 +111,15 @@ internal class LibraryVaultCaptureService(
             completedAt = null,
         ).let { it.copy(id = repository.upsertTransferJob(it)) }
 
-        val pendingRequestChapters = request.pendingChapters()
+        val pendingRequestChapters = request.pendingTaskItems
         val pendingChapters = pendingRequestChapters.mapNotNull { requestChapter ->
             val chapter = selectedChaptersById[requestChapter.selectionId]
             if (chapter == null) {
+                repository.markImportRequestChapterRunning(
+                    requestId = request.id,
+                    selectionId = requestChapter.selectionId,
+                    processedAt = System.currentTimeMillis(),
+                )
                 repository.markImportRequestChapterFailed(
                     requestId = request.id,
                     selectionId = requestChapter.selectionId,
@@ -138,6 +143,11 @@ internal class LibraryVaultCaptureService(
         try {
             pendingChapters.forEachIndexed { index, (requestChapter, chapter) ->
                 currentCoroutineContext().ensureActive()
+                repository.markImportRequestChapterRunning(
+                    requestId = request.id,
+                    selectionId = requestChapter.selectionId,
+                    processedAt = System.currentTimeMillis(),
+                )
                 fun updatePhase(phase: AddToVaultProgressPhase) {
                     progress(
                         AddToVaultProgress(
@@ -212,6 +222,11 @@ internal class LibraryVaultCaptureService(
                 )
             }
         } catch (e: CancellationException) {
+            repository.markNonTerminalImportRequestChaptersFailed(
+                requestId = request.id,
+                failureCategory = "cancelled",
+                processedAt = System.currentTimeMillis(),
+            )
             val latestRequest = repository.getImportRequest(request.id) ?: request
             val summary = latestRequest.checkpointSummary()
             repository.upsertTransferJob(
@@ -240,6 +255,11 @@ internal class LibraryVaultCaptureService(
                     globalFailure = globalFailure,
                     completedAt = completedAt,
                 ),
+            )
+            repository.markNonTerminalImportRequestChaptersFailed(
+                requestId = request.id,
+                failureCategory = e.category,
+                processedAt = completedAt,
             )
             return if (summary.added + summary.replaced > 0) {
                 LibraryVaultCaptureResult.Captured(
@@ -445,12 +465,6 @@ internal fun orderLibraryVaultCaptureChapters(
         merged.add(index.coerceAtMost(merged.size), replacement)
     }
     return merged.mapIndexed { index, chapter -> chapter.copy(sourceOrder = index.toLong()) }
-}
-
-internal fun VaultImportRequest.pendingChapters(): List<VaultImportRequestChapter> {
-    return chapters
-        .filter { it.state == VaultImportRequestChapterState.PENDING }
-        .sortedWith(compareBy<VaultImportRequestChapter> { it.sortOrder }.thenBy { it.selectionId })
 }
 
 internal fun VaultImportRequest.checkpointSummary(): LibraryVaultCaptureCheckpointSummary {
