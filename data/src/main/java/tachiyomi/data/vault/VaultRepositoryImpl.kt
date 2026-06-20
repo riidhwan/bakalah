@@ -275,6 +275,12 @@ class VaultRepositoryImpl(
             .awaitAsOneOrNull()
     }
 
+    override fun getReadingStatesForMangaAsFlow(mangaId: Long): Flow<List<VaultReadingState>> {
+        return database.vaultQueries
+            .getReadingStatesForManga(mangaId, VaultMapper::mapReadingState)
+            .subscribeToList()
+    }
+
     override suspend fun upsertCacheState(state: VaultChapterCacheState) {
         database.vaultQueries.upsertCacheState(
             chapterId = state.chapterId,

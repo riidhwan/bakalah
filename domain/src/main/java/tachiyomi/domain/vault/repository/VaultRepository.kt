@@ -66,6 +66,9 @@ interface VaultRepository {
 
     suspend fun getReadingState(chapterId: Long): VaultReadingState?
 
+    fun getReadingStatesForMangaAsFlow(mangaId: Long): Flow<List<VaultReadingState>> =
+        error("Not implemented")
+
     suspend fun upsertCacheState(state: VaultChapterCacheState)
 
     suspend fun getCacheState(chapterId: Long): VaultChapterCacheState?

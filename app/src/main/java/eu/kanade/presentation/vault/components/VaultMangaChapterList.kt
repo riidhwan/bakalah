@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HourglassEmpty
@@ -39,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -62,9 +62,6 @@ import tachiyomi.presentation.core.i18n.stringResource
 internal fun VaultChapterList(
     state: VaultMangaScreenModel.State,
     contentPadding: PaddingValues,
-    onClickCache: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
-    onClickEvict: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
-    onClickRetry: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onLongPressPath: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickDownloadCbz: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onLongPressThumbnailPath: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
@@ -84,11 +81,7 @@ internal fun VaultChapterList(
                 state = state,
                 onPrimaryAction = {
                     state.primaryActionChapter()?.let { chapter ->
-                        if (chapter.state == VaultCacheState.CACHED) {
-                            onClickRead(chapter)
-                        } else {
-                            onClickCache(chapter)
-                        }
+                        onClickRead(chapter)
                     }
                 },
                 onClickAssignLabel = onClickAssignLabel,
@@ -106,9 +99,6 @@ internal fun VaultChapterList(
             VaultChapterListItem(
                 state = state,
                 item = item,
-                onClickCache = { onClickCache(item) },
-                onClickEvict = { onClickEvict(item) },
-                onClickRetry = { onClickRetry(item) },
                 onLongPressPath = { onLongPressPath(item) },
                 onClickDownloadCbz = { onClickDownloadCbz(item) },
                 onLongPressThumbnailPath = { onLongPressThumbnailPath(item) },
@@ -125,9 +115,6 @@ internal fun VaultChapterList(
 private fun VaultChapterListItem(
     state: VaultMangaScreenModel.State,
     item: VaultMangaScreenModel.VaultChapterItem,
-    onClickCache: () -> Unit,
-    onClickEvict: () -> Unit,
-    onClickRetry: () -> Unit,
     onLongPressPath: () -> Unit,
     onClickDownloadCbz: () -> Unit,
     onLongPressThumbnailPath: () -> Unit,
@@ -187,11 +174,7 @@ private fun VaultChapterListItem(
                     )
                 }
             }
-            ChapterStateAction(
-                state = item.state,
-                onClickCache = onClickCache,
-                onClickRetry = onClickRetry,
-            )
+            ChapterStateIcon(state = item.state)
             Box {
                 IconButton(onClick = { showMenu = true }) {
                     Icon(
@@ -211,16 +194,6 @@ private fun VaultChapterListItem(
                             showProperties = true
                         },
                     )
-                    if (item.state == VaultCacheState.CACHED) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(MR.strings.vault_action_evict_from_device)) },
-                            leadingIcon = { Icon(Icons.Outlined.DeleteOutline, contentDescription = null) },
-                            onClick = {
-                                showMenu = false
-                                onClickEvict()
-                            },
-                        )
-                    }
                 }
             }
         }
@@ -431,31 +404,24 @@ private fun VaultChapterThumbnail(
 }
 
 @Composable
-private fun ChapterStateAction(
+private fun ChapterStateIcon(
     state: VaultCacheState,
-    onClickCache: () -> Unit,
-    onClickRetry: () -> Unit,
 ) {
     when (state) {
-        VaultCacheState.VAULT_ONLY -> IconButton(onClick = onClickCache) {
-            Icon(
-                imageVector = Icons.Outlined.Download,
-                contentDescription = stringResource(MR.strings.vault_action_cache),
-            )
-        }
+        VaultCacheState.VAULT_ONLY,
+        VaultCacheState.CACHED,
+        -> Unit
         VaultCacheState.FAILED,
         VaultCacheState.INTEGRITY_FAULT,
-        -> IconButton(onClick = onClickRetry) {
-            Icon(
-                imageVector = if (state == VaultCacheState.INTEGRITY_FAULT) {
-                    Icons.Outlined.WarningAmber
-                } else {
-                    Icons.Outlined.ErrorOutline
-                },
-                tint = MaterialTheme.colorScheme.error,
-                contentDescription = stringResource(MR.strings.action_retry),
-            )
-        }
+        -> StateIcon(
+            icon = if (state == VaultCacheState.INTEGRITY_FAULT) {
+                Icons.Outlined.WarningAmber
+            } else {
+                Icons.Outlined.ErrorOutline
+            },
+            tint = MaterialTheme.colorScheme.error,
+            contentDescription = state.label(),
+        )
         VaultCacheState.QUEUED,
         VaultCacheState.CACHING,
         VaultCacheState.PUBLISHING,
@@ -463,7 +429,6 @@ private fun ChapterStateAction(
             icon = Icons.Outlined.HourglassEmpty,
             contentDescription = state.label(),
         )
-        VaultCacheState.CACHED -> Unit
     }
 }
 
@@ -471,11 +436,12 @@ private fun ChapterStateAction(
 private fun StateIcon(
     icon: ImageVector,
     contentDescription: String,
+    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     Icon(
         imageVector = icon,
         contentDescription = contentDescription,
-        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        tint = tint,
         modifier = Modifier
             .padding(horizontal = 12.dp)
             .size(24.dp),

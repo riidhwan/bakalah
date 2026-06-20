@@ -573,6 +573,12 @@ SELECT *
 FROM vault_reading_state
 WHERE chapter_id = :chapterId;
 
+getReadingStatesForManga:
+SELECT vault_reading_state.*
+FROM vault_reading_state
+JOIN vault_chapters ON vault_chapters._id = vault_reading_state.chapter_id
+WHERE vault_chapters.manga_id = :mangaId;
+
 upsertCacheState:
 INSERT INTO vault_chapter_cache_state(
     chapter_id, state, local_path, size_bytes, checksum_sha256, last_verified_at, last_opened_at, updated_at,
