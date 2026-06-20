@@ -80,6 +80,19 @@ WHERE _id IN (
     WHERE M.source = :localSourceId
 );
 
+removeSourceHistory:
+DELETE FROM history
+WHERE _id IN (
+    SELECT H._id
+    FROM history H
+    INNER JOIN chapters C
+    ON H.chapter_id = C._id
+    INNER JOIN mangas M
+    ON C.manga_id = M._id
+    WHERE M.favorite = 0
+    AND M.source != :localSourceId
+);
+
 removeResettedHistory:
 DELETE FROM history
 WHERE last_read = 0;

@@ -3,6 +3,7 @@ package eu.kanade.presentation.browse.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.ViewModule
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -33,7 +34,6 @@ fun BrowseSourceToolbar(
     navigateUp: (() -> Unit)?,
     onClickCloseSearch: () -> Unit = { onSearchQueryChange(null) },
     onWebViewClick: () -> Unit,
-    onHelpClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onHistoryClick: (() -> Unit)? = null,
     onSearch: (String) -> Unit,
@@ -70,18 +70,13 @@ fun BrowseSourceToolbar(
                     if (isLocalSource) {
                         onHistoryClick?.let {
                             add(
-                                AppBar.OverflowAction(
+                                AppBar.Action(
                                     title = stringResource(MR.strings.history),
+                                    icon = Icons.Outlined.History,
                                     onClick = it,
                                 ),
                             )
                         }
-                        add(
-                            AppBar.OverflowAction(
-                                title = stringResource(MR.strings.label_help),
-                                onClick = onHelpClick,
-                            ),
-                        )
                     } else {
                         add(
                             AppBar.OverflowAction(

@@ -11,7 +11,11 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Added
+- Add Source history from Browse Sources for source manga read before being saved to the Library.
+
 ### Changed
+- Promote Library and Local history to toolbar actions and remove their remaining overflow-only menu actions.
 - Let Vault Manga Detail open chapters through app-managed cache policy instead of exposing manual cache, retry, and eviction controls.
 
 ## [v0.32.0] - 2026-06-19

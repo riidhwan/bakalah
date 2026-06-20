@@ -20,6 +20,7 @@
     <string name="history">History</string>
     <string name="library_history">Library history</string>
     <string name="local_history">Local history</string>
+    <string name="source_history">Source history</string>
     <string name="scanlator">Scanlator</string>
 
     <!-- Screen titles -->

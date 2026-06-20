@@ -162,7 +162,6 @@ data class BrowseSourceScreen(
                         navigateUp = navigateUp.takeIf { showNavigateUp },
                         onClickCloseSearch = navigateUp,
                         onWebViewClick = onWebViewClick,
-                        onHelpClick = onHelpClick,
                         onSettingsClick = { navigator.push(SourcePreferencesScreen(sourceId)) },
                         onHistoryClick = {
                             navigator.push(

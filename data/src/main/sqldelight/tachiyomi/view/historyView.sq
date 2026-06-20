@@ -67,6 +67,27 @@ AND historyView.source = :localSourceId
 AND lower(historyView.title) LIKE ('%' || lower(:query) || '%')
 ORDER BY readAt DESC;
 
+historyBySource:
+SELECT
+id,
+mangaId,
+chapterId,
+title,
+thumbnailUrl,
+source,
+favorite,
+cover_last_modified,
+chapterNumber,
+readAt,
+readDuration
+FROM historyView
+WHERE historyView.readAt > 0
+AND maxReadAtChapterId = historyView.chapterId
+AND historyView.favorite = 0
+AND historyView.source != :localSourceId
+AND lower(historyView.title) LIKE ('%' || lower(:query) || '%')
+ORDER BY readAt DESC;
+
 getLatestHistory:
 SELECT
 id,

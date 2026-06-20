@@ -61,6 +61,16 @@ class GetHistoryTest {
     }
 
     @Test
+    fun `source history requests non-library non-local scope`() = runTest {
+        val filter = HistorySourceFilter.Source(excludedLocalSourceId = LOCAL_SOURCE_ID)
+
+        val result = getHistory.subscribe(query = "", sourceFilter = filter).single()
+
+        repository.lastHistoryRequest shouldBe HistoryRequest(query = "", sourceFilter = filter)
+        result.map { it.id } shouldBe listOf(3L)
+    }
+
+    @Test
     fun `search query filters within selected scope`() = runTest {
         val result = getHistory.subscribe(
             query = "favorite",
@@ -103,6 +113,15 @@ class RemoveHistoryTest {
     @Test
     fun `clear all local history uses local scope`() = runTest {
         val filter = HistorySourceFilter.Local(localSourceId = LOCAL_SOURCE_ID)
+
+        removeHistory.awaitAll(filter) shouldBe true
+
+        repository.lastDeleteAllFilter shouldBe filter
+    }
+
+    @Test
+    fun `clear all source history uses source scope`() = runTest {
+        val filter = HistorySourceFilter.Source(excludedLocalSourceId = LOCAL_SOURCE_ID)
 
         removeHistory.awaitAll(filter) shouldBe true
 
@@ -163,6 +182,7 @@ private fun HistorySourceFilter.includes(sourceId: Long, favorite: Boolean): Boo
     return when (this) {
         is HistorySourceFilter.Library -> favorite && sourceId != excludedLocalSourceId
         is HistorySourceFilter.Local -> sourceId == localSourceId
+        is HistorySourceFilter.Source -> !favorite && sourceId != excludedLocalSourceId
     }
 }
 

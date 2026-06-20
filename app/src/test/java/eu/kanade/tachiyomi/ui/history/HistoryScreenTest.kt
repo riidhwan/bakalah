@@ -18,6 +18,12 @@ class HistoryScreenTest {
         serialize(HistoryScreen.local(localSourceId = 0L, title = "Local history")).size shouldBeGreaterThan 0
     }
 
+    @Test
+    fun `source history screen is serializable for saved state`() {
+        serialize(HistoryScreen.source(excludedLocalSourceId = 0L, title = "Source history")).size shouldBeGreaterThan
+            0
+    }
+
     private fun serialize(screen: HistoryScreen): ByteArray {
         val bytes = ByteArrayOutputStream()
         ObjectOutputStream(bytes).use { it.writeObject(screen) }

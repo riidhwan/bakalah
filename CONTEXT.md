@@ -80,6 +80,10 @@ _Avoid_: Local source tab, downloads
 The top-level navigation destination for revisiting manga and chapters from the user's reading history.
 _Avoid_: Recent manga tab, recently read screen
 
+**Source History**:
+Reading history for manga supplied by source extensions that the user has opened or read but has not saved to the Library. It excludes Local Manga and Source-Backed Library Manga.
+_Avoid_: Browse history, extension history, unsaved library history
+
 **Browse Destination**:
 The top-level navigation destination for finding source manga, managing extensions, and starting migration workflows.
 _Avoid_: Browse tab, sources screen

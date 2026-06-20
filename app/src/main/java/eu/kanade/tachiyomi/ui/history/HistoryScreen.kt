@@ -140,12 +140,14 @@ class HistoryScreen private constructor(
     private enum class SourceFilterType {
         Library,
         Local,
+        Source,
     }
 
     private fun SourceFilterType.toHistorySourceFilter(localSourceId: Long): HistorySourceFilter {
         return when (this) {
             SourceFilterType.Library -> HistorySourceFilter.Library(excludedLocalSourceId = localSourceId)
             SourceFilterType.Local -> HistorySourceFilter.Local(localSourceId = localSourceId)
+            SourceFilterType.Source -> HistorySourceFilter.Source(excludedLocalSourceId = localSourceId)
         }
     }
 
@@ -162,6 +164,14 @@ class HistoryScreen private constructor(
             return HistoryScreen(
                 sourceFilterType = SourceFilterType.Local,
                 localSourceId = localSourceId,
+                title = title,
+            )
+        }
+
+        fun source(excludedLocalSourceId: Long, title: String): HistoryScreen {
+            return HistoryScreen(
+                sourceFilterType = SourceFilterType.Source,
+                localSourceId = excludedLocalSourceId,
                 title = title,
             )
         }
