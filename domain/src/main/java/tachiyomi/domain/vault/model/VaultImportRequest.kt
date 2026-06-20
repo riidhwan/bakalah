@@ -60,6 +60,7 @@ data class VaultImportRequestSummary(
     val sourceMangaThumbnailUrl: String? = null,
     val sourceMangaCoverLastModified: Long = 0,
     val targetMangaTitle: String? = null,
+    val isTargetSensitive: Boolean = false,
 ) {
     val createNew: Boolean
         get() = createNewTitle != null

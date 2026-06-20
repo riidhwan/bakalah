@@ -169,7 +169,7 @@ The top-level app destination for browsing and managing the Vault Collection.
 _Avoid_: Vault Surface, Local Destination, Library Destination, sync settings
 
 **Task Destination**:
-The top-level app destination for inspecting durable user-visible work records, starting with retained Add to Vault requests and their per-chapter outcomes.
+The top-level app destination for inspecting durable user-visible work records, starting with retained Add to Vault requests and their per-chapter outcomes. When a Task Record targets a Vault Manga, its default visibility follows the same current Sensitive Vault Label-derived content visibility rule as the Vault Destination.
 _Avoid_: Import Requests tab, job list, worker queue
 
 **Task Record**:

@@ -735,6 +735,22 @@ SELECT
     source_mangas.thumbnail_url AS source_manga_thumbnail_url,
     source_mangas.cover_last_modified AS source_manga_cover_last_modified,
     target_mangas.title AS target_manga_title,
+    EXISTS(
+        SELECT 1
+        FROM vault_mangas AS sensitive_target_mangas
+        JOIN vault_manga_labels
+            ON vault_manga_labels.manga_id = sensitive_target_mangas._id
+        JOIN vault_labels
+            ON vault_labels._id = vault_manga_labels.label_id
+        WHERE vault_labels.is_sensitive
+        AND (
+            sensitive_target_mangas._id = vault_import_requests.target_manga_id
+            OR (
+                vault_import_requests.target_manga_id IS NULL
+                AND sensitive_target_mangas.identity = vault_import_requests.active_manga_identity
+            )
+        )
+    ) AS is_target_sensitive,
     count(vault_import_request_chapters.selection_id) AS total_chapters,
     coalesce(sum(CASE WHEN vault_import_request_chapters.state = 'pending' THEN 1 ELSE 0 END), 0) AS pending_chapters,
     coalesce(sum(CASE WHEN vault_import_request_chapters.state = 'running' THEN 1 ELSE 0 END), 0) AS running_chapters,

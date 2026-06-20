@@ -14,6 +14,7 @@ import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import tachiyomi.core.common.preference.InMemoryPreferenceStore
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultImportRequest
 import tachiyomi.domain.vault.model.VaultImportRequestChapter
@@ -21,6 +22,7 @@ import tachiyomi.domain.vault.model.VaultImportRequestChapterState
 import tachiyomi.domain.vault.model.VaultImportRequestSummary
 import tachiyomi.domain.vault.model.VaultImportRequestWorkflow
 import tachiyomi.domain.vault.repository.VaultRepository
+import tachiyomi.domain.vault.service.ContentVaultPreferences
 
 class ImportRequestsScreenModelTest {
 
@@ -38,7 +40,10 @@ class ImportRequestsScreenModelTest {
 
     @Test
     fun `list model exposes empty state`() = runBlocking {
-        val model = ImportRequestsScreenModel(repository(summaries = emptyList()))
+        val model = ImportRequestsScreenModel(
+            repository = repository(summaries = emptyList()),
+            preferences = preferences(),
+        )
 
         val state = model.awaitState { !it.isLoading }
 
@@ -56,7 +61,10 @@ class ImportRequestsScreenModelTest {
             failedChapters = 1,
             replacedChapters = 1,
         )
-        val model = ImportRequestsScreenModel(repository(summaries = listOf(request)))
+        val model = ImportRequestsScreenModel(
+            repository = repository(summaries = listOf(request)),
+            preferences = preferences(),
+        )
 
         val state = model.awaitState { it.requests.isNotEmpty() }
 
@@ -65,6 +73,34 @@ class ImportRequestsScreenModelTest {
         state.requests.single().sourceMangaSourceId shouldBe 99
         state.requests.single().sourceMangaThumbnailUrl shouldBe "https://example.invalid/cover.jpg"
         state.requests.single().targetMangaTitle shouldBe "Target Manga"
+    }
+
+    @Test
+    fun `list model hides sensitive target requests by default`() = runBlocking {
+        val visibleRequest = summary(id = 1, isTargetSensitive = false)
+        val sensitiveRequest = summary(id = 2, isTargetSensitive = true)
+        val model = ImportRequestsScreenModel(
+            repository = repository(summaries = listOf(visibleRequest, sensitiveRequest)),
+            preferences = preferences(includeSensitive = false),
+        )
+
+        val state = model.awaitState { it.requests.size == 2 }
+
+        state.visibleRequests shouldContainExactly listOf(visibleRequest)
+    }
+
+    @Test
+    fun `list model includes sensitive target requests when preference is enabled`() = runBlocking {
+        val visibleRequest = summary(id = 1, isTargetSensitive = false)
+        val sensitiveRequest = summary(id = 2, isTargetSensitive = true)
+        val model = ImportRequestsScreenModel(
+            repository = repository(summaries = listOf(visibleRequest, sensitiveRequest)),
+            preferences = preferences(includeSensitive = true),
+        )
+
+        val state = model.awaitState { it.requests.size == 2 }
+
+        state.visibleRequests shouldContainExactly listOf(visibleRequest, sensitiveRequest)
     }
 
     @Test
@@ -135,6 +171,12 @@ class ImportRequestsScreenModelTest {
         }
     }
 
+    private fun preferences(includeSensitive: Boolean = false): ContentVaultPreferences {
+        return ContentVaultPreferences(InMemoryPreferenceStore()).also {
+            it.includeSensitiveContent.set(includeSensitive)
+        }
+    }
+
     private fun summary(
         id: Long = 1,
         totalChapters: Int = 0,
@@ -143,6 +185,7 @@ class ImportRequestsScreenModelTest {
         completedChapters: Int = 0,
         failedChapters: Int = 0,
         replacedChapters: Int = 0,
+        isTargetSensitive: Boolean = false,
     ) = VaultImportRequestSummary(
         id = id,
         mangaId = 10,
@@ -165,6 +208,7 @@ class ImportRequestsScreenModelTest {
         sourceMangaThumbnailUrl = "https://example.invalid/cover.jpg",
         sourceMangaCoverLastModified = 300,
         targetMangaTitle = "Target Manga",
+        isTargetSensitive = isTargetSensitive,
     )
 
     private fun request(

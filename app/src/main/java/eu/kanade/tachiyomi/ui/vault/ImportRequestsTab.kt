@@ -36,6 +36,7 @@ data object ImportRequestsTab : Tab {
         ImportRequestsScreen(
             state = state,
             onClickRequest = { navigator.push(ImportRequestChaptersScreen(it)) },
+            onIncludeSensitiveChange = screenModel::setIncludeSensitiveContent,
         )
     }
 }

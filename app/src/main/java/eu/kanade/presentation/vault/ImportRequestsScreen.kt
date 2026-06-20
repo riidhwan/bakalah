@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined._18UpRating
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.components.AppBar
+import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.manga.components.MangaCover
 import eu.kanade.tachiyomi.ui.vault.ImportRequestsScreenModel
 import tachiyomi.domain.vault.model.VaultImportRequestSummary
@@ -29,6 +33,7 @@ import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.LoadingScreen
+import tachiyomi.presentation.core.theme.active
 import kotlin.time.Duration.Companion.milliseconds
 import tachiyomi.domain.manga.model.MangaCover as MangaCoverModel
 
@@ -36,11 +41,36 @@ import tachiyomi.domain.manga.model.MangaCover as MangaCoverModel
 fun ImportRequestsScreen(
     state: ImportRequestsScreenModel.State,
     onClickRequest: (Long) -> Unit,
+    onIncludeSensitiveChange: (Boolean) -> Unit,
 ) {
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
                 title = stringResource(MR.strings.label_import_requests),
+                actions = {
+                    val includeSensitiveTitle = stringResource(
+                        if (state.includeSensitiveContent) {
+                            MR.strings.vault_action_hide_sensitive
+                        } else {
+                            MR.strings.vault_action_include_sensitive
+                        },
+                    )
+                    val includeSensitiveTint = if (state.includeSensitiveContent) {
+                        MaterialTheme.colorScheme.active
+                    } else {
+                        LocalContentColor.current
+                    }
+                    AppBarActions(
+                        listOf(
+                            AppBar.Action(
+                                title = includeSensitiveTitle,
+                                icon = Icons.Outlined._18UpRating,
+                                iconTint = includeSensitiveTint,
+                                onClick = { onIncludeSensitiveChange(!state.includeSensitiveContent) },
+                            ),
+                        ),
+                    )
+                },
                 scrollBehavior = scrollBehavior,
             )
         },
@@ -55,8 +85,12 @@ fun ImportRequestsScreen(
                 stringRes = MR.strings.vault_import_requests_empty,
                 modifier = Modifier.padding(contentPadding),
             )
+            state.visibleRequests.isEmpty() -> EmptyScreen(
+                stringRes = MR.strings.no_results_found,
+                modifier = Modifier.padding(contentPadding),
+            )
             else -> ImportRequestList(
-                requests = state.requests,
+                requests = state.visibleRequests,
                 contentPadding = contentPadding,
                 onClickRequest = onClickRequest,
             )

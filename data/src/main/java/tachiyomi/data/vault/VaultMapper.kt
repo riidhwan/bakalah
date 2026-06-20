@@ -340,6 +340,7 @@ object VaultMapper {
         sourceMangaThumbnailUrl: String?,
         sourceMangaCoverLastModified: Long?,
         targetMangaTitle: String?,
+        isTargetSensitive: Boolean,
         totalChapters: Long,
         pendingChapters: Long,
         runningChapters: Long,
@@ -370,6 +371,7 @@ object VaultMapper {
         sourceMangaThumbnailUrl = sourceMangaThumbnailUrl,
         sourceMangaCoverLastModified = sourceMangaCoverLastModified ?: 0,
         targetMangaTitle = targetMangaTitle,
+        isTargetSensitive = isTargetSensitive,
     )
 
     fun mapImportRequestChapter(
