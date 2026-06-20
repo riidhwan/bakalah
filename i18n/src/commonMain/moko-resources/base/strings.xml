@@ -233,9 +233,15 @@
     <string name="vault_refresh_failed">Could not refresh Vault Catalogue</string>
     <string name="vault_refresh_failed_details">Could not refresh Vault Catalogue: %s</string>
     <string name="vault_delete_manga_confirm_title">Delete from Vault?</string>
-    <string name="vault_delete_manga_confirm_message">This moves the manga to Vault Trash and removes only this device's app-managed Vault cache for it. Original Local Manga files and Downloads will not be deleted.</string>
-    <string name="vault_delete_manga_complete">Vault Manga moved to Trash</string>
+    <string name="vault_delete_manga_confirm_message">This permanently deletes the manga from the Vault and removes this device's app-managed Vault cache for it. Original Local Manga files and Downloads will not be deleted.</string>
+    <string name="vault_delete_manga_complete">Vault Manga deleted</string>
     <string name="vault_delete_manga_failed_details">Could not delete from Vault: %s</string>
+    <string name="vault_action_delete_chapter">Delete chapter</string>
+    <string name="vault_delete_chapter_confirm_title">Delete chapter?</string>
+    <string name="vault_delete_chapter_confirm_message">This permanently deletes the chapter from the Vault and removes this device's vault cache and reading state for it. Original Local Manga files and Downloads will not be deleted.</string>
+    <string name="vault_delete_chapter_complete">Vault Chapter deleted</string>
+    <string name="vault_delete_chapter_failed_details">Could not delete chapter: %s</string>
+    <string name="vault_chapter_deleting">Deleting</string>
     <string name="vault_metadata_edit_title">Edit Vault Metadata</string>
     <string name="vault_metadata_label_duplicate">Vault Label names must be unique</string>
     <string name="vault_label_add">Add Vault Label</string>

@@ -7,6 +7,7 @@ import eu.kanade.tachiyomi.data.vault.cache.VaultCachePolicyService
 import eu.kanade.tachiyomi.data.vault.export.VaultChapterExportResult
 import eu.kanade.tachiyomi.data.vault.export.VaultChapterExportService
 import eu.kanade.tachiyomi.data.vault.export.vaultChapterRemotePath
+import eu.kanade.tachiyomi.data.vault.operation.VaultChapterDeletePayload
 import eu.kanade.tachiyomi.data.vault.operation.VaultMetadataLabelEditPayload
 import eu.kanade.tachiyomi.data.vault.operation.VaultMetadataPublishPayload
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationManager
@@ -73,6 +74,7 @@ class VaultMangaScreenModel(
     val events = _events.receiveAsFlow()
     private val loadingChapterThumbnailIds = Collections.synchronizedSet(mutableSetOf<Long>())
     private val observedTerminalMetadataJobIds = Collections.synchronizedSet(mutableSetOf<Long>())
+    private val observedTerminalChapterDeletionJobIds = Collections.synchronizedSet(mutableSetOf<Long>())
 
     init {
         screenModelScope.launchIO {
@@ -96,6 +98,11 @@ class VaultMangaScreenModel(
             observedTerminalMetadataJobIds.addAll(
                 repository.getTransferJobsForVault(manga.vaultId)
                     .filter { it.isCompletedMetadataOperationForCurrentManga() }
+                    .map { it.id },
+            )
+            observedTerminalChapterDeletionJobIds.addAll(
+                repository.getTransferJobsForVault(manga.vaultId)
+                    .filter { it.isCompletedChapterDeletionForCurrentManga() }
                     .map { it.id },
             )
             reloadCoverCache()
@@ -122,6 +129,9 @@ class VaultMangaScreenModel(
                                 (it.state == VaultTransferState.QUEUED || it.state == VaultTransferState.RUNNING)
                         },
                         terminalJobs = transferJobs.filter { it.isCompletedMetadataOperationForCurrentManga() },
+                        terminalChapterDeletionJobs = transferJobs.filter {
+                            it.isCompletedChapterDeletionForCurrentManga()
+                        },
                     )
                 }
                     .catch {
@@ -154,6 +164,20 @@ class VaultMangaScreenModel(
                                 }
                             }
                         }
+                        snapshot.terminalChapterDeletionJobs.forEach { job ->
+                            if (observedTerminalChapterDeletionJobIds.add(job.id)) {
+                                if (
+                                    job.state == VaultTransferState.SUCCEEDED ||
+                                    job.state == VaultTransferState.PARTIALLY_SUCCEEDED
+                                ) {
+                                    _events.send(Event.ChapterDeleteCompleted(job.cleanupWarningDetail()))
+                                } else {
+                                    _events.send(
+                                        Event.ChapterDeleteFailed(job.failureReason.toChapterDeleteFailureDetail()),
+                                    )
+                                }
+                            }
+                        }
                     }
             }
 
@@ -161,12 +185,22 @@ class VaultMangaScreenModel(
                 repository.getChaptersAsFlow(mangaId),
                 repository.getCacheStatesForMangaAsFlow(mangaId),
                 repository.getReadingStatesForMangaAsFlow(mangaId),
-            ) { chapters, cacheStates, readingStates ->
+                repository.getTransferJobsForMangaAsFlow(mangaId),
+            ) { chapters, cacheStates, readingStates, transferJobs ->
+                val pendingDeletingChapterIds = transferJobs
+                    .filter {
+                        it.type == VaultTransferType.CHAPTER_DELETE &&
+                            it.state in ACTIVE_TRANSFER_STATES &&
+                            it.chapterId != null
+                    }
+                    .mapNotNull { it.chapterId }
+                    .toSet()
                 buildVaultChapterItems(
                     chapters = chapters,
                     cacheStates = cacheStates,
                     readingStates = readingStates.associateBy { it.chapterId },
                     previousItems = mutableState.value.chapters,
+                    pendingDeletingChapterIds = pendingDeletingChapterIds,
                 )
             }
                 .catch {
@@ -227,6 +261,7 @@ class VaultMangaScreenModel(
     }
 
     fun cacheChapter(item: VaultChapterItem) {
+        if (item.isDeleting) return
         screenModelScope.launchIO {
             runCatching {
                 val manga = mutableState.value.manga ?: return@launchIO
@@ -265,6 +300,7 @@ class VaultMangaScreenModel(
     }
 
     fun retryChapter(item: VaultChapterItem) {
+        if (item.isDeleting) return
         screenModelScope.launchIO {
             runCatching {
                 val manga = mutableState.value.manga ?: return@launchIO
@@ -352,6 +388,7 @@ class VaultMangaScreenModel(
     }
 
     fun evictChapter(item: VaultChapterItem) {
+        if (item.isDeleting) return
         screenModelScope.launchIO {
             runCatching {
                 val localStaging = localStaging() ?: return@runCatching false
@@ -366,6 +403,7 @@ class VaultMangaScreenModel(
     }
 
     fun exportChapter(item: VaultChapterItem) {
+        if (item.isDeleting) return
         screenModelScope.launchIO {
             val currentState = mutableState.value
             val manga = currentState.manga ?: return@launchIO
@@ -407,6 +445,7 @@ class VaultMangaScreenModel(
     }
 
     fun exportChapterThumbnail(item: VaultChapterItem) {
+        if (item.isDeleting) return
         screenModelScope.launchIO {
             val currentState = mutableState.value
             val manga = currentState.manga ?: return@launchIO
@@ -464,6 +503,33 @@ class VaultMangaScreenModel(
                 else -> _events.send(Event.DeleteFailed(result.toFailureDetail()))
             }
             mutableState.update { it.copy(isDeleting = false) }
+        }
+    }
+
+    fun deleteChapter(item: VaultChapterItem) {
+        screenModelScope.launchIO {
+            val manga = mutableState.value.manga ?: return@launchIO
+            if (item.isDeleting) return@launchIO
+            if (mutableState.value.chapters.size <= 1) {
+                _events.send(Event.ChapterDeleteFailed("Delete the Vault Manga instead"))
+                return@launchIO
+            }
+            val result = runCatching {
+                operationManager.enqueueChapterDeletion(
+                    vaultId = manga.vaultId,
+                    mangaId = manga.id,
+                    chapterId = item.chapter.id,
+                    payload = VaultChapterDeletePayload(
+                        mangaId = manga.id,
+                        chapterId = item.chapter.id,
+                        chapterTitle = item.chapter.title,
+                    ),
+                )
+            }.getOrElse {
+                logcat(LogPriority.ERROR, it)
+                null
+            }
+            if (result == null) _events.send(Event.ChapterDeleteFailed("Could not enqueue Vault chapter deletion"))
         }
     }
 
@@ -623,6 +689,7 @@ class VaultMangaScreenModel(
         val cacheState: VaultChapterCacheState?,
         val readingState: VaultReadingState? = null,
         val thumbnail: VaultChapterThumbnailDisplayResult,
+        val isDeleting: Boolean = false,
     ) {
         val state: VaultCacheState
             get() = cacheState?.state ?: VaultCacheState.VAULT_ONLY
@@ -635,6 +702,7 @@ class VaultMangaScreenModel(
 
         val canDownloadCbz: Boolean
             get() = chapter.content.format == VaultChapterContentFormat.CBZ &&
+                !isDeleting &&
                 state !in EXPORT_BLOCKED_STATES
     }
 
@@ -659,6 +727,8 @@ class VaultMangaScreenModel(
         data object CacheFailed : Event
         data class DeleteCompleted(val warningDetail: String? = null) : Event
         data class DeleteFailed(val detail: String) : Event
+        data class ChapterDeleteCompleted(val warningDetail: String? = null) : Event
+        data class ChapterDeleteFailed(val detail: String) : Event
         data object MetadataPublished : Event
         data class MetadataPublishFailed(val detail: String) : Event
         data class ChapterExported(val filename: String) : Event
@@ -689,6 +759,12 @@ class VaultMangaScreenModel(
             mangaId == this@VaultMangaScreenModel.mangaId &&
             isTerminal
     }
+
+    private fun VaultTransferJob.isCompletedChapterDeletionForCurrentManga(): Boolean {
+        return type == VaultTransferType.CHAPTER_DELETE &&
+            mangaId == this@VaultMangaScreenModel.mangaId &&
+            isTerminal
+    }
 }
 
 private data class VaultMangaMetadataSnapshot(
@@ -698,6 +774,7 @@ private data class VaultMangaMetadataSnapshot(
     val pendingLabelIdentities: Set<String>,
     val isPublishingMetadata: Boolean,
     val terminalJobs: List<VaultTransferJob>,
+    val terminalChapterDeletionJobs: List<VaultTransferJob>,
 )
 
 private data class VaultMetadataPendingOverlay(
@@ -843,6 +920,7 @@ internal fun buildVaultChapterItems(
     cacheStates: List<VaultChapterCacheState>,
     readingStates: Map<Long, VaultReadingState> = emptyMap(),
     previousItems: List<VaultMangaScreenModel.VaultChapterItem>,
+    pendingDeletingChapterIds: Set<Long> = emptySet(),
 ): List<VaultMangaScreenModel.VaultChapterItem> {
     val cacheByChapter = cacheStates.associateBy { it.chapterId }
     val previousByChapter = previousItems.associateBy { it.chapter.id }
@@ -852,6 +930,7 @@ internal fun buildVaultChapterItems(
             chapter = chapter,
             cacheState = cacheByChapter[chapter.id],
             readingState = readingStates[chapter.id],
+            isDeleting = chapter.id in pendingDeletingChapterIds,
             thumbnail = previous
                 ?.thumbnail
                 ?.takeIf { previous.chapter.thumbnail?.identity == chapter.thumbnail?.identity }
@@ -859,6 +938,8 @@ internal fun buildVaultChapterItems(
         )
     }
 }
+
+private val ACTIVE_TRANSFER_STATES = setOf(VaultTransferState.QUEUED, VaultTransferState.RUNNING)
 
 private fun VaultMangaDeletionResult.toFailureDetail(): String {
     return when (this) {
@@ -888,6 +969,38 @@ private fun VaultMangaDeletionResult.cleanupWarningDetail(): String? {
         is VaultMangaDeletionResult.DeletedWithCleanupFailures ->
             "Cleanup failed for ${failedPaths.size} remote file(s)"
         else -> null
+    }
+}
+
+private fun VaultTransferJob.cleanupWarningDetail(): String? {
+    return failureReason
+        ?.takeIf { state == VaultTransferState.PARTIALLY_SUCCEEDED && it.startsWith("cleanup_failed") }
+        ?.let { reason ->
+            val count = reason.substringAfter(':', "1").toIntOrNull() ?: 1
+            "Cleanup failed for $count remote file(s)"
+        }
+}
+
+private fun String?.toChapterDeleteFailureDetail(): String {
+    return when (this?.substringBefore(':')) {
+        "active_transfer" -> "Vault Chapter has active work"
+        "active_reader" -> "Vault Manga is open in the reader"
+        "last_chapter" -> "Delete the Vault Manga instead"
+        "incomplete_configuration" -> "Incomplete configuration"
+        "vault_not_found" -> "Vault not found"
+        "manga_not_found" -> "Vault Manga not found"
+        "chapter_not_found" -> "Vault Chapter not found"
+        "not_vault" -> "Remote root is not a Bakalah Content Vault"
+        "unsupported_older_version" -> "Unsupported older layout version"
+        "unsupported_newer_version" -> "Unsupported newer layout version"
+        "identity_changed" -> "Remote identity changed"
+        "revision_mismatch" -> "Vault revision changed"
+        "manifest_not_found" -> "Manifest not found"
+        "identity_mismatch" -> "Manifest identity mismatch"
+        "malformed_manifest" -> "Malformed manifest"
+        "invalid_payload" -> "Invalid deletion request"
+        "publish_failed" -> "Could not publish Vault chapter deletion"
+        else -> "Could not delete Vault Chapter"
     }
 }
 

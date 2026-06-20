@@ -416,6 +416,10 @@ _Avoid_: Delete chapter, unsync, remove from vault
 Permanently removing vault-owned manga content from the authoritative Vault Collection through a Vault-owned workflow.
 _Avoid_: Soft delete, move to trash, delete download, remove from device, cleanup
 
+**Vault Chapter Deletion**:
+Permanently removing one Vault Chapter from a Vault Manga while leaving the Vault Manga in the authoritative Vault Collection.
+_Avoid_: Cache eviction, delete download, remove from device, delete last chapter
+
 **Vault Trash**:
 Retired name for a recoverable holding area for vault-owned content removed from normal Vault browsing but still represented in the authoritative Vault Catalogue.
 _Avoid_: Cache eviction, delete downloads, archive

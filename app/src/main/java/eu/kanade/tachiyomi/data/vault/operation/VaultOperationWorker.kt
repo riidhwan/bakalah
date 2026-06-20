@@ -46,7 +46,7 @@ class VaultOperationWorker(
             }
 
             val runningJob = markRunning(job)
-            val result = handler.execute(payloadJson)
+            val result = handler.execute(runningJob, payloadJson)
             markCompleted(runningJob, result)
         }
     }
