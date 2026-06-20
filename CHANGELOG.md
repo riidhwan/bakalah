@@ -12,6 +12,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 ### Added
+- Add Vault chapter deletion from Vault Manga Detail.
 - Add Source history from Browse Sources for source manga read before being saved to the Library.
 
 ### Changed

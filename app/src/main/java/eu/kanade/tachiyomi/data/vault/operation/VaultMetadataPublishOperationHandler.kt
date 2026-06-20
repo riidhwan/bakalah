@@ -4,6 +4,7 @@ import eu.kanade.tachiyomi.data.vault.publishing.VaultMetadataPublishResult
 import eu.kanade.tachiyomi.data.vault.publishing.VaultMetadataPublishService
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import tachiyomi.domain.vault.model.VaultTransferJob
 import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.model.VaultTransferType
 
@@ -15,7 +16,7 @@ class VaultMetadataPublishOperationHandler(
     override val type: VaultTransferType = VaultTransferType.METADATA_PUBLISH
     override val policy: VaultOperationPolicy = VaultOperationPolicy.OptimisticBackgroundPublish
 
-    override suspend fun execute(payloadJson: String): VaultOperationExecutionResult {
+    override suspend fun execute(job: VaultTransferJob, payloadJson: String): VaultOperationExecutionResult {
         val payload = try {
             json.decodeFromString<VaultMetadataPublishPayload>(payloadJson)
         } catch (_: SerializationException) {

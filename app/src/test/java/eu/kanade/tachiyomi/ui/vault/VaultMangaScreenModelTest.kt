@@ -71,6 +71,21 @@ class VaultMangaScreenModelTest {
         rebuilt.single().thumbnail shouldBe VaultChapterThumbnailDisplayResult.Unavailable
     }
 
+    @Test
+    fun `chapter item rebuild marks pending deletion`() {
+        val chapter = chapter(id = 1)
+
+        val rebuilt = buildVaultChapterItems(
+            chapters = listOf(chapter),
+            cacheStates = emptyList(),
+            previousItems = emptyList(),
+            pendingDeletingChapterIds = setOf(chapter.id),
+        )
+
+        rebuilt.single().isDeleting shouldBe true
+        rebuilt.single().canDownloadCbz shouldBe false
+    }
+
     private fun chapterItem(
         id: Long,
         title: String,

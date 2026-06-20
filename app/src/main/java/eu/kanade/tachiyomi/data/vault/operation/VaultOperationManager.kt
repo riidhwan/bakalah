@@ -30,7 +30,30 @@ class VaultOperationManager(
             mangaId = payload.mangaId,
             operationKey = operationKey,
             type = VaultTransferType.METADATA_PUBLISH,
+            chapterId = null,
             payloadJson = payloadJson,
+            coalesceQueued = true,
+        )
+        enqueueWorker(operationKey)
+        return VaultOperationEnqueueResult(jobId = jobId, operationKey = operationKey)
+    }
+
+    suspend fun enqueueChapterDeletion(
+        vaultId: Long,
+        mangaId: Long,
+        chapterId: Long,
+        payload: VaultChapterDeletePayload,
+    ): VaultOperationEnqueueResult {
+        val operationKey = chapterDeletionOperationKey(mangaId)
+        val payloadJson = json.encodeToString(payload)
+        val jobId = coalesceOperation(
+            vaultId = vaultId,
+            mangaId = mangaId,
+            chapterId = chapterId,
+            operationKey = operationKey,
+            type = VaultTransferType.CHAPTER_DELETE,
+            payloadJson = payloadJson,
+            coalesceQueued = false,
         )
         enqueueWorker(operationKey)
         return VaultOperationEnqueueResult(jobId = jobId, operationKey = operationKey)
@@ -39,15 +62,17 @@ class VaultOperationManager(
     private suspend fun coalesceOperation(
         vaultId: Long,
         mangaId: Long,
+        chapterId: Long?,
         operationKey: String,
         type: VaultTransferType,
         payloadJson: String,
+        coalesceQueued: Boolean,
     ): Long {
         val activeJobs = repository.getActiveTransferJobsForOperationKey(operationKey)
         val runningJob = activeJobs.firstOrNull { it.state == VaultTransferState.RUNNING }
         val queuedJob = activeJobs.lastOrNull { it.state == VaultTransferState.QUEUED }
         val timestamp = now()
-        val reusableJob = queuedJob
+        val reusableJob = queuedJob.takeIf { coalesceQueued }
         return if (reusableJob != null) {
             repository.upsertTransferJob(
                 reusableJob.copy(
@@ -63,7 +88,7 @@ class VaultOperationManager(
                     id = -1,
                     vaultId = vaultId,
                     mangaId = mangaId,
-                    chapterId = null,
+                    chapterId = chapterId,
                     importRequestId = null,
                     operationKey = operationKey,
                     payloadJson = payloadJson,
@@ -106,6 +131,8 @@ class VaultOperationManager(
         private const val WORK_TAG = "VaultOperation"
 
         fun metadataOperationKey(mangaId: Long): String = "vault-metadata:$mangaId"
+
+        fun chapterDeletionOperationKey(mangaId: Long): String = "vault-chapter-delete:$mangaId"
 
         fun workName(operationKey: String): String = "$WORK_TAG:$operationKey"
 

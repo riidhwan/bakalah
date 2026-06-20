@@ -42,6 +42,7 @@ enum class VaultTransferType {
     METADATA_PUBLISH,
     CACHE_CHAPTER,
     THUMBNAIL_PUBLISH,
+    CHAPTER_DELETE,
 }
 
 enum class VaultTransferState {

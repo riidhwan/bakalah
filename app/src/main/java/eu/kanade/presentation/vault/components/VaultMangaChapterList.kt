@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HourglassEmpty
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -29,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,6 +70,7 @@ internal fun VaultChapterList(
     onLongPressThumbnailPath: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickDownloadThumbnail: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onClickDeleteChapter: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onChapterThumbnailVisible: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickAssignLabel: (VaultLabel) -> Unit,
     onClickCreateLabel: (String) -> Unit,
@@ -104,6 +108,7 @@ internal fun VaultChapterList(
                 onLongPressThumbnailPath = { onLongPressThumbnailPath(item) },
                 onClickDownloadThumbnail = { onClickDownloadThumbnail(item) },
                 onClickRead = { onClickRead(item) },
+                onClickDelete = { onClickDeleteChapter(item) },
                 onChapterThumbnailVisible = { onChapterThumbnailVisible(item) },
                 modifier = Modifier.animateItem(),
             )
@@ -120,11 +125,13 @@ private fun VaultChapterListItem(
     onLongPressThumbnailPath: () -> Unit,
     onClickDownloadThumbnail: () -> Unit,
     onClickRead: () -> Unit,
+    onClickDelete: () -> Unit,
     onChapterThumbnailVisible: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showProperties by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(item.chapter.id, item.needsThumbnailLoad) {
         if (item.needsThumbnailLoad) {
@@ -135,7 +142,7 @@ private fun VaultChapterListItem(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClickRead)
+            .clickable(enabled = !item.isDeleting, onClick = onClickRead)
             .padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -161,11 +168,16 @@ private fun VaultChapterListItem(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    val availability = if (item.isDeleting) {
+                        stringResource(MR.strings.vault_chapter_deleting)
+                    } else {
+                        item.state.availabilityLabel()
+                    }
                     Text(
                         text = stringResource(
                             MR.strings.vault_chapter_availability,
                             formatBytes(item.chapter.content.sizeBytes),
-                            item.state.availabilityLabel(),
+                            availability,
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -189,9 +201,19 @@ private fun VaultChapterListItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(MR.strings.vault_chapter_properties)) },
                         leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                        enabled = !item.isDeleting,
                         onClick = {
                             showMenu = false
                             showProperties = true
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(MR.strings.vault_action_delete_chapter)) },
+                        leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null) },
+                        enabled = !item.isDeleting,
+                        onClick = {
+                            showMenu = false
+                            showDeleteConfirmation = true
                         },
                     )
                 }
@@ -208,6 +230,29 @@ private fun VaultChapterListItem(
             onLongPressThumbnailPath = onLongPressThumbnailPath,
             onClickDownloadThumbnail = onClickDownloadThumbnail,
             onDismissRequest = { showProperties = false },
+        )
+    }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text(stringResource(MR.strings.vault_delete_chapter_confirm_title)) },
+            text = { Text(stringResource(MR.strings.vault_delete_chapter_confirm_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        onClickDelete()
+                    },
+                ) {
+                    Text(stringResource(MR.strings.vault_action_delete_chapter))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text(stringResource(MR.strings.action_cancel))
+                }
+            },
         )
     }
 }
