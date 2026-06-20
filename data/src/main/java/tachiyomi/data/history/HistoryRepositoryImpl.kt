@@ -34,6 +34,13 @@ class HistoryRepositoryImpl(
                     mapper = HistoryMapper::mapHistoryWithRelations,
                 )
             }
+            is HistorySourceFilter.Source -> {
+                database.historyViewQueries.historyBySource(
+                    query = query,
+                    localSourceId = sourceFilter.excludedLocalSourceId,
+                    mapper = HistoryMapper::mapHistoryWithRelations,
+                )
+            }
         }
         return historyQuery.subscribeToList()
     }
@@ -80,6 +87,9 @@ class HistoryRepositoryImpl(
                 }
                 is HistorySourceFilter.Local -> {
                     database.historyQueries.removeLocalHistory(sourceFilter.localSourceId)
+                }
+                is HistorySourceFilter.Source -> {
+                    database.historyQueries.removeSourceHistory(sourceFilter.excludedLocalSourceId)
                 }
             }
             true

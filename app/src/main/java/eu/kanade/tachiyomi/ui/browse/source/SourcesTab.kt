@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.ui.browse.source
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.material.icons.outlined._18UpRating
 import androidx.compose.material3.LocalContentColor
@@ -26,11 +27,13 @@ import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.ui.browse.extension.details.ExtensionDetailsScreen
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreen
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
+import eu.kanade.tachiyomi.ui.history.HistoryScreen
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.theme.active
+import tachiyomi.source.local.LocalSource
 
 @Composable
 fun Screen.sourcesTab(): TabContent {
@@ -38,6 +41,7 @@ fun Screen.sourcesTab(): TabContent {
     val screenModel = rememberScreenModel { SourcesScreenModel() }
     val state by screenModel.state.collectAsState()
     var untrustedExtensionToTrust by remember { mutableStateOf<Extension.Untrusted?>(null) }
+    val sourceHistoryTitle = stringResource(MR.strings.source_history)
 
     return TabContent(
         titleRes = MR.strings.label_sources,
@@ -59,6 +63,18 @@ fun Screen.sourcesTab(): TabContent {
                 },
                 onClick = {
                     screenModel.setIncludeSensitiveExtensions(!state.includeSensitiveExtensions)
+                },
+            ),
+            AppBar.Action(
+                title = sourceHistoryTitle,
+                icon = Icons.Outlined.History,
+                onClick = {
+                    navigator.push(
+                        HistoryScreen.source(
+                            excludedLocalSourceId = LocalSource.ID,
+                            title = sourceHistoryTitle,
+                        ),
+                    )
                 },
             ),
             AppBar.Action(
