@@ -44,6 +44,7 @@ import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMangaStatus
 import tachiyomi.domain.vault.model.VaultMetadata
+import tachiyomi.domain.vault.model.VaultReadingState
 import tachiyomi.domain.vault.model.VaultTransferJob
 import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.model.VaultTransferType
@@ -159,10 +160,12 @@ class VaultMangaScreenModel(
             combine(
                 repository.getChaptersAsFlow(mangaId),
                 repository.getCacheStatesForMangaAsFlow(mangaId),
-            ) { chapters, cacheStates ->
+                repository.getReadingStatesForMangaAsFlow(mangaId),
+            ) { chapters, cacheStates, readingStates ->
                 buildVaultChapterItems(
                     chapters = chapters,
                     cacheStates = cacheStates,
+                    readingStates = readingStates.associateBy { it.chapterId },
                     previousItems = mutableState.value.chapters,
                 )
             }
@@ -618,6 +621,7 @@ class VaultMangaScreenModel(
     data class VaultChapterItem(
         val chapter: VaultChapter,
         val cacheState: VaultChapterCacheState?,
+        val readingState: VaultReadingState? = null,
         val thumbnail: VaultChapterThumbnailDisplayResult,
     ) {
         val state: VaultCacheState
@@ -837,6 +841,7 @@ internal fun orderVaultMangaDetailChapters(
 internal fun buildVaultChapterItems(
     chapters: List<VaultChapter>,
     cacheStates: List<VaultChapterCacheState>,
+    readingStates: Map<Long, VaultReadingState> = emptyMap(),
     previousItems: List<VaultMangaScreenModel.VaultChapterItem>,
 ): List<VaultMangaScreenModel.VaultChapterItem> {
     val cacheByChapter = cacheStates.associateBy { it.chapterId }
@@ -846,6 +851,7 @@ internal fun buildVaultChapterItems(
         VaultMangaScreenModel.VaultChapterItem(
             chapter = chapter,
             cacheState = cacheByChapter[chapter.id],
+            readingState = readingStates[chapter.id],
             thumbnail = previous
                 ?.thumbnail
                 ?.takeIf { previous.chapter.thumbnail?.identity == chapter.thumbnail?.identity }

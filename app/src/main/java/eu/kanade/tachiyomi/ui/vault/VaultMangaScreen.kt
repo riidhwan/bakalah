@@ -37,9 +37,6 @@ data class VaultMangaScreen(
             snackbarHostState = snackbarHostState,
             actions = VaultMangaScreenActions(
                 navigateUp = navigator::pop,
-                onClickCache = screenModel::cacheChapter,
-                onClickEvict = screenModel::evictChapter,
-                onClickRetry = screenModel::retryChapter,
                 onLongPressPath = {
                     state.remotePathFor(it)?.let { path ->
                         context.copyToClipboard(context.stringResource(MR.strings.vault_chapter_remote_path), path)

@@ -183,11 +183,7 @@
     <string name="vault_action_import_local">Import from Local</string>
     <string name="vault_action_import_to_vault">Import to Vault</string>
     <string name="vault_action_add_to_vault">Add to Vault</string>
-    <string name="vault_action_cache">Cache</string>
-    <string name="vault_action_evict">Evict cache</string>
-    <string name="vault_action_evict_from_device">Evict from device</string>
-    <string name="vault_action_read_cached">Read cached</string>
-    <string name="vault_action_cache_first_chapter">Cache first chapter</string>
+    <string name="vault_action_read">Read</string>
     <string name="vault_action_edit_metadata">Edit</string>
     <string name="vault_action_delete_manga">Delete from Vault</string>
     <string name="vault_action_include_sensitive">Include sensitive</string>

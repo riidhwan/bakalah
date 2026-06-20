@@ -55,12 +55,7 @@ internal fun VaultMangaHeader(
     var showAddLabel by remember { mutableStateOf(false) }
     val cachedCount = state.chapters.count { it.state == VaultCacheState.CACHED }
     val primaryAction = state.primaryActionChapter()
-    val primaryActionText = when {
-        primaryAction == null -> null
-        primaryAction.state == VaultCacheState.CACHED -> stringResource(MR.strings.vault_action_read_cached)
-        cachedCount > 0 -> stringResource(MR.strings.vault_action_read_cached)
-        else -> stringResource(MR.strings.vault_action_cache_first_chapter)
-    }
+    val primaryActionText = primaryAction?.let { stringResource(MR.strings.vault_action_read) }
 
     Column(
         modifier = modifier

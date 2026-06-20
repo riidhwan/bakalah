@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Changed
+- Let Vault Manga Detail open chapters through app-managed cache policy instead of exposing manual cache, retry, and eviction controls.
 
 ## [v0.32.0] - 2026-06-19
 ### Added

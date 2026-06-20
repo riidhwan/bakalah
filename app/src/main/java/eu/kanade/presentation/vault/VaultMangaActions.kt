@@ -1,9 +1,10 @@
 package eu.kanade.presentation.vault
 
 import eu.kanade.tachiyomi.ui.vault.VaultMangaScreenModel
-import tachiyomi.domain.vault.model.VaultCacheState
 
 internal fun VaultMangaScreenModel.State.primaryActionChapter(): VaultMangaScreenModel.VaultChapterItem? {
-    return chapters.firstOrNull { it.state == VaultCacheState.CACHED }
-        ?: chapters.firstOrNull { it.state == VaultCacheState.VAULT_ONLY }
+    return chapters
+        .filter { it.readingState?.lastReadAt != null }
+        .maxByOrNull { it.readingState?.lastReadAt ?: Long.MIN_VALUE }
+        ?: chapters.minByOrNull { it.chapter.sourceOrder }
 }

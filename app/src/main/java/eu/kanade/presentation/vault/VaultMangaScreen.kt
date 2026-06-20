@@ -84,9 +84,6 @@ fun VaultMangaScreen(
             else -> VaultChapterList(
                 state = state,
                 contentPadding = contentPadding,
-                onClickCache = actions.onClickCache,
-                onClickEvict = actions.onClickEvict,
-                onClickRetry = actions.onClickRetry,
                 onLongPressPath = actions.onLongPressPath,
                 onClickDownloadCbz = actions.onClickDownloadCbz,
                 onLongPressThumbnailPath = actions.onLongPressThumbnailPath,
@@ -138,9 +135,6 @@ fun VaultMangaScreen(
 
 data class VaultMangaScreenActions(
     val navigateUp: () -> Unit,
-    val onClickCache: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
-    val onClickEvict: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
-    val onClickRetry: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     val onLongPressPath: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     val onClickDownloadCbz: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     val onLongPressThumbnailPath: (VaultMangaScreenModel.VaultChapterItem) -> Unit,

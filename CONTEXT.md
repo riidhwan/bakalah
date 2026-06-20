@@ -425,8 +425,8 @@ A reading session for Vault Collection content that reuses Bakalah's reader expe
 _Avoid_: Library reading, fake manga session, synced reader session
 
 **Cache Policy**:
-The user's rules for which Content Vault chapters should remain cached on a device and which cached chapters may be evicted.
-_Avoid_: Auto sync settings, download settings, cleanup settings
+Bakalah's device-local rules for which Content Vault chapters should remain cached on a device and which cached chapters may be evicted.
+_Avoid_: Manual cache control, auto sync settings, download settings, cleanup settings
 
 **Local Manga File Identity**:
 The stable identity of a Local Manga as a user-owned local series folder, independent from its editable display title.
