@@ -30,6 +30,7 @@ class VaultChapterDeleteOperationHandler(
             val result = deletionService.delete(
                 mangaId = payload.mangaId,
                 chapterId = payload.chapterId,
+                chapterIdentity = payload.chapterIdentity,
                 ignoredJobId = job.id,
             )
         ) {

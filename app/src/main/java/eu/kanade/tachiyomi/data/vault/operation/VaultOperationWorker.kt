@@ -10,7 +10,6 @@ import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishGate
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefresher
 import eu.kanade.tachiyomi.util.system.setForegroundSafely
-import kotlinx.coroutines.delay
 import logcat.LogPriority
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.vault.model.VaultTransferJob
@@ -27,6 +26,7 @@ class VaultOperationWorker(
     private val handlers: List<VaultOperationHandler> = Injekt.get()
     private val refreshService: VaultCatalogueRefresher = Injekt.get()
     private val publishGate: VaultManifestPublishGate = Injekt.get()
+    private val notificationCoordinator: VaultOperationNotificationCoordinator = Injekt.get()
     private val notifier = VaultOperationNotifier(context)
     private val notificationObserver = NotificationQueueObserver(notifier)
     private val queueRunner = VaultOperationQueueRunner(
@@ -43,10 +43,10 @@ class VaultOperationWorker(
         setForegroundSafely()
         return try {
             queueRunner.runOperations(operationQueueKey)
-            notificationObserver.finish()
+            notificationCoordinator.finishDrain(operationQueueKey, notificationObserver.failureCount)
             Result.success()
         } catch (e: Exception) {
-            notifier.cancel()
+            notificationCoordinator.refresh(operationQueueKey)
             logcat(LogPriority.ERROR, e) { "Vault operation worker failed for operationQueueKey=$operationQueueKey" }
             Result.retry()
         }
@@ -54,7 +54,7 @@ class VaultOperationWorker(
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
         return ForegroundInfo(
-            Notifications.ID_VAULT_OPERATION_PROGRESS,
+            Notifications.ID_VAULT_OPERATION_FOREGROUND,
             notifier.foregroundNotification().build(),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
@@ -72,7 +72,8 @@ class VaultOperationWorker(
 private class NotificationQueueObserver(
     private val notifier: VaultOperationNotifier,
 ) : VaultOperationQueueObserver {
-    private var failureCount: Int = 0
+    var failureCount: Int = 0
+        private set
 
     override fun onQueueStarted() {
         notifier.showQueueRunning()
@@ -89,15 +90,4 @@ private class NotificationQueueObserver(
     override fun onQueueFinished(failureCount: Int) {
         this.failureCount = failureCount
     }
-
-    suspend fun finish() {
-        if (failureCount > 0) {
-            notifier.showFailures(failureCount)
-        } else {
-            delay(MIN_SUCCESS_NOTIFICATION_VISIBLE_MILLIS)
-            notifier.cancel()
-        }
-    }
 }
-
-private const val MIN_SUCCESS_NOTIFICATION_VISIBLE_MILLIS = 1_500L

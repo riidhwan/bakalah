@@ -33,6 +33,8 @@ import eu.kanade.tachiyomi.data.vault.operation.VaultChapterDeleteOperationHandl
 import eu.kanade.tachiyomi.data.vault.operation.VaultMetadataPublishOperationHandler
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationHandler
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationManager
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationNotificationCoordinator
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationNotifier
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationQueueDrainService
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationQueueDrainer
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationQueueWakeup
@@ -183,6 +185,8 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { VaultCoverPublishService(get<NetworkHelper>(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultMetadataPublishService(get<NetworkHelper>(), get(), get(), get()) }
         addSingletonFactory { VaultManifestPublishGate() }
+        addSingletonFactory { VaultOperationNotifier(app) }
+        addSingletonFactory { VaultOperationNotificationCoordinator(get(), get()) }
         addSingletonFactory { VaultMetadataPublishOperationHandler(get(), get()) }
         addSingletonFactory { VaultChapterDeleteOperationHandler(get(), get()) }
         addSingletonFactory<List<VaultOperationHandler>> {
@@ -191,7 +195,7 @@ class AppModule(val app: Application) : InjektModule {
                 get<VaultChapterDeleteOperationHandler>(),
             )
         }
-        addSingletonFactory { VaultOperationManager(app, get(), get()) }
+        addSingletonFactory { VaultOperationManager(app, get(), get(), get()) }
         addSingletonFactory<VaultOperationQueueWakeup> { get<VaultOperationManager>() }
         addSingletonFactory<VaultOperationQueueDrainer> { VaultOperationQueueDrainService(get(), get()) }
         addSingletonFactory<VaultChapterThumbnailCacheStore> { DefaultVaultChapterThumbnailCacheStore(get()) }

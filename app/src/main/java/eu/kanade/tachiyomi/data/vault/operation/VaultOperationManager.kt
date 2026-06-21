@@ -20,6 +20,7 @@ class VaultOperationManager(
     private val context: Context,
     private val repository: VaultRepository,
     private val json: Json,
+    private val notificationCoordinator: VaultOperationNotificationCoordinator,
     private val now: () -> Long = System::currentTimeMillis,
 ) : VaultOperationQueueWakeup {
 
@@ -40,6 +41,7 @@ class VaultOperationManager(
             payloadJson = payloadJson,
             coalesceQueued = true,
         )
+        notificationCoordinator.refresh(operationQueueKey)
         wakeOperationQueue(operationQueueKey)
         return VaultOperationEnqueueResult(
             jobId = jobId,
@@ -67,6 +69,7 @@ class VaultOperationManager(
             payloadJson = payloadJson,
             coalesceQueued = false,
         )
+        notificationCoordinator.refresh(operationQueueKey)
         wakeOperationQueue(operationQueueKey)
         return VaultOperationEnqueueResult(
             jobId = jobId,
@@ -152,7 +155,11 @@ class VaultOperationManager(
                 ),
             )
             .build()
-        context.workManager.enqueueUniqueWork(workName(operationQueueKey), ExistingWorkPolicy.KEEP, request)
+        context.workManager.enqueueUniqueWork(
+            workName(operationQueueKey),
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
+            request,
+        )
     }
 
     companion object {
