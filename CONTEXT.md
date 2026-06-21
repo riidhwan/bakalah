@@ -149,7 +149,7 @@ A Vault Operation whose intended catalogue change is reflected as a pending effe
 _Avoid_: Async manifest edit, optimistic update, background sync
 
 **Vault Operation Notification**:
-A privacy-preserving system notification that keeps background Vault Operation work visible without exposing Vault Manga or chapter titles outside the app.
+A privacy-preserving system notification that keeps accepted non-terminal Vault Operation work visible without exposing Vault Manga or chapter titles outside the app.
 _Avoid_: Per-title sync alert, chapter notification
 
 **Library-to-Vault Capture**:

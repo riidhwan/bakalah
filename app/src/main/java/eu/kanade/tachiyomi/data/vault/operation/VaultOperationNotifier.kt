@@ -30,6 +30,8 @@ class VaultOperationNotifier(
         setOngoing(true)
         setAutoCancel(false)
         setProgress(0, 0, true)
+        setCategory(NotificationCompat.CATEGORY_PROGRESS)
+        setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
     }
 
     private val failedNotificationBuilder = context.notificationBuilder(

@@ -24,7 +24,7 @@ class VaultChapterDeleteOperationHandlerTest {
     fun `successful deletion maps to succeeded job state`() = runTest {
         val service = mockk<VaultChapterDeletionService> {
             coEvery {
-                delete(mangaId = 10, chapterId = 20, ignoredJobId = 99)
+                delete(mangaId = 10, chapterId = 20, chapterIdentity = "chapter-20", ignoredJobId = 99)
             } returns VaultChapterDeletionResult.Deleted
         }
         val handler = VaultChapterDeleteOperationHandler(json, service)
@@ -39,7 +39,7 @@ class VaultChapterDeleteOperationHandlerTest {
     fun `cleanup failure maps to partially succeeded job state`() = runTest {
         val service = mockk<VaultChapterDeletionService> {
             coEvery {
-                delete(mangaId = 10, chapterId = 20, ignoredJobId = 99)
+                delete(mangaId = 10, chapterId = 20, chapterIdentity = "chapter-20", ignoredJobId = 99)
             } returns VaultChapterDeletionResult.DeletedWithCleanupFailures(listOf("content/chapter.cbz"))
         }
         val handler = VaultChapterDeleteOperationHandler(json, service)
@@ -54,7 +54,7 @@ class VaultChapterDeleteOperationHandlerTest {
     fun `last chapter failure maps to stable failure reason`() = runTest {
         val service = mockk<VaultChapterDeletionService> {
             coEvery {
-                delete(mangaId = 10, chapterId = 20, ignoredJobId = 99)
+                delete(mangaId = 10, chapterId = 20, chapterIdentity = "chapter-20", ignoredJobId = 99)
             } returns VaultChapterDeletionResult.LastChapter
         }
         val handler = VaultChapterDeleteOperationHandler(json, service)
@@ -70,6 +70,7 @@ class VaultChapterDeleteOperationHandlerTest {
             VaultChapterDeletePayload(
                 mangaId = 10,
                 chapterId = 20,
+                chapterIdentity = "chapter-20",
                 chapterTitle = "Chapter 20",
             ),
         )

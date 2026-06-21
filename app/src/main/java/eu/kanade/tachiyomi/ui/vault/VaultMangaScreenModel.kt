@@ -522,6 +522,7 @@ class VaultMangaScreenModel(
                     payload = VaultChapterDeletePayload(
                         mangaId = manga.id,
                         chapterId = item.chapter.id,
+                        chapterIdentity = item.chapter.identity.value,
                         chapterTitle = item.chapter.title,
                     ),
                 )

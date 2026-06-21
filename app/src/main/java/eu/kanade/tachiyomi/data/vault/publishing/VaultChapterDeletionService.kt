@@ -59,16 +59,19 @@ class VaultChapterDeletionService internal constructor(
     suspend fun delete(
         mangaId: Long,
         chapterId: Long,
+        chapterIdentity: String? = null,
         ignoredJobId: Long? = null,
     ): VaultChapterDeletionResult {
         val manga = repository.getMangaById(mangaId) ?: return VaultChapterDeletionResult.MangaNotFound
         val localChapters = repository.getChapters(manga.id)
         val chapter = localChapters.firstOrNull { it.id == chapterId }
+        val targetIdentity = chapter?.identity?.value
+            ?: chapterIdentity?.takeIf { it.isNotBlank() }
             ?: return VaultChapterDeletionResult.ChapterNotFound
         if (activeReaderSessions.isActive(manga.id)) {
             return VaultChapterDeletionResult.BlockedByActiveReader
         }
-        if (localChapters.size <= 1) {
+        if (chapter != null && localChapters.size <= 1) {
             return VaultChapterDeletionResult.LastChapter
         }
         if (hasBlockingActiveTransfer(manga.id, manga.vaultId, chapterId, ignoredJobId)) {
@@ -118,10 +121,10 @@ class VaultChapterDeletionService internal constructor(
             return VaultChapterDeletionResult.IdentityMismatch(pointer.path)
         }
 
-        val target = remoteManga.chapters.firstOrNull { it.identity == chapter.identity.value }
+        val target = remoteManga.chapters.firstOrNull { it.identity == targetIdentity }
         if (target == null) {
             if (remoteManga.chapters.isEmpty()) return VaultChapterDeletionResult.LastChapter
-            evictLocalCache(chapter.id)
+            evictLocalCache(chapterId)
             return VaultChapterDeletionResult.Deleted
         }
         val updatedChapters = remoteManga.chapters.filterNot { it.identity == target.identity }
@@ -169,7 +172,7 @@ class VaultChapterDeletionService internal constructor(
             return VaultChapterDeletionResult.PublishFailed
         }
 
-        evictLocalCache(chapter.id)
+        evictLocalCache(chapterId)
 
         val cleanupFailures = cleanupRemoteFiles(
             config = config,
