@@ -3,7 +3,6 @@ package eu.kanade.tachiyomi.data.vault.operation
 import android.content.Context
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
-import androidx.work.WorkInfo
 import androidx.work.workDataOf
 import eu.kanade.tachiyomi.util.system.workManager
 import kotlinx.serialization.encodeToString
@@ -153,13 +152,7 @@ class VaultOperationManager(
                 ),
             )
             .build()
-        val workName = workName(operationQueueKey)
-        val policy = if (context.workManager.hasRunningWork(workName)) {
-            ExistingWorkPolicy.KEEP
-        } else {
-            ExistingWorkPolicy.REPLACE
-        }
-        context.workManager.enqueueUniqueWork(workName, policy, request)
+        context.workManager.enqueueUniqueWork(workName(operationQueueKey), ExistingWorkPolicy.KEEP, request)
     }
 
     companion object {
@@ -173,12 +166,6 @@ class VaultOperationManager(
 
         fun tagForQueue(operationQueueKey: String): String = "$WORK_TAG:$operationQueueKey"
     }
-}
-
-private fun androidx.work.WorkManager.hasRunningWork(workName: String): Boolean {
-    return runCatching {
-        getWorkInfosForUniqueWork(workName).get().any { it.state == WorkInfo.State.RUNNING }
-    }.getOrDefault(false)
 }
 
 data class VaultOperationEnqueueResult(
