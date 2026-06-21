@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+
+## [v0.34.0] - 2026-06-21
 ### Fixed
 - Prevent Add to Vault imports and captures from racing queued Vault manifest edits.
 - Show background Vault operation notifications for queued metadata and chapter deletion publishes.
