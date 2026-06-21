@@ -38,6 +38,8 @@ object Notifications {
     const val ID_VAULT_IMPORT_PROGRESS = -801
     const val ID_VAULT_IMPORT_COMPLETE = -802
     const val ID_VAULT_CHAPTER_EXPORT_COMPLETE = -803
+    const val ID_VAULT_OPERATION_PROGRESS = -804
+    const val ID_VAULT_OPERATION_COMPLETE = -805
 
     /**
      * Notification channel and ids used by the downloader.

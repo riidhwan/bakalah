@@ -148,6 +148,10 @@ _Avoid_: Backend task, sync action, cloud job
 A Vault Operation whose intended catalogue change is reflected as a pending effect before the Content Vault publish finishes in the background.
 _Avoid_: Async manifest edit, optimistic update, background sync
 
+**Vault Operation Notification**:
+A privacy-preserving system notification that keeps background Vault Operation work visible without exposing Vault Manga or chapter titles outside the app.
+_Avoid_: Per-title sync alert, chapter notification
+
 **Library-to-Vault Capture**:
 The Vault Feature workflow that publishes selected chapters from a Source-Backed Library Manga into a Content Vault.
 _Avoid_: Library upload, Library sync, backup
