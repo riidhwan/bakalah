@@ -7,6 +7,7 @@ data class VaultTransferJob(
     val chapterId: Long?,
     val importRequestId: Long? = null,
     val operationKey: String? = null,
+    val operationQueueKey: String? = null,
     val payloadJson: String? = null,
     val type: VaultTransferType,
     val state: VaultTransferState,

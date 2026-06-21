@@ -42,6 +42,7 @@ import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayLoa
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailPublishService
 import eu.kanade.tachiyomi.data.vault.publishing.VaultCoverPublishService
 import eu.kanade.tachiyomi.data.vault.publishing.VaultMangaDeletionService
+import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishGate
 import eu.kanade.tachiyomi.data.vault.publishing.VaultMetadataPublishService
 import eu.kanade.tachiyomi.data.vault.reader.ActiveVaultReaderSessions
 import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshService
@@ -174,10 +175,11 @@ class AppModule(val app: Application) : InjektModule {
             VaultMangaDeletionService(get<NetworkHelper>(), get(), get(), get(), get(), get(), get())
         }
         addSingletonFactory {
-            VaultChapterDeletionService(get<NetworkHelper>(), get(), get(), get(), get(), get(), get())
+            VaultChapterDeletionService(get<NetworkHelper>(), get(), get(), get(), get(), get())
         }
         addSingletonFactory { VaultCoverPublishService(get<NetworkHelper>(), get(), get(), get(), get(), get()) }
-        addSingletonFactory { VaultMetadataPublishService(get<NetworkHelper>(), get(), get(), get(), get()) }
+        addSingletonFactory { VaultMetadataPublishService(get<NetworkHelper>(), get(), get(), get()) }
+        addSingletonFactory { VaultManifestPublishGate() }
         addSingletonFactory { VaultMetadataPublishOperationHandler(get(), get()) }
         addSingletonFactory { VaultChapterDeleteOperationHandler(get(), get()) }
         addSingletonFactory<List<VaultOperationHandler>> {

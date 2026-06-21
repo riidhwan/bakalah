@@ -1,7 +1,5 @@
 package eu.kanade.tachiyomi.data.vault.publishing
 
-import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshResult
-import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshService
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.remote.getTextOrNull
@@ -29,7 +27,6 @@ class VaultMetadataPublishService internal constructor(
     json: Json,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
-    private val refreshService: VaultCatalogueRefreshService,
     private val remoteStorageFactory: VaultRemoteStorageFactory,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
@@ -38,13 +35,11 @@ class VaultMetadataPublishService internal constructor(
         json: Json,
         repository: VaultRepository,
         preferences: ContentVaultPreferences,
-        refreshService: VaultCatalogueRefreshService,
         now: () -> Long = System::currentTimeMillis,
     ) : this(
         json = json,
         repository = repository,
         preferences = preferences,
-        refreshService = refreshService,
         remoteStorageFactory = WebDavVaultRemoteStorageFactory(networkHelper),
         now = now,
     )
@@ -182,22 +177,7 @@ class VaultMetadataPublishService internal constructor(
             return VaultMetadataPublishResult.PublishFailed
         }
 
-        return when (val refresh = refreshService.refreshConfiguredVault()) {
-            is VaultCatalogueRefreshResult.Refreshed -> VaultMetadataPublishResult.Published
-            VaultCatalogueRefreshResult.IncompleteConfiguration -> VaultMetadataPublishResult.IncompleteConfiguration
-            VaultCatalogueRefreshResult.NotVault -> VaultMetadataPublishResult.NotVault
-            is VaultCatalogueRefreshResult.UnsupportedOlderVersion ->
-                VaultMetadataPublishResult.UnsupportedOlderVersion(refresh.layoutVersion)
-            is VaultCatalogueRefreshResult.UnsupportedNewerVersion ->
-                VaultMetadataPublishResult.UnsupportedNewerVersion(refresh.layoutVersion)
-            is VaultCatalogueRefreshResult.IdentityChanged ->
-                VaultMetadataPublishResult.IdentityChanged(refresh.remoteIdentity)
-            is VaultCatalogueRefreshResult.ManifestNotFound ->
-                VaultMetadataPublishResult.ManifestNotFound(refresh.manifestPath)
-            is VaultCatalogueRefreshResult.IdentityMismatch ->
-                VaultMetadataPublishResult.IdentityMismatch(refresh.manifestPath)
-            is VaultCatalogueRefreshResult.Malformed -> VaultMetadataPublishResult.Malformed(refresh.manifestPath)
-        }
+        return VaultMetadataPublishResult.Published
     }
 
     private fun buildLabelPlan(

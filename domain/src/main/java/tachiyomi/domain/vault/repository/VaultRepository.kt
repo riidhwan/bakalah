@@ -22,6 +22,8 @@ interface VaultRepository {
 
     fun getVaultsAsFlow(): Flow<List<ContentVault>>
 
+    suspend fun getVault(id: Long): ContentVault? = error("Not implemented")
+
     suspend fun getVaultByIdentity(identity: ContentVaultIdentity): ContentVault?
 
     suspend fun upsertVault(vault: ContentVault): Long
@@ -155,6 +157,16 @@ interface VaultRepository {
     fun getTransferJobsForMangaAsFlow(mangaId: Long): Flow<List<VaultTransferJob>>
 
     suspend fun getActiveTransferJobsForOperationKey(operationKey: String): List<VaultTransferJob>
+
+    suspend fun getActiveTransferJobsForOperationQueueKey(operationQueueKey: String): List<VaultTransferJob> =
+        error("Not implemented")
+
+    suspend fun getQueuedTransferJobsForOperationQueueAndOperationKey(
+        operationQueueKey: String,
+        operationKey: String,
+    ): List<VaultTransferJob> = error("Not implemented")
+
+    suspend fun hasActiveTransferJobsForOperationQueueKey(operationQueueKey: String): Boolean = error("Not implemented")
 
     suspend fun getTransferJobsByState(states: List<VaultTransferState>): List<VaultTransferJob>
 

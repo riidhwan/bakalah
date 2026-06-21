@@ -155,6 +155,7 @@ CREATE TABLE vault_transfer_jobs(
     chapter_id INTEGER,
     import_request_id INTEGER,
     operation_key TEXT,
+    operation_queue_key TEXT,
     payload_json TEXT,
     type INTEGER AS VaultTransferType NOT NULL,
     state INTEGER AS VaultTransferState NOT NULL,
@@ -186,6 +187,7 @@ CREATE INDEX vault_transfer_jobs_manga_id_index ON vault_transfer_jobs(manga_id,
 CREATE INDEX vault_transfer_jobs_chapter_id_index ON vault_transfer_jobs(chapter_id);
 CREATE INDEX vault_transfer_jobs_import_request_id_index ON vault_transfer_jobs(import_request_id);
 CREATE INDEX vault_transfer_jobs_operation_key_index ON vault_transfer_jobs(operation_key, state, updated_at);
+CREATE INDEX vault_transfer_jobs_operation_queue_key_index ON vault_transfer_jobs(operation_queue_key, state, created_at, _id);
 
 CREATE TABLE vault_import_target_hints(
     local_manga_id INTEGER NOT NULL PRIMARY KEY,
@@ -251,6 +253,11 @@ getVaultByIdentity:
 SELECT *
 FROM content_vaults
 WHERE identity = :identity;
+
+getVaultById:
+SELECT *
+FROM content_vaults
+WHERE _id = :id;
 
 upsertVault:
 INSERT INTO content_vaults(
@@ -890,6 +897,29 @@ WHERE operation_key = :operationKey
 AND state IN :states
 ORDER BY created_at, _id;
 
+getActiveTransferJobsForOperationQueueKey:
+SELECT *
+FROM vault_transfer_jobs
+WHERE operation_queue_key = :operationQueueKey
+AND state IN :states
+ORDER BY created_at, _id;
+
+getQueuedTransferJobsForOperationQueueAndOperationKey:
+SELECT *
+FROM vault_transfer_jobs
+WHERE operation_queue_key = :operationQueueKey
+AND operation_key = :operationKey
+AND state = :queuedState
+ORDER BY created_at, _id;
+
+hasActiveTransferJobsForOperationQueueKey:
+SELECT EXISTS(
+    SELECT 1
+    FROM vault_transfer_jobs
+    WHERE operation_queue_key = :operationQueueKey
+    AND state IN :states
+);
+
 getTransferJobsByState:
 SELECT *
 FROM vault_transfer_jobs
@@ -903,13 +933,13 @@ WHERE _id = :id;
 
 upsertTransferJob:
 INSERT INTO vault_transfer_jobs(
-    _id, vault_id, manga_id, chapter_id, import_request_id, operation_key, payload_json,
+    _id, vault_id, manga_id, chapter_id, import_request_id, operation_key, operation_queue_key, payload_json,
     type, state, remote_path, local_path, staged_path, size_bytes,
     checksum_sha256, failure_reason, added_count, replaced_count, failed_count, cancelled_count, detail_json, attempts,
     created_at, updated_at, started_at, completed_at
 )
 VALUES (
-    nullif(:id, -1), :vaultId, :mangaId, :chapterId, :importRequestId, :operationKey, :payloadJson,
+    nullif(:id, -1), :vaultId, :mangaId, :chapterId, :importRequestId, :operationKey, :operationQueueKey, :payloadJson,
     :type, :state, :remotePath, :localPath, :stagedPath,
     :sizeBytes, :checksumSha256, :failureReason, :addedCount, :replacedCount, :failedCount, :cancelledCount,
     :detailJson, :attempts, :createdAt, :updatedAt, :startedAt, :completedAt
@@ -920,6 +950,7 @@ ON CONFLICT(_id) DO UPDATE SET
     chapter_id = excluded.chapter_id,
     import_request_id = excluded.import_request_id,
     operation_key = excluded.operation_key,
+    operation_queue_key = excluded.operation_queue_key,
     payload_json = excluded.payload_json,
     type = excluded.type,
     state = excluded.state,

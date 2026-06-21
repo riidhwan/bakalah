@@ -2,8 +2,6 @@ package eu.kanade.tachiyomi.data.vault.publishing
 
 import eu.kanade.tachiyomi.data.vault.cache.VaultCachePolicyService
 import eu.kanade.tachiyomi.data.vault.reader.ActiveVaultReaderSessions
-import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshResult
-import eu.kanade.tachiyomi.data.vault.refresh.VaultCatalogueRefreshService
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteStorageFactory
 import eu.kanade.tachiyomi.data.vault.remote.VaultRemoteWriteResult
 import eu.kanade.tachiyomi.data.vault.remote.childPath
@@ -33,7 +31,6 @@ class VaultChapterDeletionService internal constructor(
     json: Json,
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
-    private val refreshService: VaultCatalogueRefreshService,
     private val activeReaderSessions: ActiveVaultReaderSessions,
     private val storageManager: StorageManager,
     private val remoteStorageFactory: VaultRemoteStorageFactory,
@@ -44,7 +41,6 @@ class VaultChapterDeletionService internal constructor(
         json: Json,
         repository: VaultRepository,
         preferences: ContentVaultPreferences,
-        refreshService: VaultCatalogueRefreshService,
         activeReaderSessions: ActiveVaultReaderSessions,
         storageManager: StorageManager,
         now: () -> Long = System::currentTimeMillis,
@@ -52,7 +48,6 @@ class VaultChapterDeletionService internal constructor(
         json = json,
         repository = repository,
         preferences = preferences,
-        refreshService = refreshService,
         activeReaderSessions = activeReaderSessions,
         storageManager = storageManager,
         remoteStorageFactory = WebDavVaultRemoteStorageFactory(networkHelper),
@@ -126,7 +121,8 @@ class VaultChapterDeletionService internal constructor(
         val target = remoteManga.chapters.firstOrNull { it.identity == chapter.identity.value }
         if (target == null) {
             if (remoteManga.chapters.isEmpty()) return VaultChapterDeletionResult.LastChapter
-            return completeAlreadyDeleted(manga.id, chapter.id)
+            evictLocalCache(chapter.id)
+            return VaultChapterDeletionResult.Deleted
         }
         val updatedChapters = remoteManga.chapters.filterNot { it.identity == target.identity }
         if (updatedChapters.isEmpty()) return VaultChapterDeletionResult.LastChapter
@@ -174,8 +170,6 @@ class VaultChapterDeletionService internal constructor(
         }
 
         evictLocalCache(chapter.id)
-        val refreshResult = refreshLocalIndex()
-        refreshResult?.let { return it }
 
         val cleanupFailures = cleanupRemoteFiles(
             config = config,
@@ -185,17 +179,6 @@ class VaultChapterDeletionService internal constructor(
             VaultChapterDeletionResult.Deleted
         } else {
             VaultChapterDeletionResult.DeletedWithCleanupFailures(cleanupFailures)
-        }
-    }
-
-    private suspend fun completeAlreadyDeleted(mangaId: Long, chapterId: Long): VaultChapterDeletionResult {
-        evictLocalCache(chapterId)
-        val refreshResult = refreshLocalIndex()
-        refreshResult?.let { return it }
-        return if (repository.getChapters(mangaId).none { it.id == chapterId }) {
-            VaultChapterDeletionResult.Deleted
-        } else {
-            VaultChapterDeletionResult.ChapterNotFound
         }
     }
 
@@ -212,25 +195,6 @@ class VaultChapterDeletionService internal constructor(
                 return@any job.state == VaultTransferState.RUNNING && job.mangaId == mangaId
             }
             job.mangaId == mangaId && job.type in MANGA_MANIFEST_MUTATION_TYPES
-        }
-    }
-
-    private suspend fun refreshLocalIndex(): VaultChapterDeletionResult? {
-        return when (val refresh = refreshService.refreshConfiguredVault()) {
-            is VaultCatalogueRefreshResult.Refreshed -> null
-            VaultCatalogueRefreshResult.IncompleteConfiguration -> VaultChapterDeletionResult.IncompleteConfiguration
-            VaultCatalogueRefreshResult.NotVault -> VaultChapterDeletionResult.NotVault
-            is VaultCatalogueRefreshResult.UnsupportedOlderVersion ->
-                VaultChapterDeletionResult.UnsupportedOlderVersion(refresh.layoutVersion)
-            is VaultCatalogueRefreshResult.UnsupportedNewerVersion ->
-                VaultChapterDeletionResult.UnsupportedNewerVersion(refresh.layoutVersion)
-            is VaultCatalogueRefreshResult.IdentityChanged ->
-                VaultChapterDeletionResult.IdentityChanged(refresh.remoteIdentity)
-            is VaultCatalogueRefreshResult.ManifestNotFound ->
-                VaultChapterDeletionResult.ManifestNotFound(refresh.manifestPath)
-            is VaultCatalogueRefreshResult.IdentityMismatch ->
-                VaultChapterDeletionResult.IdentityMismatch(refresh.manifestPath)
-            is VaultCatalogueRefreshResult.Malformed -> VaultChapterDeletionResult.Malformed(refresh.manifestPath)
         }
     }
 

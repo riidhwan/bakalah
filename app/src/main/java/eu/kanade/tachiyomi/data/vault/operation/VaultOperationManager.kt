@@ -23,19 +23,25 @@ class VaultOperationManager(
         vaultId: Long,
         payload: VaultMetadataPublishPayload,
     ): VaultOperationEnqueueResult {
+        val operationQueueKey = operationQueueKey(vaultId)
         val operationKey = metadataOperationKey(payload.mangaId)
         val payloadJson = json.encodeToString(payload)
         val jobId = coalesceOperation(
             vaultId = vaultId,
             mangaId = payload.mangaId,
             operationKey = operationKey,
+            operationQueueKey = operationQueueKey,
             type = VaultTransferType.METADATA_PUBLISH,
             chapterId = null,
             payloadJson = payloadJson,
             coalesceQueued = true,
         )
-        enqueueWorker(operationKey)
-        return VaultOperationEnqueueResult(jobId = jobId, operationKey = operationKey)
+        enqueueWorker(operationQueueKey)
+        return VaultOperationEnqueueResult(
+            jobId = jobId,
+            operationKey = operationKey,
+            operationQueueKey = operationQueueKey,
+        )
     }
 
     suspend fun enqueueChapterDeletion(
@@ -44,6 +50,7 @@ class VaultOperationManager(
         chapterId: Long,
         payload: VaultChapterDeletePayload,
     ): VaultOperationEnqueueResult {
+        val operationQueueKey = operationQueueKey(vaultId)
         val operationKey = chapterDeletionOperationKey(mangaId)
         val payloadJson = json.encodeToString(payload)
         val jobId = coalesceOperation(
@@ -51,12 +58,17 @@ class VaultOperationManager(
             mangaId = mangaId,
             chapterId = chapterId,
             operationKey = operationKey,
+            operationQueueKey = operationQueueKey,
             type = VaultTransferType.CHAPTER_DELETE,
             payloadJson = payloadJson,
             coalesceQueued = false,
         )
-        enqueueWorker(operationKey)
-        return VaultOperationEnqueueResult(jobId = jobId, operationKey = operationKey)
+        enqueueWorker(operationQueueKey)
+        return VaultOperationEnqueueResult(
+            jobId = jobId,
+            operationKey = operationKey,
+            operationQueueKey = operationQueueKey,
+        )
     }
 
     private suspend fun coalesceOperation(
@@ -64,13 +76,19 @@ class VaultOperationManager(
         mangaId: Long,
         chapterId: Long?,
         operationKey: String,
+        operationQueueKey: String,
         type: VaultTransferType,
         payloadJson: String,
         coalesceQueued: Boolean,
     ): Long {
-        val activeJobs = repository.getActiveTransferJobsForOperationKey(operationKey)
-        val runningJob = activeJobs.firstOrNull { it.state == VaultTransferState.RUNNING }
-        val queuedJob = activeJobs.lastOrNull { it.state == VaultTransferState.QUEUED }
+        val runningJob = repository.getActiveTransferJobsForOperationQueueKey(operationQueueKey)
+            .firstOrNull { it.operationKey == operationKey && it.state == VaultTransferState.RUNNING }
+        val queuedJob = repository
+            .getQueuedTransferJobsForOperationQueueAndOperationKey(
+                operationQueueKey = operationQueueKey,
+                operationKey = operationKey,
+            )
+            .lastOrNull()
         val timestamp = now()
         val reusableJob = queuedJob.takeIf { coalesceQueued }
         return if (reusableJob != null) {
@@ -91,6 +109,7 @@ class VaultOperationManager(
                     chapterId = chapterId,
                     importRequestId = null,
                     operationKey = operationKey,
+                    operationQueueKey = operationQueueKey,
                     payloadJson = payloadJson,
                     type = type,
                     state = VaultTransferState.QUEUED,
@@ -109,22 +128,27 @@ class VaultOperationManager(
             )
         }.also {
             if (runningJob != null) {
-                enqueueWorker(operationKey)
+                enqueueWorker(operationQueueKey)
             }
         }
     }
 
-    private fun enqueueWorker(operationKey: String) {
+    private suspend fun operationQueueKey(vaultId: Long): String {
+        val vault = repository.getVault(vaultId) ?: error("content_vault_not_found")
+        return VaultOperationQueueKey.forContentVault(vault.identity)
+    }
+
+    private fun enqueueWorker(operationQueueKey: String) {
         val request = OneTimeWorkRequest.Builder(VaultOperationWorker::class.java)
             .addTag(WORK_TAG)
-            .addTag(tagForOperation(operationKey))
+            .addTag(tagForQueue(operationQueueKey))
             .setInputData(
                 workDataOf(
-                    VaultOperationWorker.OPERATION_KEY_INPUT to operationKey,
+                    VaultOperationWorker.OPERATION_QUEUE_KEY_INPUT to operationQueueKey,
                 ),
             )
             .build()
-        context.workManager.enqueueUniqueWork(workName(operationKey), ExistingWorkPolicy.KEEP, request)
+        context.workManager.enqueueUniqueWork(workName(operationQueueKey), ExistingWorkPolicy.KEEP, request)
     }
 
     companion object {
@@ -134,13 +158,14 @@ class VaultOperationManager(
 
         fun chapterDeletionOperationKey(mangaId: Long): String = "vault-chapter-delete:$mangaId"
 
-        fun workName(operationKey: String): String = "$WORK_TAG:$operationKey"
+        fun workName(operationQueueKey: String): String = "$WORK_TAG:$operationQueueKey"
 
-        fun tagForOperation(operationKey: String): String = "$WORK_TAG:$operationKey"
+        fun tagForQueue(operationQueueKey: String): String = "$WORK_TAG:$operationQueueKey"
     }
 }
 
 data class VaultOperationEnqueueResult(
     val jobId: Long,
     val operationKey: String,
+    val operationQueueKey: String,
 )

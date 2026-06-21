@@ -144,6 +144,10 @@ _Avoid_: Local Source sync, backup sync, cloud downloads
 A user-requested or app-started unit of Vault Feature work whose progress, completion, failure, or pending effect may need to remain visible beyond one immediate tap.
 _Avoid_: Backend task, sync action, cloud job
 
+**Optimistic Background Publish Vault Operation**:
+A Vault Operation whose intended catalogue change is reflected as a pending effect before the Content Vault publish finishes in the background.
+_Avoid_: Async manifest edit, optimistic update, background sync
+
 **Library-to-Vault Capture**:
 The Vault Feature workflow that publishes selected chapters from a Source-Backed Library Manga into a Content Vault.
 _Avoid_: Library upload, Library sync, backup
