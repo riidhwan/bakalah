@@ -1,8 +1,8 @@
 package eu.kanade.tachiyomi.data.vault.localimport
 
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultChapterStager
-import eu.kanade.tachiyomi.data.vault.localimport.ScannedLocalVaultChapter
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationQueueDrainer
+import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishGate
 import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.staging.CbzEntry
 import eu.kanade.tachiyomi.data.vault.staging.digest
@@ -356,6 +356,7 @@ class LocalVaultChapterPublisherTest {
 
     private fun publisher(
         repository: FakeVaultRepository = FakeVaultRepository(),
+        operationQueueDrainer: VaultOperationQueueDrainer = FakeOperationQueueDrainer(),
     ): LocalVaultChapterPublisher {
         val preferences = ContentVaultPreferences(InMemoryPreferenceStore()).apply {
             configuredVaultIdentity.set(vaultIdentity.value)
@@ -369,6 +370,8 @@ class LocalVaultChapterPublisherTest {
                 imageExtension = { null },
                 splitTallImage = { _, _, _ -> },
             ),
+            operationQueueDrainer = operationQueueDrainer,
+            publishGate = VaultManifestPublishGate(),
         )
     }
 
@@ -669,6 +672,14 @@ class LocalVaultChapterPublisherTest {
         ) = Unit
 
         private fun unsupported(): Nothing = error("Not used by this test")
+    }
+
+    private class FakeOperationQueueDrainer : VaultOperationQueueDrainer {
+        val drainedIdentities = mutableListOf<ContentVaultIdentity>()
+
+        override suspend fun waitUntilDrained(identity: ContentVaultIdentity) {
+            drainedIdentities += identity
+        }
     }
 
     private fun File.toUniFile(): UniFile = UniFile.fromFile(this) ?: error("test file")

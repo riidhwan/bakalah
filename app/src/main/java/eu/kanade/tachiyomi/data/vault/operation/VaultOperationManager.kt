@@ -12,12 +12,16 @@ import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.model.VaultTransferType
 import tachiyomi.domain.vault.repository.VaultRepository
 
+internal interface VaultOperationQueueWakeup {
+    fun wakeOperationQueue(operationQueueKey: String)
+}
+
 class VaultOperationManager(
     private val context: Context,
     private val repository: VaultRepository,
     private val json: Json,
     private val now: () -> Long = System::currentTimeMillis,
-) {
+) : VaultOperationQueueWakeup {
 
     suspend fun enqueueMetadataPublish(
         vaultId: Long,
@@ -36,7 +40,7 @@ class VaultOperationManager(
             payloadJson = payloadJson,
             coalesceQueued = true,
         )
-        enqueueWorker(operationQueueKey)
+        wakeOperationQueue(operationQueueKey)
         return VaultOperationEnqueueResult(
             jobId = jobId,
             operationKey = operationKey,
@@ -63,7 +67,7 @@ class VaultOperationManager(
             payloadJson = payloadJson,
             coalesceQueued = false,
         )
-        enqueueWorker(operationQueueKey)
+        wakeOperationQueue(operationQueueKey)
         return VaultOperationEnqueueResult(
             jobId = jobId,
             operationKey = operationKey,
@@ -128,7 +132,7 @@ class VaultOperationManager(
             )
         }.also {
             if (runningJob != null) {
-                enqueueWorker(operationQueueKey)
+                wakeOperationQueue(operationQueueKey)
             }
         }
     }
@@ -138,7 +142,7 @@ class VaultOperationManager(
         return VaultOperationQueueKey.forContentVault(vault.identity)
     }
 
-    private fun enqueueWorker(operationQueueKey: String) {
+    override fun wakeOperationQueue(operationQueueKey: String) {
         val request = OneTimeWorkRequest.Builder(VaultOperationWorker::class.java)
             .addTag(WORK_TAG)
             .addTag(tagForQueue(operationQueueKey))

@@ -2,6 +2,8 @@ package eu.kanade.tachiyomi.data.vault.capture
 
 import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgressPhase
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationQueueDrainer
+import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishGate
 import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.staging.CbzEntry
 import eu.kanade.tachiyomi.data.vault.staging.digest
@@ -387,11 +389,14 @@ class LibraryVaultChapterPublisherTest {
     private fun publisher(
         repository: FakeVaultRepository = FakeVaultRepository(),
         stager: LibraryVaultChapterStager = FakeStager(stagedFile()),
+        operationQueueDrainer: VaultOperationQueueDrainer = FakeOperationQueueDrainer(),
     ) = LibraryVaultChapterPublisher(
         json = json,
         repository = repository,
         preferences = ContentVaultPreferences(InMemoryPreferenceStore()),
         stager = stager,
+        operationQueueDrainer = operationQueueDrainer,
+        publishGate = VaultManifestPublishGate(),
     )
 
     private fun rootPath() = config.rootPath.childPath(ROOT_VAULT_MANIFEST_NAME)
@@ -725,5 +730,13 @@ class LibraryVaultChapterPublisherTest {
         ) = Unit
 
         private fun unsupported(): Nothing = error("Not used by this test")
+    }
+
+    private class FakeOperationQueueDrainer : VaultOperationQueueDrainer {
+        val drainedIdentities = mutableListOf<ContentVaultIdentity>()
+
+        override suspend fun waitUntilDrained(identity: ContentVaultIdentity) {
+            drainedIdentities += identity
+        }
     }
 }
