@@ -33,6 +33,9 @@ import eu.kanade.tachiyomi.data.vault.operation.VaultChapterDeleteOperationHandl
 import eu.kanade.tachiyomi.data.vault.operation.VaultMetadataPublishOperationHandler
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationHandler
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationManager
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationQueueDrainService
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationQueueDrainer
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationQueueWakeup
 import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailCacheStore
 import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailDisplayLoader
 import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailPublishService
@@ -189,6 +192,8 @@ class AppModule(val app: Application) : InjektModule {
             )
         }
         addSingletonFactory { VaultOperationManager(app, get(), get()) }
+        addSingletonFactory<VaultOperationQueueWakeup> { get<VaultOperationManager>() }
+        addSingletonFactory<VaultOperationQueueDrainer> { VaultOperationQueueDrainService(get(), get()) }
         addSingletonFactory<VaultChapterThumbnailCacheStore> { DefaultVaultChapterThumbnailCacheStore(get()) }
         addSingletonFactory<VaultChapterThumbnailPublishService> {
             DefaultVaultChapterThumbnailPublishService(get(), get(), get(), get(), get(), get())
@@ -199,12 +204,12 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory<LocalVaultMangaScannerBoundary> { LocalVaultMangaScanner(get(), get(), get(), get()) }
         addSingletonFactory { LocalVaultChapterStager() }
         addSingletonFactory<LocalVaultChapterPublisherBoundary> {
-            LocalVaultChapterPublisher(get(), get(), get(), get())
+            LocalVaultChapterPublisher(get(), get(), get(), get(), get(), get())
         }
         addSingletonFactory<LibraryVaultCaptureWebDavFactoryBoundary> { LibraryVaultCaptureWebDavFactory(get()) }
         addSingletonFactory<LibraryVaultChapterStager> { DefaultLibraryVaultChapterStager(app, get(), get()) }
         addSingletonFactory<LibraryVaultChapterPublisherBoundary> {
-            LibraryVaultChapterPublisher(get(), get(), get(), get())
+            LibraryVaultChapterPublisher(get(), get(), get(), get(), get(), get())
         }
         addSingletonFactory {
             LocalVaultImportService(app, get(), get(), get(), get(), get(), get())

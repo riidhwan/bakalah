@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Fixed
+- Prevent Add to Vault imports and captures from racing queued Vault manifest edits.
 
 ## [v0.33.0] - 2026-06-20
 ### Added

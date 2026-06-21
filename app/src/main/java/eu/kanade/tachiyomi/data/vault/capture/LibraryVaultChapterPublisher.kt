@@ -2,12 +2,15 @@ package eu.kanade.tachiyomi.data.vault.capture
 
 import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.data.vault.add.AddToVaultProgressPhase
+import eu.kanade.tachiyomi.data.vault.operation.VaultOperationQueueDrainer
 import eu.kanade.tachiyomi.data.vault.publishing.VaultContentUploadFailure
 import eu.kanade.tachiyomi.data.vault.publishing.VaultContentUploader
+import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishGate
 import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishTarget
 import eu.kanade.tachiyomi.data.vault.publishing.VaultManifestPublishTransaction
 import eu.kanade.tachiyomi.data.vault.publishing.VaultPromotableUpload
 import eu.kanade.tachiyomi.data.vault.publishing.VaultUploadCover
+import eu.kanade.tachiyomi.data.vault.publishing.VaultUploadedCover
 import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.webdav.LibraryVaultCaptureWebDav
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -59,6 +62,8 @@ internal class LibraryVaultChapterPublisher(
     private val repository: VaultRepository,
     private val preferences: ContentVaultPreferences,
     private val stager: LibraryVaultChapterStager,
+    private val operationQueueDrainer: VaultOperationQueueDrainer,
+    private val publishGate: VaultManifestPublishGate,
 ) : LibraryVaultChapterPublisherBoundary {
     private val publishTransaction = VaultManifestPublishTransaction(json)
     private val contentUploader = VaultContentUploader()
@@ -77,7 +82,8 @@ internal class LibraryVaultChapterPublisher(
         allowReplacement: Boolean,
         progressPhase: (AddToVaultProgressPhase) -> Unit,
     ): LibraryVaultChapterPublishResult {
-        val publishContext = publishTransaction.prepare(
+        operationQueueDrainer.waitUntilDrained(vaultIdentity)
+        val preflightContext = publishTransaction.prepare(
             storage = webDav,
             config = config,
             target = target.toManifestPublishTarget(),
@@ -85,22 +91,13 @@ internal class LibraryVaultChapterPublisher(
         ) { category ->
             LibraryCaptureGlobalFailure(category, chapter.name)
         }
-        val rootManifest = publishContext.rootManifest
-        val mangaManifestPath = publishContext.mangaManifestPath
-        val remoteMangaManifest = publishContext.remoteMangaManifest
-        val mangaIdentity = publishContext.mangaIdentity
+        val mangaIdentity = target.mangaIdentity ?: error("target")
+        val shouldUploadInitialCover = preflightContext.remoteMangaManifest?.cover == null
         val now = System.currentTimeMillis()
         val stagedChapter = stageChapter(source, manga, chapter, stagingRoot, progressPhase)
-        val existingRemoteChapters = remoteMangaManifest?.chapters.orEmpty()
-        val chapterDuplicateTitleKey = chapter.name.duplicateTitleKey()
-        val replacement = existingRemoteChapters
-            .firstOrNull { it.title.duplicateTitleKey() == chapterDuplicateTitleKey }
-        if (replacement != null && !allowReplacement) {
-            error("unconfirmed_duplicate")
-        }
-        val chapterIdentity = replacement?.identity ?: UUID.randomUUID().toString()
-        val contentIdentity = if (replacement == null) chapterIdentity else UUID.randomUUID().toString()
+        val newChapterIdentity = UUID.randomUUID().toString()
         var contentUpload: VaultPromotableUpload? = null
+        var uploadedCover: VaultUploadedCover? = null
         var promotedCoverPath: String? = null
         try {
             progressPhase(AddToVaultProgressPhase.UPLOADING)
@@ -108,148 +105,186 @@ internal class LibraryVaultChapterPublisher(
                 storage = webDav,
                 config = config,
                 mangaIdentity = mangaIdentity,
-                contentIdentity = contentIdentity,
+                contentIdentity = newChapterIdentity,
                 chapterFile = stagedChapter.file,
-                remoteFileName = "$contentIdentity.cbz",
+                remoteFileName = "$newChapterIdentity.cbz",
             )
             contentUpload = uploadedChapter
-            val manifestChapter = if (replacement != null) {
-                replacement.copy(
-                    content = VaultManifestChapterContent(
-                        path = uploadedChapter.finalPath,
-                        format = VaultChapterContentFormat.CBZ,
-                        integrity = VaultContentIntegrity(stagedChapter.sizeBytes, stagedChapter.checksumSha256),
-                    ),
-                    revisionId = UUID.randomUUID().toString(),
-                    revisionNumber = replacement.revisionNumber + 1,
-                    updatedAt = now,
-                )
-            } else {
-                VaultManifestChapter(
-                    identity = chapterIdentity,
-                    title = chapter.name,
-                    chapterNumber = chapter.chapterNumber,
-                    volumeNumber = null,
-                    scanlator = chapter.scanlator,
-                    sourceOrder = 0,
-                    content = VaultManifestChapterContent(
-                        path = uploadedChapter.finalPath,
-                        format = VaultChapterContentFormat.CBZ,
-                        integrity = VaultContentIntegrity(stagedChapter.sizeBytes, stagedChapter.checksumSha256),
-                    ),
-                    revisionId = UUID.randomUUID().toString(),
-                    revisionNumber = 1,
-                    dateUpload = chapter.dateUpload,
-                    createdAt = now,
-                    updatedAt = now,
-                )
-            }
-            val replacedIdentities = setOfNotNull(replacement?.identity)
-            val updatedChapters = orderLibraryVaultCaptureChapters(
-                chapters = existingRemoteChapters.filterNot { it.identity in replacedIdentities } + manifestChapter,
-                replacementIdentities = replacedIdentities,
-            )
-            val metadata = when (target) {
-                is LibraryVaultActiveTarget.Existing -> target.manga.metadata
-                is LibraryVaultActiveTarget.CreateNew,
-                is LibraryVaultActiveTarget.Created,
-                -> captureManga.metadata
-            }
-            val importedCover = remoteMangaManifest?.cover ?: runCatching {
+            uploadedCover = runCatching {
                 progressPhase(AddToVaultProgressPhase.UPLOADING)
-                stager.findCaptureCover(manga, source)?.let { cover ->
+                val cover = if (shouldUploadInitialCover) stager.findCaptureCover(manga, source) else null
+                cover?.let {
                     contentUploader.uploadCover(
                         storage = webDav,
                         config = config,
                         mangaIdentity = mangaIdentity,
                         cover = VaultUploadCover.Bytes(
-                            bytes = cover.bytes,
-                            extension = cover.extension,
-                            mediaType = cover.mediaType,
+                            bytes = it.bytes,
+                            extension = it.extension,
+                            mediaType = it.mediaType,
                         ),
                         now = now,
                     )
                 }
-            }.onSuccess { uploadedCover ->
-                if (uploadedCover != null) {
-                    promotedCoverPath = publishTransaction.promoteOptionalUpload(webDav, config, uploadedCover.upload)
-                }
             }.getOrElse { error ->
                 if (error is CancellationException) throw error
                 null
-            }?.takeIf { promotedCoverPath == it.cover.path }?.cover
-            val mangaRevision = remoteMangaManifest?.revisionNumber?.plus(1) ?: 1
-            val mangaRevisionId = UUID.randomUUID().toString()
-            val provenance = VaultManifestChapterProvenance(
-                chapterIdentity = chapterIdentity,
-                sourceId = source.id,
-                sourceName = source.toString(),
-                sourceMangaUrl = manga.url,
-                sourceChapterUrl = chapter.url,
-                capturedAt = now,
-            )
-            val mangaManifest = VaultMangaManifest(
-                layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
-                vaultIdentity = rootManifest.identity,
-                mangaIdentity = mangaIdentity,
-                revisionId = mangaRevisionId,
-                revisionNumber = mangaRevision,
-                metadata = metadata.toManifestMetadata(),
-                labels = remoteMangaManifest?.labels.orEmpty(),
-                cover = importedCover,
-                chapters = updatedChapters,
-                provenance = remoteMangaManifest?.provenance ?: VaultManifestProvenance(
-                    importedFrom = "library-capture",
-                    sourceName = source.toString(),
-                    sourceUri = manga.url,
-                    importedAt = now,
-                ),
-                chapterProvenance = remoteMangaManifest?.chapterProvenance
-                    .orEmpty()
-                    .filterNot { it.chapterIdentity == chapterIdentity }
-                    .plus(provenance),
-                createdAt = remoteMangaManifest?.createdAt ?: now,
-                updatedAt = now,
-            )
+            }
 
             progressPhase(AddToVaultProgressPhase.PUBLISHING)
-            publishTransaction.commit(
-                storage = webDav,
-                config = config,
-                context = publishContext,
-                metadata = metadata,
-                mangaManifest = mangaManifest,
-                mangaRevisionId = mangaRevisionId,
-                mangaRevisionNumber = mangaRevision,
-                now = now,
-                newUploads = listOfNotNull(contentUpload),
-                promotedPaths = listOfNotNull(promotedCoverPath),
-            ) { category ->
-                LibraryCaptureGlobalFailure(category, chapter.name)
-            }
-
-            replacement?.content?.path?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
-            if (replacement != null) {
-                invalidateReplacementCacheState(vaultIdentity, mangaIdentity, replacement.identity)
-            }
-            val nextTarget = when (target) {
-                is LibraryVaultActiveTarget.Existing -> target
-                is LibraryVaultActiveTarget.CreateNew,
-                is LibraryVaultActiveTarget.Created,
-                -> LibraryVaultActiveTarget.Created(
+            operationQueueDrainer.waitUntilDrained(vaultIdentity)
+            val committed = publishGate.withGate(vaultIdentity) {
+                val publishContext = publishTransaction.prepare(
+                    storage = webDav,
+                    config = config,
+                    target = target.toManifestPublishTarget(),
+                    expectedVaultIdentity = expectedVaultIdentity,
+                ) { category ->
+                    LibraryCaptureGlobalFailure(category, chapter.name)
+                }
+                val remoteMangaManifest = publishContext.remoteMangaManifest
+                val existingRemoteChapters = remoteMangaManifest?.chapters.orEmpty()
+                val chapterDuplicateTitleKey = chapter.name.duplicateTitleKey()
+                val replacement = existingRemoteChapters
+                    .firstOrNull { it.title.duplicateTitleKey() == chapterDuplicateTitleKey }
+                if (replacement != null && !allowReplacement) {
+                    error("unconfirmed_duplicate")
+                }
+                val chapterIdentity = replacement?.identity ?: newChapterIdentity
+                val manifestChapter = if (replacement != null) {
+                    replacement.copy(
+                        content = VaultManifestChapterContent(
+                            path = uploadedChapter.finalPath,
+                            format = VaultChapterContentFormat.CBZ,
+                            integrity = VaultContentIntegrity(stagedChapter.sizeBytes, stagedChapter.checksumSha256),
+                        ),
+                        revisionId = UUID.randomUUID().toString(),
+                        revisionNumber = replacement.revisionNumber + 1,
+                        updatedAt = now,
+                    )
+                } else {
+                    VaultManifestChapter(
+                        identity = chapterIdentity,
+                        title = chapter.name,
+                        chapterNumber = chapter.chapterNumber,
+                        volumeNumber = null,
+                        scanlator = chapter.scanlator,
+                        sourceOrder = 0,
+                        content = VaultManifestChapterContent(
+                            path = uploadedChapter.finalPath,
+                            format = VaultChapterContentFormat.CBZ,
+                            integrity = VaultContentIntegrity(stagedChapter.sizeBytes, stagedChapter.checksumSha256),
+                        ),
+                        revisionId = UUID.randomUUID().toString(),
+                        revisionNumber = 1,
+                        dateUpload = chapter.dateUpload,
+                        createdAt = now,
+                        updatedAt = now,
+                    )
+                }
+                val replacedIdentities = setOfNotNull(replacement?.identity)
+                val updatedChapters = orderLibraryVaultCaptureChapters(
+                    chapters = existingRemoteChapters.filterNot { it.identity in replacedIdentities } + manifestChapter,
+                    replacementIdentities = replacedIdentities,
+                )
+                val metadata = when (target) {
+                    is LibraryVaultActiveTarget.Existing -> target.manga.metadata
+                    is LibraryVaultActiveTarget.CreateNew,
+                    is LibraryVaultActiveTarget.Created,
+                    -> captureManga.metadata
+                }
+                val importedCover = remoteMangaManifest?.cover ?: uploadedCover?.let { cover ->
+                    promotedCoverPath = publishTransaction.promoteOptionalUpload(webDav, config, cover.upload)
+                    cover.takeIf { promotedCoverPath == it.cover.path }?.cover
+                }
+                val mangaRevision = remoteMangaManifest?.revisionNumber?.plus(1) ?: 1
+                val mangaRevisionId = UUID.randomUUID().toString()
+                val provenance = VaultManifestChapterProvenance(
+                    chapterIdentity = chapterIdentity,
+                    sourceId = source.id,
+                    sourceName = source.toString(),
+                    sourceMangaUrl = manga.url,
+                    sourceChapterUrl = chapter.url,
+                    capturedAt = now,
+                )
+                val mangaManifest = VaultMangaManifest(
+                    layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
+                    vaultIdentity = publishContext.rootManifest.identity,
                     mangaIdentity = mangaIdentity,
-                    manifestPath = mangaManifestPath,
+                    revisionId = mangaRevisionId,
+                    revisionNumber = mangaRevision,
+                    metadata = metadata.toManifestMetadata(),
+                    labels = remoteMangaManifest?.labels.orEmpty(),
+                    cover = importedCover,
+                    chapters = updatedChapters,
+                    provenance = remoteMangaManifest?.provenance ?: VaultManifestProvenance(
+                        importedFrom = "library-capture",
+                        sourceName = source.toString(),
+                        sourceUri = manga.url,
+                        importedAt = now,
+                    ),
+                    chapterProvenance = remoteMangaManifest?.chapterProvenance
+                        .orEmpty()
+                        .filterNot { it.chapterIdentity == chapterIdentity }
+                        .plus(provenance),
+                    createdAt = remoteMangaManifest?.createdAt ?: now,
+                    updatedAt = now,
+                )
+
+                publishTransaction.commit(
+                    storage = webDav,
+                    config = config,
+                    context = publishContext,
+                    metadata = metadata,
+                    mangaManifest = mangaManifest,
+                    mangaRevisionId = mangaRevisionId,
+                    mangaRevisionNumber = mangaRevision,
+                    now = now,
+                    newUploads = listOfNotNull(contentUpload),
+                    promotedPaths = listOfNotNull(promotedCoverPath),
+                ) { category ->
+                    LibraryCaptureGlobalFailure(category, chapter.name)
+                }
+
+                val nextTarget = when (target) {
+                    is LibraryVaultActiveTarget.Existing -> target
+                    is LibraryVaultActiveTarget.CreateNew,
+                    is LibraryVaultActiveTarget.Created,
+                    -> LibraryVaultActiveTarget.Created(
+                        mangaIdentity = mangaIdentity,
+                        manifestPath = publishContext.mangaManifestPath,
+                    )
+                }
+                LibraryVaultCommittedPublish(
+                    result = LibraryVaultChapterPublishResult(
+                        target = nextTarget,
+                        mangaIdentity = VaultIdentity(mangaIdentity),
+                        replaced = replacement != null,
+                    ),
+                    replacedChapterIdentity = replacement?.identity,
+                    replacedContentPath = replacement?.content?.path,
                 )
             }
-            return LibraryVaultChapterPublishResult(
-                target = nextTarget,
-                mangaIdentity = VaultIdentity(mangaIdentity),
-                replaced = replacement != null,
-            )
+
+            committed.replacedContentPath?.let { runCatching { webDav.delete(config.rootPath.childPath(it)) } }
+            if (committed.replacedChapterIdentity != null) {
+                invalidateReplacementCacheState(vaultIdentity, mangaIdentity, committed.replacedChapterIdentity)
+            }
+            if (uploadedCover != null && promotedCoverPath == null) {
+                publishTransaction.cleanupUploadedContent(
+                    storage = webDav,
+                    config = config,
+                    newUploads = listOf(uploadedCover.upload),
+                )
+            }
+            return committed.result
         } catch (error: Throwable) {
             if (error is CancellationException) throw error
-            if (error is LibraryCaptureGlobalFailure) throw error
             listOfNotNull(contentUpload).forEach { upload ->
+                runCatching { webDav.delete(config.rootPath.childPath(upload.stagedPath)) }
+                runCatching { webDav.delete(config.rootPath.childPath(upload.finalPath)) }
+            }
+            uploadedCover?.upload?.let { upload ->
                 runCatching { webDav.delete(config.rootPath.childPath(upload.stagedPath)) }
                 runCatching { webDav.delete(config.rootPath.childPath(upload.finalPath)) }
             }
@@ -257,6 +292,7 @@ internal class LibraryVaultChapterPublisher(
             if (error is VaultContentUploadFailure) {
                 error(error.category)
             }
+            if (error is LibraryCaptureGlobalFailure) throw error
             throw error
         }
     }
@@ -306,6 +342,12 @@ internal class LibraryVaultChapterPublisher(
         is LibraryVaultActiveTarget.CreateNew -> VaultManifestPublishTarget.CreateNew(mangaIdentity, manifestPath)
         is LibraryVaultActiveTarget.Created -> VaultManifestPublishTarget.Created(mangaIdentity, manifestPath)
     }
+
+    private data class LibraryVaultCommittedPublish(
+        val result: LibraryVaultChapterPublishResult,
+        val replacedChapterIdentity: String?,
+        val replacedContentPath: String?,
+    )
 
     private companion object {
         val CAPTURE_STAGING_FAILURES = setOf("downloaded_copy", "empty_pages", "staging")
