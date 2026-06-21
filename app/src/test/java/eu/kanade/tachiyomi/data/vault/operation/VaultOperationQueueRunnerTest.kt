@@ -53,13 +53,21 @@ class VaultOperationQueueRunnerTest {
             ),
         )
         val refresher = FakeRefresher()
+        val observer = RecordingObserver()
 
-        runner(repository.repository, handler, refresher).runOperations(queueKey)
+        runner(repository.repository, handler, refresher, observer).runOperations(queueKey)
 
         handler.executedJobIds shouldContainExactly listOf(1L, 2L)
         repository.jobState(1) shouldBe VaultTransferState.FAILED
         repository.jobState(2) shouldBe VaultTransferState.SUCCEEDED
         refresher.refreshCount shouldBe 1
+        observer.events shouldContainExactly listOf(
+            "queue_started",
+            "job_started:1:METADATA_PUBLISH",
+            "job_started:2:METADATA_PUBLISH",
+            "refreshing",
+            "queue_finished:1",
+        )
     }
 
     @Test
@@ -74,24 +82,34 @@ class VaultOperationQueueRunnerTest {
             ),
         )
         val refresher = FakeRefresher()
+        val observer = RecordingObserver()
 
-        runner(repository.repository, handler, refresher).runOperations(queueKey)
+        runner(repository.repository, handler, refresher, observer).runOperations(queueKey)
 
         handler.executedJobIds shouldContainExactly listOf(1L, 1L)
         repository.jobState(1) shouldBe VaultTransferState.SUCCEEDED
         refresher.refreshCount shouldBe 2
+        observer.events shouldContainExactly listOf(
+            "queue_started",
+            "job_started:1:METADATA_PUBLISH",
+            "refreshing",
+            "refreshing",
+            "queue_finished:0",
+        )
     }
 
     private fun runner(
         repository: VaultRepository,
         handler: RecordingHandler,
         refresher: FakeRefresher = FakeRefresher(),
+        observer: VaultOperationQueueObserver = VaultOperationQueueObserver.None,
     ) = VaultOperationQueueRunner(
         repository = repository,
         handlers = listOf(handler),
         refreshService = refresher,
         publishGate = VaultManifestPublishGate(),
         now = { 100 },
+        observer = observer,
     )
 
     private fun job(
@@ -173,6 +191,26 @@ class VaultOperationQueueRunnerTest {
                 mangaCount = 1,
                 chapterCount = 1,
             )
+        }
+    }
+
+    private class RecordingObserver : VaultOperationQueueObserver {
+        val events = mutableListOf<String>()
+
+        override fun onQueueStarted() {
+            events += "queue_started"
+        }
+
+        override fun onOperationStarted(job: VaultTransferJob) {
+            events += "job_started:${job.id}:${job.type}"
+        }
+
+        override fun onRefreshing() {
+            events += "refreshing"
+        }
+
+        override fun onQueueFinished(failureCount: Int) {
+            events += "queue_finished:$failureCount"
         }
     }
 }

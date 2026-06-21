@@ -13,28 +13,46 @@ class VaultOperationQueueRunner(
     private val refreshService: VaultCatalogueRefresher,
     private val publishGate: VaultManifestPublishGate,
     private val now: () -> Long = System::currentTimeMillis,
+    private val observer: VaultOperationQueueObserver = VaultOperationQueueObserver.None,
 ) {
     suspend fun runOperations(operationQueueKey: String) {
         val identity = VaultOperationQueueKey.contentVaultIdentity(operationQueueKey) ?: return
+        var failureCount = 0
+        observer.onQueueStarted()
         while (true) {
-            val job = nextActiveJob(operationQueueKey) ?: return
-            if (job.isTerminal) return
+            val job = nextActiveJob(operationQueueKey)
+            if (job == null) {
+                observer.onQueueFinished(failureCount)
+                return
+            }
+            if (job.isTerminal) {
+                observer.onQueueFinished(failureCount)
+                return
+            }
             val handler = handlers.firstOrNull { it.type == job.type }
             if (handler == null) {
                 markFailed(job, "missing_handler")
+                failureCount += 1
                 continue
             }
             val payloadJson = job.payloadJson
             if (payloadJson == null) {
                 markFailed(job, "missing_payload")
+                failureCount += 1
                 continue
             }
 
             val runningJob = markRunning(job)
+            if (handler.policy == VaultOperationPolicy.OptimisticBackgroundPublish) {
+                observer.onOperationStarted(runningJob)
+            }
             val result = publishGate.withGate(identity) {
                 executeWithFreshnessRetry(handler, runningJob, payloadJson)
             }
             markCompleted(runningJob, result)
+            if (result.isFailure) {
+                failureCount += 1
+            }
         }
     }
 
@@ -45,6 +63,7 @@ class VaultOperationQueueRunner(
     ): VaultOperationExecutionResult {
         val first = handler.execute(job, payloadJson)
         if (first.failureReason != REVISION_MISMATCH_REASON) return refreshAfterSuccess(first)
+        observer.onRefreshing()
         if (refreshService.refreshConfiguredVault() !is VaultCatalogueRefreshResult.Refreshed) return first
         return refreshAfterSuccess(handler.execute(job, payloadJson))
     }
@@ -55,6 +74,7 @@ class VaultOperationQueueRunner(
         ) {
             return result
         }
+        observer.onRefreshing()
         return when (refreshService.refreshConfiguredVault()) {
             is VaultCatalogueRefreshResult.Refreshed -> result
             VaultCatalogueRefreshResult.IncompleteConfiguration -> result.copy(
@@ -141,3 +161,23 @@ class VaultOperationQueueRunner(
         const val REVISION_MISMATCH_REASON = "revision_mismatch"
     }
 }
+
+interface VaultOperationQueueObserver {
+    fun onQueueStarted()
+    fun onOperationStarted(job: VaultTransferJob)
+    fun onRefreshing()
+    fun onQueueFinished(failureCount: Int)
+
+    object None : VaultOperationQueueObserver {
+        override fun onQueueStarted() = Unit
+        override fun onOperationStarted(job: VaultTransferJob) = Unit
+        override fun onRefreshing() = Unit
+        override fun onQueueFinished(failureCount: Int) = Unit
+    }
+}
+
+private val VaultOperationExecutionResult.isFailure: Boolean
+    get() = state == VaultTransferState.FAILED ||
+        state == VaultTransferState.PARTIALLY_SUCCEEDED ||
+        state == VaultTransferState.CANCELLED ||
+        state == VaultTransferState.INTEGRITY_FAULT

@@ -242,6 +242,12 @@
     <string name="vault_delete_chapter_complete">Vault Chapter deleted</string>
     <string name="vault_delete_chapter_failed_details">Could not delete chapter: %s</string>
     <string name="vault_chapter_deleting">Deleting</string>
+    <string name="vault_operation_publishing_changes">Publishing Vault changes</string>
+    <string name="vault_operation_saving_metadata">Saving Vault Metadata</string>
+    <string name="vault_operation_deleting_chapter">Deleting Vault Chapter</string>
+    <string name="vault_operation_refreshing">Refreshing Vault Catalogue</string>
+    <string name="vault_operation_failed_title">Some Vault changes failed</string>
+    <string name="vault_operation_failed_text">Failed Vault changes: %d</string>
     <string name="vault_metadata_edit_title">Edit Vault Metadata</string>
     <string name="vault_metadata_label_duplicate">Vault Label names must be unique</string>
     <string name="vault_label_add">Add Vault Label</string>
