@@ -1,0 +1,27 @@
+ALTER TABLE vault_transfer_jobs ADD COLUMN operation_queue_key TEXT;
+
+UPDATE vault_transfer_jobs
+SET operation_queue_key = (
+    SELECT 'content-vault:' || content_vaults.identity
+    FROM content_vaults
+    WHERE content_vaults._id = vault_transfer_jobs.vault_id
+)
+WHERE state IN (0, 1)
+AND type IN (3, 5, 6)
+AND operation_key IS NOT NULL
+AND EXISTS (
+    SELECT 1
+    FROM content_vaults
+    WHERE content_vaults._id = vault_transfer_jobs.vault_id
+);
+
+UPDATE vault_transfer_jobs
+SET state = 4,
+    failure_reason = 'missing_operation_queue_key_after_migration',
+    completed_at = updated_at
+WHERE state IN (0, 1)
+AND type IN (3, 5, 6)
+AND operation_key IS NOT NULL
+AND operation_queue_key IS NULL;
+
+CREATE INDEX vault_transfer_jobs_operation_queue_key_index ON vault_transfer_jobs(operation_queue_key, state, created_at, _id);

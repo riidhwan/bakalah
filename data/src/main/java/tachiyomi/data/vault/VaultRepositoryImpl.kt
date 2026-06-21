@@ -42,6 +42,12 @@ class VaultRepositoryImpl(
             .subscribeToList()
     }
 
+    override suspend fun getVault(id: Long): ContentVault? {
+        return database.vaultQueries
+            .getVaultById(id, VaultMapper::mapVault)
+            .awaitAsOneOrNull()
+    }
+
     override suspend fun getVaultByIdentity(identity: ContentVaultIdentity): ContentVault? {
         return database.vaultQueries
             .getVaultByIdentity(identity.value, VaultMapper::mapVault)
@@ -768,6 +774,39 @@ class VaultRepositoryImpl(
             .awaitAsList()
     }
 
+    override suspend fun getActiveTransferJobsForOperationQueueKey(operationQueueKey: String): List<VaultTransferJob> {
+        return database.vaultQueries
+            .getActiveTransferJobsForOperationQueueKey(
+                operationQueueKey = operationQueueKey,
+                states = listOf(VaultTransferState.QUEUED, VaultTransferState.RUNNING),
+                mapper = VaultMapper::mapTransferJob,
+            )
+            .awaitAsList()
+    }
+
+    override suspend fun getQueuedTransferJobsForOperationQueueAndOperationKey(
+        operationQueueKey: String,
+        operationKey: String,
+    ): List<VaultTransferJob> {
+        return database.vaultQueries
+            .getQueuedTransferJobsForOperationQueueAndOperationKey(
+                operationQueueKey = operationQueueKey,
+                operationKey = operationKey,
+                queuedState = VaultTransferState.QUEUED,
+                mapper = VaultMapper::mapTransferJob,
+            )
+            .awaitAsList()
+    }
+
+    override suspend fun hasActiveTransferJobsForOperationQueueKey(operationQueueKey: String): Boolean {
+        return database.vaultQueries
+            .hasActiveTransferJobsForOperationQueueKey(
+                operationQueueKey = operationQueueKey,
+                states = listOf(VaultTransferState.QUEUED, VaultTransferState.RUNNING),
+            )
+            .awaitAsOne()
+    }
+
     override suspend fun getTransferJobsByState(states: List<VaultTransferState>): List<VaultTransferJob> {
         if (states.isEmpty()) return emptyList()
         return database.vaultQueries
@@ -790,6 +829,7 @@ class VaultRepositoryImpl(
                 chapterId = job.chapterId,
                 importRequestId = job.importRequestId,
                 operationKey = job.operationKey,
+                operationQueueKey = job.operationQueueKey,
                 payloadJson = job.payloadJson,
                 type = job.type,
                 state = job.state,
