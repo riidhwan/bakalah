@@ -10,6 +10,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import eu.kanade.presentation.library.components.CommonMangaItemDefaults
 import eu.kanade.presentation.library.components.MangaListItem
+import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreenModel.BrowseSourceManga
 import kotlinx.coroutines.flow.StateFlow
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaCover
@@ -17,7 +18,7 @@ import tachiyomi.presentation.core.util.plus
 
 @Composable
 fun BrowseSourceList(
-    mangaList: LazyPagingItems<StateFlow<Manga>>,
+    mangaList: LazyPagingItems<StateFlow<BrowseSourceManga>>,
     contentPadding: PaddingValues,
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
@@ -32,9 +33,10 @@ fun BrowseSourceList(
         }
 
         items(count = mangaList.itemCount) { index ->
-            val manga by mangaList[index]?.collectAsState() ?: return@items
+            val item by mangaList[index]?.collectAsState() ?: return@items
+            val manga = item.manga
             BrowseSourceListItem(
-                manga = manga,
+                item = item,
                 onClick = { onMangaClick(manga) },
                 onLongClick = { onMangaLongClick(manga) },
             )
@@ -50,10 +52,13 @@ fun BrowseSourceList(
 
 @Composable
 private fun BrowseSourceListItem(
-    manga: Manga,
+    item: BrowseSourceManga,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = onClick,
 ) {
+    val manga = item.manga
+    val showLibraryMark = manga.favorite || item.sameTitleLibraryMatch
+
     MangaListItem(
         title = manga.title,
         coverData = MangaCover(
@@ -63,9 +68,12 @@ private fun BrowseSourceListItem(
             url = manga.thumbnailUrl,
             lastModified = manga.coverLastModified,
         ),
-        coverAlpha = if (manga.favorite) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f,
+        coverAlpha = if (showLibraryMark) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f,
         badge = {
-            InLibraryBadge(enabled = manga.favorite)
+            BrowseLibraryBadge(
+                inLibrary = manga.favorite,
+                sameTitleLibraryMatch = item.sameTitleLibraryMatch,
+            )
         },
         onLongClick = onLongClick,
         onClick = onClick,
