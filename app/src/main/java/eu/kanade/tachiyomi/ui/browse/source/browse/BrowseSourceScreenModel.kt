@@ -24,6 +24,7 @@ import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.util.removeCovers
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -40,12 +41,15 @@ import tachiyomi.domain.category.model.Category
 import tachiyomi.domain.chapter.interactor.SetMangaDefaultChapterFlags
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
+import tachiyomi.domain.manga.interactor.GetLibraryManga
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
+import tachiyomi.domain.manga.model.sameTitleLibraryMatchKey
 import tachiyomi.domain.manga.model.toMangaUpdate
 import tachiyomi.domain.source.interactor.GetRemoteManga
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.source.local.LocalSource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.Instant
@@ -60,6 +64,7 @@ class BrowseSourceScreenModel(
     private val coverCache: CoverCache = Injekt.get(),
     private val getRemoteManga: GetRemoteManga = Injekt.get(),
     private val getDuplicateLibraryManga: GetDuplicateLibraryManga = Injekt.get(),
+    private val getLibraryManga: GetLibraryManga = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
     private val setMangaCategories: SetMangaCategories = Injekt.get(),
     private val setMangaDefaultChapterFlags: SetMangaDefaultChapterFlags = Injekt.get(),
@@ -101,6 +106,18 @@ class BrowseSourceScreenModel(
      * Flow of Pager flow tied to [State.listing]
      */
     private val hideInLibraryItems = sourcePreferences.hideInLibraryItems.get()
+    private val sourceBackedLibraryTitleKeys = getLibraryManga.subscribe()
+        .map { libraryManga ->
+            libraryManga
+                .asSequence()
+                .map { it.manga }
+                .filter { it.source != LocalSource.ID }
+                .map { it.title.sameTitleLibraryMatchKey() }
+                .filter { it.isNotBlank() }
+                .toSet()
+        }
+        .stateIn(ioCoroutineScope, SharingStarted.Eagerly, emptySet())
+
     val mangaPagerFlowFlow = state.map { it.listing }
         .distinctUntilChanged()
         .map { listing ->
@@ -110,9 +127,16 @@ class BrowseSourceScreenModel(
                 pagingData.map { manga ->
                     getManga.subscribe(manga.url, manga.source)
                         .map { it ?: manga }
+                        .combine(sourceBackedLibraryTitleKeys) { sourceManga, titleKeys ->
+                            BrowseSourceManga(
+                                manga = sourceManga,
+                                sameTitleLibraryMatch = !sourceManga.favorite &&
+                                    sourceManga.title.sameTitleLibraryMatchKey() in titleKeys,
+                            )
+                        }
                         .stateIn(ioCoroutineScope)
                 }
-                    .filter { !hideInLibraryItems || !it.value.favorite }
+                    .filter { !hideInLibraryItems || !it.value.manga.favorite }
             }
                 .cachedIn(ioCoroutineScope)
         }
@@ -341,6 +365,12 @@ class BrowseSourceScreenModel(
         ) : Dialog
         data class Migrate(val target: Manga, val current: Manga) : Dialog
     }
+
+    @Immutable
+    data class BrowseSourceManga(
+        val manga: Manga,
+        val sameTitleLibraryMatch: Boolean,
+    )
 
     @Immutable
     data class State(

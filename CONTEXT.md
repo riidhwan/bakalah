@@ -128,6 +128,10 @@ _Avoid_: Downloaded manga, offline manga
 A manga saved in the Library whose chapters are supplied by an app source rather than owned as Local Manga files.
 _Avoid_: Library Destination manga, downloaded manga, source manga
 
+**Same-Title Library Match**:
+A source manga whose normalized title key matches the normalized title key of at least one Source-Backed Library Manga.
+_Avoid_: Duplicate manga, same manga, in-library manga
+
 **Content Vault**:
 The authoritative user-owned collection of manga content that can outlive any one device's local storage.
 _Avoid_: Backup, cloud mirror, remote local source
