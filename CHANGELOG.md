@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Fixed
+- Stop Library-to-Vault Capture progress notifications from flickering back to generic Vault operation text between chapters.
 
 ## [v0.34.0] - 2026-06-21
 ### Fixed
