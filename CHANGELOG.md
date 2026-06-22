@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+
+## [v0.35.0] - 2026-06-22
 ### Added
 - Mark Browse Source entries whose title already exists in the source-backed Library.
 - Add Library manga source groups for combining the same manga across multiple sources.
