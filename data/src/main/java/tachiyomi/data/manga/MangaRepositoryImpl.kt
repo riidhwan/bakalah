@@ -13,6 +13,8 @@ import tachiyomi.data.subscribeToList
 import tachiyomi.data.subscribeToOne
 import tachiyomi.data.subscribeToOneOrNull
 import tachiyomi.domain.library.model.LibraryManga
+import tachiyomi.domain.manga.model.LibraryMangaGroup
+import tachiyomi.domain.manga.model.LibraryMangaGroupCandidate
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
 import tachiyomi.domain.manga.model.MangaWithChapterCount
@@ -70,6 +72,85 @@ class MangaRepositoryImpl(
         return database.libraryViewQueries
             .library(MangaMapper::mapLibraryManga)
             .subscribeToList()
+    }
+
+    override suspend fun getLibraryMangaGroupForManga(mangaId: Long): LibraryMangaGroup? {
+        val groupId = database.libraryMangaGroupsQueries
+            .getGroupIdForManga(mangaId)
+            .awaitAsOneOrNull()
+            ?: return null
+
+        val members = database.libraryMangaGroupsQueries
+            .getGroupMembers(groupId, MangaMapper::mapLibraryMangaGroupMember)
+            .awaitAsList()
+            .filter { it.manga.favorite }
+
+        return LibraryMangaGroup(groupId, members)
+            .takeIf { it.members.size >= MIN_LIBRARY_MANGA_GROUP_MEMBERS }
+    }
+
+    override suspend fun getLibraryMangaGroupCandidates(
+        anchorMangaId: Long,
+        groupId: Long?,
+    ): List<LibraryMangaGroupCandidate> {
+        return database.libraryMangaGroupsQueries
+            .getCandidateManga(
+                anchorMangaId,
+                groupId ?: NO_LIBRARY_MANGA_GROUP,
+                MangaMapper::mapLibraryMangaGroupCandidate,
+            )
+            .awaitAsList()
+    }
+
+    override suspend fun createLibraryMangaGroup(primaryMangaId: Long, memberMangaIds: List<Long>): Long {
+        val uniqueMemberIds = (listOf(primaryMangaId) + memberMangaIds.filterNot { it == primaryMangaId }).distinct()
+        require(uniqueMemberIds.size >= MIN_LIBRARY_MANGA_GROUP_MEMBERS) {
+            "A library manga group requires at least two members"
+        }
+        validateNewGroupMembers(uniqueMemberIds, groupId = null)
+
+        return database.transactionWithResult {
+            val groupId = database.libraryMangaGroupsQueries.createGroup().awaitAsOne()
+            uniqueMemberIds.forEach { mangaId ->
+                database.libraryMangaGroupsQueries.insertMember(
+                    groupId = groupId,
+                    mangaId = mangaId,
+                    isPrimary = mangaId == primaryMangaId,
+                )
+            }
+            groupId
+        }
+    }
+
+    override suspend fun addMangaToLibraryMangaGroup(groupId: Long, memberMangaIds: List<Long>) {
+        val existingMemberIds = getLibraryMangaGroup(groupId).memberMangaIds.toSet()
+        val uniqueMemberIds = memberMangaIds
+            .filterNot { it in existingMemberIds }
+            .distinct()
+        if (uniqueMemberIds.isEmpty()) return
+        validateNewGroupMembers(uniqueMemberIds, groupId = groupId)
+
+        database.transaction {
+            uniqueMemberIds.forEach { mangaId ->
+                database.libraryMangaGroupsQueries.insertMember(
+                    groupId = groupId,
+                    mangaId = mangaId,
+                    isPrimary = false,
+                )
+            }
+        }
+    }
+
+    override suspend fun setLibraryMangaGroupPrimary(groupId: Long, mangaId: Long) {
+        val group = getLibraryMangaGroup(groupId)
+        require(group.members.any { it.manga.id == mangaId }) {
+            "Primary manga must be a member of the library manga group"
+        }
+
+        database.transaction {
+            database.libraryMangaGroupsQueries.clearPrimary(groupId)
+            database.libraryMangaGroupsQueries.setPrimary(groupId, mangaId)
+        }
     }
 
     override fun getFavoritesBySourceId(sourceId: Long): Flow<List<Manga>> {
@@ -194,5 +275,60 @@ class MangaRepositoryImpl(
                 )
             }
         }
+        cleanupLibraryMangaGroups()
+    }
+
+    private suspend fun getLibraryMangaGroup(groupId: Long): LibraryMangaGroup {
+        val members = database.libraryMangaGroupsQueries
+            .getGroupMembers(groupId, MangaMapper::mapLibraryMangaGroupMember)
+            .awaitAsList()
+        require(members.isNotEmpty()) {
+            "Library manga group does not exist"
+        }
+        return LibraryMangaGroup(groupId, members)
+    }
+
+    private suspend fun validateNewGroupMembers(mangaIds: List<Long>, groupId: Long?) {
+        val existingGroup = groupId?.let { getLibraryMangaGroup(it) }
+        val existingSourceIds = existingGroup
+            ?.members
+            .orEmpty()
+            .map { it.manga.source }
+            .toSet()
+
+        val newManga = mangaIds.map { id ->
+            database.mangasQueries.getMangaById(id, MangaMapper::mapManga).awaitAsOne()
+        }
+        require(newManga.all { it.favorite && it.source != LOCAL_SOURCE_ID }) {
+            "Library manga groups can only contain source-backed library manga"
+        }
+
+        val duplicateSourceId = newManga
+            .groupingBy { it.source }
+            .eachCount()
+            .any { (sourceId, count) -> count > 1 || sourceId in existingSourceIds }
+        require(!duplicateSourceId) {
+            "Library manga groups can only contain one member per source"
+        }
+
+        newManga.forEach { manga ->
+            val memberGroupId = database.libraryMangaGroupsQueries
+                .getGroupIdForManga(manga.id)
+                .awaitAsOneOrNull()
+            require(memberGroupId == null || memberGroupId == groupId) {
+                "Library manga group members cannot belong to another group"
+            }
+        }
+    }
+
+    private suspend fun cleanupLibraryMangaGroups() {
+        database.libraryMangaGroupsQueries.deleteMembershipsForNonLibraryManga()
+        database.libraryMangaGroupsQueries.deleteDissolvedGroups()
+    }
+
+    private companion object {
+        const val NO_LIBRARY_MANGA_GROUP = -1L
+        const val LOCAL_SOURCE_ID = 0L
+        const val MIN_LIBRARY_MANGA_GROUP_MEMBERS = 2
     }
 }

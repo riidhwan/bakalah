@@ -13,6 +13,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ## [Unreleased]
 ### Added
 - Mark Browse Source entries whose title already exists in the source-backed Library.
+- Add Library manga source groups for combining the same manga across multiple sources.
 
 ### Fixed
 - Stop Library-to-Vault Capture progress notifications from flickering back to generic Vault operation text between chapters.

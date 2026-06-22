@@ -28,23 +28,32 @@ data class LibraryItem(
     fun matches(constraint: String): Boolean {
         val source = sourceManager.getOrStub(libraryManga.manga.source)
         val sourceName by lazy { source.getNameForMangaInfo() }
+        val group = libraryManga.group
         if (constraint.startsWith("id:", true)) {
-            return id == constraint.substringAfter("id:").toLongOrNull()
+            val queryId = constraint.substringAfter("id:").toLongOrNull()
+            return id == queryId || group?.memberMangaIds?.contains(queryId) == true
         } else if (constraint.startsWith("src:", true)) {
             val querySource = constraint.substringAfter("src:")
             return if (querySource.equals(LOCAL_SOURCE_ID_ALIAS, ignoreCase = true)) {
-                source.id == LocalSource.ID
+                source.id == LocalSource.ID || group?.memberSourceIds?.contains(LocalSource.ID) == true
             } else {
-                source.id == querySource.toLongOrNull()
+                val sourceId = querySource.toLongOrNull()
+                source.id == sourceId || group?.memberSourceIds?.contains(sourceId) == true
             }
         }
         return libraryManga.manga.title.contains(constraint, true) ||
+            group?.memberTitles.orEmpty().any { it.contains(constraint, true) } ||
             (libraryManga.manga.author?.contains(constraint, true) ?: false) ||
+            group?.memberAuthors.orEmpty().any { it.contains(constraint, true) } ||
             (libraryManga.manga.artist?.contains(constraint, true) ?: false) ||
+            group?.memberArtists.orEmpty().any { it.contains(constraint, true) } ||
             (libraryManga.manga.description?.contains(constraint, true) ?: false) ||
             constraint.split(",").map { it.trim() }.all { subconstraint ->
                 checkNegatableConstraint(subconstraint) {
                     sourceName.contains(it, true) ||
+                        group?.memberSourceIds.orEmpty()
+                            .map { sourceId -> sourceManager.getOrStub(sourceId).getNameForMangaInfo() }
+                            .any { sourceName -> sourceName.contains(it, true) } ||
                         (libraryManga.manga.genre?.any { genre -> genre.equals(it, true) } ?: false)
                 }
             }

@@ -1,0 +1,89 @@
+import kotlin.Boolean;
+
+CREATE TABLE library_manga_groups(
+    _id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT
+);
+
+CREATE TABLE library_manga_group_members(
+    group_id INTEGER NOT NULL REFERENCES library_manga_groups(_id) ON DELETE CASCADE,
+    manga_id INTEGER NOT NULL REFERENCES mangas(_id) ON DELETE CASCADE,
+    is_primary INTEGER AS Boolean NOT NULL DEFAULT 0,
+    PRIMARY KEY(group_id, manga_id)
+);
+
+CREATE UNIQUE INDEX library_manga_group_members_manga_index
+ON library_manga_group_members(manga_id);
+
+CREATE UNIQUE INDEX library_manga_group_members_primary_index
+ON library_manga_group_members(group_id)
+WHERE is_primary = 1;
+
+createGroup:
+INSERT INTO library_manga_groups DEFAULT VALUES
+RETURNING _id;
+
+insertMember:
+INSERT INTO library_manga_group_members(group_id, manga_id, is_primary)
+VALUES (:groupId, :mangaId, :isPrimary);
+
+getGroupIdForManga:
+SELECT group_id
+FROM library_manga_group_members
+WHERE manga_id = :mangaId;
+
+getGroupMembers:
+SELECT M.*, GM.group_id, GM.is_primary
+FROM library_manga_group_members GM
+JOIN mangas M
+ON M._id = GM.manga_id
+WHERE GM.group_id = :groupId
+ORDER BY GM.is_primary DESC, M.title COLLATE NOCASE ASC;
+
+getCandidateManga:
+WITH target_sources AS (
+    SELECT M.source
+    FROM library_manga_group_members GM
+    JOIN mangas M
+    ON M._id = GM.manga_id
+    WHERE :groupId != -1
+    AND GM.group_id = :groupId
+)
+SELECT M.*
+FROM mangas M
+LEFT JOIN library_manga_group_members ExistingGroup
+ON ExistingGroup.manga_id = M._id
+WHERE M.favorite = 1
+AND M.source != 0
+AND M._id != :anchorMangaId
+AND ExistingGroup.manga_id IS NULL
+AND M.source NOT IN target_sources
+ORDER BY M.title COLLATE NOCASE ASC;
+
+clearPrimary:
+UPDATE library_manga_group_members
+SET is_primary = 0
+WHERE group_id = :groupId;
+
+setPrimary:
+UPDATE library_manga_group_members
+SET is_primary = 1
+WHERE group_id = :groupId
+AND manga_id = :mangaId;
+
+deleteMembershipsForNonLibraryManga:
+DELETE FROM library_manga_group_members
+WHERE manga_id IN (
+    SELECT _id
+    FROM mangas
+    WHERE favorite = 0
+);
+
+deleteDissolvedGroups:
+DELETE FROM library_manga_groups
+WHERE _id NOT IN (
+    SELECT group_id
+    FROM library_manga_group_members
+    GROUP BY group_id
+    HAVING count(*) >= 2
+    AND sum(is_primary) = 1
+);

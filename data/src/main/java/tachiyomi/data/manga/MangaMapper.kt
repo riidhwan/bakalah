@@ -2,6 +2,9 @@ package tachiyomi.data.manga
 
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import tachiyomi.domain.library.model.LibraryManga
+import tachiyomi.domain.library.model.LibraryMangaGroupInfo
+import tachiyomi.domain.manga.model.LibraryMangaGroupCandidate
+import tachiyomi.domain.manga.model.LibraryMangaGroupMember
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
 
@@ -93,6 +96,12 @@ object MangaMapper {
         lastRead: Long,
         bookmarkCount: Double,
         categories: String,
+        libraryGroupId: Long?,
+        memberMangaIds: String?,
+        memberSourceIds: String?,
+        memberTitles: String?,
+        memberAuthors: String?,
+        memberArtists: String?,
     ): LibraryManga = LibraryManga(
         manga = mapManga(
             id,
@@ -128,6 +137,132 @@ object MangaMapper {
         latestUpload = latestUpload,
         chapterFetchedAt = chapterFetchedAt,
         lastRead = lastRead,
+        group = libraryGroupId?.let {
+            LibraryMangaGroupInfo(
+                id = it,
+                memberMangaIds = memberMangaIds.toLongList(),
+                memberSourceIds = memberSourceIds.toLongList(),
+                memberTitles = memberTitles.toStringList(),
+                memberAuthors = memberAuthors.toStringList(),
+                memberArtists = memberArtists.toStringList(),
+            )
+        },
+    )
+
+    @Suppress("UNUSED_PARAMETER")
+    fun mapLibraryMangaGroupMember(
+        id: Long,
+        source: Long,
+        url: String,
+        artist: String?,
+        author: String?,
+        description: String?,
+        genre: List<String>?,
+        title: String,
+        status: Long,
+        thumbnailUrl: String?,
+        favorite: Boolean,
+        lastUpdate: Long?,
+        nextUpdate: Long?,
+        initialized: Boolean,
+        viewerFlags: Long,
+        chapterFlags: Long,
+        coverLastModified: Long,
+        dateAdded: Long,
+        updateStrategy: UpdateStrategy,
+        calculateInterval: Long,
+        lastModifiedAt: Long,
+        favoriteModifiedAt: Long?,
+        version: Long,
+        isSyncing: Long,
+        notes: String,
+        groupId: Long,
+        isPrimary: Boolean,
+    ): LibraryMangaGroupMember = LibraryMangaGroupMember(
+        manga = mapManga(
+            id,
+            source,
+            url,
+            artist,
+            author,
+            description,
+            genre,
+            title,
+            status,
+            thumbnailUrl,
+            favorite,
+            lastUpdate,
+            nextUpdate,
+            initialized,
+            viewerFlags,
+            chapterFlags,
+            coverLastModified,
+            dateAdded,
+            updateStrategy,
+            calculateInterval,
+            lastModifiedAt,
+            favoriteModifiedAt,
+            version,
+            isSyncing,
+            notes,
+        ),
+        isPrimary = isPrimary,
+    )
+
+    fun mapLibraryMangaGroupCandidate(
+        id: Long,
+        source: Long,
+        url: String,
+        artist: String?,
+        author: String?,
+        description: String?,
+        genre: List<String>?,
+        title: String,
+        status: Long,
+        thumbnailUrl: String?,
+        favorite: Boolean,
+        lastUpdate: Long?,
+        nextUpdate: Long?,
+        initialized: Boolean,
+        viewerFlags: Long,
+        chapterFlags: Long,
+        coverLastModified: Long,
+        dateAdded: Long,
+        updateStrategy: UpdateStrategy,
+        calculateInterval: Long,
+        lastModifiedAt: Long,
+        favoriteModifiedAt: Long?,
+        version: Long,
+        isSyncing: Long,
+        notes: String,
+    ): LibraryMangaGroupCandidate = LibraryMangaGroupCandidate(
+        manga = mapManga(
+            id,
+            source,
+            url,
+            artist,
+            author,
+            description,
+            genre,
+            title,
+            status,
+            thumbnailUrl,
+            favorite,
+            lastUpdate,
+            nextUpdate,
+            initialized,
+            viewerFlags,
+            chapterFlags,
+            coverLastModified,
+            dateAdded,
+            updateStrategy,
+            calculateInterval,
+            lastModifiedAt,
+            favoriteModifiedAt,
+            version,
+            isSyncing,
+            notes,
+        ),
     )
 
     fun mapMangaWithChapterCount(
@@ -187,4 +322,16 @@ object MangaMapper {
         ),
         chapterCount = totalCount,
     )
+
+    private fun String?.toLongList(): List<Long> {
+        return orEmpty()
+            .split(",")
+            .mapNotNull { it.toLongOrNull() }
+    }
+
+    private fun String?.toStringList(): List<String> {
+        return orEmpty()
+            .split(",")
+            .filter { it.isNotBlank() }
+    }
 }

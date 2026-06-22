@@ -224,7 +224,8 @@ data object LibraryTab : Tab {
             }
             is LibraryScreenModel.Dialog.DeleteManga -> {
                 DeleteLibraryMangaDialog(
-                    containsLocalManga = dialog.manga.any(Manga::isLocal),
+                    containsLocalManga = dialog.manga.any { it.manga.isLocal() },
+                    containsMangaGroups = dialog.manga.any { it.group != null },
                     onDismissRequest = onDismissRequest,
                     onConfirm = { deleteManga, deleteChapter ->
                         screenModel.removeMangas(dialog.manga, deleteManga, deleteChapter)
