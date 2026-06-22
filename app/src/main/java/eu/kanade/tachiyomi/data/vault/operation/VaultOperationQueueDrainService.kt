@@ -16,10 +16,9 @@ internal class VaultOperationQueueDrainService(
 
     override suspend fun waitUntilDrained(identity: ContentVaultIdentity) {
         val operationQueueKey = VaultOperationQueueKey.forContentVault(identity)
-        wakeup.wakeOperationQueue(operationQueueKey)
         while (repository.hasActiveTransferJobsForOperationQueueKey(operationQueueKey)) {
-            delay(pollDelayMillis)
             wakeup.wakeOperationQueue(operationQueueKey)
+            delay(pollDelayMillis)
         }
     }
 
