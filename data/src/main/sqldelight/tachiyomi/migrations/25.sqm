@@ -1,3 +1,5 @@
+DROP VIEW libraryView;
+
 CREATE VIEW libraryView AS
 WITH
 active_groups AS (
@@ -90,7 +92,3 @@ LEFT JOIN (
 ON MC.manga_id = M._id
 WHERE M.favorite = 1
 AND (AGM.group_id IS NULL OR GM.is_primary = 1);
-
-library:
-SELECT *
-FROM libraryView;

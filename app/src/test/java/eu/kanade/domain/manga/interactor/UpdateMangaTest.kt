@@ -17,6 +17,8 @@ import tachiyomi.core.common.preference.Preference
 import tachiyomi.domain.library.model.LibraryManga
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.FetchInterval
+import tachiyomi.domain.manga.model.LibraryMangaGroup
+import tachiyomi.domain.manga.model.LibraryMangaGroupCandidate
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
 import tachiyomi.domain.manga.model.MangaWithChapterCount
@@ -135,6 +137,25 @@ class UpdateMangaTest {
         override suspend fun getLibraryManga(): List<LibraryManga> = notImplemented()
 
         override fun getLibraryMangaAsFlow(): Flow<List<LibraryManga>> = notImplemented()
+
+        override suspend fun getLibraryMangaGroupForManga(mangaId: Long): LibraryMangaGroup? = notImplemented()
+
+        override suspend fun getLibraryMangaGroupCandidates(
+            anchorMangaId: Long,
+            groupId: Long?,
+        ): List<LibraryMangaGroupCandidate> = notImplemented()
+
+        override suspend fun createLibraryMangaGroup(primaryMangaId: Long, memberMangaIds: List<Long>): Long {
+            return notImplemented()
+        }
+
+        override suspend fun addMangaToLibraryMangaGroup(groupId: Long, memberMangaIds: List<Long>) {
+            notImplemented<Unit>()
+        }
+
+        override suspend fun setLibraryMangaGroupPrimary(groupId: Long, mangaId: Long) {
+            notImplemented<Unit>()
+        }
 
         override fun getFavoritesBySourceId(sourceId: Long): Flow<List<Manga>> = notImplemented()
 

@@ -31,6 +31,7 @@ import eu.kanade.presentation.components.NavigatorAdaptiveSheet
 import eu.kanade.presentation.manga.ChapterSettingsDialog
 import eu.kanade.presentation.manga.DuplicateMangaDialog
 import eu.kanade.presentation.manga.EditCoverAction
+import eu.kanade.presentation.manga.LibraryMangaGroupDialog
 import eu.kanade.presentation.manga.LocalVaultTargetSetupDialog
 import eu.kanade.presentation.manga.MangaScreen
 import eu.kanade.presentation.manga.VaultChapterReplacementDialog
@@ -67,6 +68,7 @@ import tachiyomi.domain.manga.model.Manga
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.LoadingScreen
+import tachiyomi.source.local.isLocal
 
 class MangaScreen(
     private val mangaId: Long,
@@ -101,7 +103,11 @@ class MangaScreen(
         }
 
         val successState = state as MangaScreenModel.State.Success
-        val isHttpSource = remember { successState.source is HttpSource }
+        val isHttpSource = successState.source is HttpSource
+        val groupedSourceTabs = successState.libraryMangaGroupTabs
+        val isGrouped = groupedSourceTabs.isNotEmpty()
+        val selectedSourceTab = groupedSourceTabs.firstOrNull { it.selected }
+        val canGroupManga = successState.manga.favorite && !successState.manga.isLocal()
 
         LaunchedEffect(successState.manga, screenModel.source) {
             if (isHttpSource) {
@@ -174,6 +180,17 @@ class MangaScreen(
                 }
             },
             onEditNotesClicked = { navigator.push(MangaNotesScreen(manga = successState.manga)) },
+            onSourceTabClicked = {
+                if (it != successState.manga.id) {
+                    screenModel.selectLibraryMangaGroupTab(it)
+                }
+            },
+            onUseAsPrimarySourceClicked = screenModel::showLibraryMangaGroupDialog
+                .takeIf { canGroupManga && !isGrouped },
+            onAddSourceClicked = screenModel::showLibraryMangaGroupDialog
+                .takeIf { canGroupManga && isGrouped },
+            onSetAsPrimarySourceClicked = screenModel::setCurrentSourceAsPrimary
+                .takeIf { isGrouped && selectedSourceTab?.isPrimary == false },
             onAddToVaultClicked = {
                 screenModel.startAddToVault {
                     navigator.push(SettingsScreen(SettingsScreen.Destination.Vault))
@@ -242,6 +259,16 @@ class MangaScreen(
                     allowUnlink = dialog.allowUnlink,
                     pendingAddToVault = dialog.pendingAddToVault,
                     onTargetSelected = screenModel::selectLocalVaultTarget,
+                    onDismissRequest = onDismissRequest,
+                )
+            }
+            is MangaScreenModel.Dialog.LibraryMangaGroupSetup -> {
+                LibraryMangaGroupDialog(
+                    initialTitle = dialog.initialTitle,
+                    candidates = dialog.candidates,
+                    onConfirm = { selectedMangaIds ->
+                        screenModel.confirmLibraryMangaGroupSources(dialog.groupId, selectedMangaIds)
+                    },
                     onDismissRequest = onDismissRequest,
                 )
             }

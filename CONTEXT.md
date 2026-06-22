@@ -100,6 +100,10 @@ _Avoid_: More tab, settings screen
 A pushed screen for viewing and acting on one Library, Local, or source manga. Use Screen for pushed detail or full-screen experiences, not top-level navigation areas.
 _Avoid_: Manga page, title screen
 
+**Source Tab**:
+A tab in a grouped Manga Detail Screen that represents one Source-Backed Library Manga member by its source display name.
+_Avoid_: Manga tab, duplicate tab, source group
+
 **Vault Manga Detail Screen**:
 A pushed screen for viewing and managing one Vault Manga.
 _Avoid_: Vault title screen, vault details
@@ -127,6 +131,42 @@ _Avoid_: Downloaded manga, offline manga
 **Source-Backed Library Manga**:
 A manga saved in the Library whose chapters are supplied by an app source rather than owned as Local Manga files.
 _Avoid_: Library Destination manga, downloaded manga, source manga
+
+**Library Manga Group**:
+A user-owned grouping of multiple existing Source-Backed Library Manga from different sources that the user wants to treat as alternate source entries for the same work and see as one entry in the Library Destination. Its Library Destination entry uses group-level recent activity but does not present unread count behavior.
+_Avoid_: Duplicate manga, same manga, temporary match
+
+**Grouped Library Removal**:
+Removing a Library Manga Group from the Library Destination as one visible entry, meaning all grouped Source-Backed Library Manga are removed from the Library together.
+_Avoid_: Delete group only, remove primary manga
+
+**Library Manga Group Dissolution**:
+The return from a Library Manga Group to ordinary Source-Backed Library Manga when fewer than two grouped members remain in the Library.
+_Avoid_: Group deletion, ungrouping leftovers, orphan group
+
+**Primary Library Manga**:
+The Source-Backed Library Manga that represents a Library Manga Group in the Library Destination and supplies the first loaded manga data in the Manga Detail Screen.
+_Avoid_: Main duplicate, default source, group owner
+
+**Direct Group Member Navigation**:
+Opening a grouped Source-Backed Library Manga through a path that names that manga directly, landing on its Source Tab rather than the Primary Library Manga tab.
+_Avoid_: Primary redirect, hidden duplicate navigation
+
+**Use as Primary Source**:
+The user action that creates a Library Manga Group from an ungrouped Source-Backed Library Manga by making that manga the Primary Library Manga.
+_Avoid_: Group, merge, link duplicate
+
+**Add Source**:
+The user action that adds another Source-Backed Library Manga to an existing Library Manga Group without changing the Primary Library Manga.
+_Avoid_: Group, merge, use as primary source
+
+**Set as Primary Source**:
+The user action that makes the currently selected member of a Library Manga Group become the Primary Library Manga.
+_Avoid_: Make default, pin source, reorder group
+
+**Group Anchor Manga**:
+The Source-Backed Library Manga from which a user starts creating a Library Manga Group. It is always included in the new group and becomes the initial Primary Library Manga.
+_Avoid_: Selected duplicate, seed manga, base manga
 
 **Same-Title Library Match**:
 A source manga whose normalized title key matches the normalized title key of at least one Source-Backed Library Manga.

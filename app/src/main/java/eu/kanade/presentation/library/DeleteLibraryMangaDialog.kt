@@ -18,6 +18,7 @@ import tachiyomi.presentation.core.i18n.stringResource
 @Composable
 fun DeleteLibraryMangaDialog(
     containsLocalManga: Boolean,
+    containsMangaGroups: Boolean = false,
     onDismissRequest: () -> Unit,
     onConfirm: (Boolean, Boolean) -> Unit,
 ) {
@@ -57,6 +58,9 @@ fun DeleteLibraryMangaDialog(
         },
         text = {
             Column {
+                if (containsMangaGroups) {
+                    Text(text = stringResource(MR.strings.library_manga_group_remove_warning))
+                }
                 list.forEach { state ->
                     LabeledCheckbox(
                         label = stringResource(state.value),

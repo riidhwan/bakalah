@@ -108,6 +108,9 @@
     <string name="action_retry">Retry</string>
     <string name="action_remove">Remove</string>
     <string name="action_remove_everything">Remove everything</string>
+    <string name="action_use_as_primary_source">Use as Primary Source</string>
+    <string name="action_add_source">Add Source</string>
+    <string name="action_set_as_primary_source">Set as Primary Source</string>
     <string name="action_start">Start</string>
     <string name="action_resume">Resume</string>
     <string name="action_open_in_browser">Open in browser</string>
@@ -128,6 +131,9 @@
     <string name="action_display_unread_badge">Unread chapters</string>
     <string name="action_display_local_badge">Local source</string>
     <string name="action_display_language_badge">Language</string>
+    <string name="library_manga_group_add_source">Add source</string>
+    <string name="library_manga_group_search_library">Search library</string>
+    <string name="library_manga_group_remove_warning">Removing a grouped library entry removes every source in that group from the library.</string>
     <string name="action_display_show_tabs">Show category tabs</string>
     <string name="action_display_show_number_of_items">Show number of items</string>
     <string name="action_display_show_continue_reading_button">Continue reading button</string>
