@@ -21,6 +21,7 @@ import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.domain.manga.repository.MangaRepository
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.coroutines.cancellation.CancellationException
 
 class MangaRepositoryImpl(
     private val database: Database,
@@ -176,6 +177,8 @@ class MangaRepositoryImpl(
         return try {
             database.mangasQueries.resetViewerFlags()
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
             false
@@ -195,6 +198,8 @@ class MangaRepositoryImpl(
         return try {
             partialUpdate(update)
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
             false
@@ -205,6 +210,8 @@ class MangaRepositoryImpl(
         return try {
             partialUpdate(*mangaUpdates.toTypedArray())
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
             false

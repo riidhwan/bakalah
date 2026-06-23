@@ -104,6 +104,7 @@ import tachiyomi.source.local.io.LocalSourceFileSystem
 import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.floor
 
 class MangaScreenModel(
@@ -270,12 +271,15 @@ class MangaScreenModel(
                         (needRefreshInfo || needRefreshChapter)
                     ) {
                         refreshedOnLoadMangaIds.add(manga.id)
-                        val fetchFromSourceTasks = listOf(
-                            async { if (needRefreshInfo) fetchMangaFromSource() },
-                            async { if (needRefreshChapter) fetchChaptersFromSource() },
-                        )
-                        fetchFromSourceTasks.awaitAll()
-                        updateSuccessState { it.copy(isRefreshingData = false) }
+                        try {
+                            val fetchFromSourceTasks = listOf(
+                                async { if (needRefreshInfo) fetchMangaFromSource() },
+                                async { if (needRefreshChapter) fetchChaptersFromSource() },
+                            )
+                            fetchFromSourceTasks.awaitAll()
+                        } finally {
+                            updateSuccessState { it.copy(isRefreshingData = false) }
+                        }
                     }
                 }
         }
@@ -310,12 +314,15 @@ class MangaScreenModel(
     fun fetchAllFromSource(manualFetch: Boolean = true) {
         screenModelScope.launch {
             updateSuccessState { it.copy(isRefreshingData = true) }
-            val fetchFromSourceTasks = listOf(
-                async { fetchMangaFromSource(manualFetch) },
-                async { fetchChaptersFromSource(manualFetch) },
-            )
-            fetchFromSourceTasks.awaitAll()
-            updateSuccessState { it.copy(isRefreshingData = false) }
+            try {
+                val fetchFromSourceTasks = listOf(
+                    async { fetchMangaFromSource(manualFetch) },
+                    async { fetchChaptersFromSource(manualFetch) },
+                )
+                fetchFromSourceTasks.awaitAll()
+            } finally {
+                updateSuccessState { it.copy(isRefreshingData = false) }
+            }
         }
     }
 
@@ -332,6 +339,8 @@ class MangaScreenModel(
                 updateManga.awaitUpdateFromSource(state.manga, networkManga, manualFetch)
             }
         } catch (e: Throwable) {
+            if (e is CancellationException) throw e
+
             // Ignore early hints "errors" that aren't handled by OkHttp
             if (e is HttpException && e.code == 103) return
 
@@ -1141,6 +1150,8 @@ class MangaScreenModel(
                 }
             }
         } catch (e: Throwable) {
+            if (e is CancellationException) throw e
+
             val message = if (e is NoChaptersException) {
                 context.stringResource(MR.strings.no_chapters_error)
             } else {

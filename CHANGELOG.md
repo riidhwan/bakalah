@@ -12,6 +12,10 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.35.1] - 2026-06-23
+### Fixed
+- Stop manga detail refresh cancellation from leaving the loading indicator stuck.
+
 ## [v0.35.0] - 2026-06-22
 ### Added
 - Mark Browse Source entries whose title already exists in the source-backed Library.
