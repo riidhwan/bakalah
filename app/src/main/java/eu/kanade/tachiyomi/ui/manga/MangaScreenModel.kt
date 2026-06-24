@@ -81,7 +81,6 @@ import tachiyomi.domain.chapter.model.NoChaptersException
 import tachiyomi.domain.chapter.service.calculateChapterGap
 import tachiyomi.domain.chapter.service.getChapterSort
 import tachiyomi.domain.library.service.LibraryPreferences
-import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
 import tachiyomi.domain.manga.interactor.GetMangaWithChapters
 import tachiyomi.domain.manga.interactor.GetSameTitleLibraryManga
 import tachiyomi.domain.manga.interactor.ManageLibraryMangaGroup
@@ -121,7 +120,6 @@ class MangaScreenModel(
     private val downloadManager: DownloadManager = Injekt.get(),
     private val downloadCache: DownloadCache = Injekt.get(),
     private val getMangaAndChapters: GetMangaWithChapters = Injekt.get(),
-    private val getDuplicateLibraryManga: GetDuplicateLibraryManga = Injekt.get(),
     private val getSameTitleLibraryManga: GetSameTitleLibraryManga = Injekt.get(),
     private val getAvailableScanlators: GetAvailableScanlators = Injekt.get(),
     private val getExcludedScanlators: GetExcludedScanlators = Injekt.get(),
@@ -144,8 +142,11 @@ class MangaScreenModel(
     private val vaultRepository: VaultRepository = Injekt.get(),
     private val contentVaultPreferences: ContentVaultPreferences = Injekt.get(),
     private val localVaultImportStateBuilder: LocalVaultImportScreenStateBuilder = LocalVaultImportScreenStateBuilder(),
-    val snackbarHostState: SnackbarHostState = SnackbarHostState(),
     private val sourceManager: SourceManager = Injekt.get(),
+    private val libraryMangaGroupStateBuilder: LibraryMangaGroupStateBuilder = LibraryMangaGroupStateBuilder(
+        sourceName = { sourceId -> sourceManager.getOrStub(sourceId).getNameForMangaInfo() },
+    ),
+    val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
 
     private val successState: State.Success?
@@ -516,44 +517,13 @@ class MangaScreenModel(
     private suspend fun buildDuplicateMangaGroupTargets(
         duplicates: List<MangaWithChapterCount>,
     ): List<DuplicateMangaGroupTargetItem> {
-        val duplicatesByMangaId = duplicates.associateBy { it.manga.id }
-        val targets = mutableListOf<DuplicateMangaGroupTargetItem>()
-        val addedGroupIds = mutableSetOf<Long>()
-
-        duplicates.forEach { duplicate ->
-            val group = manageLibraryMangaGroup.getGroupForManga(duplicate.manga.id)
-            if (group == null) {
-                targets += DuplicateMangaGroupTargetItem(
-                    key = "manga:${duplicate.manga.id}",
-                    title = duplicate.manga.title,
-                    sourceName = sourceManager.getOrStub(duplicate.manga.source).getNameForMangaInfo(),
-                    chapterCount = duplicate.chapterCount,
-                    sourceCount = 1,
-                    groupId = null,
-                    memberMangaIds = listOf(duplicate.manga.id),
-                    sourceIds = setOf(duplicate.manga.source),
-                )
-                return@forEach
-            }
-
-            if (!addedGroupIds.add(group.id)) return@forEach
-
-            val primary = group.primary ?: group.members.firstOrNull() ?: return@forEach
-            targets += DuplicateMangaGroupTargetItem(
-                key = "group:${group.id}",
-                title = primary.manga.title,
-                sourceName = sourceManager.getOrStub(primary.manga.source).getNameForMangaInfo(),
-                chapterCount = group.members.sumOf { member ->
-                    duplicatesByMangaId[member.manga.id]?.chapterCount ?: 0L
-                },
-                sourceCount = group.members.size,
-                groupId = group.id,
-                memberMangaIds = group.memberMangaIds,
-                sourceIds = group.members.map { it.manga.source }.toSet(),
-            )
+        val groupsByDuplicateMangaId = duplicates.associate { duplicate ->
+            duplicate.manga.id to manageLibraryMangaGroup.getGroupForManga(duplicate.manga.id)
         }
-
-        return targets
+        return libraryMangaGroupStateBuilder.duplicateTargets(
+            duplicates = duplicates,
+            groupsByDuplicateMangaId = groupsByDuplicateMangaId,
+        )
     }
 
     fun showSetFetchIntervalDialog() {
@@ -573,11 +543,10 @@ class MangaScreenModel(
             }
             val candidates = manageLibraryMangaGroup
                 .getCandidates(anchorMangaId = state.manga.id, groupId = groupId)
-                .filterNot { it.manga.id == state.manga.id }
-                .map {
-                    LibraryMangaGroupCandidateItem(
-                        manga = it.manga,
-                        sourceName = sourceManager.getOrStub(it.manga.source).getNameForMangaInfo(),
+                .let { candidates ->
+                    libraryMangaGroupStateBuilder.candidates(
+                        candidates = candidates,
+                        excludedMangaId = state.manga.id,
                     )
                 }
 
@@ -658,15 +627,8 @@ class MangaScreenModel(
     }
 
     private suspend fun getLibraryMangaGroupTabs(selectedMangaId: Long): List<LibraryMangaGroupTab> {
-        val group = manageLibraryMangaGroup.getGroupForManga(selectedMangaId) ?: return emptyList()
-        return group.members.map { member ->
-            LibraryMangaGroupTab(
-                mangaId = member.manga.id,
-                sourceName = sourceManager.getOrStub(member.manga.source).getNameForMangaInfo(),
-                selected = member.manga.id == selectedMangaId,
-                isPrimary = member.isPrimary,
-            )
-        }
+        val group = manageLibraryMangaGroup.getGroupForManga(selectedMangaId)
+        return libraryMangaGroupStateBuilder.tabs(group = group, selectedMangaId = selectedMangaId)
     }
 
     fun selectLibraryMangaGroupTab(mangaId: Long) {
