@@ -27,4 +27,51 @@ class SameTitleLibraryMatchTest {
     fun `title key is blank when title has no letters or numbers`() {
         " - / ... ".sameTitleLibraryMatchKey() shouldBe ""
     }
+
+    @Test
+    fun `remote non favorite matches same library title`() {
+        Manga.create()
+            .copy(
+                source = REMOTE_SOURCE_ID,
+                favorite = false,
+                title = "One Piece",
+            )
+            .hasSameTitleLibraryMatch(
+                libraryTitleKeys = setOf("one piece"),
+                localSourceId = LOCAL_SOURCE_ID,
+            ) shouldBe true
+    }
+
+    @Test
+    fun `local entry does not match same library title`() {
+        Manga.create()
+            .copy(
+                source = LOCAL_SOURCE_ID,
+                favorite = false,
+                title = "One Piece",
+            )
+            .hasSameTitleLibraryMatch(
+                libraryTitleKeys = setOf("one piece"),
+                localSourceId = LOCAL_SOURCE_ID,
+            ) shouldBe false
+    }
+
+    @Test
+    fun `favorite entry does not match same library title`() {
+        Manga.create()
+            .copy(
+                source = REMOTE_SOURCE_ID,
+                favorite = true,
+                title = "One Piece",
+            )
+            .hasSameTitleLibraryMatch(
+                libraryTitleKeys = setOf("one piece"),
+                localSourceId = LOCAL_SOURCE_ID,
+            ) shouldBe false
+    }
+
+    private companion object {
+        const val LOCAL_SOURCE_ID = 0L
+        const val REMOTE_SOURCE_ID = 1L
+    }
 }

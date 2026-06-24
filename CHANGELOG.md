@@ -14,6 +14,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ### Added
 - Add deletion for folder-based Local Manga from manga details.
 
+### Fixed
+- Stop same-title Browse Source badges from marking Local Source entries.
+
 ## [v0.35.1] - 2026-06-23
 ### Fixed
 - Stop manga detail refresh cancellation from leaving the loading indicator stuck.

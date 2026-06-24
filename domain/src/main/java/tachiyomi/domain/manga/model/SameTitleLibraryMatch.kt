@@ -10,3 +10,12 @@ fun String.sameTitleLibraryMatchKey(): String {
         .trim()
         .replace(Regex("\\s+"), " ")
 }
+
+fun Manga.hasSameTitleLibraryMatch(
+    libraryTitleKeys: Set<String>,
+    localSourceId: Long,
+): Boolean {
+    return !favorite &&
+        source != localSourceId &&
+        title.sameTitleLibraryMatchKey() in libraryTitleKeys
+}
