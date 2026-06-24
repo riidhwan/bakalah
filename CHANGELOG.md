@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+
+## [v0.36.0] - 2026-06-24
 ### Added
 - Add deletion for folder-based Local Manga from manga details.
 - Add grouping options to the same-title duplicate prompt when saving source manga to the Library.
