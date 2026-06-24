@@ -12,7 +12,6 @@ import androidx.lifecycle.flowWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.core.preference.asState
-import eu.kanade.core.util.insertSeparators
 import eu.kanade.domain.chapter.interactor.GetAvailableScanlators
 import eu.kanade.domain.chapter.interactor.SetReadStatus
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
@@ -20,7 +19,6 @@ import eu.kanade.domain.manga.interactor.GetExcludedScanlators
 import eu.kanade.domain.manga.interactor.SetExcludedScanlators
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.chaptersFiltered
-import eu.kanade.domain.manga.model.downloadedFilter
 import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.domain.track.interactor.AddTracks
 import eu.kanade.domain.track.interactor.RefreshTracks
@@ -42,7 +40,6 @@ import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
-import eu.kanade.tachiyomi.util.removeCovers
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -76,7 +73,6 @@ import tachiyomi.domain.chapter.interactor.UpdateChapter
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.chapter.model.ChapterUpdate
 import tachiyomi.domain.chapter.model.NoChaptersException
-import tachiyomi.domain.chapter.service.calculateChapterGap
 import tachiyomi.domain.chapter.service.getChapterSort
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetMangaWithChapters
@@ -85,7 +81,6 @@ import tachiyomi.domain.manga.interactor.ManageLibraryMangaGroup
 import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
-import tachiyomi.domain.manga.model.applyFilter
 import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
@@ -99,7 +94,6 @@ import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.math.floor
 
 class MangaScreenModel(
     private val context: Context,
@@ -205,6 +199,18 @@ class MangaScreenModel(
             dismissDialog = ::dismissDialog,
             selectedChapters = chapterSelection::selectedChapters,
             clearSelection = { toggleAllSelection(false) },
+        ),
+    )
+
+    private val libraryActionCoordinator = MangaLibraryActionCoordinator(
+        MangaLibraryActionCoordinator.Dependencies(
+            libraryPreferences = libraryPreferences,
+            getSameTitleLibraryManga = getSameTitleLibraryManga,
+            getCategories = getCategories,
+            updateManga = updateManga,
+            setMangaCategories = setMangaCategories,
+            manageLibraryMangaGroup = manageLibraryMangaGroup,
+            libraryMangaGroupStateBuilder = libraryMangaGroupStateBuilder,
         ),
     )
 
@@ -405,38 +411,18 @@ class MangaScreenModel(
             val manga = state.manga
 
             if (isFavorited) {
-                // Remove from library
-                if (updateManga.awaitUpdateFavorite(manga.id, false)) {
-                    // Remove covers and update last modified in db
-                    if (manga.removeCovers() != manga) {
-                        updateManga.awaitUpdateCoverLastModified(manga.id)
-                    }
+                if (libraryActionCoordinator.removeFromLibrary(manga)) {
                     withUIContext { onRemoved() }
                 }
             } else {
-                // Add to library
-                // First, check if duplicate exists if callback is provided
-                if (checkDuplicate) {
-                    val duplicates = getSameTitleLibraryManga(manga)
-
-                    if (duplicates.isNotEmpty()) {
-                        updateSuccessState {
-                            it.copy(
-                                dialog = Dialog.DuplicateManga(
-                                    manga = manga,
-                                    duplicates = duplicates,
-                                    groupTargets = buildDuplicateMangaGroupTargets(duplicates),
-                                ),
-                            )
-                        }
-                        return@launchIO
-                    }
-                }
-
-                if (!addMangaToLibraryWithDefaultCategoryOrPrompt(manga)) return@launchIO
-
-                // Finally match with enhanced tracking when available
-                addTracks.bindEnhancedTrackers(manga, state.source)
+                handleAddToLibraryResult(
+                    manga = manga,
+                    source = state.source,
+                    result = libraryActionCoordinator.addToLibrary(
+                        manga = manga,
+                        checkDuplicate = checkDuplicate,
+                    ),
+                )
             }
         }
     }
@@ -444,55 +430,53 @@ class MangaScreenModel(
     fun showChangeCategoryDialog() {
         val manga = successState?.manga ?: return
         screenModelScope.launch {
-            val categories = getCategories()
-            val selection = getMangaCategoryIds(manga)
+            val selection = libraryActionCoordinator.categorySelection(manga)
             updateSuccessState { successState ->
                 successState.copy(
                     dialog = Dialog.ChangeCategory(
                         manga = manga,
-                        initialSelection = categories.mapAsCheckboxState { it.id in selection },
+                        initialSelection = selection.toCheckboxState(),
                     ),
                 )
             }
         }
     }
 
-    private suspend fun addMangaToLibraryWithDefaultCategoryOrPrompt(
+    private suspend fun handleAddToLibraryResult(
         manga: Manga,
-        pendingAddToGroup: PendingAddToGroup? = null,
-    ): Boolean {
-        val categories = getCategories()
-        val defaultCategoryId = libraryPreferences.defaultCategory.get().toLong()
-        val defaultCategory = categories.find { it.id == defaultCategoryId }
-        return when {
-            defaultCategory != null -> {
-                updateManga.awaitUpdateFavorite(manga.id, true).also { added ->
-                    if (added) {
-                        setMangaCategories.await(manga.id, listOf(defaultCategory.id))
-                    }
+        source: Source,
+        result: AddToLibraryResult,
+    ) {
+        when (result) {
+            AddToLibraryResult.Added -> addTracks.bindEnhancedTrackers(manga, source)
+            AddToLibraryResult.NotAdded -> {}
+            is AddToLibraryResult.DuplicateFound -> {
+                updateSuccessState {
+                    it.copy(
+                        dialog = Dialog.DuplicateManga(
+                            manga = manga,
+                            duplicates = result.duplicates,
+                            groupTargets = result.groupTargets,
+                        ),
+                    )
                 }
             }
-            defaultCategoryId == 0L || categories.isEmpty() -> {
-                updateManga.awaitUpdateFavorite(manga.id, true).also { added ->
-                    if (added) {
-                        setMangaCategories.await(manga.id, emptyList())
-                    }
-                }
-            }
-            else -> {
-                val selection = getMangaCategoryIds(manga)
+            is AddToLibraryResult.NeedsCategorySelection -> {
                 updateSuccessState {
                     it.copy(
                         dialog = Dialog.ChangeCategory(
                             manga = manga,
-                            initialSelection = categories.mapAsCheckboxState { category -> category.id in selection },
-                            pendingAddToGroup = pendingAddToGroup,
+                            initialSelection = result.selection.toCheckboxState(),
+                            pendingAddToGroup = result.pendingAddToGroup,
                         ),
                     )
                 }
-                false
             }
         }
+    }
+
+    private fun CategorySelection.toCheckboxState(): List<CheckboxState<Category>> {
+        return categories.mapAsCheckboxState { category -> category.id in selectedCategoryIds }
     }
 
     fun addDuplicateMangaToGroup(targets: List<DuplicateMangaGroupTargetItem>) {
@@ -501,45 +485,28 @@ class MangaScreenModel(
 
         screenModelScope.launchIO {
             val pendingAddToGroup = PendingAddToGroup(targets)
-            if (!addMangaToLibraryWithDefaultCategoryOrPrompt(manga, pendingAddToGroup)) return@launchIO
-
-            addMangaToSelectedGroup(manga, pendingAddToGroup)
-            addTracks.bindEnhancedTrackers(manga, successState?.source ?: return@launchIO)
+            when (
+                val result = libraryActionCoordinator.addToLibrary(
+                    manga = manga,
+                    checkDuplicate = false,
+                    pendingAddToGroup = pendingAddToGroup,
+                )
+            ) {
+                AddToLibraryResult.Added -> {
+                    addMangaToSelectedGroup(manga, pendingAddToGroup)
+                    addTracks.bindEnhancedTrackers(manga, successState?.source ?: return@launchIO)
+                }
+                AddToLibraryResult.NotAdded -> {}
+                is AddToLibraryResult.DuplicateFound -> {}
+                is AddToLibraryResult.NeedsCategorySelection -> {
+                    handleAddToLibraryResult(
+                        manga = manga,
+                        source = successState?.source ?: return@launchIO,
+                        result = result,
+                    )
+                }
+            }
         }
-    }
-
-    private suspend fun addMangaToSelectedGroup(manga: Manga, pendingAddToGroup: PendingAddToGroup) {
-        val targets = pendingAddToGroup.targets
-        if (!targets.canAddMangaToGroup(manga.source)) return
-
-        val existingGroupId = targets.mapNotNull { it.groupId }.distinct().singleOrNull()
-        val existingMangaIds = targets.flatMap { it.memberMangaIds }.distinct()
-        if (existingGroupId == null) {
-            val primaryMangaId = existingMangaIds.firstOrNull() ?: return
-            manageLibraryMangaGroup.createGroup(
-                primaryMangaId = primaryMangaId,
-                memberMangaIds = existingMangaIds + manga.id,
-            )
-        } else {
-            manageLibraryMangaGroup.addSources(
-                groupId = existingGroupId,
-                memberMangaIds = existingMangaIds + manga.id,
-            )
-        }
-        val tabs = getLibraryMangaGroupTabs(manga.id)
-        updateSuccessState { it.copy(dialog = null, libraryMangaGroupTabs = tabs) }
-    }
-
-    private suspend fun buildDuplicateMangaGroupTargets(
-        duplicates: List<MangaWithChapterCount>,
-    ): List<DuplicateMangaGroupTargetItem> {
-        val groupsByDuplicateMangaId = duplicates.associate { duplicate ->
-            duplicate.manga.id to manageLibraryMangaGroup.getGroupForManga(duplicate.manga.id)
-        }
-        return libraryMangaGroupStateBuilder.duplicateTargets(
-            duplicates = duplicates,
-            groupsByDuplicateMangaId = groupsByDuplicateMangaId,
-        )
     }
 
     fun showSetFetchIntervalDialog() {
@@ -657,30 +624,9 @@ class MangaScreenModel(
         activeMangaId.value = mangaId
     }
 
-    /**
-     * Get user categories.
-     *
-     * @return List of categories, not including the default category
-     */
-    suspend fun getCategories(): List<Category> {
-        return getCategories.await().filterNot { it.isSystemCategory }
-    }
-
-    /**
-     * Gets the category id's the manga is in, if the manga is not in a category, returns the default id.
-     *
-     * @param manga the manga to get categories from.
-     * @return Array of category ids the manga is in, if none returns default id
-     */
-    private suspend fun getMangaCategoryIds(manga: Manga): List<Long> {
-        return getCategories.await(manga.id)
-            .map { it.id }
-    }
-
     fun moveMangaToCategoriesAndAddToLibrary(manga: Manga, categories: List<Long>) {
         screenModelScope.launchIO {
-            setMangaCategories.await(manga.id, categories)
-            if (!manga.favorite && !updateManga.awaitUpdateFavorite(manga.id, true)) return@launchIO
+            if (!libraryActionCoordinator.moveToCategoriesAndAddToLibrary(manga, categories)) return@launchIO
 
             val pendingAddToGroup = (successState?.dialog as? Dialog.ChangeCategory)?.pendingAddToGroup
             if (pendingAddToGroup != null) {
@@ -690,30 +636,11 @@ class MangaScreenModel(
         }
     }
 
-    /**
-     * Move the given manga to categories.
-     *
-     * @param categories the selected categories.
-     */
-    private fun moveMangaToCategories(categories: List<Category>) {
-        val categoryIds = categories.map { it.id }
-        moveMangaToCategory(categoryIds)
-    }
+    private suspend fun addMangaToSelectedGroup(manga: Manga, pendingAddToGroup: PendingAddToGroup) {
+        if (!libraryActionCoordinator.addMangaToSelectedGroup(manga, pendingAddToGroup)) return
 
-    private fun moveMangaToCategory(categoryIds: List<Long>) {
-        screenModelScope.launchIO {
-            val manga = successState?.manga ?: return@launchIO
-            setMangaCategories.await(manga.id, categoryIds)
-        }
-    }
-
-    /**
-     * Move the given manga to the category.
-     *
-     * @param category the selected category, or null for default category.
-     */
-    private fun moveMangaToCategory(category: Category?) {
-        moveMangaToCategories(listOfNotNull(category))
+        val tabs = getLibraryMangaGroupTabs(manga.id)
+        updateSuccessState { it.copy(dialog = null, libraryMangaGroupTabs = tabs) }
     }
 
     // Manga info - end
@@ -1346,10 +1273,6 @@ class MangaScreenModel(
         data object FullCover : Dialog
     }
 
-    data class PendingAddToGroup(
-        val targets: List<DuplicateMangaGroupTargetItem>,
-    )
-
     fun dismissDialog() {
         updateSuccessState { it.copy(dialog = null) }
     }
@@ -1448,7 +1371,7 @@ class MangaScreenModel(
             val libraryMangaGroupTabs: List<LibraryMangaGroupTab> = emptyList(),
         ) : State {
             val processedChapters by lazy {
-                chapters.applyFilters(manga).toList()
+                MangaChapterListProcessor.process(chapters, manga)
             }
 
             val isAnySelected by lazy {
@@ -1456,34 +1379,11 @@ class MangaScreenModel(
             }
 
             val chapterListItems by lazy {
-                if (hideMissingChapters) {
-                    return@lazy processedChapters
-                }
-
-                processedChapters.insertSeparators { before, after ->
-                    val (lowerChapter, higherChapter) = if (manga.sortDescending()) {
-                        after to before
-                    } else {
-                        before to after
-                    }
-                    if (higherChapter == null) return@insertSeparators null
-
-                    if (lowerChapter == null) {
-                        floor(higherChapter.chapter.chapterNumber)
-                            .toInt()
-                            .minus(1)
-                            .coerceAtLeast(0)
-                    } else {
-                        calculateChapterGap(higherChapter.chapter, lowerChapter.chapter)
-                    }
-                        .takeIf { it > 0 }
-                        ?.let { missingCount ->
-                            ChapterList.MissingCount(
-                                id = "${lowerChapter?.id}-${higherChapter.id}",
-                                count = missingCount,
-                            )
-                        }
-                }
+                MangaChapterListProcessor.withMissingChapterSeparators(
+                    processedChapters = processedChapters,
+                    manga = manga,
+                    hideMissingChapters = hideMissingChapters,
+                )
             }
 
             val scanlatorFilterActive: Boolean
@@ -1491,22 +1391,6 @@ class MangaScreenModel(
 
             val filterActive: Boolean
                 get() = scanlatorFilterActive || manga.chaptersFiltered()
-
-            /**
-             * Applies the view filters to the list of chapters obtained from the database.
-             * @return an observable of the list of chapters filtered and sorted.
-             */
-            private fun List<ChapterList.Item>.applyFilters(manga: Manga): Sequence<ChapterList.Item> {
-                val isLocalManga = manga.isLocal()
-                val unreadFilter = manga.unreadFilter
-                val downloadedFilter = manga.downloadedFilter
-                val bookmarkedFilter = manga.bookmarkedFilter
-                return asSequence()
-                    .filter { (chapter) -> applyFilter(unreadFilter) { !chapter.read } }
-                    .filter { (chapter) -> applyFilter(bookmarkedFilter) { chapter.bookmark } }
-                    .filter { applyFilter(downloadedFilter) { it.isDownloaded || isLocalManga } }
-                    .sortedWith { (chapter1), (chapter2) -> getChapterSort(manga).invoke(chapter1, chapter2) }
-            }
         }
     }
 }
