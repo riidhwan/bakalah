@@ -159,6 +159,10 @@ class UpdateMangaTest {
 
         override fun getFavoritesBySourceId(sourceId: Long): Flow<List<Manga>> = notImplemented()
 
+        override suspend fun getLibraryMangaWithChapterCount(): List<MangaWithChapterCount> {
+            return notImplemented()
+        }
+
         override suspend fun getDuplicateLibraryManga(id: Long, title: String): List<MangaWithChapterCount> {
             return notImplemented()
         }

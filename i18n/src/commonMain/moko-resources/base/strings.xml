@@ -177,6 +177,7 @@
     <string name="action_start_downloading_now">Start downloading now</string>
     <string name="action_not_now">Not now</string>
     <string name="action_add_anyway">Add anyway</string>
+    <string name="action_add_to_group">Add to group</string>
     <string name="local_manga_metadata_edit_title">Edit metadata</string>
     <string name="local_manga_metadata_genres">Genres</string>
     <string name="local_manga_metadata_title_required">Title is required</string>
@@ -939,6 +940,8 @@
     <string name="unknown_title">Unknown title</string>
     <string name="possible_duplicates_title">Possible duplicates</string>
     <string name="possible_duplicates_summary">You have entries in your library with a similar name.\n\nSelect an entry to migrate or add anyway.</string>
+    <string name="possible_duplicates_group_summary">This title is already in your library.\n\nSelect matching library entries to add this manga to a group, or add it separately.</string>
+    <string name="library_manga_group_source_count">%d sources</string>
     <string name="manga_added_library">Added to library</string>
     <string name="manga_removed_library">Removed from library</string>
     <string name="manga_info_expand">More</string>

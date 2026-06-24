@@ -164,6 +164,10 @@ _Avoid_: Group, merge, link duplicate
 The user action that adds another Source-Backed Library Manga to an existing Library Manga Group without changing the Primary Library Manga.
 _Avoid_: Group, merge, use as primary source
 
+**Add to Group**:
+The user action that saves a source manga to the Library and immediately makes it a member of a Library Manga Group for a matching existing Source-Backed Library Manga.
+_Avoid_: Add duplicate, merge into library, add anyway grouped
+
 **Set as Primary Source**:
 The user action that makes the currently selected member of a Library Manga Group become the Primary Library Manga.
 _Avoid_: Make default, pin source, reorder group

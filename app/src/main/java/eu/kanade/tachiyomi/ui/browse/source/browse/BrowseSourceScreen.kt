@@ -257,11 +257,15 @@ data class BrowseSourceScreen(
                 onMangaClick = { navigator.push((MangaScreen(it.id, true))) },
                 onMangaLongClick = { manga ->
                     scope.launchIO {
-                        val duplicates = screenModel.getDuplicateLibraryManga(manga)
+                        val duplicates = screenModel.getSameTitleLibraryManga(manga)
                         when {
                             manga.favorite -> screenModel.setDialog(BrowseSourceScreenModel.Dialog.RemoveManga(manga))
                             duplicates.isNotEmpty() -> screenModel.setDialog(
-                                BrowseSourceScreenModel.Dialog.AddDuplicateManga(manga, duplicates),
+                                BrowseSourceScreenModel.Dialog.AddDuplicateManga(
+                                    manga = manga,
+                                    duplicates = duplicates,
+                                    groupTargets = screenModel.getDuplicateMangaGroupTargets(duplicates),
+                                ),
                             )
                             else -> screenModel.addFavorite(manga)
                         }
@@ -289,6 +293,9 @@ data class BrowseSourceScreen(
                     onConfirm = { screenModel.addFavorite(dialog.manga) },
                     onOpenManga = { navigator.push(MangaScreen(it.id)) },
                     onMigrate = { screenModel.setDialog(BrowseSourceScreenModel.Dialog.Migrate(dialog.manga, it)) },
+                    groupTargets = dialog.groupTargets,
+                    pendingMangaSourceId = dialog.manga.source,
+                    onAddToGroup = { screenModel.addFavoriteToGroup(dialog.manga, it) },
                 )
             }
 
@@ -316,8 +323,7 @@ data class BrowseSourceScreen(
                     onDismissRequest = onDismissRequest,
                     onEditCategories = { navigator.push(CategoryScreen()) },
                     onConfirm = { include, _ ->
-                        screenModel.changeMangaFavorite(dialog.manga)
-                        screenModel.moveMangaToCategories(dialog.manga, include)
+                        screenModel.addFavoriteWithCategoriesAndMaybeGroup(dialog.manga, include)
                     },
                 )
             }

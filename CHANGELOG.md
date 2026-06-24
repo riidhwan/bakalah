@@ -13,6 +13,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ## [Unreleased]
 ### Added
 - Add deletion for folder-based Local Manga from manga details.
+- Add grouping options to the same-title duplicate prompt when saving source manga to the Library.
 
 ### Fixed
 - Stop same-title Browse Source badges from marking Local Source entries.

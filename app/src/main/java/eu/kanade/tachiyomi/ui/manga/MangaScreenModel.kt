@@ -84,6 +84,7 @@ import tachiyomi.domain.chapter.service.getChapterSort
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
 import tachiyomi.domain.manga.interactor.GetMangaWithChapters
+import tachiyomi.domain.manga.interactor.GetSameTitleLibraryManga
 import tachiyomi.domain.manga.interactor.ManageLibraryMangaGroup
 import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
 import tachiyomi.domain.manga.model.Manga
@@ -123,6 +124,7 @@ class MangaScreenModel(
     private val downloadCache: DownloadCache = Injekt.get(),
     private val getMangaAndChapters: GetMangaWithChapters = Injekt.get(),
     private val getDuplicateLibraryManga: GetDuplicateLibraryManga = Injekt.get(),
+    private val getSameTitleLibraryManga: GetSameTitleLibraryManga = Injekt.get(),
     private val getAvailableScanlators: GetAvailableScanlators = Injekt.get(),
     private val getExcludedScanlators: GetExcludedScanlators = Injekt.get(),
     private val setExcludedScanlators: SetExcludedScanlators = Injekt.get(),
@@ -402,36 +404,23 @@ class MangaScreenModel(
                 // Add to library
                 // First, check if duplicate exists if callback is provided
                 if (checkDuplicate) {
-                    val duplicates = getDuplicateLibraryManga(manga)
+                    val duplicates = getSameTitleLibraryManga(manga)
 
                     if (duplicates.isNotEmpty()) {
-                        updateSuccessState { it.copy(dialog = Dialog.DuplicateManga(manga, duplicates)) }
+                        updateSuccessState {
+                            it.copy(
+                                dialog = Dialog.DuplicateManga(
+                                    manga = manga,
+                                    duplicates = duplicates,
+                                    groupTargets = buildDuplicateMangaGroupTargets(duplicates),
+                                ),
+                            )
+                        }
                         return@launchIO
                     }
                 }
 
-                // Now check if user previously set categories, when available
-                val categories = getCategories()
-                val defaultCategoryId = libraryPreferences.defaultCategory.get().toLong()
-                val defaultCategory = categories.find { it.id == defaultCategoryId }
-                when {
-                    // Default category set
-                    defaultCategory != null -> {
-                        val result = updateManga.awaitUpdateFavorite(manga.id, true)
-                        if (!result) return@launchIO
-                        moveMangaToCategory(defaultCategory)
-                    }
-
-                    // Automatic 'Default' or no categories
-                    defaultCategoryId == 0L || categories.isEmpty() -> {
-                        val result = updateManga.awaitUpdateFavorite(manga.id, true)
-                        if (!result) return@launchIO
-                        moveMangaToCategory(null)
-                    }
-
-                    // Choose a category
-                    else -> showChangeCategoryDialog()
-                }
+                if (!addMangaToLibraryWithDefaultCategoryOrPrompt(manga)) return@launchIO
 
                 // Finally match with enhanced tracking when available
                 addTracks.bindEnhancedTrackers(manga, state.source)
@@ -453,6 +442,122 @@ class MangaScreenModel(
                 )
             }
         }
+    }
+
+    private suspend fun addMangaToLibraryWithDefaultCategoryOrPrompt(
+        manga: Manga,
+        pendingAddToGroup: PendingAddToGroup? = null,
+    ): Boolean {
+        val categories = getCategories()
+        val defaultCategoryId = libraryPreferences.defaultCategory.get().toLong()
+        val defaultCategory = categories.find { it.id == defaultCategoryId }
+        return when {
+            defaultCategory != null -> {
+                updateManga.awaitUpdateFavorite(manga.id, true).also { added ->
+                    if (added) {
+                        setMangaCategories.await(manga.id, listOf(defaultCategory.id))
+                    }
+                }
+            }
+            defaultCategoryId == 0L || categories.isEmpty() -> {
+                updateManga.awaitUpdateFavorite(manga.id, true).also { added ->
+                    if (added) {
+                        setMangaCategories.await(manga.id, emptyList())
+                    }
+                }
+            }
+            else -> {
+                val selection = getMangaCategoryIds(manga)
+                updateSuccessState {
+                    it.copy(
+                        dialog = Dialog.ChangeCategory(
+                            manga = manga,
+                            initialSelection = categories.mapAsCheckboxState { category -> category.id in selection },
+                            pendingAddToGroup = pendingAddToGroup,
+                        ),
+                    )
+                }
+                false
+            }
+        }
+    }
+
+    fun addDuplicateMangaToGroup(targets: List<DuplicateMangaGroupTargetItem>) {
+        val manga = successState?.manga ?: return
+        if (targets.isEmpty()) return
+
+        screenModelScope.launchIO {
+            val pendingAddToGroup = PendingAddToGroup(targets)
+            if (!addMangaToLibraryWithDefaultCategoryOrPrompt(manga, pendingAddToGroup)) return@launchIO
+
+            addMangaToSelectedGroup(manga, pendingAddToGroup)
+            addTracks.bindEnhancedTrackers(manga, successState?.source ?: return@launchIO)
+        }
+    }
+
+    private suspend fun addMangaToSelectedGroup(manga: Manga, pendingAddToGroup: PendingAddToGroup) {
+        val targets = pendingAddToGroup.targets
+        if (!targets.canAddMangaToGroup(manga.source)) return
+
+        val existingGroupId = targets.mapNotNull { it.groupId }.distinct().singleOrNull()
+        val existingMangaIds = targets.flatMap { it.memberMangaIds }.distinct()
+        if (existingGroupId == null) {
+            val primaryMangaId = existingMangaIds.firstOrNull() ?: return
+            manageLibraryMangaGroup.createGroup(
+                primaryMangaId = primaryMangaId,
+                memberMangaIds = existingMangaIds + manga.id,
+            )
+        } else {
+            manageLibraryMangaGroup.addSources(
+                groupId = existingGroupId,
+                memberMangaIds = existingMangaIds + manga.id,
+            )
+        }
+        val tabs = getLibraryMangaGroupTabs(manga.id)
+        updateSuccessState { it.copy(dialog = null, libraryMangaGroupTabs = tabs) }
+    }
+
+    private suspend fun buildDuplicateMangaGroupTargets(
+        duplicates: List<MangaWithChapterCount>,
+    ): List<DuplicateMangaGroupTargetItem> {
+        val duplicatesByMangaId = duplicates.associateBy { it.manga.id }
+        val targets = mutableListOf<DuplicateMangaGroupTargetItem>()
+        val addedGroupIds = mutableSetOf<Long>()
+
+        duplicates.forEach { duplicate ->
+            val group = manageLibraryMangaGroup.getGroupForManga(duplicate.manga.id)
+            if (group == null) {
+                targets += DuplicateMangaGroupTargetItem(
+                    key = "manga:${duplicate.manga.id}",
+                    title = duplicate.manga.title,
+                    sourceName = sourceManager.getOrStub(duplicate.manga.source).getNameForMangaInfo(),
+                    chapterCount = duplicate.chapterCount,
+                    sourceCount = 1,
+                    groupId = null,
+                    memberMangaIds = listOf(duplicate.manga.id),
+                    sourceIds = setOf(duplicate.manga.source),
+                )
+                return@forEach
+            }
+
+            if (!addedGroupIds.add(group.id)) return@forEach
+
+            val primary = group.primary ?: group.members.firstOrNull() ?: return@forEach
+            targets += DuplicateMangaGroupTargetItem(
+                key = "group:${group.id}",
+                title = primary.manga.title,
+                sourceName = sourceManager.getOrStub(primary.manga.source).getNameForMangaInfo(),
+                chapterCount = group.members.sumOf { member ->
+                    duplicatesByMangaId[member.manga.id]?.chapterCount ?: 0L
+                },
+                sourceCount = group.members.size,
+                groupId = group.id,
+                memberMangaIds = group.memberMangaIds,
+                sourceIds = group.members.map { it.manga.source }.toSet(),
+            )
+        }
+
+        return targets
     }
 
     fun showSetFetchIntervalDialog() {
@@ -599,11 +704,15 @@ class MangaScreenModel(
     }
 
     fun moveMangaToCategoriesAndAddToLibrary(manga: Manga, categories: List<Long>) {
-        moveMangaToCategory(categories)
-        if (manga.favorite) return
-
         screenModelScope.launchIO {
-            updateManga.awaitUpdateFavorite(manga.id, true)
+            setMangaCategories.await(manga.id, categories)
+            if (!manga.favorite && !updateManga.awaitUpdateFavorite(manga.id, true)) return@launchIO
+
+            val pendingAddToGroup = (successState?.dialog as? Dialog.ChangeCategory)?.pendingAddToGroup
+            if (pendingAddToGroup != null) {
+                addMangaToSelectedGroup(manga, pendingAddToGroup)
+                addTracks.bindEnhancedTrackers(manga, successState?.source ?: return@launchIO)
+            }
         }
     }
 
@@ -1673,9 +1782,14 @@ class MangaScreenModel(
         data class ChangeCategory(
             val manga: Manga,
             val initialSelection: List<CheckboxState<Category>>,
+            val pendingAddToGroup: PendingAddToGroup? = null,
         ) : Dialog
         data class DeleteChapters(val chapters: List<Chapter>) : Dialog
-        data class DuplicateManga(val manga: Manga, val duplicates: List<MangaWithChapterCount>) : Dialog
+        data class DuplicateManga(
+            val manga: Manga,
+            val duplicates: List<MangaWithChapterCount>,
+            val groupTargets: List<DuplicateMangaGroupTargetItem> = emptyList(),
+        ) : Dialog
         data class Migrate(val target: Manga, val current: Manga) : Dialog
         data class LocalVaultTargetSetup(
             val initialTitle: String,
@@ -1697,6 +1811,10 @@ class MangaScreenModel(
         data object TrackSheet : Dialog
         data object FullCover : Dialog
     }
+
+    data class PendingAddToGroup(
+        val targets: List<DuplicateMangaGroupTargetItem>,
+    )
 
     fun dismissDialog() {
         updateSuccessState { it.copy(dialog = null) }

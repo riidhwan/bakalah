@@ -38,7 +38,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +66,9 @@ import eu.kanade.presentation.more.settings.LocalPreferenceMinHeight
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.ui.manga.DuplicateMangaGroupTargetItem
+import eu.kanade.tachiyomi.ui.manga.canAddMangaToGroup
+import eu.kanade.tachiyomi.ui.manga.initialDuplicateMangaGroupTargetSelection
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.domain.source.model.StubSource
@@ -85,11 +91,29 @@ fun DuplicateMangaDialog(
     onOpenManga: (manga: Manga) -> Unit,
     onMigrate: (manga: Manga) -> Unit,
     modifier: Modifier = Modifier,
+    groupTargets: List<DuplicateMangaGroupTargetItem> = emptyList(),
+    pendingMangaSourceId: Long? = null,
+    onAddToGroup: (List<DuplicateMangaGroupTargetItem>) -> Unit = {},
 ) {
     val sourceManager = remember { Injekt.get<SourceManager>() }
     val minHeight = LocalPreferenceMinHeight.current
     val horizontalPadding = PaddingValues(horizontal = TabbedDialogPaddings.Horizontal)
     val horizontalPaddingModifier = Modifier.padding(horizontalPadding)
+    val groupMode = groupTargets.isNotEmpty() && pendingMangaSourceId != null
+    var selectedTargetKeys by remember(groupTargets) {
+        mutableStateOf(initialDuplicateMangaGroupTargetSelection(groupTargets))
+    }
+    val selectedTargets = remember(groupTargets, selectedTargetKeys) {
+        groupTargets.filter { it.key in selectedTargetKeys }
+    }
+    val canAddToGroup = groupMode && selectedTargets.canAddMangaToGroup(pendingMangaSourceId)
+    val toggleTargetSelection = { target: DuplicateMangaGroupTargetItem ->
+        selectedTargetKeys = if (target.key in selectedTargetKeys) {
+            selectedTargetKeys - target.key
+        } else {
+            selectedTargetKeys + target.key
+        }
+    }
 
     AdaptiveSheet(
         modifier = modifier,
@@ -111,7 +135,13 @@ fun DuplicateMangaDialog(
             )
 
             Text(
-                text = stringResource(MR.strings.possible_duplicates_summary),
+                text = stringResource(
+                    if (groupMode) {
+                        MR.strings.possible_duplicates_group_summary
+                    } else {
+                        MR.strings.possible_duplicates_summary
+                    },
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.then(horizontalPaddingModifier),
             )
@@ -125,11 +155,22 @@ fun DuplicateMangaDialog(
                     items = duplicates,
                     key = { it.manga.id },
                 ) {
+                    val target = groupTargets.firstOrNull { target ->
+                        it.manga.id in target.memberMangaIds
+                    }
                     DuplicateMangaListItem(
                         duplicate = it,
                         getSource = { sourceManager.getOrStub(it.manga.source) },
-                        onMigrate = { onMigrate(it.manga) },
-                        onDismissRequest = onDismissRequest,
+                        onMigrate = if (groupMode && target != null) {
+                            { toggleTargetSelection(target) }
+                        } else {
+                            { onMigrate(it.manga) }
+                        },
+                        onDismissRequest = {
+                            if (!groupMode) {
+                                onDismissRequest()
+                            }
+                        },
                         onOpenManga = { onOpenManga(it.manga) },
                     )
                 }
@@ -137,6 +178,33 @@ fun DuplicateMangaDialog(
 
             Column(modifier = horizontalPaddingModifier) {
                 HorizontalDivider()
+
+                if (groupMode) {
+                    groupTargets.forEach { target ->
+                        val selected = target.key in selectedTargetKeys
+                        TextPreferenceWidget(
+                            title = target.title,
+                            subtitle = target.groupSubtitle(),
+                            icon = if (selected) Icons.Outlined.Done else null,
+                            onPreferenceClick = { toggleTargetSelection(target) },
+                            modifier = Modifier.clip(CircleShape),
+                        )
+                    }
+
+                    if (canAddToGroup) {
+                        TextPreferenceWidget(
+                            title = stringResource(MR.strings.action_add_to_group),
+                            icon = Icons.Outlined.Add,
+                            onPreferenceClick = {
+                                onDismissRequest()
+                                onAddToGroup(selectedTargets)
+                            },
+                            modifier = Modifier.clip(CircleShape),
+                        )
+                    }
+
+                    HorizontalDivider()
+                }
 
                 TextPreferenceWidget(
                     title = stringResource(MR.strings.action_add_anyway),
@@ -166,6 +234,19 @@ fun DuplicateMangaDialog(
             }
         }
     }
+}
+
+@Composable
+private fun DuplicateMangaGroupTargetItem.groupSubtitle(): String {
+    return if (sourceCount > 1) {
+        "${stringResource(MR.strings.library_manga_group_source_count, sourceCount)} - $sourceName"
+    } else {
+        sourceName
+    }
+}
+
+private fun List<DuplicateMangaGroupTargetItem>.canAddMangaToGroup(pendingMangaSourceId: Long?): Boolean {
+    return pendingMangaSourceId != null && canAddMangaToGroup(pendingMangaSourceId)
 }
 
 @Composable

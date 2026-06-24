@@ -160,6 +160,12 @@ class MangaRepositoryImpl(
             .subscribeToList()
     }
 
+    override suspend fun getLibraryMangaWithChapterCount(): List<MangaWithChapterCount> {
+        return database.mangasQueries
+            .getLibraryMangaWithChapterCount(MangaMapper::mapMangaWithChapterCount)
+            .awaitAsList()
+    }
+
     override suspend fun getDuplicateLibraryManga(id: Long, title: String): List<MangaWithChapterCount> {
         return database.mangasQueries
             .getDuplicateLibraryManga(id, title, MangaMapper::mapMangaWithChapterCount)
