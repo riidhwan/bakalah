@@ -37,8 +37,6 @@ import eu.kanade.tachiyomi.data.local.LocalMangaDeletionResult
 import eu.kanade.tachiyomi.data.local.LocalMangaDeletionService
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
-import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultCaptureJob
-import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultImportJob
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
@@ -91,10 +89,6 @@ import tachiyomi.domain.manga.model.applyFilter
 import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
-import tachiyomi.domain.vault.model.ContentVaultIdentity
-import tachiyomi.domain.vault.model.ImportTargetHint
-import tachiyomi.domain.vault.model.VaultChapter
-import tachiyomi.domain.vault.model.VaultImportRequestChapter
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
@@ -186,11 +180,33 @@ class MangaScreenModel(
     private val activeMangaId = MutableStateFlow(mangaId)
     private val refreshedOnLoadMangaIds = mutableSetOf<Long>()
     private var loadedMangaId: Long? = null
-    private var localVaultImportJob: Job? = null
     private var trackerJob: Job? = null
 
     @Volatile
     private var isDeletingLocalManga = false
+
+    private val localVaultImportCoordinator = MangaLocalVaultImportCoordinator(
+        runtime = MangaLocalVaultImportCoordinator.Runtime(
+            context = context,
+            lifecycle = lifecycle,
+            screenModelScope = screenModelScope,
+            snackbarHostState = snackbarHostState,
+        ),
+        services = MangaLocalVaultImportCoordinator.Services(
+            localSourceFileSystem = localSourceFileSystem,
+            vaultRepository = vaultRepository,
+            contentVaultPreferences = contentVaultPreferences,
+            localVaultImportStateBuilder = localVaultImportStateBuilder,
+        ),
+        callbacks = MangaLocalVaultImportCoordinator.Callbacks(
+            getState = { successState },
+            setLocalVaultImportState = ::updateLocalVaultImportState,
+            showDialog = { dialog -> updateSuccessState { it.copy(dialog = dialog) } },
+            dismissDialog = ::dismissDialog,
+            selectedChapters = chapterSelection::selectedChapters,
+            clearSelection = { toggleAllSelection(false) },
+        ),
+    )
 
     /**
      * Helper function to update the UI state only if it's currently in success state
@@ -269,7 +285,7 @@ class MangaScreenModel(
 
                     if (isMangaSwitch) {
                         loadedMangaId = manga.id
-                        restartLocalVaultImportObservation(manga, source)
+                        localVaultImportCoordinator.restartObservation(manga, source)
                         observeTrackers(manga.id, source)
                     }
 
@@ -704,113 +720,6 @@ class MangaScreenModel(
 
     // Local-to-Vault Import - start
 
-    private fun restartLocalVaultImportObservation(manga: Manga, source: Source) {
-        localVaultImportJob?.cancel()
-        localVaultImportJob = when {
-            source is LocalSource && localSourceFileSystem.getMangaDirectory(manga.url) != null -> {
-                observeLocalVaultImport(manga, LocalVaultWorkflow.LocalImport)
-            }
-            manga.favorite && source !is LocalSource -> {
-                observeLocalVaultImport(manga, LocalVaultWorkflow.LibraryCapture)
-            }
-            else -> null
-        }
-    }
-
-    private fun observeLocalVaultImport(localManga: Manga, workflow: LocalVaultWorkflow): Job {
-        return screenModelScope.launchIO {
-            val configuredIdentity = contentVaultPreferences.configuredVaultIdentity.get()
-            if (configuredIdentity.isBlank()) {
-                updateLocalVaultImportState(
-                    LocalVaultImportState(
-                        targetState = LocalVaultImportTargetState.SetupContentVault,
-                        workflow = workflow,
-                    ),
-                )
-                return@launchIO
-            }
-
-            val vault = vaultRepository.getVaultByIdentity(ContentVaultIdentity(configuredIdentity))
-            if (vault == null) {
-                updateLocalVaultImportState(
-                    LocalVaultImportState(
-                        targetState = LocalVaultImportTargetState.SetupContentVault,
-                        workflow = workflow,
-                    ),
-                )
-                return@launchIO
-            }
-
-            combine(
-                vaultRepository.getMangaAsFlow(vault.id),
-                vaultRepository.getChaptersForVaultAsFlow(vault.id),
-                vaultRepository.getImportTargetHintAsFlow(localManga.id),
-            ) { vaultManga, vaultChapters, hint ->
-                LocalVaultImportInputs(vaultManga, vaultChapters, hint)
-            }
-                .flowWithLifecycle(lifecycle)
-                .collectLatest { inputs ->
-                    refreshLocalVaultImportState(
-                        localManga = localManga,
-                        workflow = workflow,
-                        vaultManga = inputs.vaultManga,
-                        vaultChapters = inputs.vaultChapters,
-                        hint = inputs.hint,
-                    )
-                }
-        }
-    }
-
-    private suspend fun refreshLocalVaultImportState(
-        localManga: Manga,
-        workflow: LocalVaultWorkflow,
-        vaultManga: List<VaultManga>,
-        vaultChapters: List<VaultChapter>,
-        hint: ImportTargetHint?,
-        pendingTargetOverride: LocalVaultImportTargetSelection? = successState?.localVaultImport?.pendingTarget,
-    ) {
-        val localVaultImport = localVaultImportStateBuilder.build(
-            workflow = workflow,
-            expectedSourceIdentity = localVaultImportSourceIdentity(
-                workflow = workflow,
-                sourceId = localManga.source,
-                mangaUrl = localManga.url,
-            ),
-            vaultManga = vaultManga,
-            vaultChapters = vaultChapters,
-            hint = hint,
-            pendingTargetOverride = pendingTargetOverride,
-            chapters = successState?.chapters.orEmpty().map { it.chapter },
-            localChapterDuplicateKeys = if (workflow == LocalVaultWorkflow.LocalImport) {
-                getLocalChapterDuplicateKeys(localManga)
-            } else {
-                emptyMap()
-            },
-            isImportRunning = LocalVaultImportJob.isRunning(context) || LibraryVaultCaptureJob.isRunning(context),
-        )
-        updateLocalVaultImportState(
-            localVaultImport,
-        )
-    }
-
-    private fun getLocalChapterDuplicateKeys(localManga: Manga): Map<String, String> {
-        val filesByName = localSourceFileSystem.getFilesInMangaDirectory(localManga.url)
-            .associateBy { it.name.orEmpty() }
-        return successState
-            ?.chapters
-            .orEmpty()
-            .mapNotNull { item ->
-                val fileName = item.chapter.url.substringAfter('/', missingDelimiterValue = item.chapter.url)
-                val file = filesByName[fileName] ?: return@mapNotNull null
-                if (!file.isDirectory && !file.name.orEmpty().endsWith(".cbz", ignoreCase = true)) {
-                    return@mapNotNull null
-                }
-                item.chapter.url to localVaultImportDuplicateFileKey(file.name.orEmpty())
-            }
-            .filter { (_, duplicateKey) -> duplicateKey.isNotBlank() }
-            .toMap()
-    }
-
     private fun updateLocalVaultImportState(localVaultImport: LocalVaultImportState) {
         updateSuccessState { state ->
             state.copy(
@@ -823,29 +732,7 @@ class MangaScreenModel(
     }
 
     fun showLocalVaultTargetSetup(pendingAddToVault: Boolean) {
-        val localVaultImport = successState?.localVaultImport ?: return
-        updateSuccessState {
-            val selectedTarget = localVaultImport.pendingTarget ?: localVaultImport.linkedTargetSelection()
-            it.copy(
-                dialog = Dialog.LocalVaultTargetSetup(
-                    initialTitle = when (selectedTarget) {
-                        is LocalVaultImportTargetSelection.CreateNew -> selectedTarget.title
-                        is LocalVaultImportTargetSelection.Existing ->
-                            localVaultImport.availableTargets
-                                .firstOrNull { target -> target.id == selectedTarget.mangaId }
-                                ?.metadata
-                                ?.title
-                                ?: it.manga.title
-                        null -> it.manga.title
-                    },
-                    targets = localVaultImport.availableTargets,
-                    selectedTarget = selectedTarget,
-                    allowCreateNew = pendingAddToVault,
-                    allowUnlink = !pendingAddToVault,
-                    pendingAddToVault = pendingAddToVault,
-                ),
-            )
-        }
+        localVaultImportCoordinator.showTargetSetup(pendingAddToVault)
     }
 
     fun openLocalVaultTargetRow(onOpenSettings: () -> Unit) {
@@ -860,187 +747,15 @@ class MangaScreenModel(
         target: LocalVaultImportTargetSelection?,
         pendingAddToVault: Boolean,
     ) {
-        val state = successState ?: return
-        val localVaultImport = state.localVaultImport ?: return
-        when {
-            pendingAddToVault -> {
-                if (target == null) {
-                    dismissDialog()
-                    return
-                }
-                screenModelScope.launchIO {
-                    updateLocalVaultImportState(localVaultImport.copy(pendingTarget = target))
-                    refreshLocalVaultImportState(
-                        localManga = state.manga,
-                        workflow = localVaultImport.workflow,
-                        vaultManga = localVaultImport.availableTargets,
-                        vaultChapters = localVaultImport.loadVaultChapters(),
-                        hint = null,
-                        pendingTargetOverride = target,
-                    )
-                    withUIContext {
-                        dismissDialog()
-                        startAddToVaultInternal()
-                    }
-                }
-            }
-            target == null -> {
-                screenModelScope.launchIO {
-                    vaultRepository.deleteImportTargetHint(state.manga.id)
-                    updateLocalVaultImportState(
-                        localVaultImport.copy(
-                            pendingTarget = null,
-                            targetState = LocalVaultImportTargetState.Unlinked,
-                            duplicateChapterSelectionIds = emptySet(),
-                        ),
-                    )
-                }
-                dismissDialog()
-            }
-            target is LocalVaultImportTargetSelection.Existing -> {
-                screenModelScope.launchIO {
-                    val hint = ImportTargetHint(
-                        localMangaId = state.manga.id,
-                        localMangaIdentity = state.manga.url,
-                        contentVaultIdentity = contentVaultPreferences.configuredVaultIdentity.get()
-                            .takeIf { it.isNotBlank() }
-                            ?.let(::ContentVaultIdentity),
-                        sourceIdentity = localVaultImportSourceIdentity(
-                            workflow = localVaultImport.workflow,
-                            sourceId = state.manga.source,
-                            mangaUrl = state.manga.url,
-                        ),
-                        vaultMangaIdentity = localVaultImport.availableTargets
-                            .firstOrNull { it.id == target.mangaId }
-                            ?.identity,
-                        vaultMangaId = target.mangaId,
-                        updatedAt = System.currentTimeMillis(),
-                    )
-                    vaultRepository.upsertImportTargetHint(
-                        hint,
-                    )
-                    refreshLocalVaultImportState(
-                        localManga = state.manga,
-                        workflow = localVaultImport.workflow,
-                        vaultManga = localVaultImport.availableTargets,
-                        vaultChapters = localVaultImport.loadVaultChapters(),
-                        hint = hint,
-                    )
-                }
-                dismissDialog()
-            }
-            target is LocalVaultImportTargetSelection.CreateNew -> dismissDialog()
-        }
+        localVaultImportCoordinator.selectTarget(target, pendingAddToVault)
     }
 
     fun startAddToVault(onOpenSettings: () -> Unit) {
-        val localVaultImport = successState?.localVaultImport ?: return
-        if (chapterSelection.isEmpty) return
-        when (localVaultImport.targetState) {
-            LocalVaultImportTargetState.SetupContentVault -> {
-                onOpenSettings()
-                return
-            }
-            LocalVaultImportTargetState.Stale,
-            LocalVaultImportTargetState.Unlinked,
-            -> {
-                showLocalVaultTargetSetup(pendingAddToVault = true)
-                return
-            }
-            is LocalVaultImportTargetState.Linked -> startAddToVaultInternal()
-        }
-    }
-
-    private fun startAddToVaultInternal(replaceConfirmed: Boolean = false) {
-        val state = successState ?: return
-        val localVaultImport = state.localVaultImport ?: return
-        val selectedChapters = chapterSelection.selectedChapters(state.chapters)
-        if (selectedChapters.isEmpty()) return
-
-        val duplicateTitles = selectedChapters
-            .filter { it.url in localVaultImport.duplicateChapterSelectionIds }
-            .map { it.name }
-        if (duplicateTitles.isNotEmpty() && !replaceConfirmed) {
-            updateSuccessState {
-                it.copy(
-                    dialog = Dialog.LocalVaultReplaceChapters(
-                        chapterTitles = duplicateTitles,
-                    ),
-                )
-            }
-            return
-        }
-
-        val target = localVaultImport.pendingTarget ?: localVaultImport.linkedTargetSelection()
-        val replacementChapterIds = if (replaceConfirmed) {
-            selectedChapters
-                .filter { it.url in localVaultImport.duplicateChapterSelectionIds }
-                .map { it.url }
-                .toSet()
-        } else {
-            emptySet()
-        }
-        val requestChapters = selectedChapters.mapIndexed { index, chapter ->
-            VaultImportRequestChapter(
-                chapterId = chapter.id,
-                selectionId = chapter.url,
-                sortOrder = index.toLong(),
-                allowReplacement = chapter.url in replacementChapterIds,
-            )
-        }
-        val targetMangaId = (target as? LocalVaultImportTargetSelection.Existing)?.mangaId
-        val createNewTitle = (target as? LocalVaultImportTargetSelection.CreateNew)?.title
-        screenModelScope.launch {
-            val started = when (localVaultImport.workflow) {
-                LocalVaultWorkflow.LocalImport -> LocalVaultImportJob.startNow(
-                    context = context.applicationContext,
-                    mangaId = state.manga.id,
-                    selectedChapters = requestChapters,
-                    targetMangaId = targetMangaId,
-                    createNewTitle = createNewTitle,
-                )
-                LocalVaultWorkflow.LibraryCapture -> LibraryVaultCaptureJob.startNow(
-                    context = context.applicationContext,
-                    mangaId = state.manga.id,
-                    selectedChapters = requestChapters,
-                    targetMangaId = targetMangaId,
-                    createNewTitle = createNewTitle,
-                )
-            }
-            if (started) {
-                toggleAllSelection(false)
-                updateLocalVaultImportState(
-                    localVaultImport.copy(
-                        pendingTarget = null,
-                        isImportRunning = true,
-                    ),
-                )
-            }
-            snackbarHostState.showSnackbar(
-                message = context.stringResource(
-                    if (started) {
-                        MR.strings.vault_import_ongoing
-                    } else {
-                        MR.strings.vault_import_error_already_running
-                    },
-                ),
-            )
-        }
+        localVaultImportCoordinator.startAddToVault(onOpenSettings)
     }
 
     fun confirmLocalVaultReplacement() {
-        dismissDialog()
-        startAddToVaultInternal(replaceConfirmed = true)
-    }
-
-    private fun LocalVaultImportState.linkedTargetSelection(): LocalVaultImportTargetSelection? {
-        return (targetState as? LocalVaultImportTargetState.Linked)
-            ?.let { LocalVaultImportTargetSelection.Existing(it.mangaId) }
-    }
-
-    private suspend fun LocalVaultImportState.loadVaultChapters(): List<VaultChapter> {
-        val vaultId = availableTargets.firstOrNull()?.vaultId ?: return emptyList()
-        return vaultRepository.getChaptersForVault(vaultId)
+        localVaultImportCoordinator.confirmReplacement()
     }
 
     // Local-to-Vault Import - end
