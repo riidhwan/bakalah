@@ -2,10 +2,13 @@ package eu.kanade.presentation.manga.components
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -57,6 +60,52 @@ fun DeleteChaptersDialog(
         },
         text = {
             Text(text = stringResource(MR.strings.confirm_delete_chapters))
+        },
+    )
+}
+
+@Composable
+fun DeleteLocalMangaDialog(
+    title: String,
+    isDeleting: Boolean,
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = {
+            if (!isDeleting) onDismissRequest()
+        },
+        dismissButton = {
+            TextButton(
+                enabled = !isDeleting,
+                onClick = onDismissRequest,
+            ) {
+                Text(text = stringResource(MR.strings.action_cancel))
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !isDeleting,
+                onClick = onConfirm,
+            ) {
+                Text(text = stringResource(MR.strings.action_delete))
+            }
+        },
+        title = {
+            Text(text = stringResource(MR.strings.local_manga_delete_confirm_title))
+        },
+        text = {
+            Column {
+                Text(text = stringResource(MR.strings.local_manga_delete_confirm_message, title))
+                if (isDeleting) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(text = stringResource(MR.strings.local_manga_delete_in_progress))
+                    }
+                }
+            }
         },
     )
 }

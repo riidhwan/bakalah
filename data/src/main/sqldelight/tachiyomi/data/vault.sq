@@ -771,6 +771,17 @@ LEFT JOIN vault_mangas AS target_mangas ON target_mangas._id = vault_import_requ
 GROUP BY vault_import_requests._id
 ORDER BY vault_import_requests.updated_at DESC, vault_import_requests._id DESC;
 
+hasNonTerminalImportRequest:
+SELECT EXISTS(
+    SELECT 1
+    FROM vault_import_requests
+    JOIN vault_import_request_chapters
+        ON vault_import_request_chapters.request_id = vault_import_requests._id
+    WHERE vault_import_requests.manga_id = :mangaId
+    AND vault_import_requests.workflow = :workflow
+    AND vault_import_request_chapters.state IN ('pending', 'running')
+);
+
 getImportRequestChapters:
 SELECT
     vault_import_request_chapters.request_id,

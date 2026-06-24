@@ -15,6 +15,9 @@ import eu.kanade.tachiyomi.data.database.DatabaseViewerService
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.DownloadProvider
+import eu.kanade.tachiyomi.data.local.ActiveLocalReaderSessions
+import eu.kanade.tachiyomi.data.local.LocalMangaDeletionService
+import eu.kanade.tachiyomi.data.local.LocalSourceChangeNotifier
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.vault.capture.DefaultLibraryVaultChapterStager
@@ -169,6 +172,9 @@ class AppModule(val app: Application) : InjektModule {
 
         addSingletonFactory { ChapterCache(app, get()) }
         addSingletonFactory { CoverCache(app) }
+        addSingletonFactory { ActiveLocalReaderSessions() }
+        addSingletonFactory { LocalSourceChangeNotifier() }
+        addSingletonFactory { LocalMangaDeletionService(get(), get(), get(), get(), get(), get(), get()) }
 
         addSingletonFactory { NetworkHelper(app, get()) }
         addSingletonFactory<VaultRemoteStorageFactory> { WebDavVaultRemoteStorageFactory(get()) }

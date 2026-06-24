@@ -34,6 +34,8 @@ import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.model.Download
+import eu.kanade.tachiyomi.data.local.LocalMangaDeletionResult
+import eu.kanade.tachiyomi.data.local.LocalMangaDeletionService
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultCaptureJob
@@ -138,6 +140,7 @@ class MangaScreenModel(
     private val manageLibraryMangaGroup: ManageLibraryMangaGroup = Injekt.get(),
     private val filterChaptersForDownload: FilterChaptersForDownload = Injekt.get(),
     private val localSourceFileSystem: LocalSourceFileSystem = Injekt.get(),
+    private val localMangaDeletionService: LocalMangaDeletionService = Injekt.get(),
     private val vaultRepository: VaultRepository = Injekt.get(),
     private val contentVaultPreferences: ContentVaultPreferences = Injekt.get(),
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
@@ -185,6 +188,9 @@ class MangaScreenModel(
     private var localVaultImportJob: Job? = null
     private var trackerJob: Job? = null
 
+    @Volatile
+    private var isDeletingLocalManga = false
+
     /**
      * Helper function to update the UI state only if it's currently in success state
      */
@@ -207,6 +213,9 @@ class MangaScreenModel(
                         downloadCache.changes,
                         downloadManager.queueState,
                     ) { mangaAndChapters, _, _ -> mangaAndChapters }
+                }
+                .catch { error ->
+                    if (!isDeletingLocalManga) throw error
                 }
                 .flowWithLifecycle(lifecycle)
                 .collectLatest { (manga, chapters) ->
@@ -1682,6 +1691,7 @@ class MangaScreenModel(
             val candidates: List<LibraryMangaGroupCandidateItem>,
         ) : Dialog
         data class LocalVaultReplaceChapters(val chapterTitles: List<String>) : Dialog
+        data class DeleteLocalManga(val manga: Manga) : Dialog
         data class SetFetchInterval(val manga: Manga) : Dialog
         data object SettingsSheet : Dialog
         data object TrackSheet : Dialog
@@ -1694,6 +1704,48 @@ class MangaScreenModel(
 
     fun showDeleteChapterDialog(chapters: List<Chapter>) {
         updateSuccessState { it.copy(dialog = Dialog.DeleteChapters(chapters)) }
+    }
+
+    fun showDeleteLocalMangaDialog() {
+        val manga = successState?.manga ?: return
+        updateSuccessState { it.copy(dialog = Dialog.DeleteLocalManga(manga)) }
+    }
+
+    fun deleteLocalManga(onDeleted: () -> Unit) {
+        val manga = successState?.manga ?: return
+        if (successState?.isDeletingLocalManga == true) return
+        screenModelScope.launch {
+            isDeletingLocalManga = true
+            updateSuccessState { it.copy(isDeletingLocalManga = true) }
+            val result = try {
+                localMangaDeletionService.delete(manga)
+            } catch (e: CancellationException) {
+                isDeletingLocalManga = false
+                updateSuccessState { it.copy(isDeletingLocalManga = false) }
+                throw e
+            } catch (e: Throwable) {
+                logcat(LogPriority.ERROR, e)
+                LocalMangaDeletionResult.StateCleanupFailed
+            }
+            if (result == LocalMangaDeletionResult.Deleted) {
+                onDeleted()
+                context.toast(MR.strings.local_manga_delete_complete)
+                return@launch
+            }
+            isDeletingLocalManga = false
+            updateSuccessState { it.copy(isDeletingLocalManga = false) }
+            val message = when (result) {
+                LocalMangaDeletionResult.BlockedByActiveReader -> MR.strings.local_manga_delete_blocked_reader
+                LocalMangaDeletionResult.BlockedByActiveImport -> MR.strings.local_manga_delete_blocked_import
+                LocalMangaDeletionResult.MangaDirectoryNotFound -> MR.strings.local_manga_delete_missing_folder
+                LocalMangaDeletionResult.FileDeletionFailed,
+                LocalMangaDeletionResult.NotLocalManga,
+                LocalMangaDeletionResult.StateCleanupFailed,
+                -> MR.strings.local_manga_delete_failed
+                LocalMangaDeletionResult.Deleted -> error("Handled above")
+            }
+            snackbarHostState.showSnackbar(context.stringResource(message))
+        }
     }
 
     fun showSettingsDialog() {
@@ -1736,6 +1788,7 @@ class MangaScreenModel(
             val hasLoggedInTrackers: Boolean = false,
             val isRefreshingData: Boolean = false,
             val dialog: Dialog? = null,
+            val isDeletingLocalManga: Boolean = false,
             val hasPromptedToAddBefore: Boolean = false,
             val hideMissingChapters: Boolean = false,
             val canEditLocalMetadata: Boolean = false,

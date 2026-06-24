@@ -21,6 +21,7 @@ import eu.kanade.tachiyomi.data.database.models.toDomainChapter
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.download.model.Download
+import eu.kanade.tachiyomi.data.local.ActiveLocalReaderSessions
 import eu.kanade.tachiyomi.data.saver.Image
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
@@ -136,6 +137,7 @@ class ReaderViewModel @JvmOverloads constructor(
     private val vaultChapterThumbnailImageNormalizer: VaultChapterThumbnailImageNormalizer =
         DefaultVaultChapterThumbnailImageNormalizer(),
     private val activeVaultReaderSessions: ActiveVaultReaderSessions = Injekt.get(),
+    private val activeLocalReaderSessions: ActiveLocalReaderSessions = Injekt.get(),
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(State())
@@ -305,7 +307,11 @@ class ReaderViewModel @JvmOverloads constructor(
                 downloadManager.addDownloadsToStartOfQueue(listOf(it))
             }
         }
-        (readerSession as? ReaderSession.Vault)?.manga?.id?.let(activeVaultReaderSessions::clear)
+        when (val session = readerSession) {
+            is ReaderSession.Local -> activeLocalReaderSessions.clear(session.mangaId)
+            is ReaderSession.Vault -> activeVaultReaderSessions.clear(session.manga.id)
+            ReaderSession.Library -> Unit
+        }
         super.onCleared()
     }
 
@@ -341,6 +347,10 @@ class ReaderViewModel @JvmOverloads constructor(
                     val context = Injekt.get<Application>()
                     val source = sourceManager.getOrStub(manga.source)
                     loader = ChapterLoader(context, downloadManager, downloadProvider, manga, source)
+                    if (manga.isLocal()) {
+                        readerSession = ReaderSession.Local(manga.id)
+                        activeLocalReaderSessions.markActive(manga.id)
+                    }
 
                     loadChapter(loader!!, chapterList.first { chapterId == it.chapter.id })
                     Result.success(true)
@@ -1372,6 +1382,8 @@ class ReaderViewModel @JvmOverloads constructor(
 
     private sealed interface ReaderSession {
         data object Library : ReaderSession
+
+        data class Local(val mangaId: Long) : ReaderSession
 
         data class Vault(
             val manga: VaultManga,

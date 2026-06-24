@@ -128,6 +128,10 @@ _Avoid_: Downloads tab, download manager page
 A manga whose chapters and metadata are owned by the user as local files rather than supplied by a remote source.
 _Avoid_: Downloaded manga, offline manga
 
+**Local Manga Deletion**:
+Permanent removal of one Local Manga, its user-owned local files, and Bakalah-owned state for that manga.
+_Avoid_: Remove from library, hide local manga, delete downloads
+
 **Source-Backed Library Manga**:
 A manga saved in the Library whose chapters are supplied by an app source rather than owned as Local Manga files.
 _Avoid_: Library Destination manga, downloaded manga, source manga
