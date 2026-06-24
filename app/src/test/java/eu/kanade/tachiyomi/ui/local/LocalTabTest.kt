@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.ui.local
 
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreenModel
+import eu.kanade.tachiyomi.ui.browse.source.browse.browsePagerKey
 import eu.kanade.tachiyomi.ui.browse.source.browse.shouldCloseSearchOnNavigateUp
 import eu.kanade.tachiyomi.ui.browse.source.browse.shouldShowLocalHistoryAction
 import io.kotest.matchers.shouldBe
@@ -66,5 +67,15 @@ class LocalTabTest {
             isLocalSource = false,
             showNavigateUp = false,
         ) shouldBe false
+    }
+
+    @Test
+    fun `local source change version rebuilds browse pager key`() {
+        val listing = BrowseSourceScreenModel.Listing.Popular
+
+        val initialKey = browsePagerKey(listing, localSourceVersion = 0)
+        val changedKey = browsePagerKey(listing, localSourceVersion = 1)
+
+        (initialKey == changedKey) shouldBe false
     }
 }

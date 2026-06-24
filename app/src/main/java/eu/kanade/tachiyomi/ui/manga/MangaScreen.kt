@@ -36,6 +36,7 @@ import eu.kanade.presentation.manga.LocalVaultTargetSetupDialog
 import eu.kanade.presentation.manga.MangaScreen
 import eu.kanade.presentation.manga.VaultChapterReplacementDialog
 import eu.kanade.presentation.manga.components.DeleteChaptersDialog
+import eu.kanade.presentation.manga.components.DeleteLocalMangaDialog
 import eu.kanade.presentation.manga.components.MangaCoverDialog
 import eu.kanade.presentation.manga.components.ScanlatorFilterDialog
 import eu.kanade.presentation.manga.components.SetIntervalDialog
@@ -174,6 +175,8 @@ class MangaScreen(
             onEditLocalMetadataClicked = {
                 navigator.push(LocalMangaMetadataEditScreen(successState.manga.id))
             }.takeIf { successState.canEditLocalMetadata },
+            onDeleteLocalMangaClicked = screenModel::showDeleteLocalMangaDialog
+                .takeIf { successState.canEditLocalMetadata },
             onVaultTargetClicked = {
                 screenModel.openLocalVaultTargetRow {
                     navigator.push(SettingsScreen(SettingsScreen.Destination.Vault))
@@ -228,6 +231,14 @@ class MangaScreen(
                         screenModel.toggleAllSelection(false)
                         screenModel.deleteChapters(dialog.chapters)
                     },
+                )
+            }
+            is MangaScreenModel.Dialog.DeleteLocalManga -> {
+                DeleteLocalMangaDialog(
+                    title = dialog.manga.title,
+                    isDeleting = successState.isDeletingLocalManga,
+                    onDismissRequest = onDismissRequest,
+                    onConfirm = { screenModel.deleteLocalManga(navigator::pop) },
                 )
             }
 

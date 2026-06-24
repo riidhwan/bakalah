@@ -194,6 +194,19 @@ class MangaRepositoryImpl(
         }
     }
 
+    override suspend fun deleteById(id: Long): Boolean {
+        return try {
+            database.mangasQueries.deleteMangaById(id)
+            cleanupLibraryMangaGroups()
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e)
+            false
+        }
+    }
+
     override suspend fun update(update: MangaUpdate): Boolean {
         return try {
             partialUpdate(update)

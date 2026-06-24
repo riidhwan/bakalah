@@ -23,6 +23,7 @@ import tachiyomi.domain.vault.model.VaultCover
 import tachiyomi.domain.vault.model.VaultIdentity
 import tachiyomi.domain.vault.model.VaultImportRequest
 import tachiyomi.domain.vault.model.VaultImportRequestSummary
+import tachiyomi.domain.vault.model.VaultImportRequestWorkflow
 import tachiyomi.domain.vault.model.VaultLabel
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultManifestSnapshot
@@ -469,6 +470,15 @@ class VaultRepositoryImpl(
                 )
             }
         }
+    }
+
+    override suspend fun hasNonTerminalImportRequest(
+        mangaId: Long,
+        workflow: VaultImportRequestWorkflow,
+    ): Boolean {
+        return database.vaultQueries
+            .hasNonTerminalImportRequest(mangaId = mangaId, workflow = workflow.name)
+            .awaitAsOne()
     }
 
     override suspend fun updateImportRequestActiveTarget(

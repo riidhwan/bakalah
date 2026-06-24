@@ -37,6 +37,7 @@ fun MangaToolbar(
     onClickRefresh: () -> Unit,
     onClickMigrate: (() -> Unit)?,
     onClickEditLocalMetadata: (() -> Unit)?,
+    onClickDeleteLocalManga: (() -> Unit)?,
     onClickEditNotes: () -> Unit,
     onClickUseAsPrimarySource: (() -> Unit)?,
     onClickAddSource: (() -> Unit)?,
@@ -165,6 +166,14 @@ fun MangaToolbar(
                             AppBar.OverflowAction(
                                 title = stringResource(MR.strings.action_edit),
                                 onClick = onClickEditLocalMetadata,
+                            ),
+                        )
+                    }
+                    if (onClickDeleteLocalManga != null) {
+                        add(
+                            AppBar.OverflowAction(
+                                title = stringResource(MR.strings.action_delete),
+                                onClick = onClickDeleteLocalManga,
                             ),
                         )
                     }

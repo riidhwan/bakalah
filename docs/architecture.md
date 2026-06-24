@@ -95,6 +95,8 @@ Dependencies are resolved through Injekt in app/runtime code. New shared service
 
 `source-local` implements local library support. It handles local file-system discovery, archive formats, local covers, and local metadata extraction.
 
+Local Manga Deletion is a destructive Local Source workflow for folder-based Local Manga only. It deletes the resolved top-level local series folder before removing Bakalah-owned state for that manga, and it fails without state cleanup if the folder cannot be removed. It is exposed from the Local Manga Detail Screen rather than Local Destination bulk actions, is blocked while the same Local Manga is being read or imported to the Vault, and does not mutate any Vault Manga or already-published Vault content created from prior imports.
+
 The `app` module's `AndroidSourceManager` and `ExtensionManager` coordinate installed extensions, source discovery, source preferences, and runtime Android integration. Domain code should depend on source abstractions rather than concrete extension-loading details.
 
 ## Content Vault Architecture

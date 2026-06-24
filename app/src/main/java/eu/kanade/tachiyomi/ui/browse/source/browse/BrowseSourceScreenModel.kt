@@ -20,6 +20,7 @@ import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.track.interactor.AddTracks
 import eu.kanade.presentation.util.ioCoroutineScope
 import eu.kanade.tachiyomi.data.cache.CoverCache
+import eu.kanade.tachiyomi.data.local.LocalSourceChangeNotifier
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.util.removeCovers
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -72,6 +74,7 @@ class BrowseSourceScreenModel(
     private val updateManga: UpdateManga = Injekt.get(),
     private val addTracks: AddTracks = Injekt.get(),
     private val getIncognitoState: GetIncognitoState = Injekt.get(),
+    private val localSourceChangeNotifier: LocalSourceChangeNotifier = Injekt.get(),
 ) : StateScreenModel<BrowseSourceScreenModel.State>(State(Listing.valueOf(listingQuery))) {
 
     var displayMode by sourcePreferences.sourceDisplayMode.asState(screenModelScope)
@@ -118,11 +121,15 @@ class BrowseSourceScreenModel(
         }
         .stateIn(ioCoroutineScope, SharingStarted.Eagerly, emptySet())
 
-    val mangaPagerFlowFlow = state.map { it.listing }
+    val mangaPagerFlowFlow = combine(
+        state.map { it.listing }.distinctUntilChanged(),
+        if (sourceId == LocalSource.ID) localSourceChangeNotifier.changes else flowOf(0L),
+        ::browsePagerKey,
+    )
         .distinctUntilChanged()
-        .map { listing ->
+        .map { key ->
             Pager(PagingConfig(pageSize = 25)) {
-                getRemoteManga(sourceId, listing.query ?: "", listing.filters)
+                getRemoteManga(sourceId, key.listing.query ?: "", key.listing.filters)
             }.flow.map { pagingData ->
                 pagingData.map { manga ->
                     getManga.subscribe(manga.url, manga.source)
@@ -381,4 +388,19 @@ class BrowseSourceScreenModel(
     ) {
         val isUserQuery get() = listing is Listing.Search && !listing.query.isNullOrEmpty()
     }
+}
+
+internal data class BrowsePagerKey(
+    val listing: BrowseSourceScreenModel.Listing,
+    val localSourceVersion: Long,
+)
+
+internal fun browsePagerKey(
+    listing: BrowseSourceScreenModel.Listing,
+    localSourceVersion: Long,
+): BrowsePagerKey {
+    return BrowsePagerKey(
+        listing = listing,
+        localSourceVersion = localSourceVersion,
+    )
 }

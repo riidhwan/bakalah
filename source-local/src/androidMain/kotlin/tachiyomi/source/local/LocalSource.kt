@@ -337,6 +337,10 @@ actual class LocalSource(
     // Filters
     override fun getFilterList() = FilterList(OrderBy.Popular(context))
 
+    fun invalidateSearchCache() {
+        searchCache = null
+    }
+
     // Unused stuff
     override suspend fun getPageList(chapter: SChapter): List<Page> = throw UnsupportedOperationException("Unused")
 

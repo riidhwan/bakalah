@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Added
+- Add deletion for folder-based Local Manga from manga details.
 
 ## [v0.35.1] - 2026-06-23
 ### Fixed

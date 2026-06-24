@@ -184,6 +184,14 @@
     <string name="local_manga_metadata_error_malformed_metadata">ComicInfo.xml is malformed and was not overwritten</string>
     <string name="local_manga_metadata_error_write_failed">Could not save local manga metadata</string>
     <string name="local_manga_metadata_error_refresh_failed">Metadata was saved, but the manga details could not be refreshed</string>
+    <string name="local_manga_delete_confirm_title">Delete local manga?</string>
+    <string name="local_manga_delete_confirm_message">This permanently deletes \"%s\" and its local files from this device.</string>
+    <string name="local_manga_delete_in_progress">Deleting Local Manga…</string>
+    <string name="local_manga_delete_complete">Local Manga deleted</string>
+    <string name="local_manga_delete_failed">Could not delete Local Manga</string>
+    <string name="local_manga_delete_blocked_reader">Close the reader before deleting this Local Manga</string>
+    <string name="local_manga_delete_blocked_import">Wait for Add to Vault to finish before deleting this Local Manga</string>
+    <string name="local_manga_delete_missing_folder">Local manga folder is missing or inaccessible</string>
 
     <!-- Content Vault -->
     <string name="vault_action_refresh_catalogue">Refresh catalogue</string>
