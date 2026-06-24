@@ -47,6 +47,7 @@ import tachiyomi.domain.manga.interactor.GetLibraryManga
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
+import tachiyomi.domain.manga.model.hasSameTitleLibraryMatch
 import tachiyomi.domain.manga.model.sameTitleLibraryMatchKey
 import tachiyomi.domain.manga.model.toMangaUpdate
 import tachiyomi.domain.source.interactor.GetRemoteManga
@@ -137,8 +138,10 @@ class BrowseSourceScreenModel(
                         .combine(sourceBackedLibraryTitleKeys) { sourceManga, titleKeys ->
                             BrowseSourceManga(
                                 manga = sourceManga,
-                                sameTitleLibraryMatch = !sourceManga.favorite &&
-                                    sourceManga.title.sameTitleLibraryMatchKey() in titleKeys,
+                                sameTitleLibraryMatch = sourceManga.hasSameTitleLibraryMatch(
+                                    libraryTitleKeys = titleKeys,
+                                    localSourceId = LocalSource.ID,
+                                ),
                             )
                         }
                         .stateIn(ioCoroutineScope)
