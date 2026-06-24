@@ -249,6 +249,9 @@ class MangaScreen(
                     onConfirm = { screenModel.toggleFavorite(onRemoved = {}, checkDuplicate = false) },
                     onOpenManga = { navigator.push(MangaScreen(it.id)) },
                     onMigrate = { screenModel.showMigrateDialog(it) },
+                    groupTargets = dialog.groupTargets,
+                    pendingMangaSourceId = dialog.manga.source,
+                    onAddToGroup = screenModel::addDuplicateMangaToGroup,
                 )
             }
 
