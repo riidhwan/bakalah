@@ -37,7 +37,7 @@ internal class MangaLibraryWorkflowCoordinator(
     suspend fun showChangeCategoryDialog(manga: Manga): MangaLibraryWorkflowEffect {
         val selection = libraryActionCoordinator.categorySelection(manga)
         return MangaLibraryWorkflowEffect.ShowDialog(
-            MangaScreenModel.Dialog.ChangeCategory(
+            MangaScreenModel.LibraryDialog.ChangeCategory(
                 manga = manga,
                 initialSelection = selection.toCheckboxState(),
             ),
@@ -111,7 +111,7 @@ internal class MangaLibraryWorkflowCoordinator(
                     MangaLibraryWorkflowEffect.None
                 } else {
                     MangaLibraryWorkflowEffect.ShowDialog(
-                        MangaScreenModel.Dialog.DuplicateManga(
+                        MangaScreenModel.LibraryDialog.DuplicateManga(
                             manga = manga,
                             duplicates = result.duplicates,
                             groupTargets = result.groupTargets,
@@ -121,7 +121,7 @@ internal class MangaLibraryWorkflowCoordinator(
             }
             is AddToLibraryResult.NeedsCategorySelection -> {
                 MangaLibraryWorkflowEffect.ShowDialog(
-                    MangaScreenModel.Dialog.ChangeCategory(
+                    MangaScreenModel.LibraryDialog.ChangeCategory(
                         manga = manga,
                         initialSelection = result.selection.toCheckboxState(),
                         pendingAddToGroup = result.pendingAddToGroup,
@@ -154,7 +154,7 @@ internal sealed interface MangaLibraryWorkflowEffect {
     data object None : MangaLibraryWorkflowEffect
     data object Added : MangaLibraryWorkflowEffect
     data object Removed : MangaLibraryWorkflowEffect
-    data class ShowDialog(val dialog: MangaScreenModel.Dialog) : MangaLibraryWorkflowEffect
+    data class ShowDialog(val dialog: MangaScreenModel.LibraryDialog) : MangaLibraryWorkflowEffect
     data class UpdateGroupTabs(
         val tabs: List<LibraryMangaGroupTab>,
         val dismissDialog: Boolean,

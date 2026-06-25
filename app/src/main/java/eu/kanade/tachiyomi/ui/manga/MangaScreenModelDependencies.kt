@@ -106,6 +106,13 @@ class MangaScreenModelDependencies {
             libraryGroupCoordinator = libraryGroupCoordinator,
         ),
     )
+    internal val sessionCoordinator = MangaSessionCoordinator(
+        MangaSessionCoordinator.Dependencies(
+            loadCoordinator = loadCoordinator,
+            getAvailableScanlators = getAvailableScanlators,
+            getExcludedScanlators = getExcludedScanlators,
+        ),
+    )
     internal val chapterSettingsCoordinator = MangaChapterSettingsCoordinator(
         MangaChapterSettingsCoordinator.Dependencies(
             libraryPreferences = libraryPreferences,

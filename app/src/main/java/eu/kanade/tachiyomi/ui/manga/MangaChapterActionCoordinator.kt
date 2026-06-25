@@ -2,15 +2,12 @@ package eu.kanade.tachiyomi.ui.manga
 
 import android.content.Context
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import eu.kanade.domain.chapter.interactor.SetReadStatus
 import eu.kanade.domain.track.model.AutoTrackState
 import eu.kanade.presentation.manga.DownloadAction
 import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
-import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -193,14 +190,18 @@ internal class MangaChapterActionCoordinator(
 
             if (callbacks.getState()?.manga?.favorite != true && !state.hasPromptedToAddBefore) {
                 callbacks.updateState { it.copy(hasPromptedToAddBefore = true) }
-                val result = runtime.snackbarHostState.showSnackbar(
-                    message = runtime.context.stringResource(MR.strings.snack_add_to_library),
-                    actionLabel = runtime.context.stringResource(MR.strings.action_add),
-                    withDismissAction = true,
+                callbacks.showUiEffect(
+                    MangaScreenModel.UiEffect.ShowSnackbar(
+                        message = runtime.context.stringResource(MR.strings.snack_add_to_library),
+                        actionLabel = runtime.context.stringResource(MR.strings.action_add),
+                        withDismissAction = true,
+                        onAction = {
+                            if (callbacks.getState()?.manga?.favorite != true) {
+                                callbacks.toggleFavorite()
+                            }
+                        },
+                    ),
                 )
-                if (result == SnackbarResult.ActionPerformed && callbacks.getState()?.manga?.favorite != true) {
-                    callbacks.toggleFavorite()
-                }
             }
         }
     }
@@ -212,11 +213,13 @@ internal class MangaChapterActionCoordinator(
     private suspend fun showTrackerRefreshFailures(failures: List<MangaTrackerRefreshFailure>) {
         failures.forEach { failure ->
             withUIContext {
-                runtime.context.toast(
-                    runtime.context.stringResource(
-                        MR.strings.track_error,
-                        failure.trackerName,
-                        failure.error.message ?: "",
+                callbacks.showUiEffect(
+                    MangaScreenModel.UiEffect.ShowToast(
+                        runtime.context.stringResource(
+                            MR.strings.track_error,
+                            failure.trackerName,
+                            failure.error.message ?: "",
+                        ),
                     ),
                 )
             }
@@ -229,28 +232,33 @@ internal class MangaChapterActionCoordinator(
             is MangaTrackingUpdate.Auto -> {
                 coordinators.trackingCoordinator.trackChapter(runtime.context, update)
                 withUIContext {
-                    runtime.context.toast(
-                        runtime.context.stringResource(
-                            MR.strings.trackers_updated_summary,
-                            update.chapterNumber.toInt(),
+                    callbacks.showUiEffect(
+                        MangaScreenModel.UiEffect.ShowToast(
+                            runtime.context.stringResource(
+                                MR.strings.trackers_updated_summary,
+                                update.chapterNumber.toInt(),
+                            ),
                         ),
                     )
                 }
             }
             is MangaTrackingUpdate.Prompt -> {
-                val result = runtime.snackbarHostState.showSnackbar(
-                    message = runtime.context.stringResource(
-                        MR.strings.confirm_tracker_update,
-                        update.chapterNumber.toInt(),
+                callbacks.showUiEffect(
+                    MangaScreenModel.UiEffect.ShowSnackbar(
+                        message = runtime.context.stringResource(
+                            MR.strings.confirm_tracker_update,
+                            update.chapterNumber.toInt(),
+                        ),
+                        actionLabel = runtime.context.stringResource(MR.strings.action_ok),
+                        duration = SnackbarDuration.Short,
+                        withDismissAction = true,
+                        onAction = {
+                            runtime.screenModelScope.launchIO {
+                                coordinators.trackingCoordinator.trackChapter(runtime.context, update)
+                            }
+                        },
                     ),
-                    actionLabel = runtime.context.stringResource(MR.strings.action_ok),
-                    duration = SnackbarDuration.Short,
-                    withDismissAction = true,
                 )
-
-                if (result == SnackbarResult.ActionPerformed) {
-                    coordinators.trackingCoordinator.trackChapter(runtime.context, update)
-                }
             }
         }
     }
@@ -258,7 +266,6 @@ internal class MangaChapterActionCoordinator(
     data class Runtime(
         val context: Context,
         val screenModelScope: CoroutineScope,
-        val snackbarHostState: SnackbarHostState,
     )
 
     data class Dependencies(
@@ -279,5 +286,6 @@ internal class MangaChapterActionCoordinator(
         val updateDownloadState: (Download) -> Unit,
         val toggleAllSelection: (Boolean) -> Unit,
         val toggleFavorite: () -> Unit,
+        val showUiEffect: (MangaScreenModel.UiEffect) -> Unit,
     )
 }

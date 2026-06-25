@@ -36,7 +36,13 @@ internal class MangaStateAssembler(
                 ?.excludedScanlators
                 ?: emptySet(),
             isRefreshingData = isRefreshingData,
-            dialog = previousSuccessState?.dialog,
+            libraryDialog = previousSuccessState?.libraryDialog,
+            chapterDialog = previousSuccessState?.chapterDialog,
+            vaultDialog = previousSuccessState?.vaultDialog,
+            localDialog = previousSuccessState?.localDialog,
+            migrationDialog = previousSuccessState?.migrationDialog,
+            trackingDialog = previousSuccessState?.trackingDialog,
+            coverDialog = previousSuccessState?.coverDialog,
             hasPromptedToAddBefore = previousSuccessState?.hasPromptedToAddBefore ?: false,
             tracking = if (isMangaSwitch) {
                 MangaTrackingUiState()

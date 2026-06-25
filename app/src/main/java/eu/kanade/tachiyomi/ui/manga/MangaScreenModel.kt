@@ -1,8 +1,7 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import android.content.Context
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.util.fastAny
@@ -17,17 +16,16 @@ import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import tachiyomi.core.common.i18n.stringResource
@@ -53,19 +51,19 @@ class MangaScreenModel(
     private val mangaId: Long,
     private val isFromSource: Boolean,
     private val dependencies: MangaScreenModelDependencies = MangaScreenModelDependencies(),
-    val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
     private val libraryPreferences = dependencies.libraryPreferences
     private val trackPreferences = dependencies.trackPreferences
     private val readerPreferences = dependencies.readerPreferences
-    private val getAvailableScanlators = dependencies.getAvailableScanlators
-    private val getExcludedScanlators = dependencies.getExcludedScanlators
     private val setExcludedScanlators = dependencies.setExcludedScanlators
     private val updateManga = dependencies.updateManga
     private val mangaRepository = dependencies.mangaRepository
 
     private val successState: State.Success?
         get() = state.value as? State.Success
+
+    private val _uiEffects = MutableSharedFlow<UiEffect>()
+    val uiEffects = _uiEffects.asSharedFlow()
 
     val manga: Manga?
         get() = successState?.manga
@@ -74,9 +72,7 @@ class MangaScreenModel(
         get() = successState?.source
 
     fun showSnackbar(message: String) {
-        screenModelScope.launch {
-            snackbarHostState.showSnackbar(message = message)
-        }
+        emitUiEffect(UiEffect.ShowSnackbar(message = message))
     }
 
     private val isFavorited: Boolean
@@ -111,21 +107,21 @@ class MangaScreenModel(
             context = context,
             lifecycle = lifecycle,
             screenModelScope = screenModelScope,
-            snackbarHostState = snackbarHostState,
         ),
         callbacks = MangaLocalVaultImportCoordinator.Callbacks(
             getState = { successState },
             setLocalVaultImportState = ::updateLocalVaultImportState,
-            showDialog = { dialog -> updateSuccessState { it.copy(dialog = dialog) } },
+            showDialog = ::showVaultDialog,
             dismissDialog = ::dismissDialog,
             selectedChapters = chapterSelection::selectedChapters,
             clearSelection = { toggleAllSelection(false) },
+            showUiEffect = ::emitUiEffect,
         ),
     )
 
     private val libraryGroupCoordinator = dependencies.libraryGroupCoordinator
     private val libraryWorkflowCoordinator = dependencies.libraryWorkflowCoordinator
-    private val loadCoordinator = dependencies.loadCoordinator
+    private val sessionCoordinator = dependencies.sessionCoordinator
     private val chapterSettingsCoordinator = dependencies.chapterSettingsCoordinator
     private val downloadCoordinator = dependencies.downloadCoordinator
     private val sourceRefreshCoordinator = dependencies.sourceRefreshCoordinator
@@ -135,7 +131,6 @@ class MangaScreenModel(
         runtime = MangaChapterActionCoordinator.Runtime(
             context = context,
             screenModelScope = screenModelScope,
-            snackbarHostState = snackbarHostState,
         ),
         callbacks = MangaChapterActionCoordinator.Callbacks(
             getState = { successState },
@@ -143,6 +138,7 @@ class MangaScreenModel(
             updateDownloadState = ::updateDownloadState,
             toggleAllSelection = ::toggleAllSelection,
             toggleFavorite = ::toggleFavorite,
+            showUiEffect = ::emitUiEffect,
         ),
         skipFiltered = { skipFiltered },
         autoTrackState = { autoTrackState },
@@ -160,77 +156,79 @@ class MangaScreenModel(
         }
     }
 
+    private fun emitUiEffect(effect: UiEffect) {
+        screenModelScope.launch {
+            _uiEffects.emit(effect)
+        }
+    }
+
     init {
-        screenModelScope.launchIO {
-            loadCoordinator.observe(activeMangaId)
-                .catch { error ->
-                    if (!isDeletingLocalManga) throw error
-                }
-                .flowWithLifecycle(lifecycle)
-                .collectLatest { snapshot ->
-                    if (snapshot.isMangaSwitch) {
-                        chapterSelection.clear()
-                    }
-
-                    val chapterItems = snapshot.chapters.toChapterListItems(snapshot.manga)
-
-                    mutableState.update { previousState ->
-                        mangaStateAssembler.successState(
-                            previousState = previousState,
-                            manga = snapshot.manga,
-                            source = snapshot.source,
-                            isFromSource = isFromSource,
-                            chapters = chapterItems,
-                            isRefreshingData = snapshot.needRefreshInfo || snapshot.needRefreshChapter,
-                            isMangaSwitch = snapshot.isMangaSwitch,
-                            libraryMangaGroupTabs = snapshot.libraryMangaGroupTabs,
-                        )
-                    }
-
-                    if (snapshot.isMangaSwitch) {
-                        localVaultImportCoordinator.restartObservation(snapshot.manga, snapshot.source)
-                        observeTrackers(snapshot.manga.id, snapshot.source)
-                    }
-
-                    if (loadCoordinator.takeRefreshOnLoad(snapshot, screenModelScope.isActive)) {
-                        try {
-                            val fetchFromSourceTasks = listOf(
-                                async { if (snapshot.needRefreshInfo) fetchMangaFromSource() },
-                                async { if (snapshot.needRefreshChapter) fetchChaptersFromSource() },
-                            )
-                            fetchFromSourceTasks.awaitAll()
-                        } finally {
-                            updateSuccessState { it.copy(isRefreshingData = false) }
-                        }
-                    }
-                }
-        }
-
-        screenModelScope.launchIO {
-            activeMangaId
-                .flatMapLatest { getExcludedScanlators.subscribe(it) }
-                .flowWithLifecycle(lifecycle)
-                .distinctUntilChanged()
-                .collectLatest { excludedScanlators ->
-                    updateSuccessState {
-                        it.copy(excludedScanlators = excludedScanlators)
-                    }
-                }
-        }
-
-        screenModelScope.launchIO {
-            activeMangaId
-                .flatMapLatest { getAvailableScanlators.subscribe(it) }
-                .flowWithLifecycle(lifecycle)
-                .distinctUntilChanged()
-                .collectLatest { availableScanlators ->
-                    updateSuccessState {
-                        it.copy(availableScanlators = availableScanlators)
-                    }
-                }
-        }
-
+        sessionCoordinator.start(
+            runtime = MangaSessionCoordinator.Runtime(
+                screenModelScope = screenModelScope,
+            ),
+            activeMangaId = activeMangaId,
+            callbacks = MangaSessionCoordinator.Callbacks(
+                isDeletingLocalManga = { isDeletingLocalManga },
+                onSnapshot = ::applyLoadSnapshot,
+                onRefreshOnLoad = ::refreshOnLoad,
+                onExcludedScanlators = ::applyExcludedScanlators,
+                onAvailableScanlators = ::applyAvailableScanlators,
+            ),
+        )
         observeDownloads()
+    }
+
+    private suspend fun applyLoadSnapshot(snapshot: MangaLoadSnapshot) {
+        if (snapshot.isMangaSwitch) {
+            chapterSelection.clear()
+        }
+
+        val chapterItems = snapshot.chapters.toChapterListItems(snapshot.manga)
+
+        mutableState.update { previousState ->
+            mangaStateAssembler.successState(
+                previousState = previousState,
+                manga = snapshot.manga,
+                source = snapshot.source,
+                isFromSource = isFromSource,
+                chapters = chapterItems,
+                isRefreshingData = snapshot.needRefreshInfo || snapshot.needRefreshChapter,
+                isMangaSwitch = snapshot.isMangaSwitch,
+                libraryMangaGroupTabs = snapshot.libraryMangaGroupTabs,
+            )
+        }
+
+        if (snapshot.isMangaSwitch) {
+            localVaultImportCoordinator.restartObservation(snapshot.manga, snapshot.source)
+            observeTrackers(snapshot.manga.id, snapshot.source)
+        }
+    }
+
+    private suspend fun refreshOnLoad(snapshot: MangaLoadSnapshot) {
+        try {
+            coroutineScope {
+                val fetchFromSourceTasks = listOf(
+                    async { if (snapshot.needRefreshInfo) fetchMangaFromSource() },
+                    async { if (snapshot.needRefreshChapter) fetchChaptersFromSource() },
+                )
+                fetchFromSourceTasks.awaitAll()
+            }
+        } finally {
+            updateSuccessState { it.copy(isRefreshingData = false) }
+        }
+    }
+
+    private fun applyExcludedScanlators(excludedScanlators: Set<String>) {
+        updateSuccessState {
+            it.copy(excludedScanlators = excludedScanlators)
+        }
+    }
+
+    private fun applyAvailableScanlators(availableScanlators: Set<String>) {
+        updateSuccessState {
+            it.copy(availableScanlators = availableScanlators)
+        }
     }
 
     fun fetchAllFromSource(manualFetch: Boolean = true) {
@@ -265,7 +263,9 @@ class MangaScreenModel(
             MangaSourceRefreshResult.Success,
             MangaSourceRefreshResult.IgnoredEarlyHints,
             -> Unit
-            is MangaSourceRefreshResult.Failed -> showSourceRefreshError(result.error)
+            is MangaSourceRefreshResult.Failed -> {
+                showSourceRefreshError(result.error)
+            }
         }
     }
 
@@ -275,24 +275,21 @@ class MangaScreenModel(
     }
 
     private fun showSourceRefreshMessage(message: String) {
-        screenModelScope.launch {
-            snackbarHostState.showSnackbar(message = message)
-        }
+        emitUiEffect(UiEffect.ShowSnackbar(message = message))
     }
 
     fun toggleFavorite() {
         toggleFavorite(
             onRemoved = {
-                screenModelScope.launch {
-                    if (!hasDownloads()) return@launch
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.stringResource(MR.strings.delete_downloads_for_manga),
-                        actionLabel = context.stringResource(MR.strings.action_delete),
-                        withDismissAction = true,
+                if (hasDownloads()) {
+                    emitUiEffect(
+                        UiEffect.ShowSnackbar(
+                            message = context.stringResource(MR.strings.delete_downloads_for_manga),
+                            actionLabel = context.stringResource(MR.strings.action_delete),
+                            withDismissAction = true,
+                            onAction = ::deleteDownloads,
+                        ),
                     )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        deleteDownloads()
-                    }
                 }
             },
         )
@@ -332,12 +329,12 @@ class MangaScreenModel(
             -> Unit
             MangaLibraryWorkflowEffect.Removed -> onRemoved()
             is MangaLibraryWorkflowEffect.ShowDialog -> {
-                updateSuccessState { it.copy(dialog = effect.dialog) }
+                showLibraryDialog(effect.dialog)
             }
             is MangaLibraryWorkflowEffect.UpdateGroupTabs -> {
                 updateSuccessState {
                     it.copy(
-                        dialog = if (effect.dismissDialog) null else it.dialog,
+                        libraryDialog = if (effect.dismissDialog) null else it.libraryDialog,
                         libraryMangaGroupTabs = effect.tabs,
                     )
                 }
@@ -368,9 +365,7 @@ class MangaScreenModel(
 
     fun showSetFetchIntervalDialog() {
         val manga = successState?.manga ?: return
-        updateSuccessState {
-            it.copy(dialog = Dialog.SetFetchInterval(manga))
-        }
+        showLibraryDialog(LibraryDialog.SetFetchInterval(manga))
     }
 
     fun showLibraryMangaGroupDialog() {
@@ -383,8 +378,8 @@ class MangaScreenModel(
                 currentTabs = state.libraryMangaGroupTabs,
             )
             updateSuccessState {
-                it.copy(
-                    dialog = Dialog.LibraryMangaGroupSetup(
+                it.withLibraryDialog(
+                    LibraryDialog.LibraryMangaGroupSetup(
                         groupId = setup.groupId,
                         initialTitle = setup.initialTitle,
                         candidates = setup.candidates,
@@ -403,7 +398,7 @@ class MangaScreenModel(
                 groupId = groupId,
                 selectedMangaIds = selectedMangaIds,
             ) ?: return@launchIO
-            updateSuccessState { it.copy(dialog = null, libraryMangaGroupTabs = tabs) }
+            updateSuccessState { it.dismissDialogs().copy(libraryMangaGroupTabs = tabs) }
         }
     }
 
@@ -457,7 +452,7 @@ class MangaScreenModel(
 
     fun moveMangaToCategoriesAndAddToLibrary(manga: Manga, categories: List<Long>) {
         val state = successState ?: return
-        val pendingAddToGroup = (state.dialog as? Dialog.ChangeCategory)?.pendingAddToGroup
+        val pendingAddToGroup = (state.libraryDialog as? LibraryDialog.ChangeCategory)?.pendingAddToGroup
         screenModelScope.launchIO {
             applyLibraryWorkflowEffect(
                 libraryWorkflowCoordinator.moveMangaToCategoriesAndAddToLibrary(
@@ -679,7 +674,7 @@ class MangaScreenModel(
         val manga = successState?.manga ?: return
         screenModelScope.launchNonCancellable {
             chapterSettingsCoordinator.setCurrentSettingsAsDefault(manga, applyToExisting)
-            snackbarHostState.showSnackbar(message = context.stringResource(MR.strings.chapter_settings_updated))
+            emitUiEffect(UiEffect.ShowSnackbar(context.stringResource(MR.strings.chapter_settings_updated)))
         }
     }
 
@@ -745,19 +740,31 @@ class MangaScreenModel(
 
     // Track sheet - end
 
-    sealed interface Dialog {
+    sealed interface LibraryDialog {
         data class ChangeCategory(
             val manga: Manga,
             val initialSelection: List<CheckboxState<Category>>,
             val pendingAddToGroup: PendingAddToGroup? = null,
-        ) : Dialog
-        data class DeleteChapters(val chapters: List<Chapter>) : Dialog
+        ) : LibraryDialog
         data class DuplicateManga(
             val manga: Manga,
             val duplicates: List<MangaWithChapterCount>,
             val groupTargets: List<DuplicateMangaGroupTargetItem> = emptyList(),
-        ) : Dialog
-        data class Migrate(val target: Manga, val current: Manga) : Dialog
+        ) : LibraryDialog
+        data class LibraryMangaGroupSetup(
+            val groupId: Long?,
+            val initialTitle: String,
+            val candidates: List<LibraryMangaGroupCandidateItem>,
+        ) : LibraryDialog
+        data class SetFetchInterval(val manga: Manga) : LibraryDialog
+    }
+
+    sealed interface ChapterDialog {
+        data class DeleteChapters(val chapters: List<Chapter>) : ChapterDialog
+        data object SettingsSheet : ChapterDialog
+    }
+
+    sealed interface VaultDialog {
         data class LocalVaultTargetSetup(
             val initialTitle: String,
             val targets: List<VaultManga>,
@@ -765,31 +772,37 @@ class MangaScreenModel(
             val allowCreateNew: Boolean,
             val allowUnlink: Boolean,
             val pendingAddToVault: Boolean,
-        ) : Dialog
-        data class LibraryMangaGroupSetup(
-            val groupId: Long?,
-            val initialTitle: String,
-            val candidates: List<LibraryMangaGroupCandidateItem>,
-        ) : Dialog
-        data class LocalVaultReplaceChapters(val chapterTitles: List<String>) : Dialog
-        data class DeleteLocalManga(val manga: Manga) : Dialog
-        data class SetFetchInterval(val manga: Manga) : Dialog
-        data object SettingsSheet : Dialog
-        data object TrackSheet : Dialog
-        data object FullCover : Dialog
+        ) : VaultDialog
+        data class LocalVaultReplaceChapters(val chapterTitles: List<String>) : VaultDialog
+    }
+
+    sealed interface LocalDialog {
+        data class DeleteLocalManga(val manga: Manga) : LocalDialog
+    }
+
+    sealed interface MigrationDialog {
+        data class Migrate(val target: Manga, val current: Manga) : MigrationDialog
+    }
+
+    sealed interface TrackingDialog {
+        data object TrackSheet : TrackingDialog
+    }
+
+    sealed interface CoverDialog {
+        data object FullCover : CoverDialog
     }
 
     fun dismissDialog() {
-        updateSuccessState { it.copy(dialog = null) }
+        updateSuccessState { it.dismissDialogs() }
     }
 
     fun showDeleteChapterDialog(chapters: List<Chapter>) {
-        updateSuccessState { it.copy(dialog = Dialog.DeleteChapters(chapters)) }
+        showChapterDialog(ChapterDialog.DeleteChapters(chapters))
     }
 
     fun showDeleteLocalMangaDialog() {
         val manga = successState?.manga ?: return
-        updateSuccessState { it.copy(dialog = Dialog.DeleteLocalManga(manga)) }
+        showLocalDialog(LocalDialog.DeleteLocalManga(manga))
     }
 
     fun deleteLocalManga(onDeleted: () -> Unit) {
@@ -802,13 +815,13 @@ class MangaScreenModel(
                 when (val result = localMangaDeletionCoordinator.delete(manga)) {
                     MangaLocalDeletionOutcome.Deleted -> {
                         onDeleted()
-                        context.toast(MR.strings.local_manga_delete_complete)
+                        emitUiEffect(UiEffect.ShowToast(context.stringResource(MR.strings.local_manga_delete_complete)))
                         return@launch
                     }
                     is MangaLocalDeletionOutcome.Failed -> {
                         isDeletingLocalManga = false
                         updateSuccessState { it.copy(localDeletion = MangaLocalDeletionUiState(isDeleting = false)) }
-                        snackbarHostState.showSnackbar(context.stringResource(result.message))
+                        emitUiEffect(UiEffect.ShowSnackbar(context.stringResource(result.message)))
                     }
                 }
             } catch (e: CancellationException) {
@@ -820,20 +833,20 @@ class MangaScreenModel(
     }
 
     fun showSettingsDialog() {
-        updateSuccessState { it.copy(dialog = Dialog.SettingsSheet) }
+        showChapterDialog(ChapterDialog.SettingsSheet)
     }
 
     fun showTrackDialog() {
-        updateSuccessState { it.copy(dialog = Dialog.TrackSheet) }
+        showTrackingDialog(TrackingDialog.TrackSheet)
     }
 
     fun showCoverDialog() {
-        updateSuccessState { it.copy(dialog = Dialog.FullCover) }
+        showCoverDialog(CoverDialog.FullCover)
     }
 
     fun showMigrateDialog(duplicate: Manga) {
         val manga = successState?.manga ?: return
-        updateSuccessState { it.copy(dialog = Dialog.Migrate(target = manga, current = duplicate)) }
+        showMigrationDialog(MigrationDialog.Migrate(target = manga, current = duplicate))
     }
 
     fun setExcludedScanlators(excludedScanlators: Set<String>) {
@@ -841,6 +854,18 @@ class MangaScreenModel(
             val manga = successState?.manga ?: return@launchIO
             setExcludedScanlators.await(manga.id, excludedScanlators)
         }
+    }
+
+    sealed interface UiEffect {
+        data class ShowSnackbar(
+            val message: String,
+            val actionLabel: String? = null,
+            val withDismissAction: Boolean = false,
+            val duration: SnackbarDuration = SnackbarDuration.Short,
+            val onAction: (() -> Unit)? = null,
+        ) : UiEffect
+
+        data class ShowToast(val message: String) : UiEffect
     }
 
     sealed interface State {
@@ -857,7 +882,13 @@ class MangaScreenModel(
             val excludedScanlators: Set<String>,
             val tracking: MangaTrackingUiState = MangaTrackingUiState(),
             val isRefreshingData: Boolean = false,
-            val dialog: Dialog? = null,
+            val libraryDialog: LibraryDialog? = null,
+            val chapterDialog: ChapterDialog? = null,
+            val vaultDialog: VaultDialog? = null,
+            val localDialog: LocalDialog? = null,
+            val migrationDialog: MigrationDialog? = null,
+            val trackingDialog: TrackingDialog? = null,
+            val coverDialog: CoverDialog? = null,
             val localDeletion: MangaLocalDeletionUiState = MangaLocalDeletionUiState(),
             val hasPromptedToAddBefore: Boolean = false,
             val hideMissingChapters: Boolean = false,
@@ -886,7 +917,75 @@ class MangaScreenModel(
 
             val filterActive: Boolean
                 get() = scanlatorFilterActive || manga.chaptersFiltered()
+
+            fun dismissDialogs(): Success {
+                return copy(
+                    libraryDialog = null,
+                    chapterDialog = null,
+                    vaultDialog = null,
+                    localDialog = null,
+                    migrationDialog = null,
+                    trackingDialog = null,
+                    coverDialog = null,
+                )
+            }
+
+            fun withLibraryDialog(dialog: LibraryDialog): Success {
+                return dismissDialogs().copy(libraryDialog = dialog)
+            }
+
+            fun withChapterDialog(dialog: ChapterDialog): Success {
+                return dismissDialogs().copy(chapterDialog = dialog)
+            }
+
+            fun withVaultDialog(dialog: VaultDialog): Success {
+                return dismissDialogs().copy(vaultDialog = dialog)
+            }
+
+            fun withLocalDialog(dialog: LocalDialog): Success {
+                return dismissDialogs().copy(localDialog = dialog)
+            }
+
+            fun withMigrationDialog(dialog: MigrationDialog): Success {
+                return dismissDialogs().copy(migrationDialog = dialog)
+            }
+
+            fun withTrackingDialog(dialog: TrackingDialog): Success {
+                return dismissDialogs().copy(trackingDialog = dialog)
+            }
+
+            fun withCoverDialog(dialog: CoverDialog): Success {
+                return dismissDialogs().copy(coverDialog = dialog)
+            }
         }
+    }
+
+    private fun showLibraryDialog(dialog: LibraryDialog) {
+        updateSuccessState { it.withLibraryDialog(dialog) }
+    }
+
+    private fun showChapterDialog(dialog: ChapterDialog) {
+        updateSuccessState { it.withChapterDialog(dialog) }
+    }
+
+    private fun showVaultDialog(dialog: VaultDialog) {
+        updateSuccessState { it.withVaultDialog(dialog) }
+    }
+
+    private fun showLocalDialog(dialog: LocalDialog) {
+        updateSuccessState { it.withLocalDialog(dialog) }
+    }
+
+    private fun showMigrationDialog(dialog: MigrationDialog) {
+        updateSuccessState { it.withMigrationDialog(dialog) }
+    }
+
+    private fun showTrackingDialog(dialog: TrackingDialog) {
+        updateSuccessState { it.withTrackingDialog(dialog) }
+    }
+
+    private fun showCoverDialog(dialog: CoverDialog) {
+        updateSuccessState { it.withCoverDialog(dialog) }
     }
 }
 
