@@ -48,7 +48,7 @@ internal class MangaLocalVaultImportCoordinator(
     data class Callbacks(
         val getState: () -> MangaScreenModel.State.Success?,
         val setLocalVaultImportState: (LocalVaultImportState) -> Unit,
-        val showDialog: (MangaScreenModel.VaultDialog) -> Unit,
+        val showDialog: (MangaVaultDialog) -> Unit,
         val dismissDialog: () -> Unit,
         val selectedChapters: (List<ChapterList.Item>) -> List<Chapter>,
         val clearSelection: () -> Unit,
@@ -89,7 +89,7 @@ internal class MangaLocalVaultImportCoordinator(
         val localVaultImport = state.localVaultImport ?: return
         val selectedTarget = localVaultImport.pendingTarget ?: localVaultImport.linkedTargetSelection()
         callbacks.showDialog(
-            MangaScreenModel.VaultDialog.LocalVaultTargetSetup(
+            MangaVaultDialog.LocalVaultTargetSetup(
                 initialTitle = when (selectedTarget) {
                     is LocalVaultImportTargetSelection.CreateNew -> selectedTarget.title
                     is LocalVaultImportTargetSelection.Existing ->
@@ -261,7 +261,7 @@ internal class MangaLocalVaultImportCoordinator(
         when {
             state == null || localVaultImport == null || selectedChapters.isEmpty() -> Unit
             duplicateTitles.isNotEmpty() && !replaceConfirmed -> callbacks.showDialog(
-                MangaScreenModel.VaultDialog.LocalVaultReplaceChapters(
+                MangaVaultDialog.LocalVaultReplaceChapters(
                     chapterTitles = duplicateTitles,
                 ),
             )
