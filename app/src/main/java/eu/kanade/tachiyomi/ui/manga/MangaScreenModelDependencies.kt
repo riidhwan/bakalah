@@ -41,9 +41,9 @@ class MangaScreenModelDependencies {
     internal val getAvailableScanlators: GetAvailableScanlators = Injekt.get()
     internal val getExcludedScanlators: GetExcludedScanlators = Injekt.get()
     internal val setExcludedScanlators: SetExcludedScanlators = Injekt.get()
-    internal val updateManga: UpdateManga = Injekt.get()
-    internal val mangaRepository: MangaRepository = Injekt.get()
 
+    private val updateManga: UpdateManga = Injekt.get()
+    private val mangaRepository: MangaRepository = Injekt.get()
     private val downloadManager: DownloadManager = Injekt.get()
     private val downloadCache: DownloadCache = Injekt.get()
     private val getMangaAndChapters: GetMangaWithChapters = Injekt.get()
@@ -118,6 +118,12 @@ class MangaScreenModelDependencies {
             libraryPreferences = libraryPreferences,
             setMangaChapterFlags = setMangaChapterFlags,
             setMangaDefaultChapterFlags = setMangaDefaultChapterFlags,
+        ),
+    )
+    internal val fetchIntervalCoordinator = MangaFetchIntervalCoordinator(
+        MangaFetchIntervalCoordinator.Dependencies(
+            updateManga = updateManga,
+            mangaRepository = mangaRepository,
         ),
     )
     internal val sourceRefreshCoordinator = MangaSourceRefreshCoordinator(

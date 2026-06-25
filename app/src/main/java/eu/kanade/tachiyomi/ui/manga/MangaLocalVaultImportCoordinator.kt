@@ -52,7 +52,7 @@ internal class MangaLocalVaultImportCoordinator(
         val dismissDialog: () -> Unit,
         val selectedChapters: (List<ChapterList.Item>) -> List<Chapter>,
         val clearSelection: () -> Unit,
-        val showUiEffect: (MangaScreenModel.UiEffect) -> Unit,
+        val showUiEffect: (MangaUiEffect) -> Unit,
     )
 
     private var localVaultImportJob: Job? = null
@@ -463,7 +463,7 @@ private fun startAddToVaultJob(
             )
         }
         callbacks.showUiEffect(
-            MangaScreenModel.UiEffect.ShowSnackbar(
+            MangaUiEffect.ShowSnackbar(
                 message = runtime.context.stringResource(
                     if (started) {
                         MR.strings.vault_import_ongoing
