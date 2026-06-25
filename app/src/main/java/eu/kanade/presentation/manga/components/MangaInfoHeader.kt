@@ -91,8 +91,8 @@ import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.ui.manga.LocalVaultImportState
-import eu.kanade.tachiyomi.ui.manga.LocalVaultImportTargetState
+import eu.kanade.tachiyomi.ui.manga.vault.LocalVaultImportState
+import eu.kanade.tachiyomi.ui.manga.vault.LocalVaultImportTargetState
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes

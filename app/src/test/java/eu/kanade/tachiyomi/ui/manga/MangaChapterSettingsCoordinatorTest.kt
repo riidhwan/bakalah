@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.ui.manga
 
+import eu.kanade.tachiyomi.ui.manga.chapter.MangaChapterSettingsCoordinator
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

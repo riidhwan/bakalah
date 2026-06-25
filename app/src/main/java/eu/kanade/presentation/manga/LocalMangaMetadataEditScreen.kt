@@ -36,7 +36,7 @@ import dev.icerock.moko.resources.StringResource
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarTitle
 import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.ui.manga.LocalMangaMetadataEditScreenModel
+import eu.kanade.tachiyomi.ui.manga.local.LocalMangaMetadataEditScreenModel
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource

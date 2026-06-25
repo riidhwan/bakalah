@@ -24,8 +24,8 @@ import eu.kanade.tachiyomi.data.local.LocalSourceChangeNotifier
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import eu.kanade.tachiyomi.source.model.FilterList
-import eu.kanade.tachiyomi.ui.manga.DuplicateMangaGroupTargetItem
-import eu.kanade.tachiyomi.ui.manga.canAddMangaToGroup
+import eu.kanade.tachiyomi.ui.manga.library.DuplicateMangaGroupTargetItem
+import eu.kanade.tachiyomi.ui.manga.library.canAddMangaToGroup
 import eu.kanade.tachiyomi.util.removeCovers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine

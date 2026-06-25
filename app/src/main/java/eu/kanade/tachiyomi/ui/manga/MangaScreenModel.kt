@@ -12,18 +12,48 @@ import eu.kanade.core.preference.asState
 import eu.kanade.domain.manga.model.chaptersFiltered
 import eu.kanade.presentation.manga.DownloadAction
 import eu.kanade.presentation.manga.components.ChapterDownloadAction
-import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.source.Source
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import eu.kanade.tachiyomi.ui.manga.chapter.MangaChapterActionCoordinator
+import eu.kanade.tachiyomi.ui.manga.chapter.MangaChapterActionEffect
+import eu.kanade.tachiyomi.ui.manga.chapter.MangaChapterListProcessor
+import eu.kanade.tachiyomi.ui.manga.chapter.MangaChapterListStateReducer
+import eu.kanade.tachiyomi.ui.manga.chapter.MangaChapterSelectionState
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaChapterDialog
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaCoverDialogState
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaDialogState
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaDialogStateReducer
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaLibraryDialog
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaLocalDialog
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaMigrationDialog
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaTrackingDialog
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaVaultDialog
+import eu.kanade.tachiyomi.ui.manga.effect.MangaSnackbarAction
+import eu.kanade.tachiyomi.ui.manga.effect.MangaUiEffect
+import eu.kanade.tachiyomi.ui.manga.effect.MangaUiEffectFactory
+import eu.kanade.tachiyomi.ui.manga.library.CategorySelection
+import eu.kanade.tachiyomi.ui.manga.library.DuplicateMangaGroupTargetItem
+import eu.kanade.tachiyomi.ui.manga.library.LibraryMangaGroupTab
+import eu.kanade.tachiyomi.ui.manga.library.MangaLibraryWorkflowEffect
+import eu.kanade.tachiyomi.ui.manga.library.selectManga
+import eu.kanade.tachiyomi.ui.manga.local.MangaLocalDeletionOutcome
+import eu.kanade.tachiyomi.ui.manga.model.ChapterList
+import eu.kanade.tachiyomi.ui.manga.model.MangaLocalDeletionUiState
+import eu.kanade.tachiyomi.ui.manga.model.MangaTrackingUiState
+import eu.kanade.tachiyomi.ui.manga.source.MangaLoadSnapshot
+import eu.kanade.tachiyomi.ui.manga.source.MangaSessionCoordinator
+import eu.kanade.tachiyomi.ui.manga.source.MangaSourceRefreshUiCoordinator
+import eu.kanade.tachiyomi.ui.manga.tracking.MangaTrackingObserver
+import eu.kanade.tachiyomi.ui.manga.tracking.MangaTrackingUpdate
+import eu.kanade.tachiyomi.ui.manga.vault.LocalVaultImportState
+import eu.kanade.tachiyomi.ui.manga.vault.LocalVaultImportTargetSelection
+import eu.kanade.tachiyomi.ui.manga.vault.LocalVaultImportTargetState
+import eu.kanade.tachiyomi.ui.manga.vault.MangaLocalVaultImportCoordinator
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import logcat.LogPriority
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.preference.CheckboxState
 import tachiyomi.core.common.preference.TriState
@@ -31,12 +61,10 @@ import tachiyomi.core.common.preference.mapAsCheckboxState
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchNonCancellable
 import tachiyomi.core.common.util.lang.withUIContext
-import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.category.model.Category
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.model.Manga
-import tachiyomi.i18n.MR
 import tachiyomi.source.local.isLocal
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -119,7 +147,6 @@ class MangaScreenModel(
     private val chapterSettingsCoordinator = dependencies.chapterSettingsCoordinator
     private val fetchIntervalCoordinator = dependencies.fetchIntervalCoordinator
     private val downloadCoordinator = dependencies.downloadCoordinator
-    private val sourceRefreshCoordinator = dependencies.sourceRefreshCoordinator
     private val trackingCoordinator = dependencies.trackingCoordinator
     private val trackingObserver = MangaTrackingObserver(trackingCoordinator)
     private val localMangaDeletionCoordinator = dependencies.localMangaDeletionCoordinator
@@ -139,6 +166,19 @@ class MangaScreenModel(
         ),
         skipFiltered = { skipFiltered },
         autoTrackState = { autoTrackState },
+    )
+    private val sourceRefreshUiCoordinator = MangaSourceRefreshUiCoordinator(
+        context = context,
+        runtime = MangaSourceRefreshUiCoordinator.Runtime(
+            screenModelScope = screenModelScope,
+        ),
+        sourceRefreshCoordinator = dependencies.sourceRefreshCoordinator,
+        callbacks = MangaSourceRefreshUiCoordinator.Callbacks(
+            getState = { successState },
+            updateState = { transform -> updateSuccessState(transform) },
+            downloadChapters = chapterActionCoordinator::downloadChapters,
+            showUiEffect = ::emitUiEffect,
+        ),
     )
 
     /**
@@ -236,17 +276,7 @@ class MangaScreenModel(
     }
 
     private suspend fun refreshOnLoad(snapshot: MangaLoadSnapshot) {
-        try {
-            coroutineScope {
-                val fetchFromSourceTasks = listOf(
-                    async { if (snapshot.needRefreshInfo) fetchMangaFromSource() },
-                    async { if (snapshot.needRefreshChapter) fetchChaptersFromSource() },
-                )
-                fetchFromSourceTasks.awaitAll()
-            }
-        } finally {
-            updateSuccessState { it.copy(isRefreshingData = false) }
-        }
+        sourceRefreshUiCoordinator.refreshOnLoad(snapshot)
     }
 
     private fun applyExcludedScanlators(excludedScanlators: Set<String>) {
@@ -262,51 +292,10 @@ class MangaScreenModel(
     }
 
     fun fetchAllFromSource(manualFetch: Boolean = true) {
-        screenModelScope.launch {
-            updateSuccessState { it.copy(isRefreshingData = true) }
-            try {
-                val fetchFromSourceTasks = listOf(
-                    async { fetchMangaFromSource(manualFetch) },
-                    async { fetchChaptersFromSource(manualFetch) },
-                )
-                fetchFromSourceTasks.awaitAll()
-            } finally {
-                updateSuccessState { it.copy(isRefreshingData = false) }
-            }
-        }
+        sourceRefreshUiCoordinator.fetchAllFromSource(manualFetch)
     }
 
     // Manga info - start
-
-    /**
-     * Fetch manga information from source.
-     */
-    private suspend fun fetchMangaFromSource(manualFetch: Boolean = false) {
-        val state = successState ?: return
-        when (
-            val result = sourceRefreshCoordinator.fetchMangaFromSource(
-                manga = state.manga,
-                source = state.source,
-                manualFetch = manualFetch,
-            )
-        ) {
-            MangaSourceRefreshResult.Success,
-            MangaSourceRefreshResult.IgnoredEarlyHints,
-            -> Unit
-            is MangaSourceRefreshResult.Failed -> {
-                showSourceRefreshError(result.error)
-            }
-        }
-    }
-
-    private fun showSourceRefreshError(error: Throwable) {
-        logcat(LogPriority.ERROR, error)
-        showSourceRefreshMessage(with(context) { error.formattedMessage })
-    }
-
-    private fun showSourceRefreshMessage(message: String) {
-        emitUiEffect(uiEffectFactory.snackbar(message))
-    }
 
     fun toggleFavorite() {
         toggleFavorite(
@@ -573,34 +562,6 @@ class MangaScreenModel(
             isSelected = chapterSelection::contains,
             duplicateSelectionIds = duplicateSelectionIds,
         )
-    }
-
-    /**
-     * Requests an updated list of chapters from the source.
-     */
-    private suspend fun fetchChaptersFromSource(manualFetch: Boolean = false) {
-        val state = successState ?: return
-        when (
-            val result = sourceRefreshCoordinator.fetchChaptersFromSource(
-                manga = state.manga,
-                source = state.source,
-                manualFetch = manualFetch,
-            )
-        ) {
-            is ChapterSourceRefreshResult.Success -> {
-                if (result.chaptersToDownload.isNotEmpty()) {
-                    chapterActionCoordinator.downloadChapters(result.chaptersToDownload)
-                }
-            }
-            is ChapterSourceRefreshResult.NoChapters -> {
-                showSourceRefreshMessage(context.stringResource(MR.strings.no_chapters_error))
-                updateSuccessState { it.copy(manga = result.latestManga, isRefreshingData = false) }
-            }
-            is ChapterSourceRefreshResult.Failed -> {
-                showSourceRefreshError(result.error)
-                updateSuccessState { it.copy(manga = result.latestManga, isRefreshingData = false) }
-            }
-        }
     }
 
     /**
@@ -898,37 +859,5 @@ class MangaScreenModel(
 
     private fun showCoverDialog(dialog: MangaCoverDialogState) {
         updateSuccessState { dialogStateReducer.showCover(it, dialog) }
-    }
-}
-
-@Immutable
-data class MangaTrackingUiState(
-    val count: Int = 0,
-    val hasLoggedInTrackers: Boolean = false,
-)
-
-@Immutable
-data class MangaLocalDeletionUiState(
-    val isDeleting: Boolean = false,
-)
-
-@Immutable
-sealed class ChapterList {
-    @Immutable
-    data class MissingCount(
-        val id: String,
-        val count: Int,
-    ) : ChapterList()
-
-    @Immutable
-    data class Item(
-        val chapter: Chapter,
-        val downloadState: Download.State,
-        val downloadProgress: Int,
-        val selected: Boolean = false,
-        val importDuplicate: Boolean = false,
-    ) : ChapterList() {
-        val id = chapter.id
-        val isDownloaded = downloadState == Download.State.DOWNLOADED
     }
 }

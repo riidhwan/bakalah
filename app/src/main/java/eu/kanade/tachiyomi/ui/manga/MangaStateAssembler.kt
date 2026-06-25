@@ -1,6 +1,10 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaDialogState
+import eu.kanade.tachiyomi.ui.manga.library.LibraryMangaGroupTab
+import eu.kanade.tachiyomi.ui.manga.model.ChapterList
+import eu.kanade.tachiyomi.ui.manga.model.MangaTrackingUiState
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.source.local.LocalSource
