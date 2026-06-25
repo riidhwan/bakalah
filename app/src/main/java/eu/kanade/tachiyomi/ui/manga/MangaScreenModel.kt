@@ -1,7 +1,6 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import android.content.Context
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.util.fastAny
@@ -16,15 +15,12 @@ import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.source.Source
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -55,14 +51,13 @@ class MangaScreenModel(
     private val trackPreferences = dependencies.trackPreferences
     private val readerPreferences = dependencies.readerPreferences
     private val setExcludedScanlators = dependencies.setExcludedScanlators
-    private val updateManga = dependencies.updateManga
-    private val mangaRepository = dependencies.mangaRepository
 
     private val successState: State.Success?
         get() = state.value as? State.Success
 
-    private val _uiEffects = MutableSharedFlow<UiEffect>()
-    val uiEffects = _uiEffects.asSharedFlow()
+    private val uiEffectEvents = MutableSharedFlow<MangaUiEffect>()
+    internal val uiEffects = uiEffectEvents.asSharedFlow()
+    private val uiEffectFactory = MangaUiEffectFactory(context)
 
     val manga: Manga?
         get() = successState?.manga
@@ -71,7 +66,7 @@ class MangaScreenModel(
         get() = successState?.source
 
     fun showSnackbar(message: String) {
-        emitUiEffect(UiEffect.ShowSnackbar(message = message))
+        emitUiEffect(uiEffectFactory.snackbar(message))
     }
 
     private val isFavorited: Boolean
@@ -93,8 +88,8 @@ class MangaScreenModel(
         LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in libraryPreferences.autoUpdateMangaRestrictions.get()
 
     private val chapterSelection = MangaChapterSelectionState()
+    private val chapterListStateReducer = MangaChapterListStateReducer(chapterSelection)
     private val activeMangaId = MutableStateFlow(mangaId)
-    private var trackerJob: Job? = null
 
     @Volatile
     private var isDeletingLocalManga = false
@@ -122,10 +117,13 @@ class MangaScreenModel(
     private val libraryWorkflowCoordinator = dependencies.libraryWorkflowCoordinator
     private val sessionCoordinator = dependencies.sessionCoordinator
     private val chapterSettingsCoordinator = dependencies.chapterSettingsCoordinator
+    private val fetchIntervalCoordinator = dependencies.fetchIntervalCoordinator
     private val downloadCoordinator = dependencies.downloadCoordinator
     private val sourceRefreshCoordinator = dependencies.sourceRefreshCoordinator
     private val trackingCoordinator = dependencies.trackingCoordinator
+    private val trackingObserver = MangaTrackingObserver(trackingCoordinator)
     private val localMangaDeletionCoordinator = dependencies.localMangaDeletionCoordinator
+    private val dialogStateReducer = MangaDialogStateReducer()
     private val chapterActionCoordinator = dependencies.chapterActionCoordinator(
         runtime = MangaChapterActionCoordinator.Runtime(
             screenModelScope = screenModelScope,
@@ -155,66 +153,41 @@ class MangaScreenModel(
         }
     }
 
-    private fun emitUiEffect(effect: UiEffect) {
+    private fun emitUiEffect(effect: MangaUiEffect) {
         screenModelScope.launch {
-            _uiEffects.emit(effect)
+            uiEffectEvents.emit(effect)
         }
     }
 
     private suspend fun applyChapterActionEffect(effect: MangaChapterActionEffect) {
         when (effect) {
             MangaChapterActionEffect.PromptAddToLibrary -> {
-                emitUiEffect(
-                    UiEffect.ShowSnackbar(
-                        message = context.stringResource(MR.strings.snack_add_to_library),
-                        actionLabel = context.stringResource(MR.strings.action_add),
-                        withDismissAction = true,
-                        onAction = {
-                            if (successState?.manga?.favorite != true) {
-                                toggleFavorite()
-                            }
-                        },
-                    ),
-                )
+                emitUiEffect(uiEffectFactory.addToLibraryPrompt())
             }
             is MangaChapterActionEffect.ShowTrackerRefreshFailure -> {
-                emitUiEffect(
-                    UiEffect.ShowToast(
-                        context.stringResource(
-                            MR.strings.track_error,
-                            effect.failure.trackerName,
-                            effect.failure.error.message ?: "",
-                        ),
-                    ),
-                )
+                emitUiEffect(uiEffectFactory.trackerRefreshFailure(effect.failure))
             }
             is MangaChapterActionEffect.ShowTrackerUpdated -> {
-                emitUiEffect(
-                    UiEffect.ShowToast(
-                        context.stringResource(
-                            MR.strings.trackers_updated_summary,
-                            effect.chapterNumber,
-                        ),
-                    ),
-                )
+                emitUiEffect(uiEffectFactory.trackerUpdated(effect.chapterNumber))
             }
             is MangaChapterActionEffect.ConfirmTrackerUpdate -> {
-                emitUiEffect(
-                    UiEffect.ShowSnackbar(
-                        message = context.stringResource(
-                            MR.strings.confirm_tracker_update,
-                            effect.update.chapterNumber.toInt(),
-                        ),
-                        actionLabel = context.stringResource(MR.strings.action_ok),
-                        duration = SnackbarDuration.Short,
-                        withDismissAction = true,
-                        onAction = {
-                            screenModelScope.launchIO {
-                                trackingCoordinator.trackChapter(context, effect.update)
-                            }
-                        },
-                    ),
-                )
+                emitUiEffect(uiEffectFactory.confirmTrackerUpdate(effect.update))
+            }
+        }
+    }
+
+    internal fun onSnackbarAction(action: MangaSnackbarAction) {
+        when (action) {
+            MangaSnackbarAction.AddToLibrary -> {
+                if (successState?.manga?.favorite != true) {
+                    toggleFavorite()
+                }
+            }
+            MangaSnackbarAction.DeleteDownloads -> deleteDownloads()
+            is MangaSnackbarAction.ConfirmTrackerUpdate -> {
+                screenModelScope.launchIO {
+                    trackingCoordinator.trackChapter(context, action.update)
+                }
             }
         }
     }
@@ -258,7 +231,7 @@ class MangaScreenModel(
 
         if (snapshot.isMangaSwitch) {
             localVaultImportCoordinator.restartObservation(snapshot.manga, snapshot.source)
-            observeTrackers(snapshot.manga.id, snapshot.source)
+            observeTrackers(snapshot.manga, snapshot.source)
         }
     }
 
@@ -332,21 +305,14 @@ class MangaScreenModel(
     }
 
     private fun showSourceRefreshMessage(message: String) {
-        emitUiEffect(UiEffect.ShowSnackbar(message = message))
+        emitUiEffect(uiEffectFactory.snackbar(message))
     }
 
     fun toggleFavorite() {
         toggleFavorite(
             onRemoved = {
                 if (hasDownloads()) {
-                    emitUiEffect(
-                        UiEffect.ShowSnackbar(
-                            message = context.stringResource(MR.strings.delete_downloads_for_manga),
-                            actionLabel = context.stringResource(MR.strings.action_delete),
-                            withDismissAction = true,
-                            onAction = ::deleteDownloads,
-                        ),
-                    )
+                    emitUiEffect(uiEffectFactory.deleteDownloadsPrompt())
                 }
             },
         )
@@ -458,7 +424,8 @@ class MangaScreenModel(
                 currentTabs = state.libraryMangaGroupTabs,
             )
             updateSuccessState {
-                it.withLibraryDialog(
+                dialogStateReducer.showLibrary(
+                    it,
                     MangaLibraryDialog.LibraryMangaGroupSetup(
                         groupId = setup.groupId,
                         initialTitle = setup.initialTitle,
@@ -478,7 +445,7 @@ class MangaScreenModel(
                 groupId = groupId,
                 selectedMangaIds = selectedMangaIds,
             ) ?: return@launchIO
-            updateSuccessState { it.dismissDialogs().copy(libraryMangaGroupTabs = tabs) }
+            updateSuccessState { dialogStateReducer.dismiss(it).copy(libraryMangaGroupTabs = tabs) }
         }
     }
 
@@ -492,13 +459,7 @@ class MangaScreenModel(
 
     fun setFetchInterval(manga: Manga, interval: Int) {
         screenModelScope.launchIO {
-            if (
-                updateManga.awaitUpdateFetchInterval(
-                    // Custom intervals are negative
-                    manga.copy(fetchInterval = -interval),
-                )
-            ) {
-                val updatedManga = mangaRepository.getMangaById(manga.id)
+            fetchIntervalCoordinator.setFetchInterval(manga, interval)?.let { updatedManga ->
                 updateSuccessState { it.copy(manga = updatedManga) }
             }
         }
@@ -550,14 +511,7 @@ class MangaScreenModel(
     // Local-to-Vault Import - start
 
     private fun updateLocalVaultImportState(localVaultImport: LocalVaultImportState) {
-        updateSuccessState { state ->
-            state.copy(
-                chapters = state.chapters.map {
-                    it.copy(importDuplicate = it.chapter.url in localVaultImport.duplicateChapterSelectionIds)
-                },
-                localVaultImport = localVaultImport,
-            )
-        }
+        updateSuccessState { chapterListStateReducer.applyLocalVaultImportState(it, localVaultImport) }
     }
 
     fun showLocalVaultTargetSetup(pendingAddToVault: Boolean) {
@@ -754,7 +708,7 @@ class MangaScreenModel(
         val manga = successState?.manga ?: return
         screenModelScope.launchNonCancellable {
             chapterSettingsCoordinator.setCurrentSettingsAsDefault(manga, applyToExisting)
-            emitUiEffect(UiEffect.ShowSnackbar(context.stringResource(MR.strings.chapter_settings_updated)))
+            emitUiEffect(uiEffectFactory.chapterSettingsUpdated())
         }
     }
 
@@ -770,58 +724,46 @@ class MangaScreenModel(
         selected: Boolean,
         fromLongPress: Boolean = false,
     ) {
-        updateSuccessState { successState ->
-            val newChapters = chapterSelection.toggle(
-                chapters = successState.processedChapters,
+        updateSuccessState {
+            chapterListStateReducer.toggleSelection(
+                state = it,
                 item = item,
                 selected = selected,
                 fromLongPress = fromLongPress,
             )
-            successState.copy(chapters = newChapters)
         }
     }
 
     fun toggleAllSelection(selected: Boolean) {
-        updateSuccessState { successState ->
-            val newChapters = chapterSelection.toggleAll(successState.chapters, selected)
-            successState.copy(chapters = newChapters)
-        }
+        updateSuccessState { chapterListStateReducer.toggleAllSelection(it, selected) }
     }
 
     fun invertSelection() {
-        updateSuccessState { successState ->
-            val newChapters = chapterSelection.invert(successState.chapters)
-            successState.copy(chapters = newChapters)
-        }
+        updateSuccessState(chapterListStateReducer::invertSelection)
     }
 
     // Chapters list - end
 
     // Track sheet - start
 
-    private fun observeTrackers(mangaId: Long, source: Source) {
-        trackerJob?.cancel()
-        trackerJob = screenModelScope.launchIO {
-            trackingCoordinator.observeTrackingState(mangaId, source)
-                .flowWithLifecycle(lifecycle)
-                .distinctUntilChanged()
-                .collectLatest { trackingState ->
-                    updateSuccessState {
-                        it.copy(
-                            tracking = MangaTrackingUiState(
-                                count = trackingState.trackingCount,
-                                hasLoggedInTrackers = trackingState.hasLoggedInTrackers,
-                            ),
-                        )
-                    }
-                }
-        }
+    private fun observeTrackers(manga: Manga, source: Source) {
+        trackingObserver.restart(
+            screenModelScope = screenModelScope,
+            lifecycle = lifecycle,
+            mangaId = manga.id,
+            source = source,
+            onTrackingUiState = ::updateTrackingState,
+        )
+    }
+
+    private fun updateTrackingState(tracking: MangaTrackingUiState) {
+        updateSuccessState { it.copy(tracking = tracking) }
     }
 
     // Track sheet - end
 
     fun dismissDialog() {
-        updateSuccessState { it.dismissDialogs() }
+        updateSuccessState(dialogStateReducer::dismiss)
     }
 
     fun showDeleteChapterDialog(chapters: List<Chapter>) {
@@ -843,13 +785,13 @@ class MangaScreenModel(
                 when (val result = localMangaDeletionCoordinator.delete(manga)) {
                     MangaLocalDeletionOutcome.Deleted -> {
                         onDeleted()
-                        emitUiEffect(UiEffect.ShowToast(context.stringResource(MR.strings.local_manga_delete_complete)))
+                        emitUiEffect(uiEffectFactory.localMangaDeleteComplete())
                         return@launch
                     }
                     is MangaLocalDeletionOutcome.Failed -> {
                         isDeletingLocalManga = false
                         updateSuccessState { it.copy(localDeletion = MangaLocalDeletionUiState(isDeleting = false)) }
-                        emitUiEffect(UiEffect.ShowSnackbar(context.stringResource(result.message)))
+                        emitUiEffect(uiEffectFactory.snackbar(context.stringResource(result.message)))
                     }
                 }
             } catch (e: CancellationException) {
@@ -882,18 +824,6 @@ class MangaScreenModel(
             val manga = successState?.manga ?: return@launchIO
             setExcludedScanlators.await(manga.id, excludedScanlators)
         }
-    }
-
-    sealed interface UiEffect {
-        data class ShowSnackbar(
-            val message: String,
-            val actionLabel: String? = null,
-            val withDismissAction: Boolean = false,
-            val duration: SnackbarDuration = SnackbarDuration.Short,
-            val onAction: (() -> Unit)? = null,
-        ) : UiEffect
-
-        data class ShowToast(val message: String) : UiEffect
     }
 
     sealed interface State {
@@ -939,67 +869,35 @@ class MangaScreenModel(
 
             val filterActive: Boolean
                 get() = scanlatorFilterActive || manga.chaptersFiltered()
-
-            fun dismissDialogs(): Success {
-                return copy(dialogs = dialogs.dismissed())
-            }
-
-            fun withLibraryDialog(dialog: MangaLibraryDialog): Success {
-                return copy(dialogs = dialogs.withLibrary(dialog))
-            }
-
-            fun withChapterDialog(dialog: MangaChapterDialog): Success {
-                return copy(dialogs = dialogs.withChapter(dialog))
-            }
-
-            fun withVaultDialog(dialog: MangaVaultDialog): Success {
-                return copy(dialogs = dialogs.withVault(dialog))
-            }
-
-            fun withLocalDialog(dialog: MangaLocalDialog): Success {
-                return copy(dialogs = dialogs.withLocal(dialog))
-            }
-
-            fun withMigrationDialog(dialog: MangaMigrationDialog): Success {
-                return copy(dialogs = dialogs.withMigration(dialog))
-            }
-
-            fun withTrackingDialog(dialog: MangaTrackingDialog): Success {
-                return copy(dialogs = dialogs.withTracking(dialog))
-            }
-
-            fun withCoverDialog(dialog: MangaCoverDialogState): Success {
-                return copy(dialogs = dialogs.withCover(dialog))
-            }
         }
     }
 
     private fun showLibraryDialog(dialog: MangaLibraryDialog) {
-        updateSuccessState { it.withLibraryDialog(dialog) }
+        updateSuccessState { dialogStateReducer.showLibrary(it, dialog) }
     }
 
     private fun showChapterDialog(dialog: MangaChapterDialog) {
-        updateSuccessState { it.withChapterDialog(dialog) }
+        updateSuccessState { dialogStateReducer.showChapter(it, dialog) }
     }
 
     private fun showVaultDialog(dialog: MangaVaultDialog) {
-        updateSuccessState { it.withVaultDialog(dialog) }
+        updateSuccessState { dialogStateReducer.showVault(it, dialog) }
     }
 
     private fun showLocalDialog(dialog: MangaLocalDialog) {
-        updateSuccessState { it.withLocalDialog(dialog) }
+        updateSuccessState { dialogStateReducer.showLocal(it, dialog) }
     }
 
     private fun showMigrationDialog(dialog: MangaMigrationDialog) {
-        updateSuccessState { it.withMigrationDialog(dialog) }
+        updateSuccessState { dialogStateReducer.showMigration(it, dialog) }
     }
 
     private fun showTrackingDialog(dialog: MangaTrackingDialog) {
-        updateSuccessState { it.withTrackingDialog(dialog) }
+        updateSuccessState { dialogStateReducer.showTracking(it, dialog) }
     }
 
     private fun showCoverDialog(dialog: MangaCoverDialogState) {
-        updateSuccessState { it.withCoverDialog(dialog) }
+        updateSuccessState { dialogStateReducer.showCover(it, dialog) }
     }
 }
 

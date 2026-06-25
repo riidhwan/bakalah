@@ -105,7 +105,7 @@ class MangaScreen(
         LaunchedEffect(screenModel, snackbarHostState) {
             screenModel.uiEffects.collect { effect ->
                 when (effect) {
-                    is MangaScreenModel.UiEffect.ShowSnackbar -> {
+                    is MangaUiEffect.ShowSnackbar -> {
                         val result = snackbarHostState.showSnackbar(
                             message = effect.message,
                             actionLabel = effect.actionLabel,
@@ -113,10 +113,10 @@ class MangaScreen(
                             duration = effect.duration,
                         )
                         if (result == SnackbarResult.ActionPerformed) {
-                            effect.onAction?.invoke()
+                            effect.action?.let(screenModel::onSnackbarAction)
                         }
                     }
-                    is MangaScreenModel.UiEffect.ShowToast -> {
+                    is MangaUiEffect.ShowToast -> {
                         context.toast(effect.message)
                     }
                 }
