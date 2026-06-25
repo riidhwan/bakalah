@@ -81,7 +81,6 @@ import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
 import tachiyomi.i18n.MR
-import tachiyomi.source.local.LocalSource
 import tachiyomi.source.local.io.LocalSourceFileSystem
 import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
@@ -170,6 +169,11 @@ class MangaScreenModel(
     @Volatile
     private var isDeletingLocalManga = false
 
+    private val mangaStateAssembler = MangaStateAssembler(
+        libraryPreferences = libraryPreferences,
+        localSourceFileSystem = localSourceFileSystem,
+    )
+
     private val localVaultImportCoordinator = MangaLocalVaultImportCoordinator(
         runtime = MangaLocalVaultImportCoordinator.Runtime(
             context = context,
@@ -200,6 +204,13 @@ class MangaScreenModel(
             getCategories = getCategories,
             updateManga = updateManga,
             setMangaCategories = setMangaCategories,
+            manageLibraryMangaGroup = manageLibraryMangaGroup,
+            libraryMangaGroupStateBuilder = libraryMangaGroupStateBuilder,
+        ),
+    )
+
+    private val libraryGroupCoordinator = MangaLibraryGroupCoordinator(
+        MangaLibraryGroupCoordinator.Dependencies(
             manageLibraryMangaGroup = manageLibraryMangaGroup,
             libraryMangaGroupStateBuilder = libraryMangaGroupStateBuilder,
         ),
@@ -264,36 +275,17 @@ class MangaScreenModel(
                     val needRefreshInfo = !manga.initialized
                     val needRefreshChapter = chapterItems.isEmpty()
                     val source = sourceManager.getOrStub(manga.source)
-                    val libraryMangaGroupTabs = getLibraryMangaGroupTabs(manga.id)
+                    val libraryMangaGroupTabs = libraryGroupCoordinator.tabs(manga.id)
 
                     mutableState.update { previousState ->
-                        val previousSuccessState = previousState as? State.Success
-                        State.Success(
+                        mangaStateAssembler.successState(
+                            previousState = previousState,
                             manga = manga,
                             source = source,
                             isFromSource = isFromSource,
                             chapters = chapterItems,
-                            availableScanlators = previousSuccessState
-                                ?.takeUnless { isMangaSwitch }
-                                ?.availableScanlators
-                                ?: emptySet(),
-                            excludedScanlators = previousSuccessState
-                                ?.takeUnless { isMangaSwitch }
-                                ?.excludedScanlators
-                                ?: emptySet(),
                             isRefreshingData = needRefreshInfo || needRefreshChapter,
-                            dialog = previousSuccessState?.dialog,
-                            hasPromptedToAddBefore = previousSuccessState?.hasPromptedToAddBefore ?: false,
-                            trackingCount = if (isMangaSwitch) 0 else previousSuccessState?.trackingCount ?: 0,
-                            hasLoggedInTrackers = if (isMangaSwitch) {
-                                false
-                            } else {
-                                previousSuccessState?.hasLoggedInTrackers ?: false
-                            },
-                            hideMissingChapters = libraryPreferences.hideMissingChapters.get(),
-                            canEditLocalMetadata = source is LocalSource &&
-                                localSourceFileSystem.getMangaDirectory(manga.url) != null,
-                            localVaultImport = if (isMangaSwitch) null else previousSuccessState?.localVaultImport,
+                            isMangaSwitch = isMangaSwitch,
                             libraryMangaGroupTabs = libraryMangaGroupTabs,
                         )
                     }
@@ -537,24 +529,16 @@ class MangaScreenModel(
         if (state.manga.isLocal() || !state.manga.favorite) return
 
         screenModelScope.launchIO {
-            val groupId = state.libraryMangaGroupTabs.firstOrNull()?.let {
-                manageLibraryMangaGroup.getGroupForManga(state.manga.id)?.id
-            }
-            val candidates = manageLibraryMangaGroup
-                .getCandidates(anchorMangaId = state.manga.id, groupId = groupId)
-                .let { candidates ->
-                    libraryMangaGroupStateBuilder.candidates(
-                        candidates = candidates,
-                        excludedMangaId = state.manga.id,
-                    )
-                }
-
+            val setup = libraryGroupCoordinator.setup(
+                manga = state.manga,
+                currentTabs = state.libraryMangaGroupTabs,
+            )
             updateSuccessState {
                 it.copy(
                     dialog = Dialog.LibraryMangaGroupSetup(
-                        groupId = groupId,
-                        initialTitle = state.manga.title,
-                        candidates = candidates,
+                        groupId = setup.groupId,
+                        initialTitle = setup.initialTitle,
+                        candidates = setup.candidates,
                     ),
                 )
             }
@@ -563,24 +547,13 @@ class MangaScreenModel(
 
     fun confirmLibraryMangaGroupSources(groupId: Long?, selectedMangaIds: List<Long>) {
         val manga = successState?.manga ?: return
-        val memberMangaIds = selectedMangaIds
-            .filterNot { it == manga.id }
-            .distinct()
-        if (memberMangaIds.isEmpty()) return
 
         screenModelScope.launchIO {
-            if (groupId == null) {
-                manageLibraryMangaGroup.createGroup(
-                    primaryMangaId = manga.id,
-                    memberMangaIds = memberMangaIds,
-                )
-            } else {
-                manageLibraryMangaGroup.addSources(
-                    groupId = groupId,
-                    memberMangaIds = memberMangaIds,
-                )
-            }
-            val tabs = getLibraryMangaGroupTabs(manga.id)
+            val tabs = libraryGroupCoordinator.addSources(
+                manga = manga,
+                groupId = groupId,
+                selectedMangaIds = selectedMangaIds,
+            ) ?: return@launchIO
             updateSuccessState { it.copy(dialog = null, libraryMangaGroupTabs = tabs) }
         }
     }
@@ -588,9 +561,7 @@ class MangaScreenModel(
     fun setCurrentSourceAsPrimary() {
         val manga = successState?.manga ?: return
         screenModelScope.launchIO {
-            val group = manageLibraryMangaGroup.getGroupForManga(manga.id) ?: return@launchIO
-            manageLibraryMangaGroup.setPrimary(group.id, manga.id)
-            val tabs = getLibraryMangaGroupTabs(manga.id)
+            val tabs = libraryGroupCoordinator.setPrimary(manga) ?: return@launchIO
             updateSuccessState { it.copy(libraryMangaGroupTabs = tabs) }
         }
     }
@@ -625,11 +596,6 @@ class MangaScreenModel(
         downloadManager.deleteManga(state.manga, state.source)
     }
 
-    private suspend fun getLibraryMangaGroupTabs(selectedMangaId: Long): List<LibraryMangaGroupTab> {
-        val group = manageLibraryMangaGroup.getGroupForManga(selectedMangaId)
-        return libraryMangaGroupStateBuilder.tabs(group = group, selectedMangaId = selectedMangaId)
-    }
-
     fun selectLibraryMangaGroupTab(mangaId: Long) {
         if (activeMangaId.value == mangaId) return
         updateSuccessState { state ->
@@ -655,7 +621,7 @@ class MangaScreenModel(
     private suspend fun addMangaToSelectedGroup(manga: Manga, pendingAddToGroup: PendingAddToGroup) {
         if (!libraryActionCoordinator.addMangaToSelectedGroup(manga, pendingAddToGroup)) return
 
-        val tabs = getLibraryMangaGroupTabs(manga.id)
+        val tabs = libraryGroupCoordinator.tabs(manga.id)
         updateSuccessState { it.copy(dialog = null, libraryMangaGroupTabs = tabs) }
     }
 
