@@ -52,6 +52,16 @@ import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreen
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.home.HomeScreen
+import eu.kanade.tachiyomi.ui.manga.cover.MangaCoverScreenModel
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaChapterDialog
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaCoverDialogState
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaLibraryDialog
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaLocalDialog
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaMigrationDialog
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaTrackingDialog
+import eu.kanade.tachiyomi.ui.manga.dialog.MangaVaultDialog
+import eu.kanade.tachiyomi.ui.manga.effect.MangaUiEffect
+import eu.kanade.tachiyomi.ui.manga.local.LocalMangaMetadataEditScreen
 import eu.kanade.tachiyomi.ui.manga.notes.MangaNotesScreen
 import eu.kanade.tachiyomi.ui.manga.track.TrackInfoDialogHomeScreen
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity

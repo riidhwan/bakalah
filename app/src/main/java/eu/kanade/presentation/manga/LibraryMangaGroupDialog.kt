@@ -26,7 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import eu.kanade.tachiyomi.ui.manga.LibraryMangaGroupCandidateItem
+import eu.kanade.tachiyomi.ui.manga.library.LibraryMangaGroupCandidateItem
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 

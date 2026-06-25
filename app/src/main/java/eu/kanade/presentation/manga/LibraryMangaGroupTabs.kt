@@ -6,7 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import eu.kanade.tachiyomi.ui.manga.LibraryMangaGroupTab
+import eu.kanade.tachiyomi.ui.manga.library.LibraryMangaGroupTab
 
 @Composable
 fun LibraryMangaGroupTabs(

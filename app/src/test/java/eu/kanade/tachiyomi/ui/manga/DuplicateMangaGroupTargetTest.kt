@@ -1,5 +1,10 @@
 package eu.kanade.tachiyomi.ui.manga
 
+import eu.kanade.tachiyomi.ui.manga.library.DuplicateMangaGroupTargetItem
+import eu.kanade.tachiyomi.ui.manga.library.LibraryMangaGroupStateBuilder
+import eu.kanade.tachiyomi.ui.manga.library.LibraryMangaGroupTab
+import eu.kanade.tachiyomi.ui.manga.library.canAddMangaToGroup
+import eu.kanade.tachiyomi.ui.manga.library.initialDuplicateMangaGroupTargetSelection
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test

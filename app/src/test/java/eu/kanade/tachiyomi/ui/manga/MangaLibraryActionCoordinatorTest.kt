@@ -1,6 +1,9 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import eu.kanade.domain.manga.interactor.UpdateManga
+import eu.kanade.tachiyomi.ui.manga.library.AddToLibraryResult
+import eu.kanade.tachiyomi.ui.manga.library.LibraryMangaGroupStateBuilder
+import eu.kanade.tachiyomi.ui.manga.library.MangaLibraryActionCoordinator
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf

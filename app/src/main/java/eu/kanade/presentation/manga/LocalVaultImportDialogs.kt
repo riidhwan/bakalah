@@ -26,7 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import eu.kanade.tachiyomi.ui.manga.LocalVaultImportTargetSelection
+import eu.kanade.tachiyomi.ui.manga.vault.LocalVaultImportTargetSelection
 import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultMetadata
 import tachiyomi.i18n.MR
