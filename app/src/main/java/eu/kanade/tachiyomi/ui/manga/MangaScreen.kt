@@ -237,9 +237,9 @@ class MangaScreen(
         var showScanlatorsDialog by remember { mutableStateOf(false) }
 
         val onDismissRequest = { screenModel.dismissDialog() }
-        successState.libraryDialog?.let { dialog ->
+        successState.dialogs.library?.let { dialog ->
             when (dialog) {
-                is MangaScreenModel.LibraryDialog.ChangeCategory -> {
+                is MangaLibraryDialog.ChangeCategory -> {
                     ChangeCategoryDialog(
                         initialSelection = dialog.initialSelection,
                         onDismissRequest = onDismissRequest,
@@ -249,7 +249,7 @@ class MangaScreen(
                         },
                     )
                 }
-                is MangaScreenModel.LibraryDialog.DuplicateManga -> {
+                is MangaLibraryDialog.DuplicateManga -> {
                     DuplicateMangaDialog(
                         duplicates = dialog.duplicates,
                         onDismissRequest = onDismissRequest,
@@ -261,7 +261,7 @@ class MangaScreen(
                         onAddToGroup = screenModel::addDuplicateMangaToGroup,
                     )
                 }
-                is MangaScreenModel.LibraryDialog.LibraryMangaGroupSetup -> {
+                is MangaLibraryDialog.LibraryMangaGroupSetup -> {
                     LibraryMangaGroupDialog(
                         initialTitle = dialog.initialTitle,
                         candidates = dialog.candidates,
@@ -271,7 +271,7 @@ class MangaScreen(
                         onDismissRequest = onDismissRequest,
                     )
                 }
-                is MangaScreenModel.LibraryDialog.SetFetchInterval -> {
+                is MangaLibraryDialog.SetFetchInterval -> {
                     SetIntervalDialog(
                         interval = dialog.manga.fetchInterval,
                         nextUpdate = dialog.manga.expectedNextUpdate,
@@ -283,9 +283,9 @@ class MangaScreen(
             }
         }
 
-        successState.chapterDialog?.let { dialog ->
+        successState.dialogs.chapter?.let { dialog ->
             when (dialog) {
-                is MangaScreenModel.ChapterDialog.DeleteChapters -> {
+                is MangaChapterDialog.DeleteChapters -> {
                     DeleteChaptersDialog(
                         onDismissRequest = onDismissRequest,
                         onConfirm = {
@@ -294,7 +294,7 @@ class MangaScreen(
                         },
                     )
                 }
-                MangaScreenModel.ChapterDialog.SettingsSheet -> ChapterSettingsDialog(
+                MangaChapterDialog.SettingsSheet -> ChapterSettingsDialog(
                     onDismissRequest = onDismissRequest,
                     manga = successState.manga,
                     onDownloadFilterChanged = screenModel::setDownloadedFilter,
@@ -310,9 +310,9 @@ class MangaScreen(
             }
         }
 
-        successState.vaultDialog?.let { dialog ->
+        successState.dialogs.vault?.let { dialog ->
             when (dialog) {
-                is MangaScreenModel.VaultDialog.LocalVaultTargetSetup -> {
+                is MangaVaultDialog.LocalVaultTargetSetup -> {
                     LocalVaultTargetSetupDialog(
                         initialTitle = dialog.initialTitle,
                         targets = dialog.targets,
@@ -324,7 +324,7 @@ class MangaScreen(
                         onDismissRequest = onDismissRequest,
                     )
                 }
-                is MangaScreenModel.VaultDialog.LocalVaultReplaceChapters -> {
+                is MangaVaultDialog.LocalVaultReplaceChapters -> {
                     VaultChapterReplacementDialog(
                         chapterTitles = dialog.chapterTitles,
                         onConfirm = screenModel::confirmLocalVaultReplacement,
@@ -334,9 +334,9 @@ class MangaScreen(
             }
         }
 
-        successState.localDialog?.let { dialog ->
+        successState.dialogs.local?.let { dialog ->
             when (dialog) {
-                is MangaScreenModel.LocalDialog.DeleteLocalManga -> {
+                is MangaLocalDialog.DeleteLocalManga -> {
                     DeleteLocalMangaDialog(
                         title = dialog.manga.title,
                         isDeleting = successState.localDeletion.isDeleting,
@@ -347,9 +347,9 @@ class MangaScreen(
             }
         }
 
-        successState.migrationDialog?.let { dialog ->
+        successState.dialogs.migration?.let { dialog ->
             when (dialog) {
-                is MangaScreenModel.MigrationDialog.Migrate -> {
+                is MangaMigrationDialog.Migrate -> {
                     MigrateMangaDialog(
                         current = dialog.current,
                         target = dialog.target,
@@ -361,9 +361,9 @@ class MangaScreen(
             }
         }
 
-        successState.trackingDialog?.let { dialog ->
+        successState.dialogs.tracking?.let { dialog ->
             when (dialog) {
-                MangaScreenModel.TrackingDialog.TrackSheet -> {
+                MangaTrackingDialog.TrackSheet -> {
                     NavigatorAdaptiveSheet(
                         screen = TrackInfoDialogHomeScreen(
                             mangaId = successState.manga.id,
@@ -377,9 +377,9 @@ class MangaScreen(
             }
         }
 
-        successState.coverDialog?.let { dialog ->
+        successState.dialogs.cover?.let { dialog ->
             when (dialog) {
-                MangaScreenModel.CoverDialog.FullCover -> {
+                MangaCoverDialogState.FullCover -> {
                     val sm = rememberScreenModel { MangaCoverScreenModel(successState.manga.id) }
                     val manga by sm.state.collectAsState()
                     if (manga != null) {
