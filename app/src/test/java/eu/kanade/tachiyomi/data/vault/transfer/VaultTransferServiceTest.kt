@@ -24,6 +24,7 @@ import tachiyomi.domain.vault.model.VaultTransferJob
 import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.model.VaultTransferType
 import tachiyomi.domain.vault.repository.VaultRepository
+import java.io.InputStream
 
 class VaultTransferServiceTest {
 
@@ -32,10 +33,10 @@ class VaultTransferServiceTest {
         val repository = FakeVaultRepository()
         val remote = FakeTransferStorage()
         val local = FakeLocalStaging(mutableMapOf("source.cbz" to CONTENT))
-        val service = VaultTransferService(repository, remote, local) { 10 }
+        val service = VaultTransferService(repository, remote, local) { TEST_NOW }
         val integrity = CONTENT.vaultTransferIntegrity()
         val jobId = service.enqueue(
-            vaultId = 1,
+            vaultId = VAULT_ID,
             type = VaultTransferType.IMPORT_PUBLISH,
             remotePath = "content/chapter.cbz",
             localPath = "source.cbz",
@@ -53,13 +54,16 @@ class VaultTransferServiceTest {
     @Test
     fun `checksum mismatch keeps failed download out of cache`() = runTest {
         val repository = FakeVaultRepository()
-        val remote = FakeTransferStorage(mutableMapOf("content/chapter.cbz" to CONTENT))
-        val local = FakeLocalStaging()
-        val service = VaultTransferService(repository, remote, local) { 10 }
+        val remote = FakeTransferStorage(
+            files = mutableMapOf("content/chapter.cbz" to CONTENT),
+            failLegacyGet = true,
+        )
+        val local = FakeLocalStaging(failLegacyRead = true)
+        val service = VaultTransferService(repository, remote, local) { TEST_NOW }
         val jobId = service.enqueue(
-            vaultId = 1,
+            vaultId = VAULT_ID,
             type = VaultTransferType.CACHE_CHAPTER,
-            chapterId = 7,
+            chapterId = CHAPTER_ID,
             remotePath = "content/chapter.cbz",
             localPath = "cache/chapter.cbz",
             sizeBytes = CONTENT.size.toLong(),
@@ -70,21 +74,54 @@ class VaultTransferServiceTest {
 
         (result is VaultTransferResult.IntegrityFault) shouldBe true
         local.files["cache/chapter.cbz"] shouldBe null
-        repository.cacheStates[7]?.state shouldBe VaultCacheState.INTEGRITY_FAULT
+        repository.cacheStates[CHAPTER_ID]?.state shouldBe VaultCacheState.INTEGRITY_FAULT
         repository.transferJobs[jobId]?.state shouldBe VaultTransferState.INTEGRITY_FAULT
+    }
+
+    @Test
+    fun `streamed cache download writes final file and removes staged file`() = runTest {
+        val repository = FakeVaultRepository()
+        val remote = FakeTransferStorage(
+            files = mutableMapOf("content/chapter.cbz" to CONTENT),
+            failLegacyGet = true,
+        )
+        val local = FakeLocalStaging(failLegacyRead = true)
+        val service = VaultTransferService(repository, remote, local) { TEST_NOW }
+        val integrity = CONTENT.vaultTransferIntegrity()
+        val jobId = service.enqueue(
+            vaultId = VAULT_ID,
+            type = VaultTransferType.CACHE_CHAPTER,
+            chapterId = CHAPTER_ID,
+            remotePath = "content/chapter.cbz",
+            localPath = "cache/chapter.cbz",
+            sizeBytes = integrity.sizeBytes,
+            checksumSha256 = integrity.checksumSha256,
+        )
+
+        service.execute(jobId) shouldBe VaultTransferResult.Succeeded
+
+        local.files["cache/chapter.cbz"] shouldBe CONTENT
+        local.files.keys.any { it.contains("staged") } shouldBe false
+        repository.cacheStates[CHAPTER_ID]?.state shouldBe VaultCacheState.CACHED
+        repository.cacheStates[CHAPTER_ID]?.sizeBytes shouldBe integrity.sizeBytes
+        repository.cacheStates[CHAPTER_ID]?.checksumSha256 shouldBe integrity.checksumSha256
+        repository.transferJobs[jobId]?.state shouldBe VaultTransferState.SUCCEEDED
     }
 
     @Test
     fun `failed staged download cleans up staged artifact and remains retryable`() = runTest {
         val repository = FakeVaultRepository()
-        val remote = FakeTransferStorage(mutableMapOf("content/chapter.cbz" to CONTENT))
-        val local = FakeLocalStaging(failPromote = true)
-        val service = VaultTransferService(repository, remote, local) { 10 }
+        val remote = FakeTransferStorage(
+            files = mutableMapOf("content/chapter.cbz" to CONTENT),
+            failLegacyGet = true,
+        )
+        val local = FakeLocalStaging(failPromote = true, failLegacyRead = true)
+        val service = VaultTransferService(repository, remote, local) { TEST_NOW }
         val integrity = CONTENT.vaultTransferIntegrity()
         val jobId = service.enqueue(
-            vaultId = 1,
+            vaultId = VAULT_ID,
             type = VaultTransferType.CACHE_CHAPTER,
-            chapterId = 7,
+            chapterId = CHAPTER_ID,
             remotePath = "content/chapter.cbz",
             localPath = "cache/chapter.cbz",
             sizeBytes = integrity.sizeBytes,
@@ -104,14 +141,17 @@ class VaultTransferServiceTest {
     @Test
     fun `cancelled download clears in progress cache state`() = runTest {
         val repository = FakeVaultRepository()
-        val remote = FakeTransferStorage(mutableMapOf("content/chapter.cbz" to CONTENT))
-        val local = FakeLocalStaging(writeError = CancellationException("cache cancelled"))
-        val service = VaultTransferService(repository, remote, local) { 10 }
+        val remote = FakeTransferStorage(
+            files = mutableMapOf("content/chapter.cbz" to CONTENT),
+            failLegacyGet = true,
+        )
+        val local = FakeLocalStaging(writeError = CancellationException("cache cancelled"), failLegacyRead = true)
+        val service = VaultTransferService(repository, remote, local) { TEST_NOW }
         val integrity = CONTENT.vaultTransferIntegrity()
         val jobId = service.enqueue(
-            vaultId = 1,
+            vaultId = VAULT_ID,
             type = VaultTransferType.CACHE_CHAPTER,
-            chapterId = 7,
+            chapterId = CHAPTER_ID,
             remotePath = "content/chapter.cbz",
             localPath = "cache/chapter.cbz",
             sizeBytes = integrity.sizeBytes,
@@ -123,8 +163,8 @@ class VaultTransferServiceTest {
         } catch (_: CancellationException) {
         }
 
-        repository.cacheStates[7]?.state shouldBe VaultCacheState.VAULT_ONLY
-        repository.cacheStates[7]?.localPath shouldBe null
+        repository.cacheStates[CHAPTER_ID]?.state shouldBe VaultCacheState.VAULT_ONLY
+        repository.cacheStates[CHAPTER_ID]?.localPath shouldBe null
         repository.transferJobs[jobId]?.state shouldBe VaultTransferState.CANCELLED
     }
 
@@ -133,7 +173,7 @@ class VaultTransferServiceTest {
         val repository = FakeVaultRepository()
         val remote = FakeTransferStorage(mutableMapOf("remote.stage" to CONTENT))
         val local = FakeLocalStaging(mutableMapOf("local.stage" to CONTENT))
-        val service = VaultTransferService(repository, remote, local) { 10 }
+        val service = VaultTransferService(repository, remote, local) { TEST_NOW }
         val jobId = repository.upsertTransferJob(
             transferJob(
                 state = VaultTransferState.RUNNING,
@@ -153,8 +193,15 @@ class VaultTransferServiceTest {
 
     private class FakeTransferStorage(
         val files: MutableMap<String, ByteArray> = mutableMapOf(),
+        private val failLegacyGet: Boolean = false,
     ) : VaultTransferStorage {
-        override suspend fun get(path: String): ByteArray? = files[path]
+        override suspend fun get(path: String): ByteArray? {
+            check(!failLegacyGet) { "legacy remote get should not be used" }
+            return files[path]
+        }
+        override suspend fun <T> withInputStream(path: String, block: suspend (InputStream) -> T): T? {
+            return files[path]?.inputStream()?.use { input -> block(input) }
+        }
         override suspend fun put(path: String, bytes: ByteArray) {
             files[path] = bytes
         }
@@ -170,11 +217,24 @@ class VaultTransferServiceTest {
         val files: MutableMap<String, ByteArray> = mutableMapOf(),
         var failPromote: Boolean = false,
         val writeError: Throwable? = null,
+        private val failLegacyRead: Boolean = false,
     ) : VaultTransferLocalStaging {
-        override suspend fun read(path: String): ByteArray? = files[path]
+        override suspend fun read(path: String): ByteArray? {
+            check(!failLegacyRead) { "legacy local read should not be used" }
+            return files[path]
+        }
         override suspend fun write(path: String, bytes: ByteArray) {
             writeError?.let { throw it }
             files[path] = bytes
+        }
+        override suspend fun writeFrom(path: String, input: InputStream): VaultTransferIntegrity {
+            writeError?.let { throw it }
+            val bytes = input.readBytes()
+            files[path] = bytes
+            return bytes.vaultTransferIntegrity()
+        }
+        override suspend fun integrity(path: String): VaultTransferIntegrity? {
+            return files[path]?.vaultTransferIntegrity()
         }
         override suspend fun promote(stagedPath: String, finalPath: String) {
             if (failPromote) error("local promote failed")
@@ -282,6 +342,10 @@ class VaultTransferServiceTest {
     }
 
     private companion object {
+        private const val VAULT_ID = 1L
+        private const val CHAPTER_ID = 7L
+        private const val TEST_NOW = 10L
+
         val CONTENT = byteArrayOf(1, 2, 3, 4)
 
         fun transferJob(
@@ -289,7 +353,7 @@ class VaultTransferServiceTest {
             stagedPath: String?,
         ) = VaultTransferJob(
             id = -1,
-            vaultId = 1,
+            vaultId = VAULT_ID,
             chapterId = null,
             type = VaultTransferType.IMPORT_PUBLISH,
             state = state,

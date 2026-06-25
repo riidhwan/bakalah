@@ -1,6 +1,8 @@
 package eu.kanade.tachiyomi.data.vault.cache
 
+import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferIntegrity
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferLocalStaging
+import eu.kanade.tachiyomi.data.vault.transfer.vaultTransferIntegrity
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.Flow
@@ -31,6 +33,7 @@ import tachiyomi.domain.vault.model.VaultTransferJob
 import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
+import java.io.InputStream
 
 class VaultCachePolicyServiceTest {
 
@@ -38,7 +41,7 @@ class VaultCachePolicyServiceTest {
     fun `cache path is rooted by vault manga and chapter identities`() {
         val service = VaultCachePolicyService(FakeVaultRepository(), FakeLocalStaging(), preferences())
 
-        service.cachePath(manga(), chapter(id = 9, contentPath = "../content/chapter.cbz")) shouldBe
+        service.cachePath(manga(), chapter(id = PATH_TEST_CHAPTER_ID, contentPath = "../content/chapter.cbz")) shouldBe
             "7/manga_one/chapter_9/chapter.cbz"
     }
 
@@ -47,42 +50,61 @@ class VaultCachePolicyServiceTest {
         val repository = FakeVaultRepository()
         val local = FakeLocalStaging(
             mutableMapOf(
-                "cache/old.cbz" to byteArrayOf(1),
-                "cache/new.cbz" to byteArrayOf(2),
-                "cache/unread.cbz" to byteArrayOf(3),
+                "cache/old.cbz" to byteArrayOf(CHAPTER_ONE_BYTE),
+                "cache/new.cbz" to byteArrayOf(CHAPTER_TWO_BYTE),
+                "cache/unread.cbz" to byteArrayOf(CHAPTER_THREE_BYTE),
             ),
         )
-        val preferences = preferences(limitBytes = 90)
-        val service = VaultCachePolicyService(repository, local, preferences) { 100 }
-        repository.cacheStates[1] = cacheState(chapterId = 1, localPath = "cache/old.cbz", sizeBytes = 60, openedAt = 1)
-        repository.cacheStates[2] = cacheState(chapterId = 2, localPath = "cache/new.cbz", sizeBytes = 60, openedAt = 2)
-        repository.cacheStates[3] =
-            cacheState(chapterId = 3, localPath = "cache/unread.cbz", sizeBytes = 60, openedAt = 3)
-        repository.readChapterIds += setOf(1, 2)
+        val preferences = preferences(limitBytes = HARD_CACHE_LIMIT_BYTES)
+        val service = VaultCachePolicyService(repository, local, preferences) { TEST_NOW }
+        repository.cacheStates[CHAPTER_ONE_ID] = cacheState(
+            chapterId = CHAPTER_ONE_ID,
+            localPath = "cache/old.cbz",
+            sizeBytes = CACHED_CHAPTER_SIZE_BYTES,
+            openedAt = CHAPTER_ONE_ID,
+        )
+        repository.cacheStates[CHAPTER_TWO_ID] = cacheState(
+            chapterId = CHAPTER_TWO_ID,
+            localPath = "cache/new.cbz",
+            sizeBytes = CACHED_CHAPTER_SIZE_BYTES,
+            openedAt = CHAPTER_TWO_ID,
+        )
+        repository.cacheStates[CHAPTER_THREE_ID] =
+            cacheState(
+                chapterId = CHAPTER_THREE_ID,
+                localPath = "cache/unread.cbz",
+                sizeBytes = CACHED_CHAPTER_SIZE_BYTES,
+                openedAt = CHAPTER_THREE_ID,
+            )
+        repository.readChapterIds += setOf(CHAPTER_ONE_ID, CHAPTER_TWO_ID)
 
-        val result = service.enforceLimit(vaultId = 7)
+        val result = service.enforceLimit(vaultId = VAULT_ID)
 
-        result.evictedChapterIds.shouldContainExactly(1, 2)
+        result.evictedChapterIds.shouldContainExactly(CHAPTER_ONE_ID, CHAPTER_TWO_ID)
         result.isOverLimit shouldBe false
         local.files.keys.shouldContainExactly("cache/unread.cbz")
-        repository.cacheStates[1]?.state shouldBe VaultCacheState.VAULT_ONLY
-        repository.cacheStates[2]?.state shouldBe VaultCacheState.VAULT_ONLY
-        repository.cacheStates[3]?.state shouldBe VaultCacheState.CACHED
+        repository.cacheStates[CHAPTER_ONE_ID]?.state shouldBe VaultCacheState.VAULT_ONLY
+        repository.cacheStates[CHAPTER_TWO_ID]?.state shouldBe VaultCacheState.VAULT_ONLY
+        repository.cacheStates[CHAPTER_THREE_ID]?.state shouldBe VaultCacheState.CACHED
     }
 
     @Test
     fun `limit enforcement never evicts unread cached chapters`() = runTest {
         val repository = FakeVaultRepository()
-        val local = FakeLocalStaging(mutableMapOf("cache/unread.cbz" to byteArrayOf(1)))
-        val service = VaultCachePolicyService(repository, local, preferences(limitBytes = 10))
-        repository.cacheStates[1] = cacheState(chapterId = 1, localPath = "cache/unread.cbz", sizeBytes = 60)
+        val local = FakeLocalStaging(mutableMapOf("cache/unread.cbz" to byteArrayOf(CHAPTER_ONE_BYTE)))
+        val service = VaultCachePolicyService(repository, local, preferences(limitBytes = SMALL_CACHE_LIMIT_BYTES))
+        repository.cacheStates[CHAPTER_ONE_ID] = cacheState(
+            chapterId = CHAPTER_ONE_ID,
+            localPath = "cache/unread.cbz",
+            sizeBytes = CACHED_CHAPTER_SIZE_BYTES,
+        )
 
-        val result = service.enforceLimit(vaultId = 7)
+        val result = service.enforceLimit(vaultId = VAULT_ID)
 
         result.evictedChapterIds shouldBe emptyList()
         result.isOverLimit shouldBe true
         local.files.keys.shouldContainExactly("cache/unread.cbz")
-        repository.cacheStates[1]?.state shouldBe VaultCacheState.CACHED
+        repository.cacheStates[CHAPTER_ONE_ID]?.state shouldBe VaultCacheState.CACHED
     }
 
     @Test
@@ -90,21 +112,29 @@ class VaultCachePolicyServiceTest {
         val repository = FakeVaultRepository()
         val local = FakeLocalStaging(
             mutableMapOf(
-                "cache/protected.cbz" to byteArrayOf(1),
-                "cache/old.cbz" to byteArrayOf(2),
+                "cache/protected.cbz" to byteArrayOf(CHAPTER_ONE_BYTE),
+                "cache/old.cbz" to byteArrayOf(CHAPTER_TWO_BYTE),
             ),
         )
-        val service = VaultCachePolicyService(repository, local, preferences(limitBytes = 50))
-        repository.cacheStates[1] = cacheState(chapterId = 1, localPath = "cache/protected.cbz", sizeBytes = 60)
-        repository.cacheStates[2] = cacheState(chapterId = 2, localPath = "cache/old.cbz", sizeBytes = 60)
-        repository.readChapterIds += setOf(1, 2)
+        val service = VaultCachePolicyService(repository, local, preferences(limitBytes = PROTECTED_CACHE_LIMIT_BYTES))
+        repository.cacheStates[CHAPTER_ONE_ID] = cacheState(
+            chapterId = CHAPTER_ONE_ID,
+            localPath = "cache/protected.cbz",
+            sizeBytes = CACHED_CHAPTER_SIZE_BYTES,
+        )
+        repository.cacheStates[CHAPTER_TWO_ID] = cacheState(
+            chapterId = CHAPTER_TWO_ID,
+            localPath = "cache/old.cbz",
+            sizeBytes = CACHED_CHAPTER_SIZE_BYTES,
+        )
+        repository.readChapterIds += setOf(CHAPTER_ONE_ID, CHAPTER_TWO_ID)
 
-        val result = service.enforceLimit(vaultId = 7, protectedChapterIds = setOf(1))
+        val result = service.enforceLimit(vaultId = VAULT_ID, protectedChapterIds = setOf(CHAPTER_ONE_ID))
 
-        result.evictedChapterIds.shouldContainExactly(2)
+        result.evictedChapterIds.shouldContainExactly(CHAPTER_TWO_ID)
         local.files.keys.shouldContainExactly("cache/protected.cbz")
-        repository.cacheStates[1]?.state shouldBe VaultCacheState.CACHED
-        repository.cacheStates[2]?.state shouldBe VaultCacheState.VAULT_ONLY
+        repository.cacheStates[CHAPTER_ONE_ID]?.state shouldBe VaultCacheState.CACHED
+        repository.cacheStates[CHAPTER_TWO_ID]?.state shouldBe VaultCacheState.VAULT_ONLY
     }
 
     @Test
@@ -112,25 +142,25 @@ class VaultCachePolicyServiceTest {
         val repository = FakeVaultRepository()
         val local = FakeLocalStaging(
             mutableMapOf(
-                "cache/manga/chapter-1.cbz" to byteArrayOf(1),
-                "local/original/chapter-1.cbz" to byteArrayOf(2),
-                "downloads/chapter-1.cbz" to byteArrayOf(3),
+                "cache/manga/chapter-1.cbz" to byteArrayOf(CHAPTER_ONE_BYTE),
+                "local/original/chapter-1.cbz" to byteArrayOf(CHAPTER_TWO_BYTE),
+                "downloads/chapter-1.cbz" to byteArrayOf(CHAPTER_THREE_BYTE),
             ),
         )
-        val service = VaultCachePolicyService(repository, local, preferences()) { 100 }
-        repository.chapters += chapter(id = 1, contentPath = "remote/chapter-1.cbz")
-        repository.cacheStates[1] = cacheState(
-            chapterId = 1,
+        val service = VaultCachePolicyService(repository, local, preferences()) { TEST_NOW }
+        repository.chapters += chapter(id = CHAPTER_ONE_ID, contentPath = "remote/chapter-1.cbz")
+        repository.cacheStates[CHAPTER_ONE_ID] = cacheState(
+            chapterId = CHAPTER_ONE_ID,
             localPath = "cache/manga/chapter-1.cbz",
-            sizeBytes = 60,
+            sizeBytes = CACHED_CHAPTER_SIZE_BYTES,
         )
 
-        val result = service.evictManga(mangaId = 1)
+        val result = service.evictManga(mangaId = MANGA_ID)
 
-        result.evictedChapterIds.shouldContainExactly(1)
+        result.evictedChapterIds.shouldContainExactly(CHAPTER_ONE_ID)
         local.files.keys.shouldContainExactly(setOf("local/original/chapter-1.cbz", "downloads/chapter-1.cbz"))
-        repository.cacheStates[1]?.state shouldBe VaultCacheState.VAULT_ONLY
-        repository.cacheStates[1]?.localPath shouldBe null
+        repository.cacheStates[CHAPTER_ONE_ID]?.state shouldBe VaultCacheState.VAULT_ONLY
+        repository.cacheStates[CHAPTER_ONE_ID]?.localPath shouldBe null
     }
 
     private class FakeLocalStaging(
@@ -139,6 +169,14 @@ class VaultCachePolicyServiceTest {
         override suspend fun read(path: String): ByteArray? = files[path]
         override suspend fun write(path: String, bytes: ByteArray) {
             files[path] = bytes
+        }
+        override suspend fun writeFrom(path: String, input: InputStream): VaultTransferIntegrity {
+            val bytes = input.readBytes()
+            files[path] = bytes
+            return bytes.vaultTransferIntegrity()
+        }
+        override suspend fun integrity(path: String): VaultTransferIntegrity? {
+            return files[path]?.vaultTransferIntegrity()
         }
         override suspend fun promote(stagedPath: String, finalPath: String) {
             files[finalPath] = files.remove(stagedPath) ?: error("missing staged local")
@@ -248,6 +286,21 @@ class VaultCachePolicyServiceTest {
     }
 
     private companion object {
+        private const val MANGA_ID = 1L
+        private const val VAULT_ID = 7L
+        private const val CHAPTER_ONE_ID = 1L
+        private const val CHAPTER_TWO_ID = 2L
+        private const val CHAPTER_THREE_ID = 3L
+        private const val PATH_TEST_CHAPTER_ID = 9L
+        private const val CACHED_CHAPTER_SIZE_BYTES = 60L
+        private const val HARD_CACHE_LIMIT_BYTES = 90L
+        private const val PROTECTED_CACHE_LIMIT_BYTES = 50L
+        private const val SMALL_CACHE_LIMIT_BYTES = 10L
+        private const val TEST_NOW = 100L
+        private const val CHAPTER_ONE_BYTE = 1.toByte()
+        private const val CHAPTER_TWO_BYTE = 2.toByte()
+        private const val CHAPTER_THREE_BYTE = 3.toByte()
+
         fun preferences(
             limitBytes: Long = ContentVaultPreferences.DEFAULT_LOCAL_CACHE_LIMIT_BYTES,
         ): ContentVaultPreferences {
@@ -257,8 +310,8 @@ class VaultCachePolicyServiceTest {
         }
 
         fun manga() = VaultManga(
-            id = 1,
-            vaultId = 7,
+            id = MANGA_ID,
+            vaultId = VAULT_ID,
             identity = VaultIdentity("manga/one"),
             metadata = VaultMetadata(
                 title = "Manga",
@@ -276,7 +329,7 @@ class VaultCachePolicyServiceTest {
 
         fun chapter(id: Long, contentPath: String) = VaultChapter(
             id = id,
-            mangaId = 1,
+            mangaId = MANGA_ID,
             identity = VaultIdentity("chapter/$id"),
             title = "Chapter $id",
             chapterNumber = id.toDouble(),
