@@ -11,25 +11,12 @@ import androidx.lifecycle.flowWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import eu.kanade.core.preference.asState
-import eu.kanade.domain.chapter.interactor.GetAvailableScanlators
-import eu.kanade.domain.chapter.interactor.SetReadStatus
-import eu.kanade.domain.manga.interactor.GetExcludedScanlators
-import eu.kanade.domain.manga.interactor.SetExcludedScanlators
-import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.chaptersFiltered
-import eu.kanade.domain.track.interactor.AddTracks
-import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.presentation.manga.DownloadAction
 import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.util.formattedMessage
-import eu.kanade.tachiyomi.data.download.DownloadCache
-import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.model.Download
-import eu.kanade.tachiyomi.data.local.LocalMangaDeletionResult
-import eu.kanade.tachiyomi.data.local.LocalMangaDeletionService
 import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.getNameForMangaInfo
-import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -46,35 +33,18 @@ import logcat.LogPriority
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.preference.CheckboxState
 import tachiyomi.core.common.preference.TriState
-import tachiyomi.core.common.preference.mapAsCheckboxState
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchNonCancellable
 import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
-import tachiyomi.domain.category.interactor.GetCategories
-import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.category.model.Category
-import tachiyomi.domain.chapter.interactor.SetMangaDefaultChapterFlags
-import tachiyomi.domain.chapter.interactor.UpdateChapter
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.library.service.LibraryPreferences
-import tachiyomi.domain.manga.interactor.GetMangaWithChapters
-import tachiyomi.domain.manga.interactor.GetSameTitleLibraryManga
-import tachiyomi.domain.manga.interactor.ManageLibraryMangaGroup
-import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
-import tachiyomi.domain.manga.repository.MangaRepository
-import tachiyomi.domain.source.service.SourceManager
-import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.domain.vault.model.VaultManga
-import tachiyomi.domain.vault.repository.VaultRepository
-import tachiyomi.domain.vault.service.ContentVaultPreferences
 import tachiyomi.i18n.MR
-import tachiyomi.source.local.io.LocalSourceFileSystem
 import tachiyomi.source.local.isLocal
-import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
 import kotlin.coroutines.cancellation.CancellationException
 
 class MangaScreenModel(
@@ -82,38 +52,17 @@ class MangaScreenModel(
     private val lifecycle: Lifecycle,
     private val mangaId: Long,
     private val isFromSource: Boolean,
-    private val libraryPreferences: LibraryPreferences = Injekt.get(),
-    private val trackPreferences: TrackPreferences = Injekt.get(),
-    readerPreferences: ReaderPreferences = Injekt.get(),
-    private val downloadManager: DownloadManager = Injekt.get(),
-    private val downloadCache: DownloadCache = Injekt.get(),
-    private val getMangaAndChapters: GetMangaWithChapters = Injekt.get(),
-    private val getSameTitleLibraryManga: GetSameTitleLibraryManga = Injekt.get(),
-    private val getAvailableScanlators: GetAvailableScanlators = Injekt.get(),
-    private val getExcludedScanlators: GetExcludedScanlators = Injekt.get(),
-    private val setExcludedScanlators: SetExcludedScanlators = Injekt.get(),
-    private val setMangaChapterFlags: SetMangaChapterFlags = Injekt.get(),
-    private val setMangaDefaultChapterFlags: SetMangaDefaultChapterFlags = Injekt.get(),
-    private val setReadStatus: SetReadStatus = Injekt.get(),
-    private val updateChapter: UpdateChapter = Injekt.get(),
-    private val updateManga: UpdateManga = Injekt.get(),
-    private val getCategories: GetCategories = Injekt.get(),
-    private val getTracks: GetTracks = Injekt.get(),
-    private val addTracks: AddTracks = Injekt.get(),
-    private val setMangaCategories: SetMangaCategories = Injekt.get(),
-    private val mangaRepository: MangaRepository = Injekt.get(),
-    private val manageLibraryMangaGroup: ManageLibraryMangaGroup = Injekt.get(),
-    private val localSourceFileSystem: LocalSourceFileSystem = Injekt.get(),
-    private val localMangaDeletionService: LocalMangaDeletionService = Injekt.get(),
-    private val vaultRepository: VaultRepository = Injekt.get(),
-    private val contentVaultPreferences: ContentVaultPreferences = Injekt.get(),
-    private val localVaultImportStateBuilder: LocalVaultImportScreenStateBuilder = LocalVaultImportScreenStateBuilder(),
-    private val sourceManager: SourceManager = Injekt.get(),
-    private val libraryMangaGroupStateBuilder: LibraryMangaGroupStateBuilder = LibraryMangaGroupStateBuilder(
-        sourceName = { sourceId -> sourceManager.getOrStub(sourceId).getNameForMangaInfo() },
-    ),
+    private val dependencies: MangaScreenModelDependencies = MangaScreenModelDependencies(),
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
+    private val libraryPreferences = dependencies.libraryPreferences
+    private val trackPreferences = dependencies.trackPreferences
+    private val readerPreferences = dependencies.readerPreferences
+    private val getAvailableScanlators = dependencies.getAvailableScanlators
+    private val getExcludedScanlators = dependencies.getExcludedScanlators
+    private val setExcludedScanlators = dependencies.setExcludedScanlators
+    private val updateManga = dependencies.updateManga
+    private val mangaRepository = dependencies.mangaRepository
 
     private val successState: State.Success?
         get() = state.value as? State.Success
@@ -155,23 +104,14 @@ class MangaScreenModel(
     @Volatile
     private var isDeletingLocalManga = false
 
-    private val mangaStateAssembler = MangaStateAssembler(
-        libraryPreferences = libraryPreferences,
-        localSourceFileSystem = localSourceFileSystem,
-    )
+    private val mangaStateAssembler = dependencies.mangaStateAssembler
 
-    private val localVaultImportCoordinator = MangaLocalVaultImportCoordinator(
+    private val localVaultImportCoordinator = dependencies.localVaultImportCoordinator(
         runtime = MangaLocalVaultImportCoordinator.Runtime(
             context = context,
             lifecycle = lifecycle,
             screenModelScope = screenModelScope,
             snackbarHostState = snackbarHostState,
-        ),
-        services = MangaLocalVaultImportCoordinator.Services(
-            localSourceFileSystem = localSourceFileSystem,
-            vaultRepository = vaultRepository,
-            contentVaultPreferences = contentVaultPreferences,
-            localVaultImportStateBuilder = localVaultImportStateBuilder,
         ),
         callbacks = MangaLocalVaultImportCoordinator.Callbacks(
             getState = { successState },
@@ -183,73 +123,19 @@ class MangaScreenModel(
         ),
     )
 
-    private val libraryActionCoordinator = MangaLibraryActionCoordinator(
-        MangaLibraryActionCoordinator.Dependencies(
-            libraryPreferences = libraryPreferences,
-            getSameTitleLibraryManga = getSameTitleLibraryManga,
-            getCategories = getCategories,
-            updateManga = updateManga,
-            setMangaCategories = setMangaCategories,
-            manageLibraryMangaGroup = manageLibraryMangaGroup,
-            libraryMangaGroupStateBuilder = libraryMangaGroupStateBuilder,
-        ),
-    )
-
-    private val libraryGroupCoordinator = MangaLibraryGroupCoordinator(
-        MangaLibraryGroupCoordinator.Dependencies(
-            manageLibraryMangaGroup = manageLibraryMangaGroup,
-            libraryMangaGroupStateBuilder = libraryMangaGroupStateBuilder,
-        ),
-    )
-    private val loadCoordinator = MangaLoadCoordinator(
-        MangaLoadCoordinator.Dependencies(
-            getMangaAndChapters = getMangaAndChapters,
-            downloadCache = downloadCache,
-            downloadManager = downloadManager,
-            setMangaDefaultChapterFlags = setMangaDefaultChapterFlags,
-            sourceManager = sourceManager,
-            libraryGroupCoordinator = libraryGroupCoordinator,
-        ),
-    )
-
-    private val chapterSettingsCoordinator = MangaChapterSettingsCoordinator(
-        MangaChapterSettingsCoordinator.Dependencies(
-            libraryPreferences = libraryPreferences,
-            setMangaChapterFlags = setMangaChapterFlags,
-            setMangaDefaultChapterFlags = setMangaDefaultChapterFlags,
-        ),
-    )
-    private val downloadCoordinator = MangaDownloadCoordinator(downloadManager)
-
-    private val sourceRefreshCoordinator = MangaSourceRefreshCoordinator(
-        MangaSourceRefreshCoordinator.Dependencies(
-            updateManga = updateManga,
-            syncChaptersWithSource = Injekt.get(),
-            mangaRepository = mangaRepository,
-            filterChaptersForDownload = Injekt.get(),
-        ),
-    )
-    private val trackingCoordinator = MangaTrackingCoordinator(
-        MangaTrackingCoordinator.Dependencies(
-            getTracks = getTracks,
-            trackerManager = Injekt.get(),
-        ),
-    )
-    private val chapterActionCoordinator = MangaChapterActionCoordinator(
+    private val libraryGroupCoordinator = dependencies.libraryGroupCoordinator
+    private val libraryWorkflowCoordinator = dependencies.libraryWorkflowCoordinator
+    private val loadCoordinator = dependencies.loadCoordinator
+    private val chapterSettingsCoordinator = dependencies.chapterSettingsCoordinator
+    private val downloadCoordinator = dependencies.downloadCoordinator
+    private val sourceRefreshCoordinator = dependencies.sourceRefreshCoordinator
+    private val trackingCoordinator = dependencies.trackingCoordinator
+    private val localMangaDeletionCoordinator = dependencies.localMangaDeletionCoordinator
+    private val chapterActionCoordinator = dependencies.chapterActionCoordinator(
         runtime = MangaChapterActionCoordinator.Runtime(
             context = context,
             screenModelScope = screenModelScope,
             snackbarHostState = snackbarHostState,
-        ),
-        dependencies = MangaChapterActionCoordinator.Dependencies(
-            setReadStatus = setReadStatus,
-            updateChapter = updateChapter,
-            skipFiltered = { skipFiltered },
-            autoTrackState = { autoTrackState },
-        ),
-        coordinators = MangaChapterActionCoordinator.Coordinators(
-            downloadCoordinator = downloadCoordinator,
-            trackingCoordinator = trackingCoordinator,
         ),
         callbacks = MangaChapterActionCoordinator.Callbacks(
             getState = { successState },
@@ -258,6 +144,8 @@ class MangaScreenModel(
             toggleAllSelection = ::toggleAllSelection,
             toggleFavorite = ::toggleFavorite,
         ),
+        skipFiltered = { skipFiltered },
+        autoTrackState = { autoTrackState },
     )
 
     /**
@@ -419,104 +307,62 @@ class MangaScreenModel(
     ) {
         val state = successState ?: return
         screenModelScope.launchIO {
-            val manga = state.manga
-
-            if (isFavorited) {
-                if (libraryActionCoordinator.removeFromLibrary(manga)) {
+            val effect = libraryWorkflowCoordinator.toggleFavorite(
+                manga = state.manga,
+                source = state.source,
+                isFavorited = isFavorited,
+                checkDuplicate = checkDuplicate,
+            )
+            applyLibraryWorkflowEffect(
+                effect = effect,
+                onRemoved = {
                     withUIContext { onRemoved() }
+                },
+            )
+        }
+    }
+
+    private suspend fun applyLibraryWorkflowEffect(
+        effect: MangaLibraryWorkflowEffect,
+        onRemoved: suspend () -> Unit = {},
+    ) {
+        when (effect) {
+            MangaLibraryWorkflowEffect.Added,
+            MangaLibraryWorkflowEffect.None,
+            -> Unit
+            MangaLibraryWorkflowEffect.Removed -> onRemoved()
+            is MangaLibraryWorkflowEffect.ShowDialog -> {
+                updateSuccessState { it.copy(dialog = effect.dialog) }
+            }
+            is MangaLibraryWorkflowEffect.UpdateGroupTabs -> {
+                updateSuccessState {
+                    it.copy(
+                        dialog = if (effect.dismissDialog) null else it.dialog,
+                        libraryMangaGroupTabs = effect.tabs,
+                    )
                 }
-            } else {
-                handleAddToLibraryResult(
-                    manga = manga,
-                    source = state.source,
-                    result = libraryActionCoordinator.addToLibrary(
-                        manga = manga,
-                        checkDuplicate = checkDuplicate,
-                    ),
-                )
             }
         }
     }
 
     fun showChangeCategoryDialog() {
         val manga = successState?.manga ?: return
-        screenModelScope.launch {
-            val selection = libraryActionCoordinator.categorySelection(manga)
-            updateSuccessState { successState ->
-                successState.copy(
-                    dialog = Dialog.ChangeCategory(
-                        manga = manga,
-                        initialSelection = selection.toCheckboxState(),
-                    ),
-                )
-            }
+        screenModelScope.launchIO {
+            applyLibraryWorkflowEffect(libraryWorkflowCoordinator.showChangeCategoryDialog(manga))
         }
-    }
-
-    private suspend fun handleAddToLibraryResult(
-        manga: Manga,
-        source: Source,
-        result: AddToLibraryResult,
-    ) {
-        when (result) {
-            AddToLibraryResult.Added -> addTracks.bindEnhancedTrackers(manga, source)
-            AddToLibraryResult.NotAdded -> {}
-            is AddToLibraryResult.DuplicateFound -> {
-                updateSuccessState {
-                    it.copy(
-                        dialog = Dialog.DuplicateManga(
-                            manga = manga,
-                            duplicates = result.duplicates,
-                            groupTargets = result.groupTargets,
-                        ),
-                    )
-                }
-            }
-            is AddToLibraryResult.NeedsCategorySelection -> {
-                updateSuccessState {
-                    it.copy(
-                        dialog = Dialog.ChangeCategory(
-                            manga = manga,
-                            initialSelection = result.selection.toCheckboxState(),
-                            pendingAddToGroup = result.pendingAddToGroup,
-                        ),
-                    )
-                }
-            }
-        }
-    }
-
-    private fun CategorySelection.toCheckboxState(): List<CheckboxState<Category>> {
-        return categories.mapAsCheckboxState { category -> category.id in selectedCategoryIds }
     }
 
     fun addDuplicateMangaToGroup(targets: List<DuplicateMangaGroupTargetItem>) {
-        val manga = successState?.manga ?: return
-        if (targets.isEmpty()) return
+        val state = successState ?: return
 
         screenModelScope.launchIO {
-            val pendingAddToGroup = PendingAddToGroup(targets)
-            when (
-                val result = libraryActionCoordinator.addToLibrary(
-                    manga = manga,
-                    checkDuplicate = false,
-                    pendingAddToGroup = pendingAddToGroup,
-                )
-            ) {
-                AddToLibraryResult.Added -> {
-                    addMangaToSelectedGroup(manga, pendingAddToGroup)
-                    addTracks.bindEnhancedTrackers(manga, successState?.source ?: return@launchIO)
-                }
-                AddToLibraryResult.NotAdded -> {}
-                is AddToLibraryResult.DuplicateFound -> {}
-                is AddToLibraryResult.NeedsCategorySelection -> {
-                    handleAddToLibraryResult(
-                        manga = manga,
-                        source = successState?.source ?: return@launchIO,
-                        result = result,
-                    )
-                }
-            }
+            applyLibraryWorkflowEffect(
+                libraryWorkflowCoordinator.addDuplicateMangaToGroup(
+                    manga = state.manga,
+                    source = state.source,
+                    targets = targets,
+                ),
+            )
         }
     }
 
@@ -610,22 +456,18 @@ class MangaScreenModel(
     }
 
     fun moveMangaToCategoriesAndAddToLibrary(manga: Manga, categories: List<Long>) {
+        val state = successState ?: return
+        val pendingAddToGroup = (state.dialog as? Dialog.ChangeCategory)?.pendingAddToGroup
         screenModelScope.launchIO {
-            if (!libraryActionCoordinator.moveToCategoriesAndAddToLibrary(manga, categories)) return@launchIO
-
-            val pendingAddToGroup = (successState?.dialog as? Dialog.ChangeCategory)?.pendingAddToGroup
-            if (pendingAddToGroup != null) {
-                addMangaToSelectedGroup(manga, pendingAddToGroup)
-                addTracks.bindEnhancedTrackers(manga, successState?.source ?: return@launchIO)
-            }
+            applyLibraryWorkflowEffect(
+                libraryWorkflowCoordinator.moveMangaToCategoriesAndAddToLibrary(
+                    manga = manga,
+                    source = state.source,
+                    categories = categories,
+                    pendingAddToGroup = pendingAddToGroup,
+                ),
+            )
         }
-    }
-
-    private suspend fun addMangaToSelectedGroup(manga: Manga, pendingAddToGroup: PendingAddToGroup) {
-        if (!libraryActionCoordinator.addMangaToSelectedGroup(manga, pendingAddToGroup)) return
-
-        val tabs = libraryGroupCoordinator.tabs(manga.id)
-        updateSuccessState { it.copy(dialog = null, libraryMangaGroupTabs = tabs) }
     }
 
     // Manga info - end
@@ -891,8 +733,10 @@ class MangaScreenModel(
                 .collectLatest { trackingState ->
                     updateSuccessState {
                         it.copy(
-                            trackingCount = trackingState.trackingCount,
-                            hasLoggedInTrackers = trackingState.hasLoggedInTrackers,
+                            tracking = MangaTrackingUiState(
+                                count = trackingState.trackingCount,
+                                hasLoggedInTrackers = trackingState.hasLoggedInTrackers,
+                            ),
                         )
                     }
                 }
@@ -950,38 +794,28 @@ class MangaScreenModel(
 
     fun deleteLocalManga(onDeleted: () -> Unit) {
         val manga = successState?.manga ?: return
-        if (successState?.isDeletingLocalManga == true) return
+        if (successState?.localDeletion?.isDeleting == true) return
         screenModelScope.launch {
             isDeletingLocalManga = true
-            updateSuccessState { it.copy(isDeletingLocalManga = true) }
-            val result = try {
-                localMangaDeletionService.delete(manga)
+            updateSuccessState { it.copy(localDeletion = MangaLocalDeletionUiState(isDeleting = true)) }
+            try {
+                when (val result = localMangaDeletionCoordinator.delete(manga)) {
+                    MangaLocalDeletionOutcome.Deleted -> {
+                        onDeleted()
+                        context.toast(MR.strings.local_manga_delete_complete)
+                        return@launch
+                    }
+                    is MangaLocalDeletionOutcome.Failed -> {
+                        isDeletingLocalManga = false
+                        updateSuccessState { it.copy(localDeletion = MangaLocalDeletionUiState(isDeleting = false)) }
+                        snackbarHostState.showSnackbar(context.stringResource(result.message))
+                    }
+                }
             } catch (e: CancellationException) {
                 isDeletingLocalManga = false
-                updateSuccessState { it.copy(isDeletingLocalManga = false) }
+                updateSuccessState { it.copy(localDeletion = MangaLocalDeletionUiState(isDeleting = false)) }
                 throw e
-            } catch (e: Throwable) {
-                logcat(LogPriority.ERROR, e)
-                LocalMangaDeletionResult.StateCleanupFailed
             }
-            if (result == LocalMangaDeletionResult.Deleted) {
-                onDeleted()
-                context.toast(MR.strings.local_manga_delete_complete)
-                return@launch
-            }
-            isDeletingLocalManga = false
-            updateSuccessState { it.copy(isDeletingLocalManga = false) }
-            val message = when (result) {
-                LocalMangaDeletionResult.BlockedByActiveReader -> MR.strings.local_manga_delete_blocked_reader
-                LocalMangaDeletionResult.BlockedByActiveImport -> MR.strings.local_manga_delete_blocked_import
-                LocalMangaDeletionResult.MangaDirectoryNotFound -> MR.strings.local_manga_delete_missing_folder
-                LocalMangaDeletionResult.FileDeletionFailed,
-                LocalMangaDeletionResult.NotLocalManga,
-                LocalMangaDeletionResult.StateCleanupFailed,
-                -> MR.strings.local_manga_delete_failed
-                LocalMangaDeletionResult.Deleted -> error("Handled above")
-            }
-            snackbarHostState.showSnackbar(context.stringResource(message))
         }
     }
 
@@ -1021,11 +855,10 @@ class MangaScreenModel(
             val chapters: List<ChapterList.Item>,
             val availableScanlators: Set<String>,
             val excludedScanlators: Set<String>,
-            val trackingCount: Int = 0,
-            val hasLoggedInTrackers: Boolean = false,
+            val tracking: MangaTrackingUiState = MangaTrackingUiState(),
             val isRefreshingData: Boolean = false,
             val dialog: Dialog? = null,
-            val isDeletingLocalManga: Boolean = false,
+            val localDeletion: MangaLocalDeletionUiState = MangaLocalDeletionUiState(),
             val hasPromptedToAddBefore: Boolean = false,
             val hideMissingChapters: Boolean = false,
             val canEditLocalMetadata: Boolean = false,
@@ -1056,6 +889,17 @@ class MangaScreenModel(
         }
     }
 }
+
+@Immutable
+data class MangaTrackingUiState(
+    val count: Int = 0,
+    val hasLoggedInTrackers: Boolean = false,
+)
+
+@Immutable
+data class MangaLocalDeletionUiState(
+    val isDeleting: Boolean = false,
+)
 
 @Immutable
 sealed class ChapterList {

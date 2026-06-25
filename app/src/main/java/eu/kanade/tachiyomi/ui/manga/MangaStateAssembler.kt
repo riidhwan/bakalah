@@ -38,11 +38,10 @@ internal class MangaStateAssembler(
             isRefreshingData = isRefreshingData,
             dialog = previousSuccessState?.dialog,
             hasPromptedToAddBefore = previousSuccessState?.hasPromptedToAddBefore ?: false,
-            trackingCount = if (isMangaSwitch) 0 else previousSuccessState?.trackingCount ?: 0,
-            hasLoggedInTrackers = if (isMangaSwitch) {
-                false
+            tracking = if (isMangaSwitch) {
+                MangaTrackingUiState()
             } else {
-                previousSuccessState?.hasLoggedInTrackers ?: false
+                previousSuccessState?.tracking ?: MangaTrackingUiState()
             },
             hideMissingChapters = libraryPreferences.hideMissingChapters.get(),
             canEditLocalMetadata = source is LocalSource &&

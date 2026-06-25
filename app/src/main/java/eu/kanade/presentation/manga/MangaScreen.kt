@@ -440,7 +440,7 @@ private fun MangaScreenSmallImpl(
                                 ) {
                                     MangaActionRow(
                                         favorite = targetState.manga.favorite,
-                                        trackingCount = targetState.trackingCount,
+                                        trackingCount = targetState.tracking.count,
                                         nextUpdate = nextUpdate,
                                         isUserIntervalMode = targetState.manga.fetchInterval < 0,
                                         onAddToLibraryClicked = onAddToLibraryClicked,
@@ -711,7 +711,7 @@ fun MangaScreenLargeImpl(
                                 if (!targetState.source.isLocal()) {
                                     MangaActionRow(
                                         favorite = targetState.manga.favorite,
-                                        trackingCount = targetState.trackingCount,
+                                        trackingCount = targetState.tracking.count,
                                         nextUpdate = nextUpdate,
                                         isUserIntervalMode = targetState.manga.fetchInterval < 0,
                                         onAddToLibraryClicked = onAddToLibraryClicked,
