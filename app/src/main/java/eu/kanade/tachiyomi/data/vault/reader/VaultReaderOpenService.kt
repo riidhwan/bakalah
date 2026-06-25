@@ -5,7 +5,6 @@ import eu.kanade.tachiyomi.data.vault.remote.childPath
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferLocalStaging
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferResult
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferService
-import eu.kanade.tachiyomi.data.vault.transfer.vaultTransferIntegrity
 import kotlinx.coroutines.delay
 import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapter
@@ -83,8 +82,8 @@ class VaultReaderOpenService(
         val localPath = state.localPath
         if (state.state != VaultCacheState.CACHED || localPath == null) return null
 
-        val bytes = localStaging.read(localPath)
-        if (bytes == null) {
+        val integrity = localStaging.integrity(localPath)
+        if (integrity == null) {
             repository.upsertCacheState(
                 state.copy(
                     state = VaultCacheState.VAULT_ONLY,
@@ -99,7 +98,6 @@ class VaultReaderOpenService(
             return null
         }
 
-        val integrity = bytes.vaultTransferIntegrity()
         if (
             integrity.sizeBytes != chapter.content.sizeBytes ||
             integrity.checksumSha256 != chapter.content.checksumSha256

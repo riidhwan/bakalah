@@ -13,6 +13,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 ## [Unreleased]
 ### Fixed
 - Continue Vault reader chapters in chapter order instead of raw catalogue source order.
+- Stream Vault chapter cache downloads to avoid buffering full chapters in memory.
 
 ## [v0.36.0] - 2026-06-24
 ### Added

@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.data.vault.reader
 
+import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferIntegrity
 import eu.kanade.tachiyomi.data.vault.transfer.VaultTransferLocalStaging
 import eu.kanade.tachiyomi.data.vault.transfer.vaultTransferIntegrity
 import io.kotest.matchers.shouldBe
@@ -31,6 +32,7 @@ import tachiyomi.domain.vault.model.VaultTransferJob
 import tachiyomi.domain.vault.model.VaultTransferState
 import tachiyomi.domain.vault.repository.VaultRepository
 import tachiyomi.domain.vault.service.ContentVaultPreferences
+import java.io.InputStream
 
 class VaultReaderOpenServiceTest {
 
@@ -39,7 +41,10 @@ class VaultReaderOpenServiceTest {
         val content = byteArrayOf(1, 2, 3)
         val integrity = content.vaultTransferIntegrity()
         val repository = FakeVaultRepository()
-        val local = FakeLocalStaging(mutableMapOf("cache/chapter.cbz" to content))
+        val local = FakeLocalStaging(
+            files = mutableMapOf("cache/chapter.cbz" to content),
+            failLegacyRead = true,
+        )
         repository.manga = manga()
         repository.chapters += chapter(sizeBytes = integrity.sizeBytes, checksumSha256 = integrity.checksumSha256)
         repository.cacheStates[1] = cacheState(
@@ -109,10 +114,22 @@ class VaultReaderOpenServiceTest {
 
     private class FakeLocalStaging(
         val files: MutableMap<String, ByteArray> = mutableMapOf(),
+        private val failLegacyRead: Boolean = false,
     ) : VaultTransferLocalStaging {
-        override suspend fun read(path: String): ByteArray? = files[path]
+        override suspend fun read(path: String): ByteArray? {
+            check(!failLegacyRead) { "legacy local read should not be used" }
+            return files[path]
+        }
         override suspend fun write(path: String, bytes: ByteArray) {
             files[path] = bytes
+        }
+        override suspend fun writeFrom(path: String, input: InputStream): VaultTransferIntegrity {
+            val bytes = input.readBytes()
+            files[path] = bytes
+            return bytes.vaultTransferIntegrity()
+        }
+        override suspend fun integrity(path: String): VaultTransferIntegrity? {
+            return files[path]?.vaultTransferIntegrity()
         }
         override suspend fun promote(stagedPath: String, finalPath: String) = Unit
         override suspend fun delete(path: String) {
