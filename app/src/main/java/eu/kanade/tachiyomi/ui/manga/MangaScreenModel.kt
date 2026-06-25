@@ -19,9 +19,6 @@ import eu.kanade.domain.manga.interactor.SetExcludedScanlators
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.chaptersFiltered
 import eu.kanade.domain.track.interactor.AddTracks
-import eu.kanade.domain.track.interactor.RefreshTracks
-import eu.kanade.domain.track.interactor.TrackChapter
-import eu.kanade.domain.track.model.AutoTrackState
 import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.presentation.manga.DownloadAction
 import eu.kanade.presentation.manga.components.ChapterDownloadAction
@@ -31,8 +28,6 @@ import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.local.LocalMangaDeletionResult
 import eu.kanade.tachiyomi.data.local.LocalMangaDeletionService
-import eu.kanade.tachiyomi.data.track.EnhancedTracker
-import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
@@ -44,9 +39,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
@@ -95,8 +88,6 @@ class MangaScreenModel(
     private val libraryPreferences: LibraryPreferences = Injekt.get(),
     private val trackPreferences: TrackPreferences = Injekt.get(),
     readerPreferences: ReaderPreferences = Injekt.get(),
-    private val trackerManager: TrackerManager = Injekt.get(),
-    private val trackChapter: TrackChapter = Injekt.get(),
     private val downloadManager: DownloadManager = Injekt.get(),
     private val downloadCache: DownloadCache = Injekt.get(),
     private val getMangaAndChapters: GetMangaWithChapters = Injekt.get(),
@@ -162,8 +153,6 @@ class MangaScreenModel(
 
     private val chapterSelection = MangaChapterSelectionState()
     private val activeMangaId = MutableStateFlow(mangaId)
-    private val refreshedOnLoadMangaIds = mutableSetOf<Long>()
-    private var loadedMangaId: Long? = null
     private var trackerJob: Job? = null
 
     @Volatile
@@ -215,6 +204,16 @@ class MangaScreenModel(
             libraryMangaGroupStateBuilder = libraryMangaGroupStateBuilder,
         ),
     )
+    private val loadCoordinator = MangaLoadCoordinator(
+        MangaLoadCoordinator.Dependencies(
+            getMangaAndChapters = getMangaAndChapters,
+            downloadCache = downloadCache,
+            downloadManager = downloadManager,
+            setMangaDefaultChapterFlags = setMangaDefaultChapterFlags,
+            sourceManager = sourceManager,
+            libraryGroupCoordinator = libraryGroupCoordinator,
+        ),
+    )
 
     private val chapterSettingsCoordinator = MangaChapterSettingsCoordinator(
         MangaChapterSettingsCoordinator.Dependencies(
@@ -233,6 +232,12 @@ class MangaScreenModel(
             filterChaptersForDownload = Injekt.get(),
         ),
     )
+    private val trackingCoordinator = MangaTrackingCoordinator(
+        MangaTrackingCoordinator.Dependencies(
+            getTracks = getTracks,
+            trackerManager = Injekt.get(),
+        ),
+    )
 
     /**
      * Helper function to update the UI state only if it's currently in success state
@@ -248,64 +253,41 @@ class MangaScreenModel(
 
     init {
         screenModelScope.launchIO {
-            activeMangaId
-                .flatMapLatest { selectedMangaId ->
-                    combine(
-                        getMangaAndChapters.subscribe(selectedMangaId, applyScanlatorFilter = true)
-                            .distinctUntilChanged(),
-                        downloadCache.changes,
-                        downloadManager.queueState,
-                    ) { mangaAndChapters, _, _ -> mangaAndChapters }
-                }
+            loadCoordinator.observe(activeMangaId)
                 .catch { error ->
                     if (!isDeletingLocalManga) throw error
                 }
                 .flowWithLifecycle(lifecycle)
-                .collectLatest { (manga, chapters) ->
-                    val isMangaSwitch = loadedMangaId != manga.id
-                    if (isMangaSwitch) {
+                .collectLatest { snapshot ->
+                    if (snapshot.isMangaSwitch) {
                         chapterSelection.clear()
                     }
 
-                    if (!manga.favorite) {
-                        setMangaDefaultChapterFlags.await(manga)
-                    }
-
-                    val chapterItems = chapters.toChapterListItems(manga)
-                    val needRefreshInfo = !manga.initialized
-                    val needRefreshChapter = chapterItems.isEmpty()
-                    val source = sourceManager.getOrStub(manga.source)
-                    val libraryMangaGroupTabs = libraryGroupCoordinator.tabs(manga.id)
+                    val chapterItems = snapshot.chapters.toChapterListItems(snapshot.manga)
 
                     mutableState.update { previousState ->
                         mangaStateAssembler.successState(
                             previousState = previousState,
-                            manga = manga,
-                            source = source,
+                            manga = snapshot.manga,
+                            source = snapshot.source,
                             isFromSource = isFromSource,
                             chapters = chapterItems,
-                            isRefreshingData = needRefreshInfo || needRefreshChapter,
-                            isMangaSwitch = isMangaSwitch,
-                            libraryMangaGroupTabs = libraryMangaGroupTabs,
+                            isRefreshingData = snapshot.needRefreshInfo || snapshot.needRefreshChapter,
+                            isMangaSwitch = snapshot.isMangaSwitch,
+                            libraryMangaGroupTabs = snapshot.libraryMangaGroupTabs,
                         )
                     }
 
-                    if (isMangaSwitch) {
-                        loadedMangaId = manga.id
-                        localVaultImportCoordinator.restartObservation(manga, source)
-                        observeTrackers(manga.id, source)
+                    if (snapshot.isMangaSwitch) {
+                        localVaultImportCoordinator.restartObservation(snapshot.manga, snapshot.source)
+                        observeTrackers(snapshot.manga.id, snapshot.source)
                     }
 
-                    if (
-                        manga.id !in refreshedOnLoadMangaIds &&
-                        screenModelScope.isActive &&
-                        (needRefreshInfo || needRefreshChapter)
-                    ) {
-                        refreshedOnLoadMangaIds.add(manga.id)
+                    if (loadCoordinator.takeRefreshOnLoad(snapshot, screenModelScope.isActive)) {
                         try {
                             val fetchFromSourceTasks = listOf(
-                                async { if (needRefreshInfo) fetchMangaFromSource() },
-                                async { if (needRefreshChapter) fetchChaptersFromSource() },
+                                async { if (snapshot.needRefreshInfo) fetchMangaFromSource() },
+                                async { if (snapshot.needRefreshChapter) fetchChaptersFromSource() },
                             )
                             fetchFromSourceTasks.awaitAll()
                         } finally {
@@ -585,7 +567,7 @@ class MangaScreenModel(
      */
     private fun hasDownloads(): Boolean {
         val manga = successState?.manga ?: return false
-        return downloadManager.getDownloadCount(manga) > 0
+        return downloadCoordinator.hasDownloads(manga)
     }
 
     /**
@@ -593,7 +575,7 @@ class MangaScreenModel(
      */
     private fun deleteDownloads() {
         val state = successState ?: return
-        downloadManager.deleteManga(state.manga, state.source)
+        downloadCoordinator.deleteMangaDownloads(state.manga, state.source)
     }
 
     fun selectLibraryMangaGroupTab(mangaId: Long) {
@@ -673,21 +655,7 @@ class MangaScreenModel(
 
     private fun observeDownloads() {
         screenModelScope.launchIO {
-            downloadManager.statusFlow()
-                .filter { it.manga.id == successState?.manga?.id }
-                .catch { error -> logcat(LogPriority.ERROR, error) }
-                .flowWithLifecycle(lifecycle)
-                .collect {
-                    withUIContext {
-                        updateDownloadState(it)
-                    }
-                }
-        }
-
-        screenModelScope.launchIO {
-            downloadManager.progressFlow()
-                .filter { it.manga.id == successState?.manga?.id }
-                .catch { error -> logcat(LogPriority.ERROR, error) }
+            downloadCoordinator.observeDownloadUpdates(activeMangaId = { successState?.manga?.id })
                 .flowWithLifecycle(lifecycle)
                 .collect {
                     withUIContext {
@@ -880,59 +848,66 @@ class MangaScreenModel(
                 chapters = chapters.toTypedArray(),
             )
 
-            if (!read || successState?.hasLoggedInTrackers == false || autoTrackState == AutoTrackState.NEVER) {
+            if (!read) {
                 return@launchIO
             }
 
-            val mangaId = successState?.manga?.id ?: return@launchIO
-            refreshTrackers(mangaId = mangaId)
-
-            val tracks = getTracks.await(mangaId)
-            val maxChapterNumber = chapters.maxOf { it.chapterNumber }
-            val shouldPromptTrackingUpdate = tracks.any { track -> maxChapterNumber > track.lastChapterRead }
-
-            if (!shouldPromptTrackingUpdate) return@launchIO
-            if (autoTrackState == AutoTrackState.ALWAYS) {
-                trackChapter.await(context, mangaId, maxChapterNumber)
-                withUIContext {
-                    context.toast(context.stringResource(MR.strings.trackers_updated_summary, maxChapterNumber.toInt()))
-                }
-                return@launchIO
-            }
-
-            val result = snackbarHostState.showSnackbar(
-                message = context.stringResource(MR.strings.confirm_tracker_update, maxChapterNumber.toInt()),
-                actionLabel = context.stringResource(MR.strings.action_ok),
-                duration = SnackbarDuration.Short,
-                withDismissAction = true,
+            val state = successState ?: return@launchIO
+            val result = trackingCoordinator.planMarkReadTrackingUpdate(
+                mangaId = state.manga.id,
+                chapters = chapters,
+                hasLoggedInTrackers = state.hasLoggedInTrackers,
+                autoTrackState = autoTrackState,
             )
+            showTrackerRefreshFailures(result.refreshFailures)
+            handleTrackingUpdate(result.update)
+        }
+    }
 
-            if (result == SnackbarResult.ActionPerformed) {
-                trackChapter.await(context, mangaId, maxChapterNumber)
+    private suspend fun showTrackerRefreshFailures(failures: List<MangaTrackerRefreshFailure>) {
+        failures.forEach { failure ->
+            withUIContext {
+                context.toast(
+                    context.stringResource(
+                        MR.strings.track_error,
+                        failure.trackerName,
+                        failure.error.message ?: "",
+                    ),
+                )
             }
         }
     }
 
-    private suspend fun refreshTrackers(
-        mangaId: Long,
-        refreshTracks: RefreshTracks = Injekt.get(),
-    ) {
-        refreshTracks.await(mangaId)
-            .filter { it.first != null }
-            .forEach { (track, e) ->
-                logcat(LogPriority.ERROR, e) {
-                    "Failed to refresh track data mangaId=$mangaId for service ${track!!.id}"
-                }
+    private suspend fun handleTrackingUpdate(update: MangaTrackingUpdate?) {
+        when (update) {
+            null -> Unit
+            is MangaTrackingUpdate.Auto -> {
+                trackingCoordinator.trackChapter(context, update)
                 withUIContext {
                     context.toast(
                         context.stringResource(
-                            MR.strings.track_error,
-                            track!!.name,
-                            e.message ?: "",
+                            MR.strings.trackers_updated_summary,
+                            update.chapterNumber.toInt(),
                         ),
                     )
                 }
             }
+            is MangaTrackingUpdate.Prompt -> {
+                val result = snackbarHostState.showSnackbar(
+                    message = context.stringResource(
+                        MR.strings.confirm_tracker_update,
+                        update.chapterNumber.toInt(),
+                    ),
+                    actionLabel = context.stringResource(MR.strings.action_ok),
+                    duration = SnackbarDuration.Short,
+                    withDismissAction = true,
+                )
+
+                if (result == SnackbarResult.ActionPerformed) {
+                    trackingCoordinator.trackChapter(context, update)
+                }
+            }
+        }
     }
 
     /**
@@ -1063,23 +1038,14 @@ class MangaScreenModel(
     private fun observeTrackers(mangaId: Long, source: Source) {
         trackerJob?.cancel()
         trackerJob = screenModelScope.launchIO {
-            combine(
-                getTracks.subscribe(mangaId).catch { logcat(LogPriority.ERROR, it) },
-                trackerManager.loggedInTrackersFlow(),
-            ) { mangaTracks, loggedInTrackers ->
-                // Show only if the service supports this manga's source
-                val supportedTrackers = loggedInTrackers.filter { (it as? EnhancedTracker)?.accept(source) ?: true }
-                val supportedTrackerIds = supportedTrackers.map { it.id }.toHashSet()
-                val supportedTrackerTracks = mangaTracks.filter { it.trackerId in supportedTrackerIds }
-                supportedTrackerTracks.size to supportedTrackers.isNotEmpty()
-            }
+            trackingCoordinator.observeTrackingState(mangaId, source)
                 .flowWithLifecycle(lifecycle)
                 .distinctUntilChanged()
-                .collectLatest { (trackingCount, hasLoggedInTrackers) ->
+                .collectLatest { trackingState ->
                     updateSuccessState {
                         it.copy(
-                            trackingCount = trackingCount,
-                            hasLoggedInTrackers = hasLoggedInTrackers,
+                            trackingCount = trackingState.trackingCount,
+                            hasLoggedInTrackers = trackingState.hasLoggedInTrackers,
                         )
                     }
                 }
