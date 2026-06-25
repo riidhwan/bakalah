@@ -33,6 +33,7 @@ import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultImportService
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultMangaScanner
 import eu.kanade.tachiyomi.data.vault.localimport.LocalVaultMangaScannerBoundary
 import eu.kanade.tachiyomi.data.vault.operation.VaultChapterDeleteOperationHandler
+import eu.kanade.tachiyomi.data.vault.operation.VaultChapterRenameOperationHandler
 import eu.kanade.tachiyomi.data.vault.operation.VaultMetadataPublishOperationHandler
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationHandler
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationManager
@@ -45,6 +46,7 @@ import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailCac
 import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailDisplayLoader
 import eu.kanade.tachiyomi.data.vault.publishing.DefaultVaultChapterThumbnailPublishService
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterDeletionService
+import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterRenameService
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailCacheStore
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailDisplayLoader
 import eu.kanade.tachiyomi.data.vault.publishing.VaultChapterThumbnailPublishService
@@ -188,6 +190,7 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory {
             VaultChapterDeletionService(get<NetworkHelper>(), get(), get(), get(), get(), get())
         }
+        addSingletonFactory { VaultChapterRenameService(get<NetworkHelper>(), get(), get(), get()) }
         addSingletonFactory { VaultCoverPublishService(get<NetworkHelper>(), get(), get(), get(), get(), get()) }
         addSingletonFactory { VaultMetadataPublishService(get<NetworkHelper>(), get(), get(), get()) }
         addSingletonFactory { VaultManifestPublishGate() }
@@ -195,10 +198,12 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { VaultOperationNotificationCoordinator(get(), get()) }
         addSingletonFactory { VaultMetadataPublishOperationHandler(get(), get()) }
         addSingletonFactory { VaultChapterDeleteOperationHandler(get(), get()) }
+        addSingletonFactory { VaultChapterRenameOperationHandler(get(), get()) }
         addSingletonFactory<List<VaultOperationHandler>> {
             listOf(
                 get<VaultMetadataPublishOperationHandler>(),
                 get<VaultChapterDeleteOperationHandler>(),
+                get<VaultChapterRenameOperationHandler>(),
             )
         }
         addSingletonFactory { VaultOperationManager(app, get(), get(), get()) }

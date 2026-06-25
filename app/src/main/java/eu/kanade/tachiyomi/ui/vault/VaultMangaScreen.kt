@@ -55,6 +55,7 @@ data class VaultMangaScreen(
                 onClickRead = {
                     context.startActivity(ReaderActivity.newVaultIntent(context, mangaId, it.chapter.id))
                 },
+                onClickRenameChapter = screenModel::renameChapter,
                 onClickDeleteChapter = screenModel::deleteChapter,
                 onChapterThumbnailVisible = screenModel::loadChapterThumbnail,
                 onClickDelete = screenModel::deleteManga,
@@ -90,6 +91,14 @@ data class VaultMangaScreen(
                     is VaultMangaScreenModel.Event.ChapterDeleteFailed ->
                         snackbarHostState.showSnackbar(
                             context.stringResource(MR.strings.vault_delete_chapter_failed_details, event.detail),
+                        )
+                    VaultMangaScreenModel.Event.ChapterRenameCompleted ->
+                        snackbarHostState.showSnackbar(
+                            context.stringResource(MR.strings.vault_rename_chapter_complete),
+                        )
+                    is VaultMangaScreenModel.Event.ChapterRenameFailed ->
+                        snackbarHostState.showSnackbar(
+                            context.stringResource(MR.strings.vault_rename_chapter_failed_details, event.detail),
                         )
                     VaultMangaScreenModel.Event.MetadataPublished ->
                         snackbarHostState.showSnackbar(

@@ -92,6 +92,7 @@ class VaultOperationNotifier(
         return when (this) {
             VaultTransferType.METADATA_PUBLISH -> context.stringResource(MR.strings.vault_operation_saving_metadata)
             VaultTransferType.CHAPTER_DELETE -> context.stringResource(MR.strings.vault_operation_deleting_chapter)
+            VaultTransferType.CHAPTER_RENAME -> context.stringResource(MR.strings.vault_operation_renaming_chapter)
             else -> context.stringResource(MR.strings.vault_operation_publishing_changes)
         }
     }

@@ -249,6 +249,7 @@ class VaultChapterDeletionService internal constructor(
             VaultTransferType.METADATA_PUBLISH,
             VaultTransferType.THUMBNAIL_PUBLISH,
             VaultTransferType.CHAPTER_DELETE,
+            VaultTransferType.CHAPTER_RENAME,
         )
     }
 }

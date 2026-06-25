@@ -8,6 +8,7 @@ import eu.kanade.tachiyomi.data.vault.export.VaultChapterExportResult
 import eu.kanade.tachiyomi.data.vault.export.VaultChapterExportService
 import eu.kanade.tachiyomi.data.vault.export.vaultChapterRemotePath
 import eu.kanade.tachiyomi.data.vault.operation.VaultChapterDeletePayload
+import eu.kanade.tachiyomi.data.vault.operation.VaultChapterRenamePayload
 import eu.kanade.tachiyomi.data.vault.operation.VaultMetadataLabelEditPayload
 import eu.kanade.tachiyomi.data.vault.operation.VaultMetadataPublishPayload
 import eu.kanade.tachiyomi.data.vault.operation.VaultOperationManager
@@ -75,6 +76,7 @@ class VaultMangaScreenModel(
     private val loadingChapterThumbnailIds = Collections.synchronizedSet(mutableSetOf<Long>())
     private val observedTerminalMetadataJobIds = Collections.synchronizedSet(mutableSetOf<Long>())
     private val observedTerminalChapterDeletionJobIds = Collections.synchronizedSet(mutableSetOf<Long>())
+    private val observedTerminalChapterRenameJobIds = Collections.synchronizedSet(mutableSetOf<Long>())
 
     init {
         screenModelScope.launchIO {
@@ -105,6 +107,11 @@ class VaultMangaScreenModel(
                     .filter { it.isCompletedChapterDeletionForCurrentManga() }
                     .map { it.id },
             )
+            observedTerminalChapterRenameJobIds.addAll(
+                repository.getTransferJobsForVault(manga.vaultId)
+                    .filter { it.isCompletedChapterRenameForCurrentManga() }
+                    .map { it.id },
+            )
             reloadCoverCache()
             recoverInterruptedCacheJobs(manga)
 
@@ -131,6 +138,9 @@ class VaultMangaScreenModel(
                         terminalJobs = transferJobs.filter { it.isCompletedMetadataOperationForCurrentManga() },
                         terminalChapterDeletionJobs = transferJobs.filter {
                             it.isCompletedChapterDeletionForCurrentManga()
+                        },
+                        terminalChapterRenameJobs = transferJobs.filter {
+                            it.isCompletedChapterRenameForCurrentManga()
                         },
                     )
                 }
@@ -178,6 +188,17 @@ class VaultMangaScreenModel(
                                 }
                             }
                         }
+                        snapshot.terminalChapterRenameJobs.forEach { job ->
+                            if (observedTerminalChapterRenameJobIds.add(job.id)) {
+                                if (job.state == VaultTransferState.SUCCEEDED) {
+                                    _events.send(Event.ChapterRenameCompleted)
+                                } else {
+                                    _events.send(
+                                        Event.ChapterRenameFailed(job.failureReason.toChapterRenameFailureDetail()),
+                                    )
+                                }
+                            }
+                        }
                     }
             }
 
@@ -195,12 +216,14 @@ class VaultMangaScreenModel(
                     }
                     .mapNotNull { it.chapterId }
                     .toSet()
+                val renameOverlays = transferJobs.latestChapterRenameOverlays(json)
                 buildVaultChapterItems(
                     chapters = chapters,
                     cacheStates = cacheStates,
                     readingStates = readingStates.associateBy { it.chapterId },
                     previousItems = mutableState.value.chapters,
                     pendingDeletingChapterIds = pendingDeletingChapterIds,
+                    renameOverlays = renameOverlays,
                 )
             }
                 .catch {
@@ -509,7 +532,7 @@ class VaultMangaScreenModel(
     fun deleteChapter(item: VaultChapterItem) {
         screenModelScope.launchIO {
             val manga = mutableState.value.manga ?: return@launchIO
-            if (item.isDeleting) return@launchIO
+            if (item.isDeleting || item.isRenaming) return@launchIO
             if (mutableState.value.chapters.size <= 1) {
                 _events.send(Event.ChapterDeleteFailed("Delete the Vault Manga instead"))
                 return@launchIO
@@ -531,6 +554,35 @@ class VaultMangaScreenModel(
                 null
             }
             if (result == null) _events.send(Event.ChapterDeleteFailed("Could not enqueue Vault chapter deletion"))
+        }
+    }
+
+    fun renameChapter(item: VaultChapterItem, title: String) {
+        val trimmedTitle = title.trim()
+        screenModelScope.launchIO {
+            val manga = mutableState.value.manga ?: return@launchIO
+            if (item.isDeleting || item.isRenaming) return@launchIO
+            if (trimmedTitle.isBlank()) {
+                _events.send(Event.ChapterRenameFailed("Chapter title is required"))
+                return@launchIO
+            }
+            val result = runCatching {
+                operationManager.enqueueChapterRename(
+                    vaultId = manga.vaultId,
+                    mangaId = manga.id,
+                    chapterId = item.chapter.id,
+                    payload = VaultChapterRenamePayload(
+                        mangaId = manga.id,
+                        chapterId = item.chapter.id,
+                        chapterIdentity = item.chapter.identity.value,
+                        title = trimmedTitle,
+                    ),
+                )
+            }.getOrElse {
+                logcat(LogPriority.ERROR, it)
+                null
+            }
+            if (result == null) _events.send(Event.ChapterRenameFailed("Could not enqueue Vault chapter rename"))
         }
     }
 
@@ -691,6 +743,7 @@ class VaultMangaScreenModel(
         val readingState: VaultReadingState? = null,
         val thumbnail: VaultChapterThumbnailDisplayResult,
         val isDeleting: Boolean = false,
+        val isRenaming: Boolean = false,
     ) {
         val state: VaultCacheState
             get() = cacheState?.state ?: VaultCacheState.VAULT_ONLY
@@ -730,6 +783,8 @@ class VaultMangaScreenModel(
         data class DeleteFailed(val detail: String) : Event
         data class ChapterDeleteCompleted(val warningDetail: String? = null) : Event
         data class ChapterDeleteFailed(val detail: String) : Event
+        data object ChapterRenameCompleted : Event
+        data class ChapterRenameFailed(val detail: String) : Event
         data object MetadataPublished : Event
         data class MetadataPublishFailed(val detail: String) : Event
         data class ChapterExported(val filename: String) : Event
@@ -766,6 +821,12 @@ class VaultMangaScreenModel(
             mangaId == this@VaultMangaScreenModel.mangaId &&
             isTerminal
     }
+
+    private fun VaultTransferJob.isCompletedChapterRenameForCurrentManga(): Boolean {
+        return type == VaultTransferType.CHAPTER_RENAME &&
+            mangaId == this@VaultMangaScreenModel.mangaId &&
+            isTerminal
+    }
 }
 
 private data class VaultMangaMetadataSnapshot(
@@ -776,10 +837,15 @@ private data class VaultMangaMetadataSnapshot(
     val isPublishingMetadata: Boolean,
     val terminalJobs: List<VaultTransferJob>,
     val terminalChapterDeletionJobs: List<VaultTransferJob>,
+    val terminalChapterRenameJobs: List<VaultTransferJob>,
 )
 
 private data class VaultMetadataPendingOverlay(
     val payload: VaultMetadataPublishPayload,
+)
+
+internal data class VaultChapterRenameOverlay(
+    val title: String,
 )
 
 private fun List<VaultTransferJob>.latestMetadataOverlay(json: Json): VaultMetadataPendingOverlay? {
@@ -797,6 +863,28 @@ private fun List<VaultTransferJob>.latestMetadataOverlay(json: Json): VaultMetad
                 null
             }
         }
+}
+
+private fun List<VaultTransferJob>.latestChapterRenameOverlays(json: Json): Map<Long, VaultChapterRenameOverlay> {
+    return filter {
+        it.type == VaultTransferType.CHAPTER_RENAME &&
+            it.state in ACTIVE_TRANSFER_STATES &&
+            it.chapterId != null &&
+            it.payloadJson != null
+    }
+        .groupBy { it.chapterId ?: -1 }
+        .mapNotNull { (chapterId, jobs) ->
+            val latest = jobs.maxWithOrNull(compareBy<VaultTransferJob> { it.updatedAt }.thenBy { it.id })
+                ?: return@mapNotNull null
+            val payload = try {
+                json.decodeFromString<VaultChapterRenamePayload>(latest.payloadJson.orEmpty())
+            } catch (_: SerializationException) {
+                return@mapNotNull null
+            }
+            val title = payload.title.trim().takeIf(String::isNotBlank) ?: return@mapNotNull null
+            chapterId to VaultChapterRenameOverlay(title)
+        }
+        .toMap()
 }
 
 private fun VaultManga.withOverlay(overlay: VaultMetadataPendingOverlay?): VaultManga {
@@ -922,16 +1010,19 @@ internal fun buildVaultChapterItems(
     readingStates: Map<Long, VaultReadingState> = emptyMap(),
     previousItems: List<VaultMangaScreenModel.VaultChapterItem>,
     pendingDeletingChapterIds: Set<Long> = emptySet(),
+    renameOverlays: Map<Long, VaultChapterRenameOverlay> = emptyMap(),
 ): List<VaultMangaScreenModel.VaultChapterItem> {
     val cacheByChapter = cacheStates.associateBy { it.chapterId }
     val previousByChapter = previousItems.associateBy { it.chapter.id }
     return chapters.map { chapter ->
         val previous = previousByChapter[chapter.id]
+        val renameOverlay = renameOverlays[chapter.id]
         VaultMangaScreenModel.VaultChapterItem(
-            chapter = chapter,
+            chapter = renameOverlay?.let { chapter.copy(title = it.title) } ?: chapter,
             cacheState = cacheByChapter[chapter.id],
             readingState = readingStates[chapter.id],
             isDeleting = chapter.id in pendingDeletingChapterIds,
+            isRenaming = renameOverlay != null,
             thumbnail = previous
                 ?.thumbnail
                 ?.takeIf { previous.chapter.thumbnail?.identity == chapter.thumbnail?.identity }
@@ -1002,6 +1093,29 @@ private fun String?.toChapterDeleteFailureDetail(): String {
         "invalid_payload" -> "Invalid deletion request"
         "publish_failed" -> "Could not publish Vault chapter deletion"
         else -> "Could not delete Vault Chapter"
+    }
+}
+
+private fun String?.toChapterRenameFailureDetail(): String {
+    return when (this?.substringBefore(':')) {
+        "title_required" -> "Chapter title is required"
+        "active_transfer" -> "Vault Chapter has active work"
+        "incomplete_configuration" -> "Incomplete configuration"
+        "vault_not_found" -> "Vault not found"
+        "manga_not_found" -> "Vault Manga not found"
+        "chapter_not_found" -> "Vault Chapter not found"
+        "chapter_identity_mismatch" -> "Vault Chapter identity changed"
+        "not_vault" -> "Remote root is not a Bakalah Content Vault"
+        "unsupported_older_version" -> "Unsupported older layout version"
+        "unsupported_newer_version" -> "Unsupported newer layout version"
+        "identity_changed" -> "Remote identity changed"
+        "revision_mismatch" -> "Vault revision changed"
+        "manifest_not_found" -> "Manifest not found"
+        "identity_mismatch" -> "Manifest identity mismatch"
+        "malformed_manifest" -> "Malformed manifest"
+        "invalid_payload" -> "Invalid rename request"
+        "publish_failed" -> "Could not publish Vault chapter rename"
+        else -> "Could not rename Vault Chapter"
     }
 }
 

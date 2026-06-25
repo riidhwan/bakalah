@@ -11,6 +11,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Added
+- Add chapter renaming from Vault Manga Detail.
+
 ### Fixed
 - Continue Vault reader chapters in chapter order instead of raw catalogue source order.
 - Stream Vault chapter cache downloads to avoid buffering full chapters in memory.

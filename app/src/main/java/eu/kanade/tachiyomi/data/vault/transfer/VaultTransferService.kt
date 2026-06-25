@@ -93,6 +93,7 @@ class VaultTransferService(
             -> executeUpload(job)
             VaultTransferType.CAPTURE_PUBLISH,
             VaultTransferType.CHAPTER_DELETE,
+            VaultTransferType.CHAPTER_RENAME,
             -> VaultTransferResult.NotRetryable(job.state)
             VaultTransferType.CACHE_CHAPTER -> executeDownload(job)
             VaultTransferType.CATALOGUE_REFRESH -> finishSucceeded(start(job), stagedPath = null)
@@ -352,6 +353,7 @@ class VaultTransferService(
             VaultTransferType.METADATA_PUBLISH,
             VaultTransferType.THUMBNAIL_PUBLISH,
             VaultTransferType.CHAPTER_DELETE,
+            VaultTransferType.CHAPTER_RENAME,
             -> VaultCacheState.PUBLISHING
             VaultTransferType.CACHE_CHAPTER -> VaultCacheState.QUEUED
             VaultTransferType.CATALOGUE_REFRESH -> VaultCacheState.QUEUED
@@ -365,6 +367,7 @@ class VaultTransferService(
             VaultTransferType.METADATA_PUBLISH,
             VaultTransferType.THUMBNAIL_PUBLISH,
             VaultTransferType.CHAPTER_DELETE,
+            VaultTransferType.CHAPTER_RENAME,
             -> VaultCacheState.PUBLISHING
             VaultTransferType.CACHE_CHAPTER -> VaultCacheState.CACHING
             VaultTransferType.CATALOGUE_REFRESH -> VaultCacheState.QUEUED
