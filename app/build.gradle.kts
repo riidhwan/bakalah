@@ -5,8 +5,8 @@ import mihon.gradle.getLatestCommitSha
 import mihon.gradle.tasks.ReplaceShortcutsPlaceholderTask
 
 @Suppress("MagicNumber")
-private val bakalahVersionCode = 53
-private val bakalahVersionName = "0.36.0"
+private val bakalahVersionCode = 54
+private val bakalahVersionName = "0.37.0"
 
 plugins {
     alias(mihonx.plugins.android.application)

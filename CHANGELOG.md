@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+
+## [v0.37.0] - 2026-06-25
 ### Added
 - Add chapter renaming from Vault Manga Detail.
 
