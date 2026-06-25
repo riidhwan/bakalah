@@ -125,7 +125,7 @@ internal class MangaChapterActionCoordinator(
             val result = coordinators.trackingCoordinator.planMarkReadTrackingUpdate(
                 mangaId = state.manga.id,
                 chapters = chapters,
-                hasLoggedInTrackers = state.hasLoggedInTrackers,
+                hasLoggedInTrackers = state.tracking.hasLoggedInTrackers,
                 autoTrackState = dependencies.autoTrackState(),
             )
             showTrackerRefreshFailures(result.refreshFailures)

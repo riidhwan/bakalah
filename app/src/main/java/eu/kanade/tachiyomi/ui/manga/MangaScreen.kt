@@ -151,7 +151,7 @@ class MangaScreen(
                 )
             }.takeIf { isHttpSource },
             onTrackingClicked = {
-                if (!successState.hasLoggedInTrackers) {
+                if (!successState.tracking.hasLoggedInTrackers) {
                     navigator.push(SettingsScreen(SettingsScreen.Destination.Tracking))
                 } else {
                     screenModel.showTrackDialog()
@@ -236,7 +236,7 @@ class MangaScreen(
             is MangaScreenModel.Dialog.DeleteLocalManga -> {
                 DeleteLocalMangaDialog(
                     title = dialog.manga.title,
-                    isDeleting = successState.isDeletingLocalManga,
+                    isDeleting = successState.localDeletion.isDeleting,
                     onDismissRequest = onDismissRequest,
                     onConfirm = { screenModel.deleteLocalManga(navigator::pop) },
                 )
