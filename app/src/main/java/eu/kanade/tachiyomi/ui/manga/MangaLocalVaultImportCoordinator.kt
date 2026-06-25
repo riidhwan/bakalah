@@ -1,7 +1,6 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import android.content.Context
-import androidx.compose.material3.SnackbarHostState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import eu.kanade.tachiyomi.data.vault.capture.LibraryVaultCaptureJob
@@ -37,7 +36,6 @@ internal class MangaLocalVaultImportCoordinator(
         val context: Context,
         val lifecycle: Lifecycle,
         val screenModelScope: CoroutineScope,
-        val snackbarHostState: SnackbarHostState,
     )
 
     data class Services(
@@ -50,10 +48,11 @@ internal class MangaLocalVaultImportCoordinator(
     data class Callbacks(
         val getState: () -> MangaScreenModel.State.Success?,
         val setLocalVaultImportState: (LocalVaultImportState) -> Unit,
-        val showDialog: (MangaScreenModel.Dialog) -> Unit,
+        val showDialog: (MangaScreenModel.VaultDialog) -> Unit,
         val dismissDialog: () -> Unit,
         val selectedChapters: (List<ChapterList.Item>) -> List<Chapter>,
         val clearSelection: () -> Unit,
+        val showUiEffect: (MangaScreenModel.UiEffect) -> Unit,
     )
 
     private var localVaultImportJob: Job? = null
@@ -90,7 +89,7 @@ internal class MangaLocalVaultImportCoordinator(
         val localVaultImport = state.localVaultImport ?: return
         val selectedTarget = localVaultImport.pendingTarget ?: localVaultImport.linkedTargetSelection()
         callbacks.showDialog(
-            MangaScreenModel.Dialog.LocalVaultTargetSetup(
+            MangaScreenModel.VaultDialog.LocalVaultTargetSetup(
                 initialTitle = when (selectedTarget) {
                     is LocalVaultImportTargetSelection.CreateNew -> selectedTarget.title
                     is LocalVaultImportTargetSelection.Existing ->
@@ -262,7 +261,7 @@ internal class MangaLocalVaultImportCoordinator(
         when {
             state == null || localVaultImport == null || selectedChapters.isEmpty() -> Unit
             duplicateTitles.isNotEmpty() && !replaceConfirmed -> callbacks.showDialog(
-                MangaScreenModel.Dialog.LocalVaultReplaceChapters(
+                MangaScreenModel.VaultDialog.LocalVaultReplaceChapters(
                     chapterTitles = duplicateTitles,
                 ),
             )
@@ -463,13 +462,15 @@ private fun startAddToVaultJob(
                 ),
             )
         }
-        runtime.snackbarHostState.showSnackbar(
-            message = runtime.context.stringResource(
-                if (started) {
-                    MR.strings.vault_import_ongoing
-                } else {
-                    MR.strings.vault_import_error_already_running
-                },
+        callbacks.showUiEffect(
+            MangaScreenModel.UiEffect.ShowSnackbar(
+                message = runtime.context.stringResource(
+                    if (started) {
+                        MR.strings.vault_import_ongoing
+                    } else {
+                        MR.strings.vault_import_error_already_running
+                    },
+                ),
             ),
         )
     }
