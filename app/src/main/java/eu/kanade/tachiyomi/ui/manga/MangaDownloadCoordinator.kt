@@ -5,6 +5,12 @@ import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.source.Source
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.merge
+import logcat.LogPriority
+import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.chapter.service.getChapterSort
 import tachiyomi.domain.manga.model.Manga
@@ -13,6 +19,15 @@ import tachiyomi.source.local.isLocal
 internal class MangaDownloadCoordinator(
     private val downloadManager: DownloadManager,
 ) {
+
+    fun observeDownloadUpdates(activeMangaId: () -> Long?): Flow<Download> {
+        return merge(
+            downloadManager.statusFlow(),
+            downloadManager.progressFlow(),
+        )
+            .filter { download -> download.manga.id == activeMangaId() }
+            .catch { error -> logcat(LogPriority.ERROR, error) }
+    }
 
     fun chapterListItems(
         chapters: List<Chapter>,
@@ -100,6 +115,14 @@ internal class MangaDownloadCoordinator(
 
     fun downloadChapters(manga: Manga, chapters: List<Chapter>) {
         downloadManager.downloadChapters(manga, chapters)
+    }
+
+    fun hasDownloads(manga: Manga): Boolean {
+        return downloadManager.getDownloadCount(manga) > 0
+    }
+
+    fun deleteMangaDownloads(manga: Manga, source: Source) {
+        downloadManager.deleteManga(manga, source)
     }
 
     fun startDownloads(chapterId: Long? = null) {
