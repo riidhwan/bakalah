@@ -200,7 +200,7 @@ class ReaderViewModel @JvmOverloads constructor(
         val vaultSession = readerSession as? ReaderSession.Vault
         if (vaultSession != null) {
             return@lazy vaultSession.chapters
-                .sortedByDescending { it.sourceOrder }
+                .inVaultReaderOrder()
                 .map { chapter ->
                     val readingState = runBlocking {
                         vaultRepository.getReadingState(chapter.id)

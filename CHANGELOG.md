@@ -11,6 +11,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Fixed
+- Continue Vault reader chapters in chapter order instead of raw catalogue source order.
 
 ## [v0.36.0] - 2026-06-24
 ### Added
