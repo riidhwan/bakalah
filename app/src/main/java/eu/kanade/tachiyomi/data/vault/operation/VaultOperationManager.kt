@@ -78,6 +78,34 @@ class VaultOperationManager(
         )
     }
 
+    suspend fun enqueueChapterRename(
+        vaultId: Long,
+        mangaId: Long,
+        chapterId: Long,
+        payload: VaultChapterRenamePayload,
+    ): VaultOperationEnqueueResult {
+        val operationQueueKey = operationQueueKey(vaultId)
+        val operationKey = chapterRenameOperationKey(mangaId, chapterId)
+        val payloadJson = json.encodeToString(payload)
+        val jobId = coalesceOperation(
+            vaultId = vaultId,
+            mangaId = mangaId,
+            chapterId = chapterId,
+            operationKey = operationKey,
+            operationQueueKey = operationQueueKey,
+            type = VaultTransferType.CHAPTER_RENAME,
+            payloadJson = payloadJson,
+            coalesceQueued = true,
+        )
+        notificationCoordinator.refresh(operationQueueKey)
+        wakeOperationQueue(operationQueueKey)
+        return VaultOperationEnqueueResult(
+            jobId = jobId,
+            operationKey = operationKey,
+            operationQueueKey = operationQueueKey,
+        )
+    }
+
     private suspend fun coalesceOperation(
         vaultId: Long,
         mangaId: Long,
@@ -168,6 +196,9 @@ class VaultOperationManager(
         fun metadataOperationKey(mangaId: Long): String = "vault-metadata:$mangaId"
 
         fun chapterDeletionOperationKey(mangaId: Long): String = "vault-chapter-delete:$mangaId"
+
+        fun chapterRenameOperationKey(mangaId: Long, chapterId: Long): String =
+            "vault-chapter-rename:$mangaId:$chapterId"
 
         fun workName(operationQueueKey: String): String = "$WORK_TAG:$operationQueueKey"
 

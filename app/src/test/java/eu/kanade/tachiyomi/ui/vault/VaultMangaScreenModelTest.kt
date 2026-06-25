@@ -86,6 +86,21 @@ class VaultMangaScreenModelTest {
         rebuilt.single().canDownloadCbz shouldBe false
     }
 
+    @Test
+    fun `chapter item rebuild overlays pending rename title`() {
+        val chapter = chapter(id = 1, title = "Old title")
+
+        val rebuilt = buildVaultChapterItems(
+            chapters = listOf(chapter),
+            cacheStates = emptyList(),
+            previousItems = emptyList(),
+            renameOverlays = mapOf(chapter.id to VaultChapterRenameOverlay("New title")),
+        )
+
+        rebuilt.single().chapter.title shouldBe "New title"
+        rebuilt.single().isRenaming shouldBe true
+    }
+
     private fun chapterItem(
         id: Long,
         title: String,

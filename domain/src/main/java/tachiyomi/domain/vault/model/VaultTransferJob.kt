@@ -44,6 +44,7 @@ enum class VaultTransferType {
     CACHE_CHAPTER,
     THUMBNAIL_PUBLISH,
     CHAPTER_DELETE,
+    CHAPTER_RENAME,
 }
 
 enum class VaultTransferState {

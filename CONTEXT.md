@@ -388,6 +388,10 @@ _Avoid_: Download status, file metadata, cache state
 The vault-owned record of where one Vault Chapter's current readable content came from.
 _Avoid_: Manga provenance, duplicate key, source truth
 
+**Vault Chapter Rename**:
+Changing the user-facing title of one Vault Chapter in the Vault Catalogue while preserving its identity, readable content, thumbnail, reading state, cache state, catalogue order, and provenance.
+_Avoid_: File rename, chapter replacement, content rename
+
 **Staged Transfer**:
 A vault upload or download that remains hidden from normal catalogue and reading flows until content integrity is verified.
 _Avoid_: Partial sync, in-progress content, temporary chapter

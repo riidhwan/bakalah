@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.Image
@@ -29,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -70,6 +72,7 @@ internal fun VaultChapterList(
     onLongPressThumbnailPath: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickDownloadThumbnail: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickRead: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
+    onClickRenameChapter: (VaultMangaScreenModel.VaultChapterItem, String) -> Unit,
     onClickDeleteChapter: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onChapterThumbnailVisible: (VaultMangaScreenModel.VaultChapterItem) -> Unit,
     onClickAssignLabel: (VaultLabel) -> Unit,
@@ -108,6 +111,7 @@ internal fun VaultChapterList(
                 onLongPressThumbnailPath = { onLongPressThumbnailPath(item) },
                 onClickDownloadThumbnail = { onClickDownloadThumbnail(item) },
                 onClickRead = { onClickRead(item) },
+                onClickRename = { title -> onClickRenameChapter(item, title) },
                 onClickDelete = { onClickDeleteChapter(item) },
                 onChapterThumbnailVisible = { onChapterThumbnailVisible(item) },
                 modifier = Modifier.animateItem(),
@@ -125,13 +129,16 @@ private fun VaultChapterListItem(
     onLongPressThumbnailPath: () -> Unit,
     onClickDownloadThumbnail: () -> Unit,
     onClickRead: () -> Unit,
+    onClickRename: (String) -> Unit,
     onClickDelete: () -> Unit,
     onChapterThumbnailVisible: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showProperties by remember { mutableStateOf(false) }
+    var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    val isMutationActive = item.isDeleting || item.isRenaming
 
     LaunchedEffect(item.chapter.id, item.needsThumbnailLoad) {
         if (item.needsThumbnailLoad) {
@@ -142,7 +149,7 @@ private fun VaultChapterListItem(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(enabled = !item.isDeleting, onClick = onClickRead)
+            .clickable(enabled = !isMutationActive, onClick = onClickRead)
             .padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -168,10 +175,10 @@ private fun VaultChapterListItem(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val availability = if (item.isDeleting) {
-                        stringResource(MR.strings.vault_chapter_deleting)
-                    } else {
-                        item.state.availabilityLabel()
+                    val availability = when {
+                        item.isDeleting -> stringResource(MR.strings.vault_chapter_deleting)
+                        item.isRenaming -> stringResource(MR.strings.vault_chapter_renaming)
+                        else -> item.state.availabilityLabel()
                     }
                     Text(
                         text = stringResource(
@@ -201,16 +208,25 @@ private fun VaultChapterListItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(MR.strings.vault_chapter_properties)) },
                         leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
-                        enabled = !item.isDeleting,
+                        enabled = !isMutationActive,
                         onClick = {
                             showMenu = false
                             showProperties = true
                         },
                     )
                     DropdownMenuItem(
+                        text = { Text(stringResource(MR.strings.vault_action_rename_chapter)) },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                        enabled = !isMutationActive,
+                        onClick = {
+                            showMenu = false
+                            showRenameDialog = true
+                        },
+                    )
+                    DropdownMenuItem(
                         text = { Text(stringResource(MR.strings.vault_action_delete_chapter)) },
                         leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null) },
-                        enabled = !item.isDeleting,
+                        enabled = !isMutationActive,
                         onClick = {
                             showMenu = false
                             showDeleteConfirmation = true
@@ -230,6 +246,17 @@ private fun VaultChapterListItem(
             onLongPressThumbnailPath = onLongPressThumbnailPath,
             onClickDownloadThumbnail = onClickDownloadThumbnail,
             onDismissRequest = { showProperties = false },
+        )
+    }
+
+    if (showRenameDialog) {
+        VaultChapterRenameDialog(
+            item = item,
+            onDismissRequest = { showRenameDialog = false },
+            onSave = {
+                showRenameDialog = false
+                onClickRename(it)
+            },
         )
     }
 
@@ -255,6 +282,49 @@ private fun VaultChapterListItem(
             },
         )
     }
+}
+
+@Composable
+private fun VaultChapterRenameDialog(
+    item: VaultMangaScreenModel.VaultChapterItem,
+    onDismissRequest: () -> Unit,
+    onSave: (String) -> Unit,
+) {
+    var title by remember(item.chapter.id) { mutableStateOf(item.chapter.title) }
+    val titleError = title.trim().isBlank()
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(stringResource(MR.strings.vault_rename_chapter_dialog_title)) },
+        text = {
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text(stringResource(MR.strings.vault_rename_chapter_title_label)) },
+                isError = titleError,
+                supportingText = if (titleError) {
+                    { Text(stringResource(MR.strings.vault_rename_chapter_title_required)) }
+                } else {
+                    null
+                },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !titleError,
+                onClick = { onSave(title.trim()) },
+            ) {
+                Text(stringResource(MR.strings.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(MR.strings.action_cancel))
+            }
+        },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
