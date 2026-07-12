@@ -52,6 +52,10 @@ _Avoid_: Build number, version code, tag name
 The complete group of installable Bakalah files and their published checksum manifest that together represent one shipped version.
 _Avoid_: APKs, build outputs, assets
 
+**FOSS Distribution Variant**:
+The retired separately installable Bakalah variant whose Android identity ended in `.foss`. Existing installations are outside the continuing Bakalah upgrade path.
+_Avoid_: FOSS build, FOSS APK, open-source edition
+
 **Published Release**:
 An immutable, user-visible Bakalah Release Version whose reviewed notes and complete Release Artifact Set are available through GitHub Releases.
 _Avoid_: Successful workflow, uploaded draft, release job

@@ -12,6 +12,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Removed
+- Retire the FOSS Distribution Variant. Existing FOSS installations cannot upgrade in place to the standard app.
+
 ## [v0.37.0] - 2026-06-25
 ### Added
 - Add chapter renaming from Vault Manga Detail.

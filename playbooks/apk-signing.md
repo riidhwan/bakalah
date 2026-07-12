@@ -29,8 +29,6 @@ Set these in:
 
 `GitHub -> repository -> Settings -> Secrets and variables -> Actions -> Repository secrets`
 
-Use one Android signing key for both the release and FOSS APKs unless maintainers intentionally decide to split them.
-
 ## Create A New Keystore
 
 Do this only for a new app identity or an intentional APK signing-key rotation. Changing the APK signing key affects whether existing installations can upgrade.
@@ -81,7 +79,7 @@ Do this only for a new app identity or an intentional APK signing-key rotation. 
 After adding or rotating APK signing secrets:
 
 1. Trigger a release workflow only with an intentional release tag.
-2. Confirm the `Sign APK` step passes for both `release` and `foss`.
+2. Confirm the `Sign APKs` step passes for the release APKs.
 3. Confirm the workflow creates the expected renamed APKs.
 4. Download the draft release APKs.
 5. Verify install or upgrade behavior on a test device before publishing the draft.

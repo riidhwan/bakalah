@@ -61,9 +61,7 @@ jobs:
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Build release APKs
-        run: |
-          ./gradlew assembleRelease -Penable-updater
-          ./gradlew assembleFoss -Penable-updater
+        run: ./gradlew assembleRelease -Penable-updater
 
       - name: Sign release APKs
         uses: r0adkll/sign-android-release@a391126403df92c6a0a3988a829dd47f79b89ed7
@@ -76,22 +74,10 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: '35.0.1'
 
-      - name: Sign FOSS APK
-        uses: r0adkll/sign-android-release@a391126403df92c6a0a3988a829dd47f79b89ed7
-        with:
-          releaseDirectory: app/build/outputs/apk/foss
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.ALIAS }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: '35.0.1'
-
       - name: Prepare complete artifact set
         run: |
-          .github/scripts/rename-release-apks.sh release "${{ needs.validate.outputs.tag }}"
-          .github/scripts/rename-release-apks.sh foss "${{ needs.validate.outputs.tag }}"
-          .github/scripts/verify-release-artifacts.sh all "${{ needs.validate.outputs.tag }}"
+          .github/scripts/rename-release-apks.sh "${{ needs.validate.outputs.tag }}"
+          .github/scripts/verify-release-artifacts.sh "${{ needs.validate.outputs.tag }}"
 
       - name: Upload rebuilt artifacts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -123,7 +109,7 @@ jobs:
 
       - name: Verify complete artifact set
         run: |
-          .github/scripts/verify-release-artifacts.sh all "${{ needs.validate.outputs.tag }}"
+          .github/scripts/verify-release-artifacts.sh "${{ needs.validate.outputs.tag }}"
           .github/scripts/create-release-checksums.sh "${{ needs.validate.outputs.tag }}"
 
       - name: Resume draft GitHub Release
