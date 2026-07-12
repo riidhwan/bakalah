@@ -18,6 +18,7 @@ import eu.kanade.domain.track.interactor.TrackChapter
 import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.data.database.models.ChapterImpl
 import eu.kanade.tachiyomi.data.database.models.toDomainChapter
+import eu.kanade.tachiyomi.data.diagnostic.PersistenceDiagnosticRecorder
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.download.model.Download
@@ -138,6 +139,7 @@ class ReaderViewModel @JvmOverloads constructor(
         DefaultVaultChapterThumbnailImageNormalizer(),
     private val activeVaultReaderSessions: ActiveVaultReaderSessions = Injekt.get(),
     private val activeLocalReaderSessions: ActiveLocalReaderSessions = Injekt.get(),
+    private val persistenceDiagnostics: PersistenceDiagnosticRecorder = Injekt.get(),
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(State())
@@ -740,13 +742,15 @@ class ReaderViewModel @JvmOverloads constructor(
                 updateChapterProgressOnComplete(readerChapter)
             }
 
-            updateChapter.await(
-                ChapterUpdate(
-                    id = readerChapter.chapter.id!!,
-                    read = readerChapter.chapter.read,
-                    lastPageRead = readerChapter.chapter.last_page_read.toLong(),
-                ),
-            )
+            persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.READER_CHAPTER_PROGRESS) {
+                updateChapter.await(
+                    ChapterUpdate(
+                        id = readerChapter.chapter.id!!,
+                        read = readerChapter.chapter.read,
+                        lastPageRead = readerChapter.chapter.last_page_read.toLong(),
+                    ),
+                )
+            }
         }
     }
 
@@ -791,7 +795,9 @@ class ReaderViewModel @JvmOverloads constructor(
                     null
                 }
             }
-        updateChapter.awaitAll(duplicateUnreadChapters)
+        persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.READER_CHAPTER_PROGRESS) {
+            updateChapter.awaitAll(duplicateUnreadChapters)
+        }
     }
 
     fun restartReadTimer() {
@@ -810,7 +816,9 @@ class ReaderViewModel @JvmOverloads constructor(
             val endTime = Date()
             val sessionReadDuration = chapterReadStartTime?.let { endTime.time - it } ?: 0
 
-            upsertHistory.await(HistoryUpdate(chapterId, endTime, sessionReadDuration))
+            persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.READER_HISTORY) {
+                upsertHistory.await(HistoryUpdate(chapterId, endTime, sessionReadDuration))
+            }
             chapterReadStartTime = null
         }
     }
@@ -872,12 +880,14 @@ class ReaderViewModel @JvmOverloads constructor(
                     ),
                 )
             } else {
-                updateChapter.await(
-                    ChapterUpdate(
-                        id = chapter.id!!,
-                        bookmark = bookmarked,
-                    ),
-                )
+                persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.READER_CHAPTER_PROGRESS) {
+                    updateChapter.await(
+                        ChapterUpdate(
+                            id = chapter.id!!,
+                            bookmark = bookmarked,
+                        ),
+                    )
+                }
             }
         }
 

@@ -2,9 +2,10 @@ package eu.kanade.tachiyomi.ui.manga.source
 
 import eu.kanade.domain.chapter.interactor.GetAvailableScanlators
 import eu.kanade.domain.manga.interactor.GetExcludedScanlators
+import eu.kanade.tachiyomi.data.diagnostic.PersistenceDiagnosticRecorder
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -32,17 +33,32 @@ internal class MangaSessionCoordinator(
         callbacks: Callbacks,
     ) {
         runtime.screenModelScope.launchIO {
-            dependencies.loadCoordinator.observe(activeMangaId)
-                .catch { error ->
-                    if (!callbacks.isDeletingLocalManga()) throw error
-                }
-                .collect { snapshot ->
-                    callbacks.onSnapshot(snapshot)
+            val initialSnapshotTrace = dependencies.persistenceDiagnostics.begin(
+                PersistenceDiagnosticRecorder.MANGA_INITIAL_SNAPSHOT,
+            )
+            try {
+                dependencies.loadCoordinator.observe(activeMangaId)
+                    .collect { snapshot ->
+                        initialSnapshotTrace.finish()
+                        callbacks.onSnapshot(snapshot)
 
-                    if (dependencies.loadCoordinator.takeRefreshOnLoad(snapshot, runtime.screenModelScope.isActive)) {
-                        callbacks.onRefreshOnLoad(snapshot)
+                        if (dependencies.loadCoordinator.takeRefreshOnLoad(
+                                snapshot,
+                                runtime.screenModelScope.isActive,
+                            )
+                        ) {
+                            callbacks.onRefreshOnLoad(snapshot)
+                        }
                     }
-                }
+            } catch (error: CancellationException) {
+                initialSnapshotTrace.cancel()
+                throw error
+            } catch (error: Throwable) {
+                initialSnapshotTrace.fail()
+                if (!callbacks.isDeletingLocalManga()) throw error
+            } finally {
+                initialSnapshotTrace.cancel()
+            }
         }
     }
 
@@ -80,6 +96,7 @@ internal class MangaSessionCoordinator(
         val loadCoordinator: MangaLoadCoordinator,
         val getAvailableScanlators: GetAvailableScanlators,
         val getExcludedScanlators: GetExcludedScanlators,
+        val persistenceDiagnostics: PersistenceDiagnosticRecorder,
     )
 
     data class Callbacks(

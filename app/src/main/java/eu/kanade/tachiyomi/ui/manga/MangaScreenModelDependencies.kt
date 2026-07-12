@@ -9,6 +9,7 @@ import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.track.interactor.AddTracks
 import eu.kanade.domain.track.model.AutoTrackState
 import eu.kanade.domain.track.service.TrackPreferences
+import eu.kanade.tachiyomi.data.diagnostic.PersistenceDiagnosticRecorder
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.local.LocalMangaDeletionService
@@ -80,6 +81,7 @@ class MangaScreenModelDependencies {
     private val trackerManager: TrackerManager = Injekt.get()
     private val localMangaDeletionService: LocalMangaDeletionService = Injekt.get()
     private val sourceManager: SourceManager = Injekt.get()
+    private val persistenceDiagnostics: PersistenceDiagnosticRecorder = Injekt.get()
     private val localVaultImportStateBuilder = LocalVaultImportScreenStateBuilder()
     private val libraryMangaGroupStateBuilder = LibraryMangaGroupStateBuilder(
         sourceName = { sourceId -> sourceManager.getOrStub(sourceId).getNameForMangaInfo() },
@@ -106,6 +108,7 @@ class MangaScreenModelDependencies {
                 setMangaCategories = setMangaCategories,
                 manageLibraryMangaGroup = manageLibraryMangaGroup,
                 libraryMangaGroupStateBuilder = libraryMangaGroupStateBuilder,
+                persistenceDiagnostics = persistenceDiagnostics,
             ),
         ),
         libraryGroupCoordinator = libraryGroupCoordinator,
@@ -119,6 +122,7 @@ class MangaScreenModelDependencies {
             setMangaDefaultChapterFlags = setMangaDefaultChapterFlags,
             sourceManager = sourceManager,
             libraryGroupCoordinator = libraryGroupCoordinator,
+            persistenceDiagnostics = persistenceDiagnostics,
         ),
     )
     internal val sessionCoordinator = MangaSessionCoordinator(
@@ -126,6 +130,7 @@ class MangaScreenModelDependencies {
             loadCoordinator = loadCoordinator,
             getAvailableScanlators = getAvailableScanlators,
             getExcludedScanlators = getExcludedScanlators,
+            persistenceDiagnostics = persistenceDiagnostics,
         ),
     )
     internal val chapterSettingsCoordinator = MangaChapterSettingsCoordinator(

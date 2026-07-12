@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import eu.kanade.domain.manga.interactor.UpdateManga
+import eu.kanade.tachiyomi.data.diagnostic.PersistenceDiagnosticRecorder
 import eu.kanade.tachiyomi.ui.manga.library.AddToLibraryResult
 import eu.kanade.tachiyomi.ui.manga.library.LibraryMangaGroupStateBuilder
 import eu.kanade.tachiyomi.ui.manga.library.MangaLibraryActionCoordinator
@@ -21,6 +22,7 @@ import tachiyomi.domain.manga.interactor.GetSameTitleLibraryManga
 import tachiyomi.domain.manga.interactor.ManageLibraryMangaGroup
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
+import java.io.File
 
 class MangaLibraryActionCoordinatorTest {
 
@@ -87,6 +89,9 @@ class MangaLibraryActionCoordinatorTest {
                     manageLibraryMangaGroup = manageLibraryMangaGroup,
                     libraryMangaGroupStateBuilder = LibraryMangaGroupStateBuilder(
                         sourceName = { sourceId -> "Source $sourceId" },
+                    ),
+                    persistenceDiagnostics = PersistenceDiagnosticRecorder(
+                        File.createTempFile("persistence-diagnostics", ".log").apply { deleteOnExit() },
                     ),
                 ),
             ),

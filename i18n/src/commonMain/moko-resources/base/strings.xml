@@ -847,6 +847,11 @@
     <string name="pref_reset_viewer_flags_error">Couldn\'t reset reader settings</string>
     <string name="pref_dump_crash_logs">Share crash logs</string>
     <string name="pref_dump_crash_logs_summary">Saves error logs to a file for sharing with the developers</string>
+    <string name="pref_share_persistence_diagnostics">Share persistence diagnostics</string>
+    <string name="pref_share_persistence_diagnostics_summary">Exports a bounded log of stalled reader and database operations</string>
+    <string name="pref_clear_persistence_diagnostics">Clear persistence diagnostics</string>
+    <string name="persistence_diagnostics_cleared">Persistence diagnostics cleared</string>
+    <string name="persistence_diagnostics_export_failed">Failed to export persistence diagnostics</string>
     <string name="label_background_activity">Background activity</string>
     <string name="pref_disable_battery_optimization">Disable battery optimization</string>
     <string name="pref_disable_battery_optimization_summary">Helps with background library updates and backups</string>
