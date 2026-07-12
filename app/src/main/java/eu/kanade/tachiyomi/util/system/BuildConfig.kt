@@ -18,6 +18,3 @@ val isPreviewBuildType: Boolean
 
 val isReleaseBuildType: Boolean
     inline get() = BuildConfig.BUILD_TYPE == "release"
-
-val isFossBuildType: Boolean
-    inline get() = BuildConfig.BUILD_TYPE == "foss"

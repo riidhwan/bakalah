@@ -12,14 +12,13 @@ cd "$work"
 tag=v1.2.3
 files=(
   "bakalah-$tag.apk"
-  "bakalah-$tag-foss.apk"
   "bakalah-arm64-v8a-$tag.apk"
   "bakalah-armeabi-v7a-$tag.apk"
   "bakalah-x86-$tag.apk"
   "bakalah-x86_64-$tag.apk"
 )
 
-if .github/scripts/verify-release-artifacts.sh all "$tag" >/dev/null 2>&1; then
+if .github/scripts/verify-release-artifacts.sh "$tag" >/dev/null 2>&1; then
   echo "FAIL: missing artifact set was accepted"
   exit 1
 fi
@@ -29,7 +28,7 @@ for file in "${files[@]}"; do
 done
 
 .github/scripts/create-release-checksums.sh "$tag" >/dev/null
-[[ "$(wc -l < SHA256SUMS)" -eq 6 ]] || { echo "FAIL: checksum manifest is incomplete"; exit 1; }
+[[ "$(wc -l < SHA256SUMS)" -eq 5 ]] || { echo "FAIL: checksum manifest is incomplete"; exit 1; }
 sha256sum --check SHA256SUMS >/dev/null
 
 printf '# Changelog\n' > CHANGELOG.md

@@ -8,7 +8,6 @@ notes_file="${RELEASE_NOTES_FILE:-release_body.md}"
 
 expected_assets=(
   "bakalah-$tag.apk"
-  "bakalah-$tag-foss.apk"
   "bakalah-arm64-v8a-$tag.apk"
   "bakalah-armeabi-v7a-$tag.apk"
   "bakalah-x86-$tag.apk"

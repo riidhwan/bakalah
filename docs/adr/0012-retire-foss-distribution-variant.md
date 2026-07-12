@@ -1,0 +1,3 @@
+# Retire the FOSS Distribution Variant
+
+Bakalah will retire the separately installable FOSS Distribution Variant and remove its product flavor, code hooks, automation, tests, and guidance. Future Release Artifact Sets contain only the standard universal and architecture-specific APKs plus their checksum manifest; existing FOSS installations cannot upgrade in place and receive no compatibility or migration release. FOSS APKs in existing Published Releases remain available because published tags, assets, and checksums are immutable historical release records. This supersedes the requirement in [ADR 0008](./0008-publish-releases-automatically.md) to include the FOSS APK in future complete artifact sets.
