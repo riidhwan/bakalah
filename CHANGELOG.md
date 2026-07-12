@@ -12,6 +12,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.38.0] - 2026-07-12
+
 ### Added
 - Add bounded persistence diagnostics for investigating rare reader-related stalls.
 
