@@ -1,42 +1,56 @@
 name: Release
 on:
-  push:
-    tags:
-      - v*
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ startsWith(github.event.pull_request.head.ref, 'release/') && github.event.pull_request.head.repo.full_name == github.repository && 'release-publication' || github.run_id }}
+  cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  get_tag:
-    if: github.repository == 'riidhwan/bakalah'
-    name: Validate release version
-    runs-on: 'ubuntu-24.04'
+  validate:
+    if: >
+      github.repository == 'riidhwan/bakalah' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'release/')
+    name: Validate release intent
+    runs-on: ubuntu-24.04
     outputs:
-      tag: ${{ steps.extract.outputs.tag }}
-      version: ${{ steps.extract.outputs.version }}
-
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+      target_sha: ${{ steps.release.outputs.target_sha }}
     steps:
-      - name: Checkout
+      - name: Checkout merged revision
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Get tag name
-        id: extract
-        run: .github/scripts/validate-release-inputs.sh
+      - name: Validate release intent
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          TARGET_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: .github/scripts/validate-release-intent.sh "${{ github.event.pull_request.head.ref }}"
 
   gate:
-    if: github.repository == 'riidhwan/bakalah'
     name: Release gate
-    runs-on: 'ubuntu-24.04'
-    needs: get_tag
-
+    needs: validate
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
+      - name: Checkout merged revision
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ needs.validate.outputs.target_sha }}
 
       - name: Set up JDK
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -57,14 +71,14 @@ jobs:
         run: ./gradlew verifySqlDelightMigration
 
   build:
-    if: github.repository == 'riidhwan/bakalah'
     name: Build
-    runs-on: 'ubuntu-24.04'
-    needs: [get_tag, gate]
-
+    needs: [validate, gate]
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
+      - name: Checkout merged revision
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ needs.validate.outputs.target_sha }}
 
       - name: Set up JDK
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -78,7 +92,7 @@ jobs:
       - name: Build
         run: ./gradlew assembleRelease -Penable-updater
 
-      - name: Sign APK
+      - name: Sign APKs
         uses: r0adkll/sign-android-release@a391126403df92c6a0a3988a829dd47f79b89ed7
         with:
           releaseDirectory: app/build/outputs/apk/release
@@ -89,32 +103,31 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: '35.0.1'
 
-      - name: Rename APK
-        run: .github/scripts/rename-release-apks.sh release ${{ needs.get_tag.outputs.tag }}
+      - name: Prepare APKs
+        run: |
+          .github/scripts/rename-release-apks.sh release "${{ needs.validate.outputs.tag }}"
+          .github/scripts/verify-release-artifacts.sh release "${{ needs.validate.outputs.tag }}"
 
-      - name: Verify APKs
-        run: .github/scripts/verify-release-artifacts.sh release ${{ needs.get_tag.outputs.tag }}
-
-      - name: Upload APK
+      - name: Upload APKs
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: bakalah
           path: |
-            bakalah-${{ needs.get_tag.outputs.tag }}.apk
-            bakalah-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk
-            bakalah-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
-            bakalah-x86-${{ needs.get_tag.outputs.tag }}.apk
-            bakalah-x86_64-${{ needs.get_tag.outputs.tag }}.apk
+            bakalah-${{ needs.validate.outputs.tag }}.apk
+            bakalah-arm64-v8a-${{ needs.validate.outputs.tag }}.apk
+            bakalah-armeabi-v7a-${{ needs.validate.outputs.tag }}.apk
+            bakalah-x86-${{ needs.validate.outputs.tag }}.apk
+            bakalah-x86_64-${{ needs.validate.outputs.tag }}.apk
 
   build_foss:
-    if: github.repository == 'riidhwan/bakalah'
     name: Build (FOSS)
+    needs: [validate, gate]
     runs-on: ubuntu-24.04
-    needs: [get_tag, gate]
-
     steps:
-      - name: Checkout
+      - name: Checkout merged revision
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ needs.validate.outputs.target_sha }}
 
       - name: Set up JDK
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -141,61 +154,56 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: '35.0.1'
 
-      - name: Rename APK
-        run: .github/scripts/rename-release-apks.sh foss ${{ needs.get_tag.outputs.tag }}
-
-      - name: Verify APK
-        run: .github/scripts/verify-release-artifacts.sh foss ${{ needs.get_tag.outputs.tag }}
+      - name: Prepare APK
+        run: |
+          .github/scripts/rename-release-apks.sh foss "${{ needs.validate.outputs.tag }}"
+          .github/scripts/verify-release-artifacts.sh foss "${{ needs.validate.outputs.tag }}"
 
       - name: Upload APK
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: bakalah-foss
-          path: bakalah-${{ needs.get_tag.outputs.tag }}-foss.apk
+          path: bakalah-${{ needs.validate.outputs.tag }}-foss.apk
 
-  release:
-    if: github.repository == 'riidhwan/bakalah'
-    name: Create GitHub Release
+  publish:
+    name: Publish release
+    needs: [validate, build, build_foss]
     runs-on: ubuntu-24.04
-    needs: [get_tag, build, build_foss]
-
+    permissions:
+      contents: write
     steps:
-      - name: Checkout
+      - name: Checkout merged revision
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ needs.validate.outputs.target_sha }}
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Prepare release notes
-        id: changelog
-        run: .github/scripts/prepare-release-notes.sh ${{ needs.get_tag.outputs.tag }}
+        run: .github/scripts/prepare-release-notes.sh "${{ needs.validate.outputs.tag }}"
 
-      - name: Download all artifacts
+      - name: Download APKs
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           merge-multiple: true
 
-      - name: Verify release artifact set
-        run: .github/scripts/verify-release-artifacts.sh all ${{ needs.get_tag.outputs.tag }}
+      - name: Prepare complete artifact set
+        run: |
+          .github/scripts/verify-release-artifacts.sh all "${{ needs.validate.outputs.tag }}"
+          .github/scripts/create-release-checksums.sh "${{ needs.validate.outputs.tag }}"
 
-      - name: Delete all artifacts
+      - name: Stage, verify, and publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.validate.outputs.tag }}
+          TARGET_SHA: ${{ needs.validate.outputs.target_sha }}
+        run: .github/scripts/publish-release.sh
+
+      - name: Delete transient workflow artifacts
+        if: ${{ success() }}
         uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b # v5.1.0
         with:
           failOnError: false
           name: |
             bakalah
             bakalah-foss
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
-        with:
-          tag_name: ${{ needs.get_tag.outputs.tag }}
-          name: Bakalah ${{ needs.get_tag.outputs.tag }}
-          body_path: release_body.md
-          files: |
-            bakalah-${{ needs.get_tag.outputs.tag }}.apk
-            bakalah-${{ needs.get_tag.outputs.tag }}-foss.apk
-            bakalah-arm64-v8a-${{ needs.get_tag.outputs.tag }}.apk
-            bakalah-armeabi-v7a-${{ needs.get_tag.outputs.tag }}.apk
-            bakalah-x86-${{ needs.get_tag.outputs.tag }}.apk
-            bakalah-x86_64-${{ needs.get_tag.outputs.tag }}.apk
-          draft: false
-          prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
