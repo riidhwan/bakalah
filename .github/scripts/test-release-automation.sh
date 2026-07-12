@@ -3,6 +3,20 @@ set -euo pipefail
 
 root="$(git rev-parse --show-toplevel)"
 "$root/.github/scripts/test-release-publication-policy.sh"
+source "$root/.github/scripts/github-release.sh"
+
+draft='{"id":352835133,"tag_name":"v0.38.0","draft":true}'
+published='{"id":300000000,"tag_name":"v0.37.0","draft":false}'
+selected="$(printf '[%s,%s]\n' "$draft" "$published" | github_release_select_by_tag v0.38.0)"
+[[ "$(jq -r '.id' <<< "$selected")" == 352835133 ]] || { echo "FAIL: draft release was not found by tag"; exit 1; }
+if printf '[%s]\n' "$published" | github_release_select_by_tag v0.38.0 >/dev/null; then
+  echo "FAIL: missing release was reported as present"
+  exit 1
+fi
+if printf '[%s,%s]\n' "$draft" "$draft" | github_release_select_by_tag v0.38.0 >/dev/null 2>&1; then
+  echo "FAIL: duplicate draft releases were accepted"
+  exit 1
+fi
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
