@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.ui.manga.source
 
+import eu.kanade.tachiyomi.data.diagnostic.PersistenceDiagnosticRecorder
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.source.Source
@@ -37,7 +38,9 @@ internal class MangaLoadCoordinator(
             }
             .map { (manga, chapters) ->
                 if (!manga.favorite) {
-                    dependencies.setMangaDefaultChapterFlags.await(manga)
+                    dependencies.persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_DEFAULT_FLAGS) {
+                        dependencies.setMangaDefaultChapterFlags.await(manga)
+                    }
                 }
 
                 val isMangaSwitch = loadedMangaId != manga.id
@@ -71,6 +74,7 @@ internal class MangaLoadCoordinator(
         val setMangaDefaultChapterFlags: SetMangaDefaultChapterFlags,
         val sourceManager: SourceManager,
         val libraryGroupCoordinator: MangaLibraryGroupCoordinator,
+        val persistenceDiagnostics: PersistenceDiagnosticRecorder,
     )
 }
 

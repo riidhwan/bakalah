@@ -20,6 +20,7 @@ import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.track.interactor.AddTracks
 import eu.kanade.presentation.util.ioCoroutineScope
 import eu.kanade.tachiyomi.data.cache.CoverCache
+import eu.kanade.tachiyomi.data.diagnostic.PersistenceDiagnosticRecorder
 import eu.kanade.tachiyomi.data.local.LocalSourceChangeNotifier
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
@@ -81,6 +82,7 @@ class BrowseSourceScreenModel(
     private val getIncognitoState: GetIncognitoState = Injekt.get(),
     private val manageLibraryMangaGroup: ManageLibraryMangaGroup = Injekt.get(),
     private val localSourceChangeNotifier: LocalSourceChangeNotifier = Injekt.get(),
+    private val persistenceDiagnostics: PersistenceDiagnosticRecorder = Injekt.get(),
 ) : StateScreenModel<BrowseSourceScreenModel.State>(State(Listing.valueOf(listingQuery))) {
 
     var displayMode by sourcePreferences.sourceDisplayMode.asState(screenModelScope)
@@ -270,7 +272,9 @@ class BrowseSourceScreenModel(
                 prepareAddedFavorite(manga)
             }
 
-            updateManga.await(new.toMangaUpdate())
+            persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_FAVORITE_WRITE) {
+                updateManga.await(new.toMangaUpdate())
+            }
         }
     }
 
@@ -401,20 +405,26 @@ class BrowseSourceScreenModel(
     }
 
     private suspend fun addFavoriteWithCategories(manga: Manga, categoryIds: List<Long>): Boolean {
-        moveMangaToCategories(manga, categoryIds)
-        if (!manga.favorite) {
-            val new = manga.copy(
-                favorite = true,
-                dateAdded = Instant.now().toEpochMilli(),
-            )
-            prepareAddedFavorite(manga)
-            updateManga.await(new.toMangaUpdate())
+        return persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_LIBRARY_UPDATE) {
+            moveMangaToCategories(manga, categoryIds)
+            if (!manga.favorite) {
+                val new = manga.copy(
+                    favorite = true,
+                    dateAdded = Instant.now().toEpochMilli(),
+                )
+                prepareAddedFavorite(manga)
+                persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_FAVORITE_WRITE) {
+                    updateManga.await(new.toMangaUpdate())
+                }
+            }
+            true
         }
-        return true
     }
 
     private suspend fun prepareAddedFavorite(manga: Manga) {
-        setMangaDefaultChapterFlags.await(manga)
+        persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_DEFAULT_FLAGS) {
+            setMangaDefaultChapterFlags.await(manga)
+        }
         addTracks.bindEnhancedTrackers(manga, source)
     }
 
@@ -455,10 +465,12 @@ class BrowseSourceScreenModel(
 
     fun moveMangaToCategories(manga: Manga, categoryIds: List<Long>) {
         screenModelScope.launchIO {
-            setMangaCategories.await(
-                mangaId = manga.id,
-                categoryIds = categoryIds.toList(),
-            )
+            persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_CATEGORIES_WRITE) {
+                setMangaCategories.await(
+                    mangaId = manga.id,
+                    categoryIds = categoryIds.toList(),
+                )
+            }
         }
     }
 

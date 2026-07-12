@@ -139,6 +139,12 @@ Keep these flows explicit about ownership:
 - Data repositories persist state and expose query results.
 - UI observes state and sends user actions.
 
+### Persistence Stall Diagnostics
+
+Release builds keep a privacy-safe, bounded persistence diagnostic log for investigating rare reader-related stalls that cannot be reproduced reliably in debug builds. The app-level `PersistenceDiagnosticRecorder` records only static operation names, generated operation IDs, timestamps, elapsed durations, and completion outcomes. It does not record manga titles, source URLs, chapter names, or content.
+
+The log is stored under the app's private files directory, is capped at 256 KiB, and marks operations that remain active for at least five seconds. Advanced Settings provides actions to share a stable snapshot or clear the log. Instrumentation should remain limited to persistence boundaries that help distinguish reader progress/history writes, manga snapshot loading, default flag writes, favorite/category writes, and library mutations; avoid turning it into general event analytics.
+
 ## Testing Strategy
 
 Unit tests live under each module's `src/test/java`. Current examples include domain tests such as `FetchIntervalTest`, `LibraryFlagsTest`, `MissingChaptersTest`, and core utility tests such as `TallImageSplitCalculatorTest`.

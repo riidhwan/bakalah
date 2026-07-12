@@ -12,6 +12,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Added
+- Add bounded persistence diagnostics for investigating rare reader-related stalls.
+
 ### Removed
 - Retire the FOSS Distribution Variant. Existing FOSS installations cannot upgrade in place to the standard app.
 

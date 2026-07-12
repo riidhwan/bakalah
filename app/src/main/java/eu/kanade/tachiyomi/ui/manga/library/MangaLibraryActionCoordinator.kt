@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.manga.library
 
 import eu.kanade.domain.manga.interactor.UpdateManga
+import eu.kanade.tachiyomi.data.diagnostic.PersistenceDiagnosticRecorder
 import eu.kanade.tachiyomi.util.removeCovers
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.SetMangaCategories
@@ -16,7 +17,13 @@ internal class MangaLibraryActionCoordinator(
 ) {
 
     suspend fun removeFromLibrary(manga: Manga): Boolean {
-        if (!dependencies.updateManga.awaitUpdateFavorite(manga.id, false)) return false
+        return dependencies.persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_LIBRARY_UPDATE) {
+            removeFromLibraryInternal(manga)
+        }
+    }
+
+    private suspend fun removeFromLibraryInternal(manga: Manga): Boolean {
+        if (!updateFavorite(manga.id, false)) return false
 
         if (manga.removeCovers() != manga) {
             dependencies.updateManga.awaitUpdateCoverLastModified(manga.id)
@@ -29,17 +36,19 @@ internal class MangaLibraryActionCoordinator(
         checkDuplicate: Boolean,
         pendingAddToGroup: PendingAddToGroup? = null,
     ): AddToLibraryResult {
-        if (checkDuplicate) {
-            val duplicates = dependencies.getSameTitleLibraryManga(manga)
-            if (duplicates.isNotEmpty()) {
-                return AddToLibraryResult.DuplicateFound(
-                    duplicates = duplicates,
-                    groupTargets = buildDuplicateMangaGroupTargets(duplicates),
-                )
+        return dependencies.persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_LIBRARY_UPDATE) {
+            if (checkDuplicate) {
+                val duplicates = dependencies.getSameTitleLibraryManga(manga)
+                if (duplicates.isNotEmpty()) {
+                    return@trace AddToLibraryResult.DuplicateFound(
+                        duplicates = duplicates,
+                        groupTargets = buildDuplicateMangaGroupTargets(duplicates),
+                    )
+                }
             }
-        }
 
-        return addToLibraryWithDefaultCategoryOrPrompt(manga, pendingAddToGroup)
+            addToLibraryWithDefaultCategoryOrPrompt(manga, pendingAddToGroup)
+        }
     }
 
     suspend fun categorySelection(manga: Manga): CategorySelection {
@@ -50,8 +59,10 @@ internal class MangaLibraryActionCoordinator(
     }
 
     suspend fun moveToCategoriesAndAddToLibrary(manga: Manga, categoryIds: List<Long>): Boolean {
-        dependencies.setMangaCategories.await(manga.id, categoryIds)
-        return manga.favorite || dependencies.updateManga.awaitUpdateFavorite(manga.id, true)
+        return dependencies.persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_LIBRARY_UPDATE) {
+            setCategories(manga.id, categoryIds)
+            manga.favorite || updateFavorite(manga.id, true)
+        }
     }
 
     suspend fun addMangaToSelectedGroup(manga: Manga, pendingAddToGroup: PendingAddToGroup): Boolean {
@@ -103,9 +114,21 @@ internal class MangaLibraryActionCoordinator(
         manga: Manga,
         categoryIds: List<Long>,
     ): AddToLibraryResult {
-        if (!dependencies.updateManga.awaitUpdateFavorite(manga.id, true)) return AddToLibraryResult.NotAdded
-        dependencies.setMangaCategories.await(manga.id, categoryIds)
+        if (!updateFavorite(manga.id, true)) return AddToLibraryResult.NotAdded
+        setCategories(manga.id, categoryIds)
         return AddToLibraryResult.Added
+    }
+
+    private suspend fun updateFavorite(mangaId: Long, favorite: Boolean): Boolean {
+        return dependencies.persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_FAVORITE_WRITE) {
+            dependencies.updateManga.awaitUpdateFavorite(mangaId, favorite)
+        }
+    }
+
+    private suspend fun setCategories(mangaId: Long, categoryIds: List<Long>) {
+        dependencies.persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_CATEGORIES_WRITE) {
+            dependencies.setMangaCategories.await(mangaId, categoryIds)
+        }
     }
 
     private suspend fun getUserCategories(): List<Category> {
@@ -155,6 +178,7 @@ internal class MangaLibraryActionCoordinator(
         val setMangaCategories: SetMangaCategories,
         val manageLibraryMangaGroup: ManageLibraryMangaGroup,
         val libraryMangaGroupStateBuilder: LibraryMangaGroupStateBuilder,
+        val persistenceDiagnostics: PersistenceDiagnosticRecorder,
     )
 
     private sealed interface GroupMutation {

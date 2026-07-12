@@ -48,6 +48,7 @@ import eu.kanade.tachiyomi.network.PREF_DOH_QUAD9
 import eu.kanade.tachiyomi.network.PREF_DOH_SHECAN
 import eu.kanade.tachiyomi.ui.more.OnboardingScreen
 import eu.kanade.tachiyomi.util.CrashLogUtil
+import eu.kanade.tachiyomi.util.PersistenceDiagnosticLogUtil
 import eu.kanade.tachiyomi.util.system.GLUtil
 import eu.kanade.tachiyomi.util.system.isReleaseBuildType
 import eu.kanade.tachiyomi.util.system.isShizukuInstalled
@@ -93,6 +94,24 @@ object SettingsAdvancedScreen : SearchableSettings {
                 onClick = {
                     scope.launch {
                         CrashLogUtil(context).dumpLogs()
+                    }
+                },
+            ),
+            Preference.PreferenceItem.TextPreference(
+                title = stringResource(MR.strings.pref_share_persistence_diagnostics),
+                subtitle = stringResource(MR.strings.pref_share_persistence_diagnostics_summary),
+                onClick = {
+                    scope.launch {
+                        PersistenceDiagnosticLogUtil(context).share()
+                    }
+                },
+            ),
+            Preference.PreferenceItem.TextPreference(
+                title = stringResource(MR.strings.pref_clear_persistence_diagnostics),
+                onClick = {
+                    scope.launch {
+                        PersistenceDiagnosticLogUtil(context).clear()
+                        context.toast(MR.strings.persistence_diagnostics_cleared)
                     }
                 },
             ),
