@@ -7,6 +7,7 @@ head_repository="${RELEASE_HEAD_REPOSITORY:?RELEASE_HEAD_REPOSITORY is required}
 repository="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
 
 source .github/scripts/release-publication-policy.sh
+source .github/scripts/github-release.sh
 
 release_require_same_repository "$repository" "$head_repository"
 release_require_full_sha "$target_sha"
@@ -29,8 +30,11 @@ if ref_json="$(gh api "repos/$repository/git/ref/tags/$tag" 2>/dev/null)"; then
   [[ "$existing_target" == "$target_sha" ]] || { echo "$tag points to $existing_target, expected $target_sha"; exit 1; }
 fi
 
-if draft="$(gh api "repos/$repository/releases/tags/$tag" --jq '.draft' 2>/dev/null)"; then
-  [[ "$draft" == true ]] || { echo "Published release $tag is immutable"; exit 1; }
+if release="$(github_release_by_tag "$repository" "$tag")"; then
+  [[ "$(jq -r '.draft' <<< "$release")" == true ]] || { echo "Published release $tag is immutable"; exit 1; }
+else
+  status=$?
+  [[ "$status" -eq 1 ]] || exit "$status"
 fi
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then

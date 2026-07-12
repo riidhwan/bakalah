@@ -5,6 +5,8 @@ tag="${TAG:?TAG is required}"
 target_sha="${TARGET_SHA:?TARGET_SHA is required}"
 repository="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
 
+source .github/scripts/github-release.sh
+
 [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid recovery tag: $tag"; exit 1; }
 [[ "$target_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "TARGET_SHA must be a full commit SHA"; exit 1; }
 
@@ -20,8 +22,11 @@ version_name="$(bash .github/scripts/read-app-version-name.sh)"
 [[ "$tag" == "v$version_name" ]] || { echo "$tag does not match app versionName $version_name"; exit 1; }
 .github/scripts/extract-changelog-section.sh "$tag" /tmp/recovery-release-notes.md
 
-if gh api "repos/$repository/releases/tags/$tag" --jq '.draft' > /tmp/recovery-draft-state 2>/dev/null; then
-  [[ "$(cat /tmp/recovery-draft-state)" == true ]] || { echo "Published release $tag is immutable"; exit 1; }
+if release="$(github_release_by_tag "$repository" "$tag")"; then
+  [[ "$(jq -r '.draft' <<< "$release")" == true ]] || { echo "Published release $tag is immutable"; exit 1; }
+else
+  status=$?
+  [[ "$status" -eq 1 ]] || exit "$status"
 fi
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
