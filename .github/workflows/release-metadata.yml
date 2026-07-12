@@ -19,6 +19,12 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
+      - name: Reject fork release intent
+        if: ${{ startsWith(github.head_ref, 'release/') && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          echo "Release intent must come from a branch in $GITHUB_REPOSITORY."
+          exit 1
+
       - name: Skip non-release branch
         if: ${{ !startsWith(github.head_ref, 'release/') }}
         run: echo "Not a release branch; release readiness validation is not required."

@@ -29,8 +29,16 @@ The end-to-end practice for shipping a Bakalah version to users, from deciding t
 _Avoid_: Release workflow, build workflow, CI workflow
 
 **Release Intent**:
-The explicit project decision that a reviewed Bakalah revision should become a user-available version.
+The authoritative project commitment, created by merging a reviewed Release Branch, that its Bakalah revision should become a user-available version. It remains authoritative before any release tag or artifact is published.
 _Avoid_: Build trigger, publish action
+
+**Unresolved Release Intent**:
+A Release Intent whose Release Version has not yet been published and which has not been explicitly superseded. Bakalah permits only one Unresolved Release Intent at a time.
+_Avoid_: Pending workflow, failed release run, queued release
+
+**Superseded Release Intent**:
+An unshippable Release Intent explicitly replaced by a later reviewed Release Branch whose pull request identifies the prior intent and explains the replacement. It is historical release intent, not a Release Version silently retargeted to another revision.
+_Avoid_: Cancelled workflow, retagged release, abandoned build
 
 **Release Branch**:
 A short-lived preparation branch named for the Release Version it intends to ship, using `release/MAJOR.MINOR.PATCH`.
@@ -41,8 +49,12 @@ The public version name assigned to one Bakalah release and used consistently fo
 _Avoid_: Build number, version code, tag name
 
 **Release Artifact Set**:
-The complete group of installable Bakalah files that together represent one shipped version.
+The complete group of installable Bakalah files and their published checksum manifest that together represent one shipped version.
 _Avoid_: APKs, build outputs, assets
+
+**Published Release**:
+An immutable, user-visible Bakalah Release Version whose reviewed notes and complete Release Artifact Set are available through GitHub Releases.
+_Avoid_: Successful workflow, uploaded draft, release job
 
 **Internal Namespace**:
 Source code package names and module identifiers inherited from Mihon or Tachiyomi that do not by themselves determine Android install identity.

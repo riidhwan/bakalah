@@ -1,0 +1,134 @@
+name: Release Recovery
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing Release Version to recover, without the leading v
+        required: true
+        type: string
+      target_sha:
+        description: Immutable merged revision targeted by the existing annotated tag
+        required: true
+        type: string
+
+concurrency:
+  group: release-publication
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate recovery boundary
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.recovery.outputs.tag }}
+      target_sha: ${{ steps.recovery.outputs.target_sha }}
+    steps:
+      - name: Checkout existing tag
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: v${{ inputs.version }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate existing release tag
+        id: recovery
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ inputs.version }}
+          TARGET_SHA: ${{ inputs.target_sha }}
+        run: .github/scripts/validate-release-recovery.sh
+
+  build:
+    name: Rebuild release artifacts
+    needs: validate
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout immutable release revision
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ needs.validate.outputs.target_sha }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          java-version-file: .github/.java-version
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      - name: Build release APKs
+        run: |
+          ./gradlew assembleRelease -Penable-updater
+          ./gradlew assembleFoss -Penable-updater
+
+      - name: Sign release APKs
+        uses: r0adkll/sign-android-release@a391126403df92c6a0a3988a829dd47f79b89ed7
+        with:
+          releaseDirectory: app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: '35.0.1'
+
+      - name: Sign FOSS APK
+        uses: r0adkll/sign-android-release@a391126403df92c6a0a3988a829dd47f79b89ed7
+        with:
+          releaseDirectory: app/build/outputs/apk/foss
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: '35.0.1'
+
+      - name: Prepare complete artifact set
+        run: |
+          .github/scripts/rename-release-apks.sh release "${{ needs.validate.outputs.tag }}"
+          .github/scripts/rename-release-apks.sh foss "${{ needs.validate.outputs.tag }}"
+          .github/scripts/verify-release-artifacts.sh all "${{ needs.validate.outputs.tag }}"
+
+      - name: Upload rebuilt artifacts
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: bakalah-recovery
+          path: bakalah-*.apk
+
+  publish:
+    name: Resume draft publication
+    needs: [validate, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout immutable release revision
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ needs.validate.outputs.target_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare release notes
+        run: .github/scripts/prepare-release-notes.sh "${{ needs.validate.outputs.tag }}"
+
+      - name: Download rebuilt artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: bakalah-recovery
+
+      - name: Verify complete artifact set
+        run: |
+          .github/scripts/verify-release-artifacts.sh all "${{ needs.validate.outputs.tag }}"
+          .github/scripts/create-release-checksums.sh "${{ needs.validate.outputs.tag }}"
+
+      - name: Resume draft GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.validate.outputs.tag }}
+          TARGET_SHA: ${{ needs.validate.outputs.target_sha }}
+        run: .github/scripts/publish-release.sh
