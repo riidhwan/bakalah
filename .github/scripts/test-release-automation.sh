@@ -5,6 +5,9 @@ root="$(git rev-parse --show-toplevel)"
 "$root/.github/scripts/test-release-publication-policy.sh"
 source "$root/.github/scripts/github-release.sh"
 
+restore_count="$(grep -c 'git checkout origin/main -- .github/scripts' "$root/.github/workflows/release-recovery.yml")"
+[[ "$restore_count" -eq 3 ]] || { echo "FAIL: every recovery job must restore current release automation"; exit 1; }
+
 draft='{"id":352835133,"tag_name":"v0.38.0","draft":true}'
 published='{"id":300000000,"tag_name":"v0.37.0","draft":false}'
 selected="$(printf '[%s,%s]\n' "$draft" "$published" | github_release_select_by_tag v0.38.0)"
