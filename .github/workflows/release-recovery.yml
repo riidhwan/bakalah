@@ -33,6 +33,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Restore current release automation
+        run: git checkout origin/main -- .github/scripts
+
       - name: Validate existing release tag
         id: recovery
         env:
@@ -50,6 +53,11 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ needs.validate.outputs.target_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Restore current release automation
+        run: git checkout origin/main -- .github/scripts
 
       - name: Set up JDK
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -98,6 +106,9 @@ jobs:
           ref: ${{ needs.validate.outputs.target_sha }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Restore current release automation
+        run: git checkout origin/main -- .github/scripts
 
       - name: Prepare release notes
         run: .github/scripts/prepare-release-notes.sh "${{ needs.validate.outputs.tag }}"
