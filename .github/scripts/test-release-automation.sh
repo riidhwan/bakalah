@@ -7,6 +7,8 @@ source "$root/.github/scripts/github-release.sh"
 
 restore_count="$(grep -c 'git checkout origin/main -- .github/scripts' "$root/.github/workflows/release-recovery.yml")"
 [[ "$restore_count" -eq 3 ]] || { echo "FAIL: every recovery job must restore current release automation"; exit 1; }
+restore_count="$(grep -c 'git checkout origin/main -- .github/scripts' "$root/.github/workflows/release.yml")"
+[[ "$restore_count" -eq 4 ]] || { echo "FAIL: every release job must restore current release automation"; exit 1; }
 grep -q 'https://uploads.github.com/repos/' "$root/.github/scripts/publish-release.sh" || { echo "FAIL: release assets must use the uploads.github.com API"; exit 1; }
 if grep -q 'api.uploads.github.com' "$root/.github/scripts/publish-release.sh"; then
   echo "FAIL: invalid api.uploads.github.com host is present"

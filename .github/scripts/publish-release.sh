@@ -5,6 +5,7 @@ tag="${TAG:?TAG is required}"
 target_sha="${TARGET_SHA:?TARGET_SHA is required}"
 repository="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
 notes_file="${RELEASE_NOTES_FILE:-release_body.md}"
+release_id=""
 
 expected_assets=(
   "bakalah-$tag.apk"
@@ -21,7 +22,13 @@ source .github/scripts/github-release.sh
 fail() { echo "$*"; exit 1; }
 api() { gh api "$@"; }
 local_digest() { sha256sum "$1" | cut -d ' ' -f 1; }
-release_json() { github_release_by_tag "$repository" "$tag"; }
+release_json() {
+  if [[ -n "$release_id" ]]; then
+    api "repos/$repository/releases/$release_id"
+  else
+    github_release_by_tag "$repository" "$tag"
+  fi
+}
 
 tag_target() {
   local ref_type ref_sha
@@ -47,6 +54,7 @@ ensure_annotated_tag() {
 ensure_draft_release() {
   local release status
   if release="$(release_json)"; then
+    release_id="$(jq -r '.id' <<< "$release")"
     release_require_draft "$(jq -r '.draft' <<< "$release")" || fail "Published release $tag is immutable"
     [[ "$(jq -r '.target_commitish' <<< "$release")" == "$target_sha" ]] || fail "Release $tag targets an unexpected revision"
     [[ "$(jq -r '.body' <<< "$release")" == "$(cat "$notes_file")" ]] || fail "Draft release notes differ from the reviewed changelog"
@@ -56,19 +64,19 @@ ensure_draft_release() {
     [[ "$status" -eq 1 ]] || return "$status"
   fi
 
-  api --method POST "repos/$repository/releases" \
+  release="$(api --method POST "repos/$repository/releases" \
     -f tag_name="$tag" \
     -f target_commitish="$target_sha" \
     -f name="Bakalah $tag" \
     -f body="$(cat "$notes_file")" \
     -F draft=true \
-    -F prerelease=false >/dev/null
+    -F prerelease=false)"
+  release_id="$(jq -r '.id' <<< "$release")"
 }
 
 reconcile_assets() {
-  local remote release_id name asset_id remote_digest digest action
+  local remote name asset_id remote_digest digest action
   remote="$(release_json)"
-  release_id="$(jq -r '.id' <<< "$remote")"
   while IFS= read -r name; do
     [[ -z "$name" ]] && continue
     release_asset_is_expected "$name" "${expected_assets[@]}" || fail "Draft release contains unexpected asset: $name"
@@ -122,6 +130,5 @@ ensure_annotated_tag
 ensure_draft_release
 reconcile_assets
 verify_remote_release
-release_id="$(release_json | jq -r '.id')"
 api --method PATCH "repos/$repository/releases/$release_id" -F draft=false >/dev/null
 echo "Published immutable release $tag at $target_sha"
