@@ -12,6 +12,11 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.38.1] - 2026-07-13
+
+### Fixed
+- Prevent database connection cancellation races from blocking Library, Local, and manga persistence until restart.
+
 ## [v0.38.0] - 2026-07-12
 
 ### Added
