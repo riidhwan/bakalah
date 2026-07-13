@@ -84,11 +84,17 @@ reconcile_assets() {
     if [[ -n "$asset_id" ]]; then
       api --method DELETE "repos/$repository/releases/assets/$asset_id" >/dev/null
     fi
-    gh api --hostname uploads.github.com \
-      --method POST \
-      -H 'Content-Type: application/octet-stream' \
-      --input "$name" \
-      "repos/$repository/releases/$release_id/assets?name=$name" >/dev/null
+    curl \
+      --silent \
+      --show-error \
+      --fail-with-body \
+      --request POST \
+      --header 'Accept: application/vnd.github+json' \
+      --header "Authorization: Bearer ${GH_TOKEN:?GH_TOKEN is required}" \
+      --header 'Content-Type: application/octet-stream' \
+      --header 'X-GitHub-Api-Version: 2022-11-28' \
+      --data-binary "@$name" \
+      "https://uploads.github.com/repos/$repository/releases/$release_id/assets?name=$name" >/dev/null
     remote="$(release_json)"
   done
 }

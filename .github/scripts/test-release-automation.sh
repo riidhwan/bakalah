@@ -7,6 +7,11 @@ source "$root/.github/scripts/github-release.sh"
 
 restore_count="$(grep -c 'git checkout origin/main -- .github/scripts' "$root/.github/workflows/release-recovery.yml")"
 [[ "$restore_count" -eq 3 ]] || { echo "FAIL: every recovery job must restore current release automation"; exit 1; }
+grep -q 'https://uploads.github.com/repos/' "$root/.github/scripts/publish-release.sh" || { echo "FAIL: release assets must use the uploads.github.com API"; exit 1; }
+if grep -q 'api.uploads.github.com' "$root/.github/scripts/publish-release.sh"; then
+  echo "FAIL: invalid api.uploads.github.com host is present"
+  exit 1
+fi
 
 draft='{"id":352835133,"tag_name":"v0.38.0","draft":true}'
 published='{"id":300000000,"tag_name":"v0.37.0","draft":false}'
