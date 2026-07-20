@@ -57,6 +57,7 @@ val backupChapterMapper = {
         lastModifiedAt: Long,
         version: Long,
         _: Long,
+        _: kotlinx.serialization.json.JsonObject,
     ->
     BackupChapter(
         url = url,

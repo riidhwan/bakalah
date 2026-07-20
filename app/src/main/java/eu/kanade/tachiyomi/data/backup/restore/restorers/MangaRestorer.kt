@@ -191,7 +191,15 @@ class MangaRestorer(
     }
 
     private fun Chapter.forComparison() =
-        this.copy(id = 0L, mangaId = 0L, dateFetch = 0L, dateUpload = 0L, lastModifiedAt = 0L, version = 0L)
+        this.copy(
+            id = 0L,
+            mangaId = 0L,
+            dateFetch = 0L,
+            dateUpload = 0L,
+            lastModifiedAt = 0L,
+            version = 0L,
+            memo = kotlinx.serialization.json.JsonObject(emptyMap()),
+        )
 
     private suspend fun insertNewChapters(chapters: List<Chapter>) {
         database.transaction {
@@ -209,6 +217,7 @@ class MangaRestorer(
                     chapter.dateFetch,
                     chapter.dateUpload,
                     chapter.version,
+                    chapter.memo,
                 )
             }
         }
@@ -232,6 +241,7 @@ class MangaRestorer(
                     chapterId = chapter.id,
                     version = chapter.version,
                     isSyncing = 0,
+                    memo = null,
                 )
             }
         }

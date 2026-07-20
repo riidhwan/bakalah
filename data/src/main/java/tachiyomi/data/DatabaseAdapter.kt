@@ -2,6 +2,9 @@ package tachiyomi.data
 
 import app.cash.sqldelight.ColumnAdapter
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import tachiyomi.domain.vault.model.VaultCacheState
 import tachiyomi.domain.vault.model.VaultChapterContentFormat
 import tachiyomi.domain.vault.model.VaultMangaStatus
@@ -24,6 +27,18 @@ object StringListColumnAdapter : ColumnAdapter<List<String>, String> {
     override fun encode(value: List<String>) = value.joinToString(
         separator = LIST_OF_STRINGS_SEPARATOR,
     )
+}
+
+object JsonObjectColumnAdapter : ColumnAdapter<JsonObject, String> {
+    override fun decode(databaseValue: String): JsonObject {
+        return runCatching {
+            Json.parseToJsonElement(databaseValue).jsonObject
+        }.getOrElse {
+            JsonObject(emptyMap())
+        }
+    }
+
+    override fun encode(value: JsonObject): String = value.toString()
 }
 
 object UpdateStrategyColumnAdapter : ColumnAdapter<UpdateStrategy, Long> {
