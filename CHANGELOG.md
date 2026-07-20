@@ -12,6 +12,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.39.0] - 2026-07-20
+
 ### Fixed
 - Support current `tachiyomix` 1.6 extensions.
 
