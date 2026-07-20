@@ -11,6 +11,8 @@ import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -66,6 +68,8 @@ abstract class HttpSource : CatalogueSource {
      */
     open val client: OkHttpClient
         get() = network.client
+
+    private val mangaUpdateMutex = Mutex()
 
     /**
      * Generates a unique ID for the source based on the provided [name], [lang] and
@@ -216,7 +220,14 @@ abstract class HttpSource : CatalogueSource {
      */
     @Suppress("DEPRECATION")
     override suspend fun getMangaDetails(manga: SManga): SManga {
-        return fetchMangaDetails(manga).awaitSingle()
+        return mangaUpdateMutex.withLock {
+            getMangaUpdate(
+                manga = manga,
+                chapters = emptyList(),
+                fetchDetails = true,
+                fetchChapters = false,
+            ).manga
+        }
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getMangaDetails"))
@@ -254,7 +265,14 @@ abstract class HttpSource : CatalogueSource {
      */
     @Suppress("DEPRECATION")
     override suspend fun getChapterList(manga: SManga): List<SChapter> {
-        return fetchChapterList(manga).awaitSingle()
+        return mangaUpdateMutex.withLock {
+            getMangaUpdate(
+                manga = manga,
+                chapters = emptyList(),
+                fetchDetails = false,
+                fetchChapters = true,
+            ).chapters
+        }
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getChapterList"))

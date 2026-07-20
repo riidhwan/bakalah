@@ -8,6 +8,7 @@ import logcat.LogPriority
 import tachiyomi.core.common.util.lang.toLong
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.data.Database
+import tachiyomi.data.JsonObjectColumnAdapter
 import tachiyomi.data.subscribeToList
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.chapter.model.ChapterUpdate
@@ -34,6 +35,7 @@ class ChapterRepositoryImpl(
                         chapter.dateFetch,
                         chapter.dateUpload,
                         chapter.version,
+                        chapter.memo,
                     )
                         .awaitAsOne()
                     chapter.copy(id = chapterId)
@@ -71,6 +73,7 @@ class ChapterRepositoryImpl(
                     chapterId = chapterUpdate.id,
                     version = chapterUpdate.version,
                     isSyncing = 0,
+                    memo = chapterUpdate.memo?.let(JsonObjectColumnAdapter::encode),
                 )
             }
         }
@@ -143,6 +146,7 @@ class ChapterRepositoryImpl(
         lastModifiedAt: Long,
         version: Long,
         isSyncing: Long,
+        memo: kotlinx.serialization.json.JsonObject,
     ): Chapter = Chapter(
         id = id,
         mangaId = mangaId,
@@ -158,5 +162,6 @@ class ChapterRepositoryImpl(
         scanlator = scanlator,
         lastModifiedAt = lastModifiedAt,
         version = version,
+        memo = memo,
     )
 }

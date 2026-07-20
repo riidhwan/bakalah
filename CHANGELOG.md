@@ -12,6 +12,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Fixed
+- Support current `tachiyomix` 1.6 extensions.
+
 ## [v0.38.1] - 2026-07-13
 
 ### Fixed

@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.source
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.source.model.SMangaUpdate
 import eu.kanade.tachiyomi.util.awaitSingle
 import rx.Observable
 
@@ -33,7 +34,12 @@ interface Source {
      */
     @Suppress("DEPRECATION")
     suspend fun getMangaDetails(manga: SManga): SManga {
-        return fetchMangaDetails(manga).awaitSingle()
+        return getMangaUpdate(
+            manga = manga,
+            chapters = emptyList(),
+            fetchDetails = true,
+            fetchChapters = false,
+        ).manga
     }
 
     /**
@@ -45,7 +51,36 @@ interface Source {
      */
     @Suppress("DEPRECATION")
     suspend fun getChapterList(manga: SManga): List<SChapter> {
-        return fetchChapterList(manga).awaitSingle()
+        return getMangaUpdate(
+            manga = manga,
+            chapters = emptyList(),
+            fetchDetails = false,
+            fetchChapters = true,
+        ).chapters
+    }
+
+    /**
+     * Fetches updated information for a manga.
+     *
+     * Depending on the provided flags or source availability, this may include updated manga
+     * metadata, available chapters, or both.
+     *
+     * @since tachiyomix 1.6
+     * @param manga the manga to fetch updates for.
+     * @param chapters existing chapters of the manga.
+     * @param fetchDetails whether to fetch updated manga details.
+     * @param fetchChapters whether to fetch available chapters.
+     */
+    @Suppress("DEPRECATION")
+    suspend fun getMangaUpdate(
+        manga: SManga,
+        chapters: List<SChapter>,
+        fetchDetails: Boolean,
+        fetchChapters: Boolean,
+    ): SMangaUpdate {
+        val updatedManga = if (fetchDetails) fetchMangaDetails(manga).awaitSingle() else manga
+        val updatedChapters = if (fetchChapters) fetchChapterList(manga).awaitSingle() else chapters
+        return SMangaUpdate(updatedManga, updatedChapters)
     }
 
     /**

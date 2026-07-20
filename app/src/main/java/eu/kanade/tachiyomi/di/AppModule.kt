@@ -73,9 +73,11 @@ import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
 import nl.adaptivity.xmlutil.serialization.XML
 import tachiyomi.core.common.storage.AndroidStorageFolderProvider
+import tachiyomi.data.Chapters
 import tachiyomi.data.Database
 import tachiyomi.data.DateColumnAdapter
 import tachiyomi.data.History
+import tachiyomi.data.JsonObjectColumnAdapter
 import tachiyomi.data.Mangas
 import tachiyomi.data.StringListColumnAdapter
 import tachiyomi.data.UpdateStrategyColumnAdapter
@@ -129,6 +131,9 @@ class AppModule(val app: Application) : InjektModule {
                 driver = get(),
                 historyAdapter = History.Adapter(
                     last_readAdapter = DateColumnAdapter,
+                ),
+                chaptersAdapter = Chapters.Adapter(
+                    memoAdapter = JsonObjectColumnAdapter,
                 ),
                 mangasAdapter = Mangas.Adapter(
                     genreAdapter = StringListColumnAdapter,
