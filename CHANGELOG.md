@@ -12,6 +12,11 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.39.1] - 2026-07-20
+
+### Fixed
+- Prevent release builds from crashing when 1.6 extensions receive zstd responses.
+
 ## [v0.39.0] - 2026-07-20
 
 ### Fixed
