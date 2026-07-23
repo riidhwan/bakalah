@@ -52,7 +52,9 @@ import tachiyomi.domain.manga.interactor.GetSameTitleLibraryManga
 import tachiyomi.domain.manga.interactor.ManageLibraryMangaGroup
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
+import tachiyomi.domain.manga.model.hasSameArtistLibraryMatch
 import tachiyomi.domain.manga.model.hasSameTitleLibraryMatch
+import tachiyomi.domain.manga.model.sameArtistLibraryMatchKeys
 import tachiyomi.domain.manga.model.sameTitleLibraryMatchKey
 import tachiyomi.domain.manga.model.toMangaUpdate
 import tachiyomi.domain.source.interactor.GetRemoteManga
@@ -128,6 +130,16 @@ class BrowseSourceScreenModel(
                 .toSet()
         }
         .stateIn(ioCoroutineScope, SharingStarted.Eagerly, emptySet())
+    private val sourceBackedLibraryArtistKeys = getLibraryManga.subscribe()
+        .map { libraryManga ->
+            libraryManga
+                .asSequence()
+                .map { it.manga }
+                .filter { it.source != LocalSource.ID }
+                .flatMap { it.artist.sameArtistLibraryMatchKeys() }
+                .toSet()
+        }
+        .stateIn(ioCoroutineScope, SharingStarted.Eagerly, emptySet())
 
     val mangaPagerFlowFlow = combine(
         state.map { it.listing }.distinctUntilChanged(),
@@ -142,11 +154,21 @@ class BrowseSourceScreenModel(
                 pagingData.map { manga ->
                     getManga.subscribe(manga.url, manga.source)
                         .map { it ?: manga }
-                        .combine(sourceBackedLibraryTitleKeys) { sourceManga, titleKeys ->
+                        .combine(
+                            combine(
+                                sourceBackedLibraryTitleKeys,
+                                sourceBackedLibraryArtistKeys,
+                                ::LibraryMatchKeys,
+                            ),
+                        ) { sourceManga, libraryMatchKeys ->
                             BrowseSourceManga(
                                 manga = sourceManga,
                                 sameTitleLibraryMatch = sourceManga.hasSameTitleLibraryMatch(
-                                    libraryTitleKeys = titleKeys,
+                                    libraryTitleKeys = libraryMatchKeys.titleKeys,
+                                    localSourceId = LocalSource.ID,
+                                ),
+                                sameArtistLibraryMatch = sourceManga.hasSameArtistLibraryMatch(
+                                    libraryArtistKeys = libraryMatchKeys.artistKeys,
                                     localSourceId = LocalSource.ID,
                                 ),
                             )
@@ -529,6 +551,7 @@ class BrowseSourceScreenModel(
     data class BrowseSourceManga(
         val manga: Manga,
         val sameTitleLibraryMatch: Boolean,
+        val sameArtistLibraryMatch: Boolean,
     )
 
     @Immutable
@@ -545,6 +568,11 @@ class BrowseSourceScreenModel(
 internal data class BrowsePagerKey(
     val listing: BrowseSourceScreenModel.Listing,
     val localSourceVersion: Long,
+)
+
+private data class LibraryMatchKeys(
+    val titleKeys: Set<String>,
+    val artistKeys: Set<String>,
 )
 
 internal fun browsePagerKey(

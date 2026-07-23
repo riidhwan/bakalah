@@ -20,9 +20,11 @@ internal fun InLibraryBadge(enabled: Boolean) {
 internal fun BrowseLibraryBadge(
     inLibrary: Boolean,
     sameTitleLibraryMatch: Boolean,
+    sameArtistLibraryMatch: Boolean,
 ) {
     when {
         inLibrary -> InLibraryBadge(enabled = true)
         sameTitleLibraryMatch -> Badge(text = stringResource(MR.strings.title_in_library))
+        sameArtistLibraryMatch -> Badge(text = stringResource(MR.strings.artist_in_library))
     }
 }
