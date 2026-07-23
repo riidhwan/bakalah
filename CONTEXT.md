@@ -196,6 +196,10 @@ _Avoid_: Selected duplicate, seed manga, base manga
 A source manga whose normalized title key matches the normalized title key of at least one Source-Backed Library Manga.
 _Avoid_: Duplicate manga, same manga, in-library manga
 
+**Same-Artist Library Match**:
+A source manga whose normalized comma-separated artist token exactly matches at least one normalized comma-separated artist token from a Source-Backed Library Manga.
+_Avoid_: Artist duplicate, author match, creator match
+
 **Content Vault**:
 The authoritative user-owned collection of manga content that can outlive any one device's local storage.
 _Avoid_: Backup, cloud mirror, remote local source
