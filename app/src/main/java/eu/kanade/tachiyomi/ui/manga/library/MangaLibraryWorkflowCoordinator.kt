@@ -60,6 +60,11 @@ internal class MangaLibraryWorkflowCoordinator(
         if (effect !is MangaLibraryWorkflowEffect.Added) return effect
 
         val tabsEffect = addMangaToSelectedGroup(manga, pendingAddToGroup)
+        if (tabsEffect !is MangaLibraryWorkflowEffect.UpdateGroupTabs) {
+            libraryActionCoordinator.removeFromLibrary(manga)
+            return tabsEffect
+        }
+
         addTracks.bindEnhancedTrackers(manga, source)
         return tabsEffect
     }
@@ -77,6 +82,11 @@ internal class MangaLibraryWorkflowCoordinator(
         if (pendingAddToGroup == null) return MangaLibraryWorkflowEffect.None
 
         val tabsEffect = addMangaToSelectedGroup(manga, pendingAddToGroup)
+        if (tabsEffect !is MangaLibraryWorkflowEffect.UpdateGroupTabs) {
+            libraryActionCoordinator.removeFromLibrary(manga)
+            return tabsEffect
+        }
+
         addTracks.bindEnhancedTrackers(manga, source)
         return tabsEffect
     }

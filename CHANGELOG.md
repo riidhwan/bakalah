@@ -12,6 +12,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Fixed
+- Prevent Add to group from leaving manga favorited without group membership when the group write fails.
+
 ## [v0.39.1] - 2026-07-20
 
 ### Fixed

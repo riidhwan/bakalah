@@ -2,9 +2,13 @@ package eu.kanade.tachiyomi.ui.manga
 
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.tachiyomi.data.diagnostic.PersistenceDiagnosticRecorder
+import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.ui.manga.library.AddToLibraryResult
+import eu.kanade.tachiyomi.ui.manga.library.DuplicateMangaGroupTargetItem
 import eu.kanade.tachiyomi.ui.manga.library.LibraryMangaGroupStateBuilder
 import eu.kanade.tachiyomi.ui.manga.library.MangaLibraryActionCoordinator
+import eu.kanade.tachiyomi.ui.manga.library.MangaLibraryWorkflowCoordinator
+import eu.kanade.tachiyomi.ui.manga.library.PendingAddToGroup
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -69,6 +73,38 @@ class MangaLibraryActionCoordinatorTest {
         coVerify(exactly = 0) { fixture.updateManga.awaitUpdateFavorite(any(), any()) }
     }
 
+    @Test
+    fun `add duplicate manga to group rolls back favorite when group write fails`() = runTest {
+        val manga = manga(MANGA_ID)
+        val source = mockk<Source>()
+        val libraryActionCoordinator = mockk<MangaLibraryActionCoordinator>()
+        val workflow = MangaLibraryWorkflowCoordinator(
+            libraryActionCoordinator = libraryActionCoordinator,
+            libraryGroupCoordinator = mockk(),
+            addTracks = mockk(relaxed = true),
+        )
+        val targets = listOf(groupTarget())
+        coEvery {
+            libraryActionCoordinator.addToLibrary(
+                manga = manga,
+                checkDuplicate = false,
+                pendingAddToGroup = PendingAddToGroup(targets),
+            )
+        } returns AddToLibraryResult.Added
+        coEvery {
+            libraryActionCoordinator.addMangaToSelectedGroup(manga, PendingAddToGroup(targets))
+        } returns false
+        coEvery { libraryActionCoordinator.removeFromLibrary(manga) } returns true
+
+        workflow.addDuplicateMangaToGroup(
+            manga = manga,
+            source = source,
+            targets = targets,
+        )
+
+        coVerify { libraryActionCoordinator.removeFromLibrary(manga) }
+    }
+
     private fun fixture(): Fixture {
         val getSameTitleLibraryManga = mockk<GetSameTitleLibraryManga>()
         val getCategories = mockk<GetCategories>()
@@ -117,6 +153,19 @@ class MangaLibraryActionCoordinatorTest {
             name = "Category $id",
             order = id,
             flags = 0,
+        )
+    }
+
+    private fun groupTarget(): DuplicateMangaGroupTargetItem {
+        return DuplicateMangaGroupTargetItem(
+            key = "manga:$DUPLICATE_MANGA_ID",
+            title = "Duplicate",
+            sourceName = "Source $DUPLICATE_SOURCE_ID",
+            chapterCount = DUPLICATE_CHAPTER_COUNT,
+            sourceCount = 1,
+            groupId = null,
+            memberMangaIds = listOf(DUPLICATE_MANGA_ID),
+            sourceIds = setOf(DUPLICATE_SOURCE_ID),
         )
     }
 

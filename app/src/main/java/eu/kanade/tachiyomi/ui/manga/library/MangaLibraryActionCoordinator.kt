@@ -3,6 +3,8 @@ package eu.kanade.tachiyomi.ui.manga.library
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.tachiyomi.data.diagnostic.PersistenceDiagnosticRecorder
 import eu.kanade.tachiyomi.util.removeCovers
+import logcat.LogPriority
+import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.category.model.Category
@@ -11,6 +13,7 @@ import tachiyomi.domain.manga.interactor.GetSameTitleLibraryManga
 import tachiyomi.domain.manga.interactor.ManageLibraryMangaGroup
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
+import kotlin.coroutines.cancellation.CancellationException
 
 internal class MangaLibraryActionCoordinator(
     private val dependencies: Dependencies,
@@ -66,22 +69,31 @@ internal class MangaLibraryActionCoordinator(
     }
 
     suspend fun addMangaToSelectedGroup(manga: Manga, pendingAddToGroup: PendingAddToGroup): Boolean {
-        val mutation = buildGroupMutation(manga, pendingAddToGroup) ?: return false
-        when (mutation) {
-            is GroupMutation.AddSources -> {
-                dependencies.manageLibraryMangaGroup.addSources(
-                    groupId = mutation.groupId,
-                    memberMangaIds = mutation.memberMangaIds,
-                )
-            }
-            is GroupMutation.CreateGroup -> {
-                dependencies.manageLibraryMangaGroup.createGroup(
-                    primaryMangaId = mutation.primaryMangaId,
-                    memberMangaIds = mutation.memberMangaIds,
-                )
+        return dependencies.persistenceDiagnostics.trace(PersistenceDiagnosticRecorder.MANGA_LIBRARY_UPDATE) {
+            try {
+                val mutation = buildGroupMutation(manga, pendingAddToGroup) ?: return@trace false
+                when (mutation) {
+                    is GroupMutation.AddSources -> {
+                        dependencies.manageLibraryMangaGroup.addSources(
+                            groupId = mutation.groupId,
+                            memberMangaIds = mutation.memberMangaIds,
+                        )
+                    }
+                    is GroupMutation.CreateGroup -> {
+                        dependencies.manageLibraryMangaGroup.createGroup(
+                            primaryMangaId = mutation.primaryMangaId,
+                            memberMangaIds = mutation.memberMangaIds,
+                        )
+                    }
+                }
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to add manga to selected library group" }
+                false
             }
         }
-        return true
     }
 
     private suspend fun addToLibraryWithDefaultCategoryOrPrompt(
