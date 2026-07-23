@@ -735,6 +735,10 @@ class VaultMangaScreenModel(
             VaultCacheState.CACHING,
             VaultCacheState.PUBLISHING,
         )
+        val RETRYABLE_THUMBNAIL_STATES = setOf(
+            VaultChapterThumbnailDisplayResult.Unavailable,
+            VaultChapterThumbnailDisplayResult.LoadFailed,
+        )
     }
 
     data class VaultChapterItem(
@@ -752,7 +756,8 @@ class VaultMangaScreenModel(
             get() = (thumbnail as? VaultChapterThumbnailDisplayResult.Ready)?.localUri
 
         val needsThumbnailLoad: Boolean
-            get() = chapter.thumbnail != null && thumbnail == VaultChapterThumbnailDisplayResult.Unavailable
+            get() = chapter.thumbnail != null &&
+                thumbnail in RETRYABLE_THUMBNAIL_STATES
 
         val canDownloadCbz: Boolean
             get() = chapter.content.format == VaultChapterContentFormat.CBZ &&

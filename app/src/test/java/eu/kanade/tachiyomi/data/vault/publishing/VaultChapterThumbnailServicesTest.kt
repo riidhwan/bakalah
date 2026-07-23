@@ -122,6 +122,111 @@ class VaultChapterThumbnailServicesTest {
     }
 
     @Test
+    fun `publish preserves known thumbnails when remote manga manifest is stale`() = runTest {
+        val root = rootManifest(revision = VaultRevision("root-rev-2", 2))
+        val remote = FakeWebDav()
+        remote.files["vault/$ROOT_VAULT_MANIFEST_NAME"] = codec.encodeRoot(root).toByteArray()
+        remote.files["vault/manga/manga-1.json"] = codec.encodeManga(
+            mangaManifest(
+                revision = VaultRevision("manga-rev-2", 2),
+                chapters = listOf(manifestChapter(), manifestChapter(id = 21, identity = "chapter-2")),
+            ),
+        ).toByteArray()
+        val repository = repository(
+            vaultRevision = VaultRevision("root-rev-2", 2),
+            chapters = listOf(
+                chapter(thumbnail = thumbnail()),
+                chapter(id = 21, identity = "chapter-2"),
+            ),
+        )
+        val service = DefaultVaultChapterThumbnailPublishService(
+            networkHelper = mockk<NetworkHelper>(),
+            json = json,
+            repository = repository.repository,
+            preferences = preferences(),
+            refreshService = refresher(),
+            cacheStore = FakeThumbnailCacheStore(),
+            webDavFactory = { remote },
+            identityFactory = identityFactory(
+                "thumbnail-2",
+                "stage-content",
+                "manga-rev-3",
+                "thumb-rev-2",
+                "chapter-rev-3",
+                "root-rev-3",
+                "stage-manga",
+                "stage-root",
+            ),
+            now = { 300L },
+        )
+
+        val result = service.publish(
+            VaultChapterThumbnailPublishRequest(
+                mangaId = 10,
+                chapterId = 21,
+                chapterIdentity = VaultIdentity("chapter-2"),
+                sourcePageNumber = 4,
+                jpegBytes = "thumbnail-2".toByteArray(),
+            ),
+        )
+
+        result shouldBe VaultChapterThumbnailPublishResult.Published
+        remote.mangaManifest("vault/manga/manga-1.json")
+            .chapters
+            .map { it.identity to it.thumbnail?.path } shouldContainExactly listOf(
+            "chapter-1" to "content/manga-1/chapter-1/thumbnail/thumb-1.jpg",
+            "chapter-2" to "content/manga-1/chapter-2/thumbnail/thumbnail-2.jpg",
+        )
+    }
+
+    @Test
+    fun `publish verifies thumbnail content lands at manifest path after promote`() = runTest {
+        val remote = FakeWebDav(promoteLeavesStagedFile = true)
+        remote.files["vault/$ROOT_VAULT_MANIFEST_NAME"] = codec.encodeRoot(rootManifest()).toByteArray()
+        remote.files["vault/manga/manga-1.json"] = codec.encodeManga(mangaManifest()).toByteArray()
+        val service = DefaultVaultChapterThumbnailPublishService(
+            networkHelper = mockk<NetworkHelper>(),
+            json = json,
+            repository = repository().repository,
+            preferences = preferences(),
+            refreshService = refresher(),
+            cacheStore = FakeThumbnailCacheStore(),
+            webDavFactory = { remote },
+            identityFactory = identityFactory(
+                "thumbnail-1",
+                "stage-content",
+                "manga-rev-2",
+                "thumb-rev-1",
+                "chapter-rev-2",
+                "root-rev-2",
+                "stage-manga",
+                "stage-root",
+            ),
+            now = { 200L },
+        )
+
+        val result = service.publish(
+            VaultChapterThumbnailPublishRequest(
+                mangaId = 10,
+                chapterId = 20,
+                chapterIdentity = VaultIdentity("chapter-1"),
+                sourcePageNumber = 3,
+                jpegBytes = "thumbnail".toByteArray(),
+            ),
+        )
+
+        result shouldBe VaultChapterThumbnailPublishResult.Published
+        remote.files["vault/content/manga-1/chapter-1/thumbnail/thumbnail-1.jpg"]?.decodeToString() shouldBe
+            "thumbnail"
+        remote.files.keys shouldContain "vault/content/manga-1/chapter-1/thumbnail/thumbnail-1.jpg"
+        remote.files.keys shouldContain "vault/manga/manga-1.json"
+        remote.files.keys shouldContain "vault/$ROOT_VAULT_MANIFEST_NAME"
+        remote.promotes.map { it.second } shouldContainExactly listOf(
+            "vault/content/manga-1/chapter-1/thumbnail/thumbnail-1.jpg",
+        )
+    }
+
+    @Test
     fun `display loader returns cached uri without remote fetch`() = runTest {
         val remote = FakeWebDav()
         val cache = FakeThumbnailCacheStore(
@@ -201,29 +306,32 @@ class VaultChapterThumbnailServicesTest {
         }
     }
 
-    private fun repository(): RepositoryFixture {
+    private fun repository(
+        vaultRevision: VaultRevision = VaultRevision("root-rev-1", 1),
+        chapters: List<VaultChapter> = listOf(chapter()),
+    ): RepositoryFixture {
         val vault = ContentVault(
             id = 1,
             identity = ContentVaultIdentity("vault-1"),
             displayName = "Vault",
             layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
-            rootRevision = VaultRevision("root-rev-1", 1),
+            rootRevision = vaultRevision,
             writerId = null,
             lastCatalogueRefreshAt = null,
             createdAt = 100L,
             updatedAt = 100L,
         )
         val manga = manga()
-        val chapters = mutableListOf(chapter())
+        val mutableChapters = chapters.toMutableList()
         val jobs = mutableMapOf<Long, VaultTransferJob>()
         var nextJobId = 1L
         val repository = mockk<VaultRepository> {
             coEvery { getVaultByIdentity(ContentVaultIdentity("vault-1")) } returns vault
             coEvery { getMangaById(10) } returns manga
-            coEvery { getChapters(10) } coAnswers { chapters.toList() }
+            coEvery { getChapters(10) } coAnswers { mutableChapters.toList() }
             coEvery { upsertChapter(10, any()) } coAnswers {
                 val updatedChapter = invocation.args[1] as VaultChapter
-                chapters.replaceAll {
+                mutableChapters.replaceAll {
                     if (it.identity == updatedChapter.identity) {
                         updatedChapter
                     } else {
@@ -241,7 +349,7 @@ class VaultChapterThumbnailServicesTest {
                 id
             }
         }
-        return RepositoryFixture(repository, jobs, chapters)
+        return RepositoryFixture(repository, jobs, mutableChapters)
     }
 
     private fun manga() = VaultManga(
@@ -256,16 +364,20 @@ class VaultChapterThumbnailServicesTest {
         updatedAt = 100L,
     )
 
-    private fun chapter(thumbnail: VaultChapterThumbnail? = null) = VaultChapter(
-        id = 20,
+    private fun chapter(
+        id: Long = 20,
+        identity: String = "chapter-1",
+        thumbnail: VaultChapterThumbnail? = null,
+    ) = VaultChapter(
+        id = id,
         mangaId = 10,
-        identity = VaultIdentity("chapter-1"),
+        identity = VaultIdentity(identity),
         title = "Chapter 1",
         chapterNumber = 1.0,
         volumeNumber = null,
         scanlator = null,
         sourceOrder = 1,
-        content = VaultChapterContent("content/manga-1/chapter-1/chapter.cbz", VaultChapterContentFormat.CBZ, 1, "sha"),
+        content = VaultChapterContent("content/manga-1/$identity/chapter.cbz", VaultChapterContentFormat.CBZ, 1, "sha"),
         revision = VaultRevision("chapter-rev-1", 1),
         dateUpload = 100L,
         createdAt = 100L,
@@ -285,12 +397,14 @@ class VaultChapterThumbnailServicesTest {
         updatedAt = 100L,
     )
 
-    private fun rootManifest() = VaultRootManifest(
+    private fun rootManifest(
+        revision: VaultRevision = VaultRevision("root-rev-1", 1),
+    ) = VaultRootManifest(
         identity = "vault-1",
         displayName = "Vault",
         layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
-        revisionId = "root-rev-1",
-        revisionNumber = 1,
+        revisionId = revision.id,
+        revisionNumber = revision.number,
         writerId = null,
         createdAt = 100L,
         updatedAt = 100L,
@@ -307,31 +421,39 @@ class VaultChapterThumbnailServicesTest {
         ),
     )
 
-    private fun mangaManifest() = VaultMangaManifest(
+    private fun mangaManifest(
+        revision: VaultRevision = VaultRevision("manga-rev-1", 1),
+        chapters: List<VaultManifestChapter> = listOf(manifestChapter()),
+    ) = VaultMangaManifest(
         layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
         vaultIdentity = "vault-1",
         mangaIdentity = "manga-1",
-        revisionId = "manga-rev-1",
-        revisionNumber = 1,
+        revisionId = revision.id,
+        revisionNumber = revision.number,
         metadata = VaultManifestMetadata(title = "Manga"),
-        chapters = listOf(
-            VaultManifestChapter(
-                identity = "chapter-1",
-                title = "Chapter 1",
-                chapterNumber = 1.0,
-                sourceOrder = 1,
-                content = VaultManifestChapterContent(
-                    path = "content/manga-1/chapter-1/chapter.cbz",
-                    format = VaultChapterContentFormat.CBZ,
-                    integrity = VaultContentIntegrity(1, "sha"),
-                ),
-                revisionId = "chapter-rev-1",
-                revisionNumber = 1,
-                dateUpload = 100L,
-                createdAt = 100L,
-                updatedAt = 100L,
-            ),
+        chapters = chapters,
+        createdAt = 100L,
+        updatedAt = 100L,
+    )
+
+    private fun manifestChapter(
+        id: Long = 20,
+        identity: String = "chapter-1",
+        thumbnail: tachiyomi.domain.vault.model.VaultManifestChapterThumbnail? = null,
+    ) = VaultManifestChapter(
+        identity = identity,
+        title = "Chapter ${id - 19}",
+        chapterNumber = (id - 19).toDouble(),
+        sourceOrder = (id - 19),
+        content = VaultManifestChapterContent(
+            path = "content/manga-1/$identity/chapter.cbz",
+            format = VaultChapterContentFormat.CBZ,
+            integrity = VaultContentIntegrity(1, "sha"),
         ),
+        thumbnail = thumbnail,
+        revisionId = "chapter-rev-1",
+        revisionNumber = 1,
+        dateUpload = 100L,
         createdAt = 100L,
         updatedAt = 100L,
     )
@@ -349,10 +471,13 @@ class VaultChapterThumbnailServicesTest {
         return { identities.removeFirst() }
     }
 
-    private inner class FakeWebDav : VaultWebDav {
+    private inner class FakeWebDav(
+        private val promoteLeavesStagedFile: Boolean = false,
+    ) : VaultWebDav {
         val files = mutableMapOf<String, ByteArray>()
         val directories = mutableListOf<String>()
         val getBytesPaths = mutableListOf<String>()
+        val promotes = mutableListOf<Pair<String, String>>()
 
         override suspend fun get(path: String): String? = files[path]?.decodeToString()
 
@@ -384,6 +509,10 @@ class VaultChapterThumbnailServicesTest {
         }
 
         override suspend fun promote(stagedPath: String, finalPath: String): Boolean {
+            promotes += stagedPath to finalPath
+            if (promoteLeavesStagedFile) {
+                return files[stagedPath] != null
+            }
             files[finalPath] = files.remove(stagedPath) ?: return false
             return true
         }

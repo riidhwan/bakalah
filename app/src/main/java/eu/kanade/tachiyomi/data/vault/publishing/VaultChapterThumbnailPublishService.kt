@@ -9,6 +9,8 @@ import eu.kanade.tachiyomi.data.vault.webdav.RemoteVaultWebDav
 import eu.kanade.tachiyomi.data.vault.webdav.VaultWebDav
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
+import logcat.LogPriority
+import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ROOT_VAULT_MANIFEST_NAME
@@ -138,6 +140,7 @@ internal class DefaultVaultChapterThumbnailPublishService(
             else -> return false
         }
         if (remoteManga.vaultIdentity != root.identity || remoteManga.mangaIdentity != pointer.identity) return false
+        val localChaptersByIdentity = repository.getChapters(manga.id).associateBy { it.identity.value }
 
         val oldThumbnail = remoteManga.chapters
             .firstOrNull { it.identity == chapterIdentity }
@@ -184,7 +187,12 @@ internal class DefaultVaultChapterThumbnailPublishService(
                         updatedAt = timestamp,
                     )
                 } else {
-                    manifestChapter
+                    val localThumbnail = localChaptersByIdentity[manifestChapter.identity]?.thumbnail
+                    if (manifestChapter.thumbnail == null && localThumbnail != null) {
+                        manifestChapter.copy(thumbnail = localThumbnail.toManifest())
+                    } else {
+                        manifestChapter
+                    }
                 }
             },
             updatedAt = timestamp,
@@ -263,6 +271,25 @@ internal class DefaultVaultChapterThumbnailPublishService(
         return refreshed
     }
 
+    private fun VaultChapterThumbnail.toManifest(): VaultManifestChapterThumbnail {
+        return VaultManifestChapterThumbnail(
+            identity = identity.value,
+            path = path,
+            mediaType = mediaType,
+            integrity = sizeBytes?.let { size ->
+                checksumSha256?.let { checksum ->
+                    VaultContentIntegrity(
+                        sizeBytes = size,
+                        checksumSha256 = checksum,
+                    )
+                }
+            },
+            revisionId = revision.id,
+            revisionNumber = revision.number,
+            updatedAt = updatedAt,
+        )
+    }
+
     private suspend fun hasActiveTransfer(mangaId: Long, vaultId: Long, mangaIdentity: String): Boolean {
         val chapterIds = repository.getChapters(mangaId).map { it.id }.toSet()
         return repository.getTransferJobsForVault(vaultId).any { job ->
@@ -312,7 +339,38 @@ internal class DefaultVaultChapterThumbnailPublishService(
     }
 
     private suspend fun putTextStaged(storage: VaultWebDav, path: String, body: String): Boolean {
-        return putBytesStaged(storage, path, body.toByteArray(), "application/json")
+        return putBytesVerified(storage, path, body.toByteArray(), "application/json")
+    }
+
+    private suspend fun putBytesVerified(
+        storage: VaultWebDav,
+        path: String,
+        bytes: ByteArray,
+        mediaType: String?,
+    ): Boolean {
+        return runCatching {
+            val uploaded = storage.putBytes(path, bytes, mediaType)
+            if (!uploaded) {
+                logcat(LogPriority.WARN) {
+                    "$THUMBNAIL_PUBLISH_DIAGNOSTIC_PREFIX direct upload failed path=$path"
+                }
+                return@runCatching false
+            }
+
+            val finalBytes = storage.getBytes(path)
+            val verified = finalBytes.contentEqualsOrFalse(bytes)
+            if (!verified) {
+                logcat(LogPriority.ERROR) {
+                    "$THUMBNAIL_PUBLISH_DIAGNOSTIC_PREFIX direct upload verification failed " +
+                        "path=$path finalReadable=${finalBytes != null} finalSize=${finalBytes?.size}"
+                }
+            }
+            verified
+        }.onFailure { error ->
+            logcat(LogPriority.ERROR, error) {
+                "$THUMBNAIL_PUBLISH_DIAGNOSTIC_PREFIX direct upload threw path=$path"
+            }
+        }.getOrDefault(false)
     }
 
     private suspend fun putBytesStaged(
@@ -323,16 +381,70 @@ internal class DefaultVaultChapterThumbnailPublishService(
     ): Boolean {
         val stagedPath = "$path.staged-${identityFactory()}"
         return runCatching {
-            check(storage.putBytes(stagedPath, bytes, mediaType)) { "remote upload failed" }
-            check(storage.promote(stagedPath, path)) { "remote promote failed" }
-        }.onFailure {
+            val stagedUploaded = storage.putBytes(stagedPath, bytes, mediaType)
+            if (!stagedUploaded) {
+                logcat(LogPriority.WARN) {
+                    "$THUMBNAIL_PUBLISH_DIAGNOSTIC_PREFIX staged upload failed path=$path stagedPath=$stagedPath"
+                }
+                return@runCatching false
+            }
+
+            val promoted = storage.promote(stagedPath, path)
+            if (!promoted) {
+                logcat(LogPriority.WARN) {
+                    "$THUMBNAIL_PUBLISH_DIAGNOSTIC_PREFIX promote failed path=$path stagedPath=$stagedPath"
+                }
+                return@runCatching false
+            }
+
+            val promotedBytes = storage.getBytes(path)
+            if (promotedBytes.contentEqualsOrFalse(bytes)) {
+                storage.delete(stagedPath)
+                return@runCatching true
+            }
+
+            val stagedBytes = storage.getBytes(stagedPath)
+            logcat(LogPriority.WARN) {
+                "$THUMBNAIL_PUBLISH_DIAGNOSTIC_PREFIX promote verification failed " +
+                    "path=$path stagedPath=$stagedPath finalReadable=${promotedBytes != null} " +
+                    "finalSize=${promotedBytes?.size} stagedReadable=${stagedBytes != null} " +
+                    "stagedSize=${stagedBytes?.size}"
+            }
+
+            val finalUploaded = storage.putBytes(path, bytes, mediaType)
+            if (!finalUploaded) {
+                logcat(LogPriority.WARN) {
+                    "$THUMBNAIL_PUBLISH_DIAGNOSTIC_PREFIX final fallback upload failed path=$path stagedPath=$stagedPath"
+                }
+                return@runCatching false
+            }
+
+            val finalBytes = storage.getBytes(path)
+            val verified = finalBytes.contentEqualsOrFalse(bytes)
+            logcat(if (verified) LogPriority.WARN else LogPriority.ERROR) {
+                "$THUMBNAIL_PUBLISH_DIAGNOSTIC_PREFIX final fallback verification " +
+                    "verified=$verified path=$path stagedPath=$stagedPath finalReadable=${finalBytes != null} " +
+                    "finalSize=${finalBytes?.size}"
+            }
+            verified
+        }.onFailure { error ->
+            logcat(LogPriority.ERROR, error) {
+                "$THUMBNAIL_PUBLISH_DIAGNOSTIC_PREFIX staged write threw path=$path stagedPath=$stagedPath"
+            }
             storage.delete(stagedPath)
-        }.isSuccess
+        }.onSuccess {
+            storage.delete(stagedPath)
+        }.getOrDefault(false)
     }
 
     private companion object {
         val ACTIVE_TRANSFER_STATES = setOf(VaultTransferState.QUEUED, VaultTransferState.RUNNING)
+        const val THUMBNAIL_PUBLISH_DIAGNOSTIC_PREFIX = "[VAULT-THUMBNAIL-PUBLISH]"
     }
+}
+
+private fun ByteArray?.contentEqualsOrFalse(other: ByteArray): Boolean {
+    return this?.contentEquals(other) == true
 }
 
 data class VaultChapterThumbnailPublishRequest(
