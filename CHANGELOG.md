@@ -12,6 +12,8 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.40.0] - 2026-07-23
+
 ### Added
 - Mark Browse Source entries whose artist already exists in the source-backed Library.
 
