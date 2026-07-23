@@ -97,6 +97,8 @@ class VaultChapterThumbnailServicesTest {
         )
 
         result shouldBe VaultChapterThumbnailPublishResult.Published
+        repository.chapters.single().thumbnail?.path shouldBe
+            "content/manga-1/chapter-1/thumbnail/thumbnail-1.jpg"
         repository.jobs.values.single().let { job ->
             job.type shouldBe VaultTransferType.THUMBNAIL_PUBLISH
             job.state shouldBe VaultTransferState.SUCCEEDED
@@ -212,13 +214,24 @@ class VaultChapterThumbnailServicesTest {
             updatedAt = 100L,
         )
         val manga = manga()
-        val chapters = listOf(chapter())
+        val chapters = mutableListOf(chapter())
         val jobs = mutableMapOf<Long, VaultTransferJob>()
         var nextJobId = 1L
         val repository = mockk<VaultRepository> {
             coEvery { getVaultByIdentity(ContentVaultIdentity("vault-1")) } returns vault
             coEvery { getMangaById(10) } returns manga
-            coEvery { getChapters(10) } returns chapters
+            coEvery { getChapters(10) } coAnswers { chapters.toList() }
+            coEvery { upsertChapter(10, any()) } coAnswers {
+                val updatedChapter = invocation.args[1] as VaultChapter
+                chapters.replaceAll {
+                    if (it.identity == updatedChapter.identity) {
+                        updatedChapter
+                    } else {
+                        it
+                    }
+                }
+                updatedChapter.id
+            }
             coEvery { getTransferJobsForVault(1) } coAnswers { jobs.values.toList() }
             coEvery { getTransferJob(any()) } coAnswers { jobs[invocation.args[0] as Long] }
             coEvery { upsertTransferJob(any()) } coAnswers {
@@ -228,7 +241,7 @@ class VaultChapterThumbnailServicesTest {
                 id
             }
         }
-        return RepositoryFixture(repository, jobs)
+        return RepositoryFixture(repository, jobs, chapters)
     }
 
     private fun manga() = VaultManga(
@@ -402,5 +415,6 @@ class VaultChapterThumbnailServicesTest {
     private data class RepositoryFixture(
         val repository: VaultRepository,
         val jobs: Map<Long, VaultTransferJob>,
+        val chapters: List<VaultChapter>,
     )
 }

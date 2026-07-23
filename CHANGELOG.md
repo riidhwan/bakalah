@@ -14,6 +14,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ### Fixed
 - Prevent Add to group from leaving manga favorited without group membership when the group write fails.
+- Update Vault chapter list thumbnails immediately after changing them from the reader.
 
 ## [v0.39.1] - 2026-07-20
 
