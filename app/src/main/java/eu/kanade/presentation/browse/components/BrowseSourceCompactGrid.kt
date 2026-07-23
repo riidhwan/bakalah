@@ -64,7 +64,7 @@ private fun BrowseSourceCompactGridItem(
     onLongClick: () -> Unit = onClick,
 ) {
     val manga = item.manga
-    val showLibraryMark = manga.favorite || item.sameTitleLibraryMatch
+    val showLibraryMark = manga.favorite || item.sameTitleLibraryMatch || item.sameArtistLibraryMatch
 
     MangaCompactGridItem(
         title = manga.title,
@@ -80,6 +80,7 @@ private fun BrowseSourceCompactGridItem(
             BrowseLibraryBadge(
                 inLibrary = manga.favorite,
                 sameTitleLibraryMatch = item.sameTitleLibraryMatch,
+                sameArtistLibraryMatch = item.sameArtistLibraryMatch,
             )
         },
         onLongClick = onLongClick,

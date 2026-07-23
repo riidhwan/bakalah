@@ -948,6 +948,7 @@
     <string name="add_to_library">Add to library</string>
     <string name="in_library">In library</string>
     <string name="title_in_library">Title in library</string>
+    <string name="artist_in_library">Artist in library</string>
     <!-- missing confirm menu after Compose rewrite #7901 -->
     <string name="remove_from_library">Remove from library</string>
     <string name="unknown_title">Unknown title</string>

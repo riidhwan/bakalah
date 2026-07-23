@@ -64,7 +64,7 @@ private fun BrowseSourceComfortableGridItem(
     onLongClick: () -> Unit = onClick,
 ) {
     val manga = item.manga
-    val showLibraryMark = manga.favorite || item.sameTitleLibraryMatch
+    val showLibraryMark = manga.favorite || item.sameTitleLibraryMatch || item.sameArtistLibraryMatch
 
     MangaComfortableGridItem(
         title = manga.title,
@@ -80,6 +80,7 @@ private fun BrowseSourceComfortableGridItem(
             BrowseLibraryBadge(
                 inLibrary = manga.favorite,
                 sameTitleLibraryMatch = item.sameTitleLibraryMatch,
+                sameArtistLibraryMatch = item.sameArtistLibraryMatch,
             )
         },
         onLongClick = onLongClick,
