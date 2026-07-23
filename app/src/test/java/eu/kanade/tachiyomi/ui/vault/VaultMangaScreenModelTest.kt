@@ -72,6 +72,17 @@ class VaultMangaScreenModelTest {
     }
 
     @Test
+    fun `chapter item retries failed thumbnail loads while thumbnail exists`() {
+        val item = VaultMangaScreenModel.VaultChapterItem(
+            chapter = chapter(id = 1, thumbnailIdentity = "thumbnail-1"),
+            cacheState = null,
+            thumbnail = VaultChapterThumbnailDisplayResult.LoadFailed,
+        )
+
+        item.needsThumbnailLoad shouldBe true
+    }
+
+    @Test
     fun `chapter item rebuild marks pending deletion`() {
         val chapter = chapter(id = 1)
 

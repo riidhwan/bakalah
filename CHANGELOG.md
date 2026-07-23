@@ -12,6 +12,11 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.40.1] - 2026-07-23
+
+### Fixed
+- Keep Vault chapter thumbnail files and manifest paths in sync when publishing new thumbnails.
+
 ## [v0.40.0] - 2026-07-23
 
 ### Added
