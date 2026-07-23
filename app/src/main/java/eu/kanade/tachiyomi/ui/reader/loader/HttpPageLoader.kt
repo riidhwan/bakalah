@@ -1,8 +1,10 @@
 package eu.kanade.tachiyomi.ui.reader.loader
 
+import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.database.models.toDomainChapter
 import eu.kanade.tachiyomi.source.model.Page
+import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
@@ -17,6 +19,9 @@ import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.withIOContext
+import tachiyomi.domain.chapter.interactor.UpdateChapter
+import tachiyomi.domain.chapter.model.ChapterUpdate
+import tachiyomi.domain.manga.model.Manga
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.concurrent.PriorityBlockingQueue
@@ -30,8 +35,10 @@ import kotlin.math.min
  */
 internal class HttpPageLoader(
     private val chapter: ReaderChapter,
+    private val manga: Manga,
     private val source: HttpSource,
     private val chapterCache: ChapterCache = Injekt.get(),
+    private val updateChapter: UpdateChapter = Injekt.get(),
 ) : PageLoader() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -73,12 +80,46 @@ internal class HttpPageLoader(
             if (e is CancellationException) {
                 throw e
             }
-            source.getPageList(chapter.chapter)
+            getPageListFromSourceWithMetadataRefresh()
         }
         return pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
             ReaderPage(index, page.url, page.imageUrl)
         }
+    }
+
+    private suspend fun getPageListFromSourceWithMetadataRefresh(): List<Page> {
+        return try {
+            source.getPageList(chapter.chapter)
+        } catch (e: Throwable) {
+            if (e is CancellationException) {
+                throw e
+            }
+            val refreshedChapter = refreshReaderChapterMetadata() ?: throw e
+            try {
+                source.getPageList(refreshedChapter)
+            } catch (_: Throwable) {
+                throw e
+            }
+        }
+    }
+
+    private suspend fun refreshReaderChapterMetadata(): SChapter? {
+        val refreshedChapter = source.getChapterList(manga.toSManga())
+            .findReaderChapterMatch(chapter.chapter)
+            ?: return null
+
+        val chapterId = chapter.chapter.id
+        if (chapterId != null && refreshedChapter.memo != chapter.chapter.memo) {
+            updateChapter.await(
+                ChapterUpdate(
+                    id = chapterId,
+                    memo = refreshedChapter.memo,
+                ),
+            )
+        }
+        chapter.chapter.copyFrom(refreshedChapter)
+        return chapter.chapter
     }
 
     /**
@@ -195,6 +236,10 @@ internal class HttpPageLoader(
             }
         }
     }
+}
+
+internal fun List<SChapter>.findReaderChapterMatch(chapter: SChapter): SChapter? {
+    return find { it.url == chapter.url }
 }
 
 /**
