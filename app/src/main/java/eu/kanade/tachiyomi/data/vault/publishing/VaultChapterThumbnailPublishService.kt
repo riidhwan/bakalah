@@ -13,8 +13,11 @@ import tachiyomi.domain.vault.model.CURRENT_VAULT_LAYOUT_VERSION
 import tachiyomi.domain.vault.model.ContentVaultIdentity
 import tachiyomi.domain.vault.model.ROOT_VAULT_MANIFEST_NAME
 import tachiyomi.domain.vault.model.VaultCatalogueSummary
+import tachiyomi.domain.vault.model.VaultChapter
+import tachiyomi.domain.vault.model.VaultChapterThumbnail
 import tachiyomi.domain.vault.model.VaultContentIntegrity
 import tachiyomi.domain.vault.model.VaultIdentity
+import tachiyomi.domain.vault.model.VaultManga
 import tachiyomi.domain.vault.model.VaultManifestChapterThumbnail
 import tachiyomi.domain.vault.model.VaultManifestCodec
 import tachiyomi.domain.vault.model.VaultManifestReadResult
@@ -85,8 +88,8 @@ internal class DefaultVaultChapterThumbnailPublishService(
             markJobRunning(jobId)
             publishRemote(
                 config = config,
-                mangaIdentity = manga.identity.value,
-                chapterIdentity = chapter.identity.value,
+                manga = manga,
+                chapter = chapter,
                 bytes = request.jpegBytes,
             )
         }.fold(
@@ -108,10 +111,12 @@ internal class DefaultVaultChapterThumbnailPublishService(
 
     private suspend fun publishRemote(
         config: WebDavVaultConfig,
-        mangaIdentity: String,
-        chapterIdentity: String,
+        manga: VaultManga,
+        chapter: VaultChapter,
         bytes: ByteArray,
     ): Boolean {
+        val mangaIdentity = manga.identity.value
+        val chapterIdentity = chapter.identity.value
         val storage = webDavFactory(config)
         val rootPath = config.rootPath.childPath(ROOT_VAULT_MANIFEST_NAME)
         val rootBody = storage.get(rootPath) ?: return false
@@ -152,13 +157,16 @@ internal class DefaultVaultChapterThumbnailPublishService(
 
         val timestamp = now()
         val mangaRevisionId = identityFactory()
+        val thumbnailRevisionId = identityFactory()
+        val chapterRevisionId = identityFactory()
+        val thumbnailRevision = (oldThumbnail?.revisionNumber ?: 0) + 1
         val updatedManga = remoteManga.copy(
             layoutVersion = CURRENT_VAULT_LAYOUT_VERSION,
             revisionId = mangaRevisionId,
             revisionNumber = remoteManga.revisionNumber + 1,
-            chapters = remoteManga.chapters.map { chapter ->
-                if (chapter.identity == chapterIdentity) {
-                    chapter.copy(
+            chapters = remoteManga.chapters.map { manifestChapter ->
+                if (manifestChapter.identity == chapterIdentity) {
+                    manifestChapter.copy(
                         thumbnail = VaultManifestChapterThumbnail(
                             identity = thumbnailIdentity,
                             path = thumbnailPath,
@@ -167,16 +175,16 @@ internal class DefaultVaultChapterThumbnailPublishService(
                                 sizeBytes = integrity.sizeBytes,
                                 checksumSha256 = integrity.checksumSha256,
                             ),
-                            revisionId = identityFactory(),
-                            revisionNumber = (chapter.thumbnail?.revisionNumber ?: 0) + 1,
+                            revisionId = thumbnailRevisionId,
+                            revisionNumber = thumbnailRevision,
                             updatedAt = timestamp,
                         ),
-                        revisionId = identityFactory(),
-                        revisionNumber = chapter.revisionNumber + 1,
+                        revisionId = chapterRevisionId,
+                        revisionNumber = manifestChapter.revisionNumber + 1,
                         updatedAt = timestamp,
                     )
                 } else {
-                    chapter
+                    manifestChapter
                 }
             },
             updatedAt = timestamp,
@@ -219,6 +227,24 @@ internal class DefaultVaultChapterThumbnailPublishService(
 
         val refreshed = refreshService.refreshConfiguredVault() is VaultCatalogueRefreshResult.Refreshed
         if (refreshed) {
+            repository.upsertChapter(
+                manga.id,
+                chapter.copy(
+                    revision = VaultRevision(chapterRevisionId, chapter.revision.number + 1),
+                    updatedAt = timestamp,
+                    thumbnail = VaultChapterThumbnail(
+                        id = -1,
+                        chapterId = chapter.id,
+                        identity = VaultIdentity(thumbnailIdentity),
+                        path = thumbnailPath,
+                        mediaType = "image/jpeg",
+                        sizeBytes = integrity.sizeBytes,
+                        checksumSha256 = integrity.checksumSha256,
+                        revision = VaultRevision(thumbnailRevisionId, thumbnailRevision),
+                        updatedAt = timestamp,
+                    ),
+                ),
+            )
             oldThumbnail?.let {
                 cacheStore.delete(
                     VaultChapterThumbnailCacheKey(

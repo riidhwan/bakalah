@@ -47,6 +47,8 @@ interface VaultRepository {
 
     suspend fun getChapters(mangaId: Long): List<VaultChapter>
 
+    suspend fun upsertChapter(mangaId: Long, chapter: VaultChapter): Long = error("Not implemented")
+
     suspend fun upsertChapters(mangaId: Long, chapters: List<VaultChapter>)
 
     suspend fun getLabels(vaultId: Long): List<VaultLabel>

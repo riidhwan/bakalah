@@ -145,6 +145,12 @@ class VaultRepositoryImpl(
             .awaitAsList()
     }
 
+    override suspend fun upsertChapter(mangaId: Long, chapter: VaultChapter): Long {
+        return database.transactionWithResult {
+            upsertChapterInternal(mangaId, chapter)
+        }
+    }
+
     override suspend fun upsertChapters(mangaId: Long, chapters: List<VaultChapter>) {
         database.transaction {
             if (chapters.isEmpty()) {
@@ -152,7 +158,7 @@ class VaultRepositoryImpl(
             } else {
                 database.vaultQueries.deleteChaptersNotInIdentities(mangaId, chapters.map { it.identity.value })
                 chapters.forEach { chapter ->
-                    upsertChapter(mangaId, chapter)
+                    upsertChapterInternal(mangaId, chapter)
                 }
             }
         }
@@ -710,7 +716,7 @@ class VaultRepositoryImpl(
                         identities = mangaRefresh.chapters.map { it.identity.value },
                     )
                     mangaRefresh.chapters.forEach { chapter ->
-                        upsertChapter(mangaId, chapter)
+                        upsertChapterInternal(mangaId, chapter)
                     }
                 }
 
@@ -885,7 +891,7 @@ class VaultRepositoryImpl(
         )
     }
 
-    private suspend fun upsertChapter(mangaId: Long, chapter: VaultChapter): Long {
+    private suspend fun upsertChapterInternal(mangaId: Long, chapter: VaultChapter): Long {
         database.vaultQueries.upsertChapter(
             id = chapter.id,
             mangaId = mangaId,
