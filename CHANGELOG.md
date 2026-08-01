@@ -12,6 +12,11 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+## [v0.40.2] - 2026-08-01
+
+### Fixed
+- Stop extensions from current v2-index repositories from being incorrectly marked obsolete.
+
 ## [v0.40.1] - 2026-07-23
 
 ### Fixed
